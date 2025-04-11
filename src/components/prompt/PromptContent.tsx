@@ -39,7 +39,7 @@ const PromptContent: React.FC<PromptContentProps> = ({ title, content, author, p
           onClick={() => setIsPurchaseDialogOpen(true)}
           className="border border-gray-300 rounded-md py-1 px-3 hover:bg-gray-50 transition-colors"
         >
-          <span className="font-bold text-sm text-green-600">¥{price}</span>
+          <span className="font-bold text-sm text-green-600">¥{price.toLocaleString()}</span>
         </button>
       </div>
       
