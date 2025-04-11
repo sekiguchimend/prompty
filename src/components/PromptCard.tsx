@@ -27,7 +27,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
   const promptId = id.includes('-') ? id.split('-')[1] : id;
   
   return (
-    <div className="prompt-card flex flex-col overflow-hidden bg-white rounded-lg border shadow-sm">
+    <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm">
       <Link to={`/prompts/${promptId}`} className="block">
         <div className="relative pb-[56.25%]">
           <img 
@@ -38,12 +38,12 @@ const PromptCard: React.FC<PromptCardProps> = ({
         </div>
       </Link>
       <div className="flex flex-col p-3">
-        <Link to={`/prompts/${promptId}`} className="mb-2 line-clamp-2 text-sm font-medium hover:text-prompty-primary">
+        <Link to={`/prompts/${promptId}`} className="mb-2 line-clamp-2 font-medium hover:text-prompty-primary">
           {title}
         </Link>
         <div className="mt-auto flex items-center justify-between">
-          <div className="flex items-center gap-1">
-            <Link to={`/users/${user.name}`} className="block h-5 w-5 overflow-hidden rounded-full">
+          <div className="flex items-center gap-2">
+            <Link to={`/users/${user.name}`} className="block h-6 w-6 overflow-hidden rounded-full">
               <img 
                 src={user.avatarUrl} 
                 alt={user.name} 
@@ -57,7 +57,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
           </div>
           <div className="flex items-center text-gray-500">
             <button className="like-button flex items-center">
-              <Heart className="mr-1 h-3.5 w-3.5" />
+              <Heart className="mr-1 h-4 w-4" />
             </button>
             <span className="text-xs">{likeCount}</span>
           </div>

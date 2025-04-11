@@ -1,12 +1,13 @@
 
 import React, { useState } from 'react';
-import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { Save, FileText } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
@@ -33,6 +34,7 @@ const CreatePost = () => {
   const onSubmit = (data: FormValues) => {
     console.log("Form submitted:", data);
     // Here you would typically save the post to your backend
+    // For now we'll just log it and redirect
     alert("投稿が保存されました");
     navigate("/");
   };

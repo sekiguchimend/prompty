@@ -1,7 +1,6 @@
 
 import React from 'react';
 import PromptCard from './PromptCard';
-import { useIsMobile } from '../hooks/use-mobile';
 
 export interface PromptItem {
   id: string;
@@ -21,14 +20,8 @@ interface PromptGridProps {
 }
 
 const PromptGrid: React.FC<PromptGridProps> = ({ prompts, sectionPrefix = '' }) => {
-  const isMobile = useIsMobile();
-
   return (
-    <div className={`grid gap-4 ${
-      isMobile 
-        ? 'grid-cols-1' 
-        : 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
-    }`}>
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
       {prompts.map(prompt => (
         <PromptCard
           key={`${sectionPrefix}${prompt.id}`}
