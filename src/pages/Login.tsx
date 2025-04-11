@@ -31,19 +31,8 @@ const Login = () => {
 
   return (
     <div className="flex min-h-screen bg-prompty-background">
-      {/* Illustration section - left side */}
-      <div className="hidden md:flex md:w-1/2 bg-white items-center justify-center p-8">
-        <div className="max-w-md">
-          <img 
-            src="/lovable-uploads/92289d47-425e-44de-932b-d74594b9e9e7.png" 
-            alt="イラストレーション" 
-            className="w-full"
-          />
-        </div>
-      </div>
-
-      {/* Login form - right side */}
-      <div className="w-full md:w-1/2 flex flex-col items-center justify-center p-8">
+      {/* Login form - centered */}
+      <div className="w-full flex flex-col items-center justify-center p-8">
         <Link to="/" className="mb-8">
           <div className="flex items-center">
             <span className="text-3xl font-bold text-prompty-primary">p<span className="text-black">rompty</span></span>
