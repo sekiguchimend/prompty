@@ -3,6 +3,7 @@ import React from 'react';
 import { Search } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { Link } from 'react-router-dom';
 
 const Header = () => {
   return (
@@ -27,9 +28,11 @@ const Header = () => {
         </div>
 
         <div className="flex items-center gap-4">
-          <Button variant="ghost" className="text-gray-700">
-            ログイン
-          </Button>
+          <Link to="/login">
+            <Button variant="ghost" className="text-gray-700">
+              ログイン
+            </Button>
+          </Link>
           <Button className="bg-black text-white hover:bg-gray-800">
             会員登録
           </Button>
