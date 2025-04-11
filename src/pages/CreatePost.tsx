@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Plus, Save, FileText, Info } from "lucide-react";
+import { Save, FileText } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
@@ -99,15 +99,6 @@ const CreatePost = () => {
                 )}
               />
               
-              <div className="my-6">
-                <button
-                  type="button"
-                  className="flex items-center gap-2 text-gray-500 hover:text-gray-800 p-2 rounded-full border border-gray-200"
-                >
-                  <Plus size={18} />
-                </button>
-              </div>
-              
               <FormField
                 control={form.control}
                 name="content"
@@ -116,7 +107,7 @@ const CreatePost = () => {
                     <FormControl>
                       <Textarea
                         placeholder="最近、調子はどうですか？"
-                        className="min-h-[200px] border-none shadow-none resize-none focus-visible:ring-0"
+                        className="min-h-[200px] border-none shadow-none resize-none focus-visible:ring-0 mt-6"
                         onChange={handleContentChange}
                         value={field.value}
                       />

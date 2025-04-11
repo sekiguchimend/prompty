@@ -23,8 +23,7 @@ const Search = () => {
       const combinedPrompts = [...featuredPrompts, ...aiGeneratedPrompts];
       const filteredResults = combinedPrompts.filter(prompt => 
         prompt.title.toLowerCase().includes(query.toLowerCase()) || 
-        prompt.author.toLowerCase().includes(query.toLowerCase()) ||
-        prompt.description.toLowerCase().includes(query.toLowerCase())
+        prompt.user.name.toLowerCase().includes(query.toLowerCase())
       );
       
       setResults(filteredResults);
