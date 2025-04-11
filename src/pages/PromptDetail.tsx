@@ -14,7 +14,7 @@ const PromptDetail = () => {
   // Mock data for the prompt detail
   const prompt = {
     id: '1',
-    title: '有料noteが売れない97%の人が知らない9つの思考法',
+    title: '努力できないのは才能じゃなくてやり方の問題！',
     content: [
       'こんにちは、末吉です。',
       'あなたがこのnoteを見つけたということは、きっとこんな悩みを持っているのかもしれません。',
@@ -31,7 +31,7 @@ const PromptDetail = () => {
       publishedAt: '2025年3月15日 11:29',
       website: 'https://hiroomisueyoshi.net/fx/mailmag', // Added the website property here
     },
-    price: 980,
+    price: 3000,
     likes: 97,
     wordCount: 3493,
     tags: [

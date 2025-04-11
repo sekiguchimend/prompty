@@ -1,5 +1,6 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import PurchaseDialog from './PurchaseDialog';
 
 interface PromptContentProps {
   title: string;
@@ -9,12 +10,14 @@ interface PromptContentProps {
     avatarUrl: string;
     bio: string;
     publishedAt: string;
-    website?: string; // Added website as optional property
+    website?: string;
   };
   price: number;
 }
 
 const PromptContent: React.FC<PromptContentProps> = ({ title, content, author, price }) => {
+  const [isPurchaseDialogOpen, setIsPurchaseDialogOpen] = useState(false);
+  
   return (
     <article>
       <h1 className="text-3xl font-bold mb-8 leading-tight">{title}</h1>
@@ -32,9 +35,12 @@ const PromptContent: React.FC<PromptContentProps> = ({ title, content, author, p
           </div>
         </div>
         
-        <div className="border border-gray-300 rounded-md py-1 px-3">
-          <span className="font-bold text-sm">¥{price}</span>
-        </div>
+        <button 
+          onClick={() => setIsPurchaseDialogOpen(true)}
+          className="border border-gray-300 rounded-md py-1 px-3 hover:bg-gray-50 transition-colors"
+        >
+          <span className="font-bold text-sm text-green-600">¥{price}</span>
+        </button>
       </div>
       
       <div className="prose prose-gray max-w-none my-10 text-lg">
@@ -42,6 +48,16 @@ const PromptContent: React.FC<PromptContentProps> = ({ title, content, author, p
           <p key={index} className="mb-6">{paragraph}</p>
         ))}
       </div>
+
+      <PurchaseDialog 
+        isOpen={isPurchaseDialogOpen} 
+        onClose={() => setIsPurchaseDialogOpen(false)}
+        prompt={{
+          title,
+          author,
+          price
+        }}
+      />
     </article>
   );
 };
