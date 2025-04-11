@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -97,18 +96,24 @@ const PromptDetail = () => {
             <div className="md:col-span-1">
               <div className="sticky top-20">
                 <div className="flex flex-col items-start">
-                  <div className="mb-4">
-                    <div className="w-20 h-20 rounded-full overflow-hidden mb-2">
-                      <img 
-                        src={prompt.author.avatarUrl} 
-                        alt={prompt.author.name} 
-                        className="w-full h-full object-cover"
-                      />
+                  {/* Smaller author profile section */}
+                  <div className="mb-3">
+                    <div className="flex items-center mb-2">
+                      <div className="w-14 h-14 rounded-full overflow-hidden mr-2">
+                        <img 
+                          src={prompt.author.avatarUrl} 
+                          alt={prompt.author.name} 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium">{prompt.author.name}</h3>
+                        <p className="text-xs text-gray-500">{prompt.author.bio}</p>
+                      </div>
                     </div>
-                    <h3 className="text-sm font-medium">{prompt.author.name}</h3>
                   </div>
                   
-                  <div className="text-xs text-gray-500 space-y-2 mb-6">
+                  <div className="text-xs text-gray-500 space-y-2 mb-4">
                     {prompt.tags.map((tag, index) => (
                       <div key={index} className="flex items-center">
                         {index === 0 && <span className="mr-1">👉</span>}
@@ -116,7 +121,7 @@ const PromptDetail = () => {
                       </div>
                     ))}
                     <div className="pt-1">
-                      <a href={prompt.website} className="text-gray-400 hover:text-gray-600">
+                      <a href={prompt.website} className="text-gray-400 hover:text-gray-600 text-xs truncate block">
                         {prompt.website}
                       </a>
                     </div>
@@ -124,7 +129,7 @@ const PromptDetail = () => {
                   
                   <Button 
                     variant="outline" 
-                    className="w-full mb-4 bg-gray-900 text-white hover:bg-gray-800 rounded-sm"
+                    className="w-full mb-4 bg-gray-900 text-white hover:bg-gray-800 rounded-sm text-sm py-1 h-auto"
                   >
                     <span className="mr-1">👤</span> フォロー
                   </Button>
@@ -142,16 +147,16 @@ const PromptDetail = () => {
                     <img 
                       src={prompt.author.avatarUrl} 
                       alt={prompt.author.name}
-                      className="w-8 h-8 rounded-full mr-2" 
+                      className="w-6 h-6 rounded-full mr-2" 
                     />
                     <div>
-                      <p className="text-sm font-medium">{prompt.author.bio}</p>
+                      <p className="text-xs font-medium">{prompt.author.bio}</p>
                       <p className="text-xs text-gray-500">{prompt.author.publishedAt}</p>
                     </div>
                   </div>
                   
-                  <div className="border border-gray-300 rounded-md py-1 px-4">
-                    <span className="font-bold">¥{prompt.price}</span>
+                  <div className="border border-gray-300 rounded-md py-1 px-3">
+                    <span className="font-bold text-sm">¥{prompt.price}</span>
                   </div>
                 </div>
                 
@@ -240,11 +245,11 @@ const PromptDetail = () => {
                     </div>
                   </div>
                   
-                  {/* Author profile */}
-                  <div className="border-t border-gray-200 pt-8 mb-10">
+                  {/* Author profile - Smaller version */}
+                  <div className="border-t border-gray-200 pt-6 mb-8">
                     <div className="flex justify-between items-start">
-                      <div className="flex items-start space-x-4">
-                        <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
                           <img 
                             src={prompt.author.avatarUrl} 
                             alt={prompt.author.name} 
@@ -252,19 +257,19 @@ const PromptDetail = () => {
                           />
                         </div>
                         <div>
-                          <h4 className="text-lg font-medium">{prompt.author.name}</h4>
-                          <p className="text-sm text-gray-600 mt-1">
+                          <h4 className="text-sm font-medium">{prompt.author.name}</h4>
+                          <p className="text-xs text-gray-600 mt-1">
                             <span>📚新刊『発信をお金にかえる勇気』予約開始！！</span>
                           </p>
-                          <p className="text-sm text-gray-600 mt-1">
+                          <p className="text-xs text-gray-600 mt-1 line-clamp-2">
                             著者、コンサルタント/『発信する勇気』（きずな出版）/ コンテンツビジネススクール主宰 / 公式メルマガ→
                             <a href={prompt.website} className="text-blue-600 hover:underline">{prompt.website}</a>
                           </p>
                           
-                          <div className="flex space-x-3 mt-3">
+                          <div className="flex space-x-2 mt-2">
                             {prompt.socialLinks.map((link, index) => (
                               <a key={index} href={link.url} className="text-gray-500 hover:text-gray-700">
-                                <div className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-200">
+                                <div className="w-5 h-5 flex items-center justify-center rounded-full bg-gray-200">
                                   <span className="text-xs">{link.icon.charAt(0).toUpperCase()}</span>
                                 </div>
                               </a>
@@ -274,7 +279,7 @@ const PromptDetail = () => {
                       </div>
                       
                       <Button 
-                        className="bg-gray-900 text-white hover:bg-gray-800 rounded-md"
+                        className="bg-gray-900 text-white hover:bg-gray-800 rounded-md text-xs py-1 px-3 h-auto"
                       >
                         フォロー
                       </Button>
