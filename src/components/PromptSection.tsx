@@ -1,4 +1,3 @@
-
 import React from 'react';
 import SectionHeader from './SectionHeader';
 import PromptGrid, { PromptItem } from './PromptGrid';
@@ -9,6 +8,7 @@ interface PromptSectionProps {
   showMoreLink?: boolean;
   showRssIcon?: boolean;
   sectionPrefix?: string;
+  horizontalScroll?: boolean;
 }
 
 const PromptSection: React.FC<PromptSectionProps> = ({ 
@@ -16,7 +16,8 @@ const PromptSection: React.FC<PromptSectionProps> = ({
   prompts, 
   showMoreLink = false, 
   showRssIcon = false,
-  sectionPrefix = ''
+  sectionPrefix = '',
+  horizontalScroll = false
 }) => {
   return (
     <section className="mt-12 first:mt-0">
@@ -24,8 +25,9 @@ const PromptSection: React.FC<PromptSectionProps> = ({
         title={title} 
         showMoreLink={showMoreLink} 
         showRssIcon={showRssIcon} 
+        horizontalScroll={horizontalScroll}
       />
-      <PromptGrid prompts={prompts} sectionPrefix={sectionPrefix} />
+      <PromptGrid prompts={prompts} sectionPrefix={sectionPrefix} horizontalScroll={horizontalScroll} />
     </section>
   );
 };

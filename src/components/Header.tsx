@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { Search, Bell, PenSquare } from 'lucide-react';
+import { Search, Bell, PenSquare, Menu } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Link, useNavigate } from 'react-router-dom';
@@ -85,6 +84,15 @@ const Header = () => {
         </div>
 
         <div className="flex items-center gap-4">
+          {/* モバイル表示時の検索アイコン */}
+          <button 
+            className="md:hidden text-gray-700" 
+            onClick={() => setOpen(true)}
+            aria-label="検索"
+          >
+            <Search className="h-6 w-6" />
+          </button>
+
           {isLoggedIn ? (
             <>
               <Button 
@@ -116,12 +124,12 @@ const Header = () => {
           ) : (
             <>
               <Link to="/login">
-                <Button variant="ghost" className="text-gray-700">
+                <Button variant="ghost" className="text-gray-700 text-xs px-2 py-1 md:text-sm md:px-4 md:py-2">
                   ログイン
                 </Button>
               </Link>
               <Link to="/register">
-                <Button className="bg-black text-white hover:bg-gray-800">
+                <Button className="bg-black text-white hover:bg-gray-800 text-xs px-2 py-1 md:text-sm md:px-4 md:py-2">
                   会員登録
                 </Button>
               </Link>
@@ -133,7 +141,7 @@ const Header = () => {
               <Button 
                 variant="ghost" 
                 onClick={toggleLogin} // For demo purposes
-                className="text-gray-700 text-sm border border-gray-200"
+                className="text-gray-700 text-xs border border-gray-200 px-1 py-0.5 md:text-sm md:px-3 md:py-1"
               >
                 デモ切替
               </Button>
