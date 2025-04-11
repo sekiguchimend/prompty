@@ -9,7 +9,7 @@ interface PromptContentProps {
     avatarUrl: string;
     bio: string;
     publishedAt: string;
-    website?: string;
+    website?: string; // Added website as optional property
   };
   price: number;
 }
@@ -17,12 +17,7 @@ interface PromptContentProps {
 const PromptContent: React.FC<PromptContentProps> = ({ title, content, author, price }) => {
   return (
     <article>
-      <h1 className="text-3xl font-bold mb-4 leading-tight">{title}</h1>
-      
-      {/* Price display - added prominent styling */}
-      <div className="mb-6">
-        <p className="text-green-600 font-bold text-xl">¥{price.toLocaleString()}</p>
-      </div>
+      <h1 className="text-3xl font-bold mb-8 leading-tight">{title}</h1>
       
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
@@ -35,6 +30,10 @@ const PromptContent: React.FC<PromptContentProps> = ({ title, content, author, p
             <p className="text-xs font-medium">{author.bio}</p>
             <p className="text-xs text-gray-500">{author.publishedAt}</p>
           </div>
+        </div>
+        
+        <div className="border border-gray-300 rounded-md py-1 px-3">
+          <span className="font-bold text-sm">¥{price}</span>
         </div>
       </div>
       
