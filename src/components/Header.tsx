@@ -38,6 +38,11 @@ const Header = () => {
               会員登録
             </Button>
           </Link>
+          <Link to="/business" className="hidden md:inline-block">
+            <Button variant="ghost" className="text-gray-700">
+              法人の方
+            </Button>
+          </Link>
         </div>
       </div>
     </header>
