@@ -1,16 +1,17 @@
 
 import React, { useState } from 'react';
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Plus, Save, FileText } from "lucide-react";
+import { Plus, Save, FileText, Info } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
+import { Card, CardContent } from "@/components/ui/card";
 
 const formSchema = z.object({
   title: z.string().min(1, "タイトルを入力してください"),
@@ -152,10 +153,22 @@ const CreatePost = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>使用したプロンプト</FormLabel>
+                      <FormDescription className="flex items-start gap-2 text-sm text-gray-500 mt-1 mb-2">
+                        <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        <span>プロンプトの入力方法：</span>
+                      </FormDescription>
+                      <Card className="mb-4 border-gray-200 bg-gray-50">
+                        <CardContent className="p-4 space-y-2 text-sm">
+                          <p>1. 使用したプロンプトをそのまま貼り付けてください</p>
+                          <p>2. 複数のプロンプトを使った場合は、順番に記載してください</p>
+                          <p>3. プロンプトに特別な指示や変数がある場合は、その説明も追加するとわかりやすくなります</p>
+                          <p>4. システムプロンプトとユーザープロンプトを分けて記載するとさらに良いでしょう</p>
+                        </CardContent>
+                      </Card>
                       <FormControl>
                         <Textarea 
                           placeholder="使用したプロンプトを入力してください" 
-                          className="min-h-[100px]"
+                          className="min-h-[200px]"
                           {...field} 
                         />
                       </FormControl>
