@@ -5,16 +5,55 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Link, useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from './ui/command';
+import { useToast } from './ui/use-toast';
 
 const Header = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   // This would normally come from an auth context
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [open, setOpen] = useState(false);
 
   // Toggle login state (for demo purposes)
   const toggleLogin = () => {
     setIsLoggedIn(!isLoggedIn);
   };
+
+  // Handle search input change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // Handle search submission
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      setOpen(false);
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
+    } else {
+      toast({
+        title: "検索キーワードを入力してください",
+        description: "キーワードを入力して検索してください",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Open search dialog on keyboard shortcut
+  React.useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setOpen((open) => !open);
+      }
+    };
+
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white">
@@ -28,12 +67,20 @@ const Header = () => {
         
         <div className="hidden md:flex md:flex-1 md:justify-center md:px-4">
           <div className="relative w-full max-w-md">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-            <Input
-              type="search"
-              placeholder="キーワードやクリエイターで検索"
-              className="w-full bg-gray-100 pl-9 rounded-md border-none"
-            />
+            <form onSubmit={handleSearchSubmit} className="w-full">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+              <Input
+                type="search"
+                placeholder="キーワードやクリエイターで検索"
+                className="w-full bg-gray-100 pl-9 rounded-md border-none"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onClick={() => setOpen(true)}
+              />
+              <kbd className="absolute right-2.5 top-2.5 hidden h-5 select-none items-center gap-1 rounded border bg-gray-100 px-1.5 font-mono text-xs text-gray-500 md:flex">
+                <span className="text-xs">⌘</span>K
+              </kbd>
+            </form>
           </div>
         </div>
 
@@ -94,6 +141,36 @@ const Header = () => {
           )}
         </div>
       </div>
+
+      <CommandDialog open={open} onOpenChange={setOpen}>
+        <CommandInput 
+          placeholder="キーワードやクリエイターで検索..."
+          value={searchQuery}
+          onValueChange={setSearchQuery}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              handleSearchSubmit(e);
+            }
+          }}
+        />
+        <CommandList>
+          <CommandEmpty>検索結果がありません</CommandEmpty>
+          {searchQuery && (
+            <CommandGroup heading="サジェスチョン">
+              <CommandItem
+                onSelect={() => {
+                  setOpen(false);
+                  navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+                  setSearchQuery('');
+                }}
+              >
+                <Search className="mr-2 h-4 w-4" />
+                <span>{searchQuery}</span> を検索
+              </CommandItem>
+            </CommandGroup>
+          )}
+        </CommandList>
+      </CommandDialog>
     </header>
   );
 };
