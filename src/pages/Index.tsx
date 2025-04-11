@@ -3,7 +3,11 @@ import React from 'react';
 import HomePage from '@/components/HomePage';
 
 const Home = () => {
-  return <HomePage />;
+  return (
+    <div className="bg-gray-50">
+      <HomePage />
+    </div>
+  );
 };
 
 export default Home;

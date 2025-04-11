@@ -1,23 +1,19 @@
 
 import React, { useState } from 'react';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Save, FileText } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
 
 const formSchema = z.object({
   title: z.string().min(1, "タイトルを入力してください"),
   content: z.string().optional(),
-  usedModel: z.string().optional(),
-  usedPrompt: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -31,15 +27,12 @@ const CreatePost = () => {
     defaultValues: {
       title: "",
       content: "",
-      usedModel: "",
-      usedPrompt: "",
     },
   });
 
   const onSubmit = (data: FormValues) => {
     console.log("Form submitted:", data);
     // Here you would typically save the post to your backend
-    // For now we'll just log it and redirect
     alert("投稿が保存されました");
     navigate("/");
   };
@@ -118,50 +111,6 @@ const CreatePost = () => {
               
               <div className="flex justify-end text-sm text-gray-500">
                 {wordCount} 文字
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
-              <h3 className="text-lg font-medium mb-4">使用したモデルやプロンプト</h3>
-              
-              <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="usedModel"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>使用したモデル</FormLabel>
-                      <FormControl>
-                        <Input placeholder="例: GPT-4o, Claude 3 Opus など" {...field} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="usedPrompt"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>使用したプロンプト</FormLabel>
-                      <Card className="mb-4 border-gray-200 bg-gray-50">
-                        <CardContent className="p-4 space-y-2 text-sm">
-                          <p>1. 使用したプロンプトをそのまま貼り付けてください</p>
-                          <p>2. 複数のプロンプトを使った場合は、順番に記載してください</p>
-                          <p>3. プロンプトに特別な指示や変数がある場合は、その説明も追加するとわかりやすくなります</p>
-                          <p>4. システムプロンプトとユーザープロンプトを分けて記載するとさらに良いでしょう</p>
-                        </CardContent>
-                      </Card>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="使用したプロンプトを入力してください" 
-                          className="min-h-[200px]"
-                          {...field} 
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
               </div>
             </div>
           </form>
