@@ -1,6 +1,8 @@
 
 import React, { useState } from 'react';
 import PurchaseDialog from './PurchaseDialog';
+import { ExternalLink, Image } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface PromptContentProps {
   title: string;
@@ -13,9 +15,18 @@ interface PromptContentProps {
     website?: string;
   };
   price: number;
+  systemImageUrl?: string;
+  systemUrl?: string;
 }
 
-const PromptContent: React.FC<PromptContentProps> = ({ title, content, author, price }) => {
+const PromptContent: React.FC<PromptContentProps> = ({ 
+  title, 
+  content, 
+  author, 
+  price, 
+  systemImageUrl,
+  systemUrl
+}) => {
   const [isPurchaseDialogOpen, setIsPurchaseDialogOpen] = useState(false);
   
   return (
@@ -43,10 +54,47 @@ const PromptContent: React.FC<PromptContentProps> = ({ title, content, author, p
         </button>
       </div>
       
-      <div className="prose prose-gray max-w-none my-10 text-lg">
+      <div className="prose prose-gray max-w-none my-6 text-lg">
         {content.map((paragraph, index) => (
           <p key={index} className="mb-6">{paragraph}</p>
         ))}
+      </div>
+
+      {/* System Image and URL */}
+      {systemImageUrl && (
+        <div className="my-8 border border-gray-200 rounded-lg overflow-hidden">
+          <img 
+            src={systemImageUrl} 
+            alt="システムのスクリーンショット" 
+            className="w-full h-auto"
+          />
+        </div>
+      )}
+
+      {systemUrl && (
+        <div className="my-6">
+          <a 
+            href={systemUrl} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center text-blue-600 hover:text-blue-800 font-medium"
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            システムを見る
+          </a>
+        </div>
+      )}
+
+      {/* Preview message and purchase button */}
+      <div className="mt-10 mb-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
+        <h3 className="text-xl font-medium text-center mb-4">ここから先は</h3>
+        <p className="text-center mb-6">使用したモデルとプロンプトを知りたい場合は、購入してください。</p>
+        <Button 
+          onClick={() => setIsPurchaseDialogOpen(true)}
+          className="w-full bg-gray-900 text-white py-3 text-lg font-medium hover:bg-gray-800"
+        >
+          購入手続きへ（¥{price.toLocaleString()}）
+        </Button>
       </div>
 
       <PurchaseDialog 

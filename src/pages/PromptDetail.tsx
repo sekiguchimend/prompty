@@ -39,6 +39,8 @@ const PromptDetail = () => {
       '末吉宏臣'
     ],
     website: 'https://hiroomisueyoshi.net/fx/mailmag',
+    systemImageUrl: '/lovable-uploads/4ed80f0e-6902-4a40-92fc-56fea3e5bd1c.png',
+    systemUrl: 'https://example.com/system-demo',
     socialLinks: [
       {icon: 'twitter', url: '#'},
       {icon: 'facebook', url: '#'},
@@ -99,7 +101,7 @@ const PromptDetail = () => {
               <AuthorSidebar 
                 author={prompt.author} 
                 tags={prompt.tags} 
-                website={prompt.author.website} // Using the website from the author object
+                website={prompt.author.website}
               />
             </div>
             
@@ -110,6 +112,8 @@ const PromptDetail = () => {
                 content={prompt.content}
                 author={prompt.author}
                 price={prompt.price}
+                systemImageUrl={prompt.systemImageUrl}
+                systemUrl={prompt.systemUrl}
               />
               
               {/* Purchase section */}

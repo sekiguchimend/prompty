@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import AvatarGroup from '@/components/AvatarGroup';
-import { Heart, Share2, MessageSquare, MoreHorizontal } from 'lucide-react';
+import { Heart, Share2, MessageSquare, MoreHorizontal, FileText, PenTool } from 'lucide-react';
+import PurchaseDialog from './PurchaseDialog';
 
 interface PurchaseSectionProps {
   wordCount: number;
@@ -35,13 +36,15 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
   author,
   socialLinks
 }) => {
+  const [isPurchaseDialogOpen, setIsPurchaseDialogOpen] = useState(false);
+  
   return (
     <div className="mt-16 border-t border-gray-200 pt-10">
-      <div className="text-center mb-2">
-        <h3 className="text-lg font-medium text-gray-700">ここから先は</h3>
+      <div className="text-center mb-4">
+        <h3 className="text-lg font-medium text-gray-700">モデルとプロンプトが必要ですか？</h3>
       </div>
       
-      <div className="text-center mb-2">
+      <div className="text-center mb-4">
         <p className="text-sm text-gray-500">{wordCount}字</p>
         <p className="text-3xl font-bold mb-2">¥ {price}</p>
       </div>
@@ -51,8 +54,20 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
         <a href="#" className="ml-2 text-blue-600 underline">詳細</a>
       </div>
       
+      <div className="flex flex-col gap-3 mb-6">
+        <div className="flex items-center gap-3 text-gray-700">
+          <FileText className="h-5 w-5 text-gray-500" />
+          <span>使用されたモデルについての詳細な情報</span>
+        </div>
+        <div className="flex items-center gap-3 text-gray-700">
+          <PenTool className="h-5 w-5 text-gray-500" />
+          <span>実際に使用されたプロンプトの全文</span>
+        </div>
+      </div>
+      
       <Button 
         className="w-full bg-gray-900 text-white py-3 text-lg font-medium hover:bg-gray-800 mb-4"
+        onClick={() => setIsPurchaseDialogOpen(true)}
       >
         購入手続きへ
       </Button>
@@ -154,6 +169,16 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
           </Button>
         </div>
       </div>
+      
+      <PurchaseDialog
+        isOpen={isPurchaseDialogOpen}
+        onClose={() => setIsPurchaseDialogOpen(false)}
+        prompt={{
+          title: author.name,
+          author,
+          price
+        }}
+      />
     </div>
   );
 };
