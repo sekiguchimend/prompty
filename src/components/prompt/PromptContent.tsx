@@ -85,18 +85,6 @@ const PromptContent: React.FC<PromptContentProps> = ({
         </div>
       )}
 
-      {/* Preview message and purchase button */}
-      <div className="mt-10 mb-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
-        <h3 className="text-xl font-medium text-center mb-4">ここから先は</h3>
-        <p className="text-center mb-6">使用したモデルとプロンプトを知りたい場合は、購入してください。</p>
-        <Button 
-          onClick={() => setIsPurchaseDialogOpen(true)}
-          className="w-full bg-gray-900 text-white py-3 text-lg font-medium hover:bg-gray-800"
-        >
-          購入手続きへ（¥{price.toLocaleString()}）
-        </Button>
-      </div>
-
       <PurchaseDialog 
         isOpen={isPurchaseDialogOpen} 
         onClose={() => setIsPurchaseDialogOpen(false)}
