@@ -33,9 +33,11 @@ const Header = () => {
               ログイン
             </Button>
           </Link>
-          <Button className="bg-black text-white hover:bg-gray-800">
-            会員登録
-          </Button>
+          <Link to="/register">
+            <Button className="bg-black text-white hover:bg-gray-800">
+              会員登録
+            </Button>
+          </Link>
         </div>
       </div>
     </header>
