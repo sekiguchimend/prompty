@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ScrollArea } from './ui/scroll-area';
+import { ScrollArea, ScrollBar } from './ui/scroll-area';
 
 const categories = [
   { id: 'all', name: 'すべて', active: true },
@@ -16,7 +16,7 @@ const categories = [
 const MobileCategories: React.FC = () => {
   return (
     <div className="bg-white border-b py-2 sticky top-16 z-10">
-      <ScrollArea className="w-full" orientation="horizontal">
+      <ScrollArea className="w-full">
         <div className="flex space-x-1 px-4 pb-0.5">
           {categories.map((category) => (
             <button
@@ -31,6 +31,7 @@ const MobileCategories: React.FC = () => {
             </button>
           ))}
         </div>
+        <ScrollBar orientation="horizontal" />
       </ScrollArea>
     </div>
   );
