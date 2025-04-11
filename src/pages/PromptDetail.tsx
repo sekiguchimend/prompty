@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import { Separator } from '@/components/ui/separator';
 import AvatarGroup from '@/components/AvatarGroup';
 import { Badge } from '@/components/ui/badge';
+import PopularArticles from '@/components/PopularArticles';
 
 const PromptDetail = () => {
   // Mock data for the prompt detail
@@ -57,6 +58,27 @@ const PromptDetail = () => {
       'https://i.pravatar.cc/150?img=7'
     ]
   };
+
+  // Mock data for popular articles
+  const popularArticles = [
+    {
+      id: '2',
+      title: '『夢がかなう！ ファンが増える！ エッセイの書き方』【追記】自己啓発エッセイのススメ（動画セミナー）（2023.1.11）',
+      likes: 1814,
+      imageUrl: '/lovable-uploads/4ed80f0e-6902-4a40-92fc-56fea3e5bd1c.png'
+    },
+    {
+      id: '3',
+      title: 'たくさんお金を受け取って、たくさん好きな人やお店や会社に回せばいい。',
+      likes: 621
+    },
+    {
+      id: '4',
+      title: '『お金から自由になる14のヒント』追記：大切なことをはじめるとき、まずはお金のことを忘れよう（2022.7.4）',
+      likes: 1508,
+      imageUrl: '/lovable-uploads/4ed80f0e-6902-4a40-92fc-56fea3e5bd1c.png'
+    },
+  ];
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -263,6 +285,10 @@ const PromptDetail = () => {
             </div>
           </div>
         </div>
+        
+        {/* Popular Articles Section */}
+        <Separator className="my-12" />
+        <PopularArticles articles={popularArticles} />
       </main>
       
       <Footer />
