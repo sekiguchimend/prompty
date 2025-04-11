@@ -13,10 +13,11 @@ import Business from "./pages/Business";
 import ForgotPassword from "./pages/ForgotPassword";
 import HelpCenter from "./pages/HelpCenter";
 import CommercialTransaction from "./pages/CommercialTransaction"; 
-import Privacy from "./pages/Privacy"; // New import
-import Terms from "./pages/Terms"; // New import
-import PaymentDisclosure from "./pages/PaymentDisclosure"; // New import
-import HowToUse from "./pages/HowToUse"; // New import
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import PaymentDisclosure from "./pages/PaymentDisclosure";
+import HowToUse from "./pages/HowToUse";
+import CreatePost from "./pages/CreatePost"; // New import
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/payment-disclosure" element={<PaymentDisclosure />} />
+          <Route path="/create-post" element={<CreatePost />} /> {/* New route */}
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

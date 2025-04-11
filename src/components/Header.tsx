@@ -3,10 +3,11 @@ import React, { useState } from 'react';
 import { Search, Bell, PenSquare } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 const Header = () => {
+  const navigate = useNavigate();
   // This would normally come from an auth context
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -43,7 +44,7 @@ const Header = () => {
                 variant="secondary" 
                 size="sm" 
                 className="bg-black text-white hover:bg-gray-800 hidden md:flex"
-                onClick={() => console.log('Post new content')}
+                onClick={() => navigate('/create-post')}
               >
                 <PenSquare className="mr-2 h-4 w-4" />
                 投稿
