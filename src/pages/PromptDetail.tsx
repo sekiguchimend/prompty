@@ -28,7 +28,8 @@ const PromptDetail = () => {
       name: '末吉宏臣 / 『発信をお金にかえる勇気』',
       avatarUrl: 'https://i.pravatar.cc/150?img=3',
       bio: '末吉宏臣 / 『発信をお金にかえる勇気』 著者',
-      publishedAt: '2025年3月15日 11:29'
+      publishedAt: '2025年3月15日 11:29',
+      website: 'https://hiroomisueyoshi.net/fx/mailmag', // Added the website property here
     },
     price: 980,
     likes: 97,
@@ -98,7 +99,7 @@ const PromptDetail = () => {
               <AuthorSidebar 
                 author={prompt.author} 
                 tags={prompt.tags} 
-                website={prompt.website} 
+                website={prompt.author.website} // Using the website from the author object
               />
             </div>
             

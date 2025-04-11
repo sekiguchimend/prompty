@@ -9,6 +9,7 @@ interface PromptContentProps {
     avatarUrl: string;
     bio: string;
     publishedAt: string;
+    website?: string; // Added website as optional property
   };
   price: number;
 }
