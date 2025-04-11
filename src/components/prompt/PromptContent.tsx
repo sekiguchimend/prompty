@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import PurchaseDialog from './PurchaseDialog';
-import { ExternalLink, Image } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface PromptContentProps {
@@ -54,13 +54,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
         </button>
       </div>
       
-      <div className="prose prose-gray max-w-none my-6 text-lg">
-        {content.map((paragraph, index) => (
-          <p key={index} className="mb-6">{paragraph}</p>
-        ))}
-      </div>
-
-      {/* System Image and URL */}
+      {/* System Image and URL - Moved above content */}
       {systemImageUrl && (
         <div className="my-8 border border-gray-200 rounded-lg overflow-hidden">
           <img 
@@ -72,7 +66,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
       )}
 
       {systemUrl && (
-        <div className="my-6">
+        <div className="mb-6">
           <a 
             href={systemUrl} 
             target="_blank" 
@@ -84,6 +78,12 @@ const PromptContent: React.FC<PromptContentProps> = ({
           </a>
         </div>
       )}
+      
+      <div className="prose prose-gray max-w-none my-6 text-lg">
+        {content.map((paragraph, index) => (
+          <p key={index} className="mb-6">{paragraph}</p>
+        ))}
+      </div>
 
       <PurchaseDialog 
         isOpen={isPurchaseDialogOpen} 
