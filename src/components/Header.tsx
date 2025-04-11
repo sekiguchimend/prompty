@@ -83,9 +83,9 @@ const Header = () => {
                 </Button>
               </Link>
               <Button 
-                className="hidden" 
                 variant="ghost" 
                 onClick={toggleLogin} // For demo purposes
+                className="text-gray-700 text-sm border border-gray-200"
               >
                 デモ切替
               </Button>
