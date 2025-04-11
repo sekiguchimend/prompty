@@ -2,9 +2,12 @@
 import React from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { ChevronLeft, Heart, MessageSquare, Share2 } from 'lucide-react';
+import { ChevronLeft, Heart, MessageSquare, Share2, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { Separator } from '@/components/ui/separator';
+import AvatarGroup from '@/components/AvatarGroup';
+import { Badge } from '@/components/ui/badge';
 
 const PromptDetail = () => {
   // Mock data for the prompt detail
@@ -28,15 +31,31 @@ const PromptDetail = () => {
     },
     price: 980,
     likes: 97,
+    wordCount: 3493,
     tags: [
-      '新刊『発信をお金にかえる勇気』予約開始！！', 
-      '著者', 
-      'コンサルタント', 
-      '『発信する勇気』（きずな出版）', 
-      'コンテンツビジネススクール主宰', 
-      '公式メルマガ'
+      '有料note', 
+      '末吉宏臣'
     ],
-    website: 'https://hiroomisueyoshi.net/fx/m/aiimag'
+    website: 'https://hiroomisueyoshi.net/fx/mailmag',
+    socialLinks: [
+      {icon: 'twitter', url: '#'},
+      {icon: 'facebook', url: '#'},
+      {icon: 'instagram', url: '#'},
+      {icon: 'youtube', url: '#'},
+      {icon: 'line', url: '#'},
+      {icon: 'tiktok', url: '#'},
+      {icon: 'google-business', url: '#'},
+      {icon: 'rss', url: '#'}
+    ],
+    reviewers: [
+      'https://i.pravatar.cc/150?img=1',
+      'https://i.pravatar.cc/150?img=2',
+      'https://i.pravatar.cc/150?img=3',
+      'https://i.pravatar.cc/150?img=4',
+      'https://i.pravatar.cc/150?img=5',
+      'https://i.pravatar.cc/150?img=6',
+      'https://i.pravatar.cc/150?img=7'
+    ]
   };
 
   return (
@@ -120,22 +139,124 @@ const PromptDetail = () => {
                   ))}
                 </div>
                 
-                <div className="flex items-center justify-between border-t border-b py-4 my-8">
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-500">
-                      <Heart className="h-5 w-5 mr-1" />
-                      <span>{prompt.likes}</span>
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <MessageSquare className="h-5 w-5" />
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <Share2 className="h-5 w-5" />
-                    </Button>
+                {/* Purchase section - New stylish bottom part */}
+                <div className="mt-16 border-t border-gray-200 pt-10">
+                  <div className="text-center mb-2">
+                    <h3 className="text-lg font-medium text-gray-700">ここから先は</h3>
                   </div>
-                  <div className="flex items-center">
-                    <span className="text-red-400 mr-1">♥</span>
-                    <span>{prompt.likes}</span>
+                  
+                  <div className="text-center mb-2">
+                    <p className="text-sm text-gray-500">{prompt.wordCount}字</p>
+                    <p className="text-3xl font-bold mb-2">¥ {prompt.price}</p>
+                  </div>
+                  
+                  <div className="text-center text-sm text-blue-600 mb-6">
+                    <span>Amazon Pay支払いで総額2,025万円を山分け！</span>
+                    <a href="#" className="ml-2 text-blue-600 underline">詳細</a>
+                  </div>
+                  
+                  <Button 
+                    className="w-full bg-gray-900 text-white py-3 text-lg font-medium hover:bg-gray-800 mb-4"
+                  >
+                    購入手続きへ
+                  </Button>
+                  
+                  <div className="flex justify-center mb-6">
+                    <AvatarGroup avatars={prompt.reviewers} count={26} />
+                  </div>
+                  
+                  <div className="flex justify-center mb-8">
+                    <Link to="/login" className="text-gray-900 font-medium hover:underline">
+                      ログイン
+                    </Link>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2 justify-center mb-8">
+                    {prompt.tags.map((tag, index) => (
+                      <Badge 
+                        key={index} 
+                        variant="outline" 
+                        className="px-4 py-1 rounded-md bg-gray-50 hover:bg-gray-100 cursor-pointer"
+                      >
+                        #{tag}
+                      </Badge>
+                    ))}
+                  </div>
+                  
+                  {/* Social interaction buttons */}
+                  <div className="flex items-center justify-between mb-10">
+                    <div className="flex items-center gap-4">
+                      <button className="flex items-center text-gray-500 hover:text-red-500 focus:outline-none">
+                        <Heart className="h-6 w-6 mr-1 text-red-400" fill="#F87171" />
+                        <span>{prompt.likes}</span>
+                      </button>
+                      <button className="text-gray-500 hover:text-gray-700 focus:outline-none">
+                        <Share2 className="h-5 w-5" />
+                      </button>
+                      <button className="text-gray-500 hover:text-gray-700 focus:outline-none">
+                        <MessageSquare className="h-5 w-5" />
+                      </button>
+                      <button className="text-gray-500 hover:text-gray-700 focus:outline-none">
+                        <MoreHorizontal className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Tip section */}
+                  <div className="bg-gray-50 p-4 rounded-md mb-10">
+                    <div className="text-center mb-4">
+                      <p className="text-gray-700">この記事が気に入ったらチップで応援してみませんか？</p>
+                    </div>
+                    <div className="flex justify-center">
+                      <Button 
+                        variant="outline" 
+                        className="bg-white border border-gray-300 text-gray-800 font-medium flex items-center space-x-1 px-5"
+                      >
+                        <Heart className="h-4 w-4" />
+                        <span>チップで応援</span>
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Author profile */}
+                  <div className="border-t border-gray-200 pt-8 mb-10">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-start space-x-4">
+                        <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
+                          <img 
+                            src={prompt.author.avatarUrl} 
+                            alt={prompt.author.name} 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-medium">{prompt.author.name}</h4>
+                          <p className="text-sm text-gray-600 mt-1">
+                            <span>📚新刊『発信をお金にかえる勇気』予約開始！！</span>
+                          </p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            著者、コンサルタント/『発信する勇気』（きずな出版）/ コンテンツビジネススクール主宰 / 公式メルマガ→
+                            <a href={prompt.website} className="text-blue-600 hover:underline">{prompt.website}</a>
+                          </p>
+                          
+                          <div className="flex space-x-3 mt-3">
+                            {prompt.socialLinks.map((link, index) => (
+                              <a key={index} href={link.url} className="text-gray-500 hover:text-gray-700">
+                                <div className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-200">
+                                  <span className="text-xs">{link.icon.charAt(0).toUpperCase()}</span>
+                                </div>
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <Button 
+                        className="bg-gray-900 text-white hover:bg-gray-800 rounded-md"
+                      >
+                        フォロー
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </article>
