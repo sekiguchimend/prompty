@@ -28,6 +28,11 @@ const Header = () => {
         </div>
 
         <div className="flex items-center gap-4">
+          <Link to="/help-center">
+            <Button variant="ghost" className="text-gray-700">
+              ヘルプ
+            </Button>
+          </Link>
           <Link to="/login">
             <Button variant="ghost" className="text-gray-700">
               ログイン
