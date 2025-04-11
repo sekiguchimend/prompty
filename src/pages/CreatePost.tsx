@@ -153,10 +153,6 @@ const CreatePost = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>使用したプロンプト</FormLabel>
-                      <FormDescription className="flex items-start gap-2 text-sm text-gray-500 mt-1 mb-2">
-                        <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                        <span>プロンプトの入力方法：</span>
-                      </FormDescription>
                       <Card className="mb-4 border-gray-200 bg-gray-50">
                         <CardContent className="p-4 space-y-2 text-sm">
                           <p>1. 使用したプロンプトをそのまま貼り付けてください</p>
