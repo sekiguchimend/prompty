@@ -6,17 +6,14 @@ const Footer = () => {
   return (
     <footer className="w-full border-t border-gray-200 py-8 bg-white">
       <div className="container flex flex-wrap justify-center items-center gap-x-6 gap-y-2 text-xs text-gray-500">
-        <a href="/help-center" className="hover:text-gray-900 hover:underline whitespace-nowrap">
-          ヘルプセンター
+        <a href="/how-to-use" className="hover:text-gray-900 hover:underline whitespace-nowrap">
+          よくある質問・promptyの使い方
         </a>
         <a href="/premium" className="hover:text-gray-900 hover:underline whitespace-nowrap">
           promptyプレミアム
         </a>
         <a href="/pro" className="hover:text-gray-900 hover:underline whitespace-nowrap">
           prompty pro
-        </a>
-        <a href="/how-to-use" className="hover:text-gray-900 hover:underline whitespace-nowrap">
-          よくある質問・promptyの使い方
         </a>
         <a href="/privacy" className="hover:text-gray-900 hover:underline whitespace-nowrap">
           プライバシー

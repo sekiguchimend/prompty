@@ -12,7 +12,11 @@ import Register from "./pages/Register";
 import Business from "./pages/Business";
 import ForgotPassword from "./pages/ForgotPassword";
 import HelpCenter from "./pages/HelpCenter";
-import CommercialTransaction from "./pages/CommercialTransaction"; // New import
+import CommercialTransaction from "./pages/CommercialTransaction"; 
+import Privacy from "./pages/Privacy"; // New import
+import Terms from "./pages/Terms"; // New import
+import PaymentDisclosure from "./pages/PaymentDisclosure"; // New import
+import HowToUse from "./pages/HowToUse"; // New import
 
 const queryClient = new QueryClient();
 
@@ -30,7 +34,11 @@ const App = () => (
           <Route path="/business" element={<Business />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/help-center" element={<HelpCenter />} />
-          <Route path="/commercial-transaction" element={<CommercialTransaction />} /> {/* New route */}
+          <Route path="/how-to-use" element={<HowToUse />} />
+          <Route path="/commercial-transaction" element={<CommercialTransaction />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/payment-disclosure" element={<PaymentDisclosure />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
