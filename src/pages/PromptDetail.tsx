@@ -14,6 +14,7 @@ const PromptDetail = () => {
   // Mock data for the prompt detail
   const prompt = {
     id: '1',
+    imageUrl: '/lovable-uploads/92289d47-425e-44de-932b-d74594b9e9e7.png',
     title: '努力できないのは才能じゃなくてやり方の問題！',
     content: [
       'こんにちは、末吉です。',
@@ -108,6 +109,7 @@ const PromptDetail = () => {
             {/* Main content */}
             <div className="md:col-span-2">
               <PromptContent 
+                imageUrl={prompt.imageUrl}
                 title={prompt.title}
                 content={prompt.content}
                 author={prompt.author}

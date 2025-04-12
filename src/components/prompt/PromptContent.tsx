@@ -5,6 +5,7 @@ import { ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface PromptContentProps {
+  imageUrl: string;
   title: string;
   content: string[];
   author: {
@@ -20,6 +21,7 @@ interface PromptContentProps {
 }
 
 const PromptContent: React.FC<PromptContentProps> = ({ 
+  imageUrl,
   title, 
   content, 
   author, 
@@ -31,6 +33,13 @@ const PromptContent: React.FC<PromptContentProps> = ({
   
   return (
     <article>
+      <div className="mb-6">
+        <img 
+          src={imageUrl} 
+          alt={title} 
+          className="w-full h-auto rounded-lg"
+        />
+      </div>
       <h1 className="text-3xl font-bold mb-8 leading-tight">{title}</h1>
       
       <div className="flex items-center justify-between mb-4">
@@ -91,7 +100,8 @@ const PromptContent: React.FC<PromptContentProps> = ({
         prompt={{
           title,
           author,
-          price
+          price,
+          
         }}
       />
     </article>

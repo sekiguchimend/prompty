@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Heart } from 'lucide-react';
+import { Heart,Bookmark } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface PromptCardProps {
@@ -41,7 +41,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
         <Link to={`/prompts/${promptId}`} className="mb-2 line-clamp-2 font-medium hover:text-prompty-primary">
           {title}
         </Link>
-        <div className="mt-auto flex items-center justify-between">
+        <div className="mt-auto">
           <div className="flex items-center gap-2">
             <Link to={`/users/${user.name}`} className="block h-6 w-6 overflow-hidden rounded-full">
               <img 
@@ -55,11 +55,18 @@ const PromptCard: React.FC<PromptCardProps> = ({
             </Link>
             <span className="text-xs text-gray-500">{postedAt}</span>
           </div>
-          <div className="flex items-center text-gray-500">
+          <div className="flex items-center">
+          <div className="flex items-center text-gray-500 mt-4">
             <button className="like-button flex items-center">
               <Heart className="mr-1 h-4 w-4" />
             </button>
             <span className="text-xs">{likeCount}</span>
+          </div>
+          <div className="flex items-center text-gray-500 mt-4 ml-2">
+          <button className="like-button flex items-center">
+              <Bookmark className="mr-1 h-4 w-4" />
+            </button>
+          </div>
           </div>
         </div>
       </div>
