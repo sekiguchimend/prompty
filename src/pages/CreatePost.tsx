@@ -8,7 +8,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Save, Image, Upload, XCircle, Clock, ChevronDown, ChevronUp, Hash, HelpCircle, Lightbulb, CheckCircle, Send } from "lucide-react";
+import { Save, Image, Upload, XCircle, Clock, ChevronDown, ChevronUp, Hash, HelpCircle, Lightbulb, CheckCircle, Send, Link } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
@@ -27,6 +27,7 @@ interface ProjectSettings {
   aiModel: string;
   description?: string;
   thumbnail?: string;
+  url?: string; // URL項目を追加
 }
 
 // 利用可能なAIモデルのリスト
@@ -55,11 +56,13 @@ const PROMPT_EXAMPLES = [
   }
 ];
 
+// プロジェクトフォームスキーマにURLを追加
 const projectFormSchema = z.object({
   projectTitle: z.string().min(1, "プロジェクトタイトルを入力してください"),
   aiModel: z.string().min(1, "AIモデルを選択してください"),
   projectDescription: z.string().optional(),
   thumbnail: z.string().optional(),
+  projectUrl: z.string().url("有効なURLを入力してください").optional().or(z.literal("")), // URL検証を追加
 });
 
 const promptFormSchema = z.object({
@@ -70,7 +73,6 @@ const promptFormSchema = z.object({
 
 type ProjectFormValues = z.infer<typeof projectFormSchema>;
 type PromptFormValues = z.infer<typeof promptFormSchema>;
-
 const CreatePost = () => {
   const navigate = useNavigate();
   const [wordCount, setWordCount] = useState(0);
@@ -90,6 +92,7 @@ const CreatePost = () => {
       aiModel: "claude-3-5-sonnet",
       projectDescription: "",
       thumbnail: "",
+      projectUrl: "", // URL項目のデフォルト値を追加
     },
   });
   
@@ -209,7 +212,7 @@ const CreatePost = () => {
       <Header />
       
       <main className="flex-1 container max-w-4xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
           <button 
             onClick={() => navigate(-1)}
             className="text-gray-500 hover:text-black"
@@ -217,11 +220,11 @@ const CreatePost = () => {
             ← 戻る
           </button>
           
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button 
               variant="outline" 
               onClick={() => setShowGuide(!showGuide)}
-              className="border-gray-300 text-black"
+              className="border-gray-300 text-black text-sm"
             >
               <HelpCircle className="h-4 w-4 mr-2" />
               ガイド
@@ -230,7 +233,7 @@ const CreatePost = () => {
               <Button 
                 variant="outline" 
                 onClick={() => setShowHistory(!showHistory)}
-                className="border-gray-300 text-black"
+                className="border-gray-300 text-black text-sm"
               >
                 {showHistory ? "履歴を隠す" : "履歴を表示"}
               </Button>
@@ -238,19 +241,18 @@ const CreatePost = () => {
             <Button 
               variant="outline"
               onClick={projectForm.handleSubmit(onProjectSubmit)}
-              className="border-gray-300 text-black"
+              className="border-gray-300 text-black text-sm"
             >
               <Save className="h-4 w-4 mr-2" />
               設定を保存
             </Button>
-           
           </div>
         </div>
         
         {/* プロジェクト設定 */}
-        <div className="mb-8 border border-gray-200 rounded-lg bg-white p-6">
+        <div className="mb-8 border border-gray-200 rounded-lg bg-white p-4 sm:p-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-black">プロジェクト設定</h2>
+            <h2 className="text-lg sm:text-xl font-bold text-black">プロジェクト設定</h2>
             {isProjectSaved && (
               <div className="flex items-center text-green-600 text-sm">
                 <CheckCircle className="h-4 w-4 mr-1" />
@@ -261,23 +263,51 @@ const CreatePost = () => {
           
           <Form {...projectForm}>
             <form className="space-y-6">
-              <div className="flex gap-6">
+              <div className="flex flex-col lg:flex-row gap-6">
                 {/* プロジェクトサムネイル */}
-                <div className="w-36">
+                <div className="w-full lg:w-36">
                   <FormLabel className="text-gray-700 mb-2 block text-sm">プロジェクトサムネイル</FormLabel>
-                  <div 
-                    className="w-32 h-32 border border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden cursor-pointer"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    {thumbnailPreview ? (
-                      <img 
-                        src={thumbnailPreview} 
-                        alt="サムネイルプレビュー" 
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <Image className="h-12 w-12 text-gray-400" />
-                    )}
+                  <div className="flex items-center gap-4">
+                    <div 
+                      className="w-32 h-32 border border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden cursor-pointer"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      {thumbnailPreview ? (
+                        <img 
+                          src={thumbnailPreview} 
+                          alt="サムネイルプレビュー" 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Image className="h-12 w-12 text-gray-400" />
+                      )}
+                    </div>
+                    
+                    <div className="flex flex-col gap-2 lg:hidden">
+                      <Button 
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="border-gray-300 text-gray-700 text-xs py-1 h-7"
+                      >
+                        <Upload className="h-3 w-3 mr-1" />
+                        画像選択
+                      </Button>
+                      
+                      {thumbnailPreview && (
+                        <Button 
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={clearThumbnail}
+                          className="border-gray-300 text-gray-700 px-2 py-1 h-7"
+                        >
+                          <XCircle className="h-3 w-3 mr-1" />
+                          削除
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   
                   <input
@@ -288,7 +318,7 @@ const CreatePost = () => {
                     className="hidden"
                   />
                   
-                  <div className="flex gap-1 mt-2">
+                  <div className="hidden lg:flex gap-1 mt-2">
                     <Button 
                       type="button"
                       variant="outline"
@@ -359,6 +389,34 @@ const CreatePost = () => {
                       )}
                     />
                   </div>
+                  
+                  {/* URLフィールドを追加 */}
+                  <FormField
+                    control={projectForm.control}
+                    name="projectUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-700">プロジェクトURL（任意）</FormLabel>
+                        <FormControl>
+                          <div className="flex items-center border border-gray-300 rounded-md">
+                            <div className="flex items-center justify-center border-r border-gray-300 h-10 w-10 bg-gray-50 text-gray-400">
+                              <Link className="h-4 w-4" />
+                            </div>
+                            <Input
+                              placeholder="https://example.com"
+                              className="border-0 rounded-none focus:ring-0"
+                              {...field}
+                            />
+                          </div>
+                        </FormControl>
+                        {projectForm.formState.errors.projectUrl && (
+                          <p className="text-xs text-red-600 mt-1">
+                            {projectForm.formState.errors.projectUrl.message}
+                          </p>
+                        )}
+                      </FormItem>
+                    )}
+                  />
                   
                   <FormField
                     control={projectForm.control}
@@ -457,7 +515,7 @@ const CreatePost = () => {
               {prompts.map((prompt, index) => (
                 <div key={prompt.id} className="relative">
                   {/* 左側のタイムライン */}
-                  <div className="absolute left-4 top-0 bottom-0 flex flex-col items-center">
+                  <div className="absolute left-2 sm:left-4 top-0 bottom-0 flex flex-col items-center">
                     <div className="flex items-center justify-center h-8 w-8 rounded-full bg-black text-white font-medium shadow-sm z-10">
                       {prompt.id}
                     </div>
@@ -467,8 +525,8 @@ const CreatePost = () => {
                   </div>
                   
                   {/* プロンプト内容 */}
-                  <div className="ml-16 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="flex items-center justify-between mb-3">
+                  <div className="ml-12 sm:ml-16 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
                       <h4 className="font-medium text-black">{prompt.title}</h4>
                       <div className="flex items-center text-xs text-gray-500">
                         <Clock className="h-3 w-3 mr-1" />
@@ -487,6 +545,7 @@ const CreatePost = () => {
                           // 過去のプロンプトを現在のフォームに読み込む
                           promptForm.setValue("title", prompt.title);
                           promptForm.setValue("content", prompt.content);
+                          setWordCount(prompt.content.length);
                         }}
                       >
                         このプロンプトを編集
@@ -499,7 +558,7 @@ const CreatePost = () => {
               {/* 現在のプロンプトへの接続線 */}
               {prompts.length > 0 && (
                 <div className="relative h-8">
-                  <div className="absolute left-4 top-0 bottom-0 flex flex-col items-center">
+                  <div className="absolute left-2 sm:left-4 top-0 bottom-0 flex flex-col items-center">
                     <div className="w-0.5 h-full bg-gray-300"></div>
                   </div>
                 </div>
@@ -511,7 +570,7 @@ const CreatePost = () => {
         {/* 新規プロンプト入力フォーム */}
         <Form {...promptForm}>
           <form onSubmit={promptForm.handleSubmit(onPromptSubmit)} className="space-y-8">
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+            <div className="bg-white rounded-lg p-4 sm:p-6 shadow-sm border border-gray-200">
               {/* ヘッダー: プロンプト番号と使用AIモデル表示 */}
               <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
                 <div className="flex items-center">
@@ -527,12 +586,12 @@ const CreatePost = () => {
               </div>
               
               {/* タイトルと番号調整 */}
-              <div className="flex items-center gap-4 mb-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
                 <FormField
                   control={promptForm.control}
                   name="title"
                   render={({ field }) => (
-                    <FormItem className="flex-1">
+                    <FormItem className="flex-1 w-full">
                       <FormControl>
                         <Input
                           placeholder="プロンプトのタイトル"
@@ -607,31 +666,31 @@ const CreatePost = () => {
                 </div>
               </div>
             </div>
-            <div className="flex gap-4 justify-end">
-              <p className="text-sm text-gray-500 italic mr-5">
+            
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-sm text-gray-500 italic">
                 このプロンプトは {getModelLabel(projectForm.watch("aiModel"))} に送信されます
               </p>
               
-              <Button 
-                type="submit"
-                className="bg-black hover:bg-gray-800 text-white"
-              >
-                プロンプトを追加
-              </Button>
-              <Button 
-              onClick={submitProject}
-              className="bg-black hover:bg-gray-800 text-white"
-              disabled={prompts.length === 0}
-            >
-              <Send className="h-4 w-4 mr-2" />
-              プロジェクトを投稿
-            </Button>
+              <div className="flex flex-wrap gap-3">
+                <Button 
+                  type="submit"
+                  className="bg-black hover:bg-gray-800 text-white"
+                >
+                  プロンプトを追加
+                </Button>
+                <Button 
+                  onClick={submitProject}
+                  className="bg-black hover:bg-gray-800 text-white"
+                  disabled={prompts.length === 0}
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  プロジェクトを投稿
+                </Button>
+              </div>
             </div>
-             {/* 投稿ボタン（複数のプロンプトがある場合のみ表示） */}
           </form>
         </Form>
-        
-        {/* 投稿ボタン（複数のプロンプトがある場合のみ表示） */}
         
         {/* プロンプト作成のヒント（フォーム下部に表示） */}
         {!showGuide && (

@@ -1,29 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import Footer from './Footer';
 import PromptSection from './PromptSection';
 import { featuredPrompts, aiGeneratedPrompts } from '../data/mockPrompts';
+import { useResponsive } from '../hooks/use-responsive';
 
 const HomePage: React.FC = () => {
-  // モバイル画面かどうかを判定するステート
-  const [isMobile, setIsMobile] = useState(false);
+  // より詳細な画面サイズ情報を取得
+  const { isMobile, isTablet, isDesktop, width } = useResponsive();
+  
+  // 画面幅に応じてカード数を調整する関数
+  const getDisplayCount = () => {
+    if (isDesktop) {
+      if (width >= 1280) return 5; // xl以上
+      return 4; // lg
+    }
+    if (isTablet) return 3; // md
+    return 6; // スマホは横スクロール表示のため、多めに表示
+  };
 
-  // 画面サイズの変更を検知
-  useEffect(() => {
-    const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768); // md breakpoint (768px)より小さい場合はモバイル
-    };
-
-    // 初期チェック
-    checkIfMobile();
-
-    // リサイズイベントのリスナー登録
-    window.addEventListener('resize', checkIfMobile);
-
-    // クリーンアップ
-    return () => window.removeEventListener('resize', checkIfMobile);
-  }, []);
+  // 横スクロール表示の条件（タブレット以下で適用）
+  const shouldUseHorizontalScroll = isMobile || (isTablet && width < 900);
+  
+  // 表示するプロンプト数
+  const displayCount = getDisplayCount();
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -40,7 +41,8 @@ const HomePage: React.FC = () => {
               prompts={featuredPrompts}
               showMoreLink={true}
               showRssIcon={true}
-              horizontalScroll={isMobile} // モバイル画面の場合のみ横スクロール
+              horizontalScroll={shouldUseHorizontalScroll}
+              maxVisible={displayCount}
             />
 
             {/* AI Generated prompts section */}
@@ -48,16 +50,18 @@ const HomePage: React.FC = () => {
               title="生成AI" 
               prompts={aiGeneratedPrompts}
               showMoreLink={true}
-              horizontalScroll={isMobile} // モバイル画面の場合のみ横スクロール
+              horizontalScroll={shouldUseHorizontalScroll}
+              maxVisible={displayCount}
             />
 
             {/* Contest prompts section */}
             <PromptSection 
               title="コンテスト・コラボ企画" 
-              prompts={featuredPrompts.slice(0, 4)}
+              prompts={featuredPrompts}
               showMoreLink={true}
               sectionPrefix="contest"
-              horizontalScroll={isMobile} // モバイル画面の場合のみ横スクロール
+              horizontalScroll={shouldUseHorizontalScroll}
+              maxVisible={Math.min(4, displayCount)}
             />
           </div>
         </main>

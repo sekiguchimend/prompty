@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, PenSquare, Menu, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -16,6 +16,24 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false); // モバイル検索表示状態
+  const [isMobile, setIsMobile] = useState(false);
+
+  // 画面サイズを検出
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    // 初期チェック
+    checkIfMobile();
+    
+    // リサイズイベントのリスナー
+    window.addEventListener('resize', checkIfMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkIfMobile);
+    };
+  }, []);
 
   // Toggle login state (for demo purposes)
   const toggleLogin = () => {
@@ -60,7 +78,7 @@ const Header = () => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        if (window.innerWidth < 768) {
+        if (isMobile) {
           setMobileSearchOpen(true);
         } else {
           setOpen((open) => !open);
@@ -70,7 +88,7 @@ const Header = () => {
 
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
-  }, []);
+  }, [isMobile]);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white">
@@ -97,7 +115,6 @@ const Header = () => {
                 >
                   <X className="h-5 w-5" />
                 </button>
-                
               </div>
             </form>
           </div>
@@ -106,13 +123,13 @@ const Header = () => {
             {/* タイトル部分 - 左寄せ */}
             <div className="flex items-center">
               <a href="/" className="flex items-center">
-                <span className="text-2xl font-bold text-prompty-primary">p<span className="text-black">rompty</span></span>
+                <span className="text-xl md:text-2xl font-bold text-prompty-primary">p<span className="text-black">rompty</span></span>
                 <span className="ml-1 text-pink-400">🌸</span>
               </a>
             </div>
             
             {/* PC画面での検索バー - 中央配置 */}
-            <div className="hidden md:flex md:flex-1 md:justify-center md:px-4">
+            <div className="hidden md:flex md:flex-1 md:justify-center md:px-4 mx-4">
               <div className="relative w-full max-w-md">
                 <form onSubmit={handleSearchSubmit} className="w-full">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
@@ -132,7 +149,7 @@ const Header = () => {
             </div>
           
             {/* 右側のアイコングループ */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
               {isLoggedIn ? (
                 <>
                   {/* PCでのみ表示する投稿ボタン */}
@@ -147,10 +164,10 @@ const Header = () => {
                   </Button>
                   
                   {/* スマホ画面のアイコン群 - 右寄せ */}
-                  <div className="flex items-center gap-2 md:hidden">
+                  <div className="flex items-center gap-1 sm:gap-2 md:hidden">
                     {/* 検索アイコン */}
                     <button 
-                      className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-700" 
+                      className="p-1 sm:p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-700" 
                       onClick={openMobileSearch}
                       aria-label="検索"
                     >
@@ -159,7 +176,7 @@ const Header = () => {
                     
                     {/* 投稿アイコン */}
                     <button
-                      className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-700"
+                      className="p-1 sm:p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-700"
                       onClick={() => navigate('/create-post')}
                       aria-label="投稿する"
                     >
@@ -178,12 +195,12 @@ const Header = () => {
                   {/* アバター */}
                   <Button 
                     variant="ghost" 
-                    className="p-1 ml-1"
+                    className="p-0 sm:p-1 ml-0 sm:ml-1"
                     onClick={toggleLogin} // For demo purposes
                   >
-                    <Avatar className="h-8 w-8 border border-gray-200">
+                    <Avatar className="h-7 w-7 sm:h-8 sm:w-8 border border-gray-200">
                       <AvatarImage src="https://github.com/shadcn.png" alt="User" />
-                      <AvatarFallback className="bg-gray-100 text-gray-700">U</AvatarFallback>
+                      <AvatarFallback className="bg-gray-100 text-gray-700 text-xs sm:text-sm">U</AvatarFallback>
                     </Avatar>
                   </Button>
                 </>
@@ -191,7 +208,7 @@ const Header = () => {
                 <>
                   {/* 未ログイン時のモバイル検索アイコン */}
                   <button 
-                    className="md:hidden p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-700" 
+                    className="md:hidden p-1 sm:p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-700" 
                     onClick={openMobileSearch}
                     aria-label="検索"
                   >
@@ -199,12 +216,12 @@ const Header = () => {
                   </button>
                   
                   <Link to="/login">
-                    <Button variant="ghost" className="text-gray-700 text-xs px-2 py-1 md:text-sm md:px-4 md:py-2">
+                    <Button variant="ghost" className="text-gray-700 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 md:text-sm md:px-4 md:py-2">
                       ログイン
                     </Button>
                   </Link>
                   <Link to="/register">
-                    <Button className="bg-black text-white hover:bg-gray-800 text-xs px-2 py-1 md:text-sm md:px-4 md:py-2">
+                    <Button className="bg-black text-white hover:bg-gray-800 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 md:text-sm md:px-4 md:py-2">
                       会員登録
                     </Button>
                   </Link>

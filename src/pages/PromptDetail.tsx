@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -98,7 +97,7 @@ const PromptDetail = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Left sidebar - Author info */}
-            <div className="md:col-span-1">
+            <div className="hidden md:block md:col-span-1">
               <AuthorSidebar 
                 author={prompt.author} 
                 tags={prompt.tags} 

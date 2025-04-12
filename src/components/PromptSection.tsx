@@ -9,6 +9,7 @@ interface PromptSectionProps {
   showRssIcon?: boolean;
   sectionPrefix?: string;
   horizontalScroll?: boolean;
+  maxVisible?: number;
 }
 
 const PromptSection: React.FC<PromptSectionProps> = ({ 
@@ -17,8 +18,11 @@ const PromptSection: React.FC<PromptSectionProps> = ({
   showMoreLink = false, 
   showRssIcon = false,
   sectionPrefix = '',
-  horizontalScroll = false
+  horizontalScroll = false,
+  maxVisible
 }) => {
+  const visiblePrompts = maxVisible ? prompts.slice(0, maxVisible) : prompts;
+  
   return (
     <section className="mt-12 first:mt-0">
       <SectionHeader 
@@ -27,7 +31,11 @@ const PromptSection: React.FC<PromptSectionProps> = ({
         showRssIcon={showRssIcon} 
         horizontalScroll={horizontalScroll}
       />
-      <PromptGrid prompts={prompts} sectionPrefix={sectionPrefix} horizontalScroll={horizontalScroll} />
+      <PromptGrid 
+        prompts={visiblePrompts} 
+        sectionPrefix={sectionPrefix} 
+        horizontalScroll={horizontalScroll} 
+      />
     </section>
   );
 };

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell } from 'lucide-react';
+import { Bell, X } from 'lucide-react';
 
 interface NotificationItem {
   id: number;
@@ -15,9 +15,93 @@ const NotificationDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('notifications');
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const [unreadCount, setUnreadCount] = useState(3);
   const [unreadAnnouncementsCount, setUnreadAnnouncementsCount] = useState(2);
+  const [isMobile, setIsMobile] = useState(false);
+  const [headerWidth, setHeaderWidth] = useState(0);
+  const [dropdownPosition, setDropdownPosition] = useState({ left: 0 });
   
+  // 画面サイズとヘッダー幅を検出
+  useEffect(() => {
+    const updateSizeInfo = () => {
+      // モバイル判定
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      
+      // ヘッダー幅の取得（モバイル時のみ）
+      if (mobile) {
+        const headerContainer = document.querySelector('header .container') as HTMLElement;
+        if (headerContainer) {
+          setHeaderWidth(headerContainer.offsetWidth);
+        }
+      }
+    };
+    
+    // 初期チェック
+    updateSizeInfo();
+    
+    // リサイズイベントのリスナー
+    window.addEventListener('resize', updateSizeInfo);
+    
+    return () => {
+      window.removeEventListener('resize', updateSizeInfo);
+    };
+  }, []);
+  
+  // ボタンとドロップダウンの位置関係を計算
+  useEffect(() => {
+    if (isOpen && isMobile && buttonRef.current) {
+      // ボタンの位置を取得
+      const buttonRect = buttonRef.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      
+      // bodyのマージンなどを考慮して調整
+      const bodyMargin = (viewportWidth - headerWidth) / 2;
+      
+      // ドロップダウンを左端からの位置で配置
+      setDropdownPosition({
+        left: bodyMargin
+      });
+    }
+  }, [isOpen, isMobile, headerWidth]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const toggleDropdown = () => {
+    setIsOpen(!isOpen);
+    if (!isOpen) {
+      // Mark as read when opening, depending on active tab
+      if (activeTab === 'notifications') {
+        setUnreadCount(0);
+      } else {
+        setUnreadAnnouncementsCount(0);
+      }
+    }
+  };
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    // Mark as read when switching tabs
+    if (tab === 'notifications') {
+      setUnreadCount(0);
+    } else {
+      setUnreadAnnouncementsCount(0);
+    }
+  };
+
   // Mock notification data
   const notifications: NotificationItem[] = [
     {
@@ -81,67 +165,50 @@ const NotificationDropdown: React.FC = () => {
     }
   ];
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  const toggleDropdown = () => {
-    setIsOpen(!isOpen);
-    if (!isOpen) {
-      // Mark as read when opening, depending on active tab
-      if (activeTab === 'notifications') {
-        setUnreadCount(0);
-      } else {
-        setUnreadAnnouncementsCount(0);
-      }
-    }
-  };
-
-  const handleTabChange = (tab: TabType) => {
-    setActiveTab(tab);
-    // Mark as read when switching tabs
-    if (tab === 'notifications') {
-      setUnreadCount(0);
-    } else {
-      setUnreadAnnouncementsCount(0);
-    }
-  };
-
   // 現在選択されているタブのデータを取得
   const activeData = activeTab === 'notifications' ? notifications : announcements;
   
   // 未読の合計数を計算
   const totalUnreadCount = unreadCount + unreadAnnouncementsCount;
 
+  // スマホ表示時のドロップダウンスタイル
+  const mobileDropdownStyle = isMobile ? {
+    position: 'fixed',
+    top: '65px', // ヘッダー高さ
+    left: dropdownPosition.left,
+    width: `${headerWidth}px`,
+    maxWidth: `${headerWidth}px`,
+    zIndex: 50,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0
+  } as React.CSSProperties : {};
+
   return (
     <div className="relative" ref={dropdownRef}>
       <button 
-        className="relative p-2 rounded-full hover:bg-gray-100 transition-colors" 
+        ref={buttonRef}
+        className="relative p-1 sm:p-2 rounded-full hover:bg-gray-100 transition-colors" 
         onClick={toggleDropdown}
         aria-label="通知"
       >
-        <Bell className="h-6 w-6 text-gray-700" />
+        <Bell className="h-5 w-5 text-gray-700" />
         {totalUnreadCount > 0 && (
-          <span className="absolute top-0 right-0 h-5 w-5 flex items-center justify-center text-xs text-white font-bold rounded-full bg-red-500">
+          <span className="absolute top-0 right-0 h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center text-xs text-white font-bold rounded-full bg-red-500">
             {totalUnreadCount}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 md:w-96 bg-white rounded-md shadow-lg z-50 border border-gray-200 max-h-[80vh] overflow-y-auto">
+        <div 
+          className={isMobile 
+            ? "fixed bg-white shadow-lg border-x border-b border-gray-200 overflow-y-auto max-h-[80vh]"
+            : "absolute right-0 mt-2 w-80 md:w-96 bg-white rounded-md shadow-lg z-50 border border-gray-200 max-h-[80vh] overflow-y-auto"
+          }
+          style={mobileDropdownStyle}
+        >
           <div className="border-b sticky top-0 bg-white z-10">
-            <div className="flex">
+            <div className="flex items-center">
               <button 
                 className={`flex-1 py-3 px-4 font-medium text-sm text-center ${activeTab !== 'notifications' ? 'text-gray-500' : 'text-black border-b-2 border-black'}`}
                 onClick={() => handleTabChange('notifications')}
@@ -163,6 +230,14 @@ const NotificationDropdown: React.FC = () => {
                     {unreadAnnouncementsCount}
                   </span>
                 )}
+              </button>
+              
+              <button 
+                className="p-2 text-gray-500 hover:text-gray-700"
+                onClick={() => setIsOpen(false)}
+                aria-label="閉じる"
+              >
+                <X className="h-5 w-5" />
               </button>
             </div>
           </div>

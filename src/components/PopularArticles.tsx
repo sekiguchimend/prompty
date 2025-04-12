@@ -122,7 +122,7 @@ const PopularArticles: React.FC<PopularArticlesProps> = ({ articles }) => {
                 <div className="flex gap-4">
                   <div className="flex-1">
                     <Link to="#" className="font-medium text-lg hover:text-blue-600 transition-colors">
-                      先達に学ぶ　描き方書き方届け方のコツ
+                      先達に学ぶ描き方書き方届け方のコツ
                     </Link>
                     <div className="flex items-center mt-3 text-sm text-gray-600">
                       <BookOpen className="h-4 w-4 mr-1" />
