@@ -96,16 +96,6 @@ const UserMenu: React.FC<UserMenuProps> = ({
               スキした記事
             </Link>
             
-            <Link to="/magazine" className="flex items-center text-sm px-4 py-2 hover:bg-gray-50">
-              <Book className="h-4 w-4 mr-3 text-gray-500" />
-              マガジン
-            </Link>
-            
-            <Link to="/images" className="flex items-center text-sm px-4 py-2 hover:bg-gray-50">
-              <Image className="h-4 w-4 mr-3 text-gray-500" />
-              画像
-            </Link>
-            
             <Link to="/settings" className="flex items-center text-sm px-4 py-2 hover:bg-gray-50">
               <Settings className="h-4 w-4 mr-3 text-gray-500" />
               設定
@@ -211,16 +201,6 @@ const UserMenu: React.FC<UserMenuProps> = ({
         <Link to="/my-articles?tab=likedArticles" className="flex items-center text-base py-2 border-b border-gray-100 pb-4">
           <Heart className="h-5 w-5 mr-3 text-gray-500" />
           スキした記事
-        </Link>
-        
-        <Link to="/magazine" className="flex items-center text-base py-2 border-b border-gray-100 pb-4">
-          <Book className="h-5 w-5 mr-3 text-gray-500" />
-          マガジン
-        </Link>
-        
-        <Link to="/images" className="flex items-center text-base py-2 border-b border-gray-100 pb-4">
-          <Image className="h-5 w-5 mr-3 text-gray-500" />
-          画像
         </Link>
         
         <Link to="/settings" className="flex items-center text-base py-2 border-b border-gray-100 pb-4">

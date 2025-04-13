@@ -3,7 +3,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
 import { MoreHorizontal, Settings, Heart, MessageSquare, Home, BookText, Users, BookOpen, BookMarked, Calendar } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 // サンプル記事データ
 const articles = [
@@ -60,6 +60,7 @@ const DashboardPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('記事');
   const [selectedFilter, setSelectedFilter] = useState<'すべて' | '公開済み' | '下書き' | '有料'>('すべて');
   const [isMobile, setIsMobile] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(true); // 実際にはAuthコンテキストから取得
   
   // 画面サイズを検出して、モバイルかPCかを判定
   useEffect(() => {
@@ -95,6 +96,36 @@ const DashboardPage: React.FC = () => {
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
   };
+  
+  // デモ用ログイン切り替え
+  const toggleLogin = () => {
+    setIsLoggedIn(!isLoggedIn);
+  };
+  
+  // ログインしていない場合の表示
+  const NotLoggedInView = () => (
+    <div className="py-12 text-center">
+      <div className="max-w-md mx-auto bg-white p-8 rounded-lg border border-gray-200">
+        <h2 className="text-xl font-bold mb-4">ログインが必要です</h2>
+        <p className="text-gray-600 mb-6">
+          クリエイターダッシュボードを利用するには、ログインが必要です。
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Link to="/login">
+            <Button className="w-full sm:w-auto">ログイン</Button>
+          </Link>
+          <Link to="/register">
+            <Button variant="outline" className="w-full sm:w-auto">アカウント登録</Button>
+          </Link>
+        </div>
+        <div className="mt-4">
+          <Button variant="link" onClick={toggleLogin} className="text-sm text-gray-500">
+            デモ用：ログイン状態を切り替える
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
   
   // モバイル用レイアウト
   const MobileLayout = () => (
@@ -370,19 +401,27 @@ const DashboardPage: React.FC = () => {
       <Header />
       
       <main className="flex-1 pt-16 overflow-hidden">
-        {isMobile ? <MobileLayout /> : <DesktopLayout />}
+        {isLoggedIn ? (
+          // ログイン済みの場合
+          isMobile ? <MobileLayout /> : <DesktopLayout />
+        ) : (
+          // 未ログインの場合
+          <NotLoggedInView />
+        )}
         
-        {/* 記事作成ボタン（固定） */}
-        <div className="fixed bottom-6 right-6">
-          <Button 
-            className="h-14 w-14 rounded-full bg-black hover:bg-gray-800 shadow-md flex items-center justify-center"
-            onClick={() => navigate('/create-post')}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 5V19M5 12H19" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </Button>
-        </div>
+        {/* 記事作成ボタン（ログイン済みの場合のみ表示） */}
+        {isLoggedIn && (
+          <div className="fixed bottom-6 right-6">
+            <Button 
+              className="h-14 w-14 rounded-full bg-black hover:bg-gray-800 shadow-md flex items-center justify-center"
+              onClick={() => navigate('/create-post')}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 5V19M5 12H19" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </Button>
+          </div>
+        )}
       </main>
       
       {isMobile && <Footer />}

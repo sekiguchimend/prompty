@@ -253,16 +253,19 @@ const Header = () => {
                           <Search className="h-5 w-5" />
                         </button>
                         
-                        {/* 未ログイン時でもアバターアイコンを表示（実際はログイン促進用） */}
-                        <Button 
-                          variant="ghost" 
-                          className="p-0.5 ml-0 rounded-full hover:bg-gray-100 transition-colors"
-                          onClick={toggleUserMenu}
-                        >
-                          <Avatar className="h-7 w-7 border border-gray-200">
-                            <AvatarFallback className="bg-gray-100 text-gray-700 text-xs">G</AvatarFallback>
-                          </Avatar>
-                        </Button>
+                        {/* モバイル表示のログインボタン類 */}
+                        <div className="flex items-center gap-2">
+                          <Link to="/login">
+                            <Button variant="ghost" className="text-gray-700 text-xs px-2 py-1 hover:bg-gray-100 transition-colors">
+                              ログイン
+                            </Button>
+                          </Link>
+                          <Link to="/register">
+                            <Button className="bg-black text-white hover:bg-gray-800 text-xs px-2 py-1 shadow-sm transition-colors">
+                              会員登録
+                            </Button>
+                          </Link>
+                        </div>
                       </div>
                       
                       {/* PC表示のログインボタン類 */}
@@ -318,11 +321,11 @@ const Header = () => {
       </header>
 
       {/* メインのコンテンツエリア - ヘッダーの下にマージンを設ける */}
-      <div className="pt-5">
+      <div className="pt-19">
         {/* スマホ用タブコンテンツを表示 */}
         {isMobile && activeTab === 'following' && (
-          <div className="bg-white">
-            <div className="pt-5 pb-3 px-4 flex items-center">
+          <div className="bg-white mt-16">
+            <div className="pb-3 px-4 flex items-center">
               <h2 className="text-xl font-bold">フォロー中</h2>
               <span className="text-gray-500 ml-1">
                 <ChevronRight className="h-5 w-5" />
