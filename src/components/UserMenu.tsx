@@ -93,7 +93,7 @@ const UserMenu: React.FC<UserMenuProps> = ({
             
             <Link to="/my-articles?tab=likedArticles" className="flex items-center text-sm px-4 py-2 hover:bg-gray-50">
               <Heart className="h-4 w-4 mr-3 text-gray-500" />
-              スキした記事
+              イイねした記事
             </Link>
             
             <Link to="/settings" className="flex items-center text-sm px-4 py-2 hover:bg-gray-50">

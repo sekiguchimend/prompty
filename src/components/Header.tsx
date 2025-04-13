@@ -320,11 +320,11 @@ const Header = () => {
         </div>
       </header>
 
-      {/* メインのコンテンツエリア - ヘッダーの下にマージンを設ける */}
-      <div className="pt-19">
+      {/* メインのコンテンツエリア - ヘッダーの下にマージンを設ける。スマホとPCで異なる値を設定 */}
+      <div className="pt-20 md:pt-16">
         {/* スマホ用タブコンテンツを表示 */}
         {isMobile && activeTab === 'following' && (
-          <div className="bg-white mt-16">
+          <div className="bg-white mt-14 md:mt-0">
             <div className="pb-3 px-4 flex items-center">
               <h2 className="text-xl font-bold">フォロー中</h2>
               <span className="text-gray-500 ml-1">
@@ -333,7 +333,7 @@ const Header = () => {
             </div>
             
             {/* フォロー中の投稿一覧（写真のような表示） */}
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-gray-100 ">
               {followingPosts.map((post) => (
                 <article key={post.id} className="px-4 py-5">
                   <div className="flex">

@@ -35,7 +35,7 @@ const HomePage: React.FC = () => {
       <Header />
       <Sidebar />
       
-      <div className="flex flex-1 pt-16">
+      <div className="flex flex-1 pt-10">
         {/* PC画面でのみサイドバーのスペースを確保 */}
         <div className="hidden md:block w-[240px] flex-shrink-0">
           {/* この空のdivはサイドバーのスペースを確保するためのもの */}
@@ -52,6 +52,7 @@ const HomePage: React.FC = () => {
                 showRssIcon={true}
                 horizontalScroll={shouldUseHorizontalScroll}
                 maxVisible={displayCount}
+                className="mt-0"
               />
             </div>
 
@@ -62,6 +63,7 @@ const HomePage: React.FC = () => {
               showMoreLink={true}
               horizontalScroll={shouldUseHorizontalScroll}
               maxVisible={displayCount}
+              className="mt-12"
             />
 
             {/* AI Generated prompts section */}
@@ -71,6 +73,7 @@ const HomePage: React.FC = () => {
               showMoreLink={true}
               horizontalScroll={shouldUseHorizontalScroll}
               maxVisible={displayCount}
+              className="mt-12"
             />
 
             {/* Contest prompts section */}
@@ -81,6 +84,7 @@ const HomePage: React.FC = () => {
               sectionPrefix="contest"
               horizontalScroll={shouldUseHorizontalScroll}
               maxVisible={Math.min(4, displayCount)}
+              className="mt-12"
             />
           </div>
         </main>

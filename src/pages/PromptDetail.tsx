@@ -55,7 +55,7 @@ const PromptDetail = () => {
     <div className="flex min-h-screen flex-col">
       <Header />
       
-      <main className="flex-1 bg-white">
+      <main className="flex-1 bg-white mt-14 md:mt-10">
         <div className="container px-4 md:px-8 py-6 max-w-6xl mx-auto">
           {/* Back link */}
           <Link to="/" className="inline-flex items-center text-gray-500 mb-6">

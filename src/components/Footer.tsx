@@ -7,25 +7,21 @@ const Footer: React.FC = () => {
     {
       category: 'Prompty',
       links: [
-        { text: '運営会社', url: '/about' },
-        { text: '採用情報', url: '/jobs' },
-        { text: 'ニュース', url: '/news' }
+        { text: 'ビジネス', url: '/business' },
+        { text: 'フィードバック', url: '/feedback' }
       ]
     },
     {
       category: 'サービス',
       links: [
-        { text: '機能', url: '/features' },
         { text: 'プレミアム', url: '/premium' },
-        { text: 'ビジネス', url: '/business' }
+        { text: 'コンテスト', url: '/contests' }
       ]
     },
     {
       category: 'ヘルプ',
       links: [
-        { text: 'ヘルプセンター', url: '/help' },
-        { text: 'よくある質問', url: '/faq' },
-        { text: 'お問い合わせ', url: '/contact' }
+        { text: 'ヘルプセンター', url: '/help-center' }
       ]
     },
     {
@@ -33,7 +29,7 @@ const Footer: React.FC = () => {
       links: [
         { text: '利用規約', url: '/terms' },
         { text: 'プライバシーポリシー', url: '/privacy' },
-        { text: 'Cookie ポリシー', url: '/cookies' }
+        { text: '特定商取引法', url: '/payment-disclosure' }
       ]
     }
   ];
@@ -50,7 +46,7 @@ const Footer: React.FC = () => {
         <div className="md:hidden">
           <div className="flex flex-col items-center text-center space-y-4 mb-8">
             {/* 3つずつリンクを横に並べる */}
-            {[0, 1, 2, 3].map((rowIndex) => (
+            {[0, 1, 2].map((rowIndex) => (
               <div key={rowIndex} className="flex space-x-4">
                 {allLinks.slice(rowIndex * 3, (rowIndex + 1) * 3).map((link, index) => (
                   <Link 

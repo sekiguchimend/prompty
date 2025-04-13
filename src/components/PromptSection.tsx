@@ -10,6 +10,7 @@ interface PromptSectionProps {
   sectionPrefix?: string;
   horizontalScroll?: boolean;
   maxVisible?: number;
+  className?: string;
 }
 
 const PromptSection: React.FC<PromptSectionProps> = ({ 
@@ -19,12 +20,13 @@ const PromptSection: React.FC<PromptSectionProps> = ({
   showRssIcon = false,
   sectionPrefix = '',
   horizontalScroll = false,
-  maxVisible
+  maxVisible,
+  className = ''
 }) => {
   const visiblePrompts = maxVisible ? prompts.slice(0, maxVisible) : prompts;
   
   return (
-    <section className="mt-8 first:mt-0">
+    <section className={`mt-8 md:mt-10 first:mt-0 ${className}`}>
       <SectionHeader 
         title={title} 
         showMoreLink={showMoreLink} 

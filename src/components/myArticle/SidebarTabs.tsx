@@ -30,7 +30,7 @@ const SidebarTabs: React.FC<SidebarTabsProps> = ({ activeTab, setActiveTab }) =>
     { id: 'myArticles', label: '自分の記事', icon: <FileText className="h-4 w-4" /> },
     { id: 'likedArticles', label: '高評価した', icon: <ThumbsUp className="h-4 w-4" /> },
     { id: 'purchasedArticles', label: '購入した', icon: <ShoppingBag className="h-4 w-4" /> },
-    { id: 'bookmarkedArticles', label: 'スキした', icon: <Heart className="h-4 w-4" /> },
+    { id: 'bookmarkedArticles', label: 'イイねした', icon: <Heart className="h-4 w-4" /> },
     { id: 'recentlyViewedArticles', label: '最近みた', icon: <Clock className="h-4 w-4" /> },
   ];
 
