@@ -19,7 +19,13 @@ import PaymentDisclosure from "./pages/PaymentDisclosure";
 import HowToUse from "./pages/HowToUse";
 import CreatePost from "./pages/CreatePost";
 import Search from "./pages/Search"; // New import
-
+import MyArticles from "./pages/MyArticles";
+import Premium from "./pages/Premium";
+import Feedback from './pages/Feedback';
+import ContestPage from './pages/ContestPage';
+import HashtagPage from './pages/HashtagPage';
+import SettingsPage from './pages/SettingsPage';
+import DashboardPage from './pages/DashboardPage';
 const queryClient = new QueryClient();
 
 // 画面サイズに応じて柔軟にレイアウトを調整するコンポーネント
@@ -76,10 +82,17 @@ const App = () => (
           <Route path="/how-to-use" element={<HowToUse />} />
           <Route path="/commercial-transaction" element={<CommercialTransaction />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/my-articles" element={<MyArticles />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/payment-disclosure" element={<PaymentDisclosure />} />
           <Route path="/create-post" element={<CreatePost />} />
+          <Route path="/premium" element={<Premium />} />
           <Route path="/search" element={<Search />} /> {/* New route */}
+          <Route path="/feedback" element={<Feedback />} />
+          <Route path="/contests" element={<ContestPage />} />
+          <Route path="/hashtag/:tag" element={<HashtagPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

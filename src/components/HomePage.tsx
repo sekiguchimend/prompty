@@ -41,17 +41,19 @@ const HomePage: React.FC = () => {
           {/* この空のdivはサイドバーのスペースを確保するためのもの */}
         </div>
         
-        <main className="flex-1 pb-12 overflow-x-hidden">
+        <main className="flex-1 pb-12 overflow-x-hidden md:mt-0 mt-5">
           <div className="container px-4 py-6 sm:px-6 md:px-8">
             {/* Featured prompts section */}
-            <PromptSection 
-              title="今日の注目プロンプト" 
-              prompts={featuredPrompts}
-              showMoreLink={true}
-              showRssIcon={true}
-              horizontalScroll={shouldUseHorizontalScroll}
-              maxVisible={displayCount}
-            />
+            <div className="mt-0">
+              <PromptSection 
+                title="今日の注目プロンプト" 
+                prompts={featuredPrompts}
+                showMoreLink={true}
+                showRssIcon={true}
+                horizontalScroll={shouldUseHorizontalScroll}
+                maxVisible={displayCount}
+              />
+            </div>
 
             {/* Popular posts section */}
             <PromptSection 

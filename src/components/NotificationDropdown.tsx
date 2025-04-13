@@ -172,7 +172,7 @@ const NotificationDropdown: React.FC = () => {
   const totalUnreadCount = unreadCount + unreadAnnouncementsCount;
 
   // スマホ表示時のドロップダウンスタイル
-  const mobileDropdownStyle = isMobile ? {
+  const dropdownStyle = isMobile ? {
     position: 'fixed',
     top: '65px', // ヘッダー高さ
     left: dropdownPosition.left,
@@ -200,69 +200,75 @@ const NotificationDropdown: React.FC = () => {
       </button>
 
       {isOpen && (
-        <div 
-          className={isMobile 
-            ? "fixed bg-white shadow-lg border-x border-b border-gray-200 overflow-y-auto max-h-[80vh]"
-            : "absolute right-0 mt-2 w-80 md:w-96 bg-white rounded-md shadow-lg z-50 border border-gray-200 max-h-[80vh] overflow-y-auto"
-          }
-          style={mobileDropdownStyle}
-        >
-          <div className="border-b sticky top-0 bg-white z-10">
-            <div className="flex items-center">
-              <button 
-                className={`flex-1 py-3 px-4 font-medium text-sm text-center ${activeTab !== 'notifications' ? 'text-gray-500' : 'text-black border-b-2 border-black'}`}
-                onClick={() => handleTabChange('notifications')}
-              >
-                通知
-                {unreadCount > 0 && (
-                  <span className="ml-1 inline-flex items-center justify-center px-1.5 h-5 text-xs text-white font-bold rounded-full bg-red-500">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
-              <button 
-                className={`flex-1 py-3 px-4 font-medium text-sm text-center relative ${activeTab !== 'announcements' ? 'text-gray-500' : 'text-black border-b-2 border-black'}`}
-                onClick={() => handleTabChange('announcements')}
-              >
-                お知らせ
-                {unreadAnnouncementsCount > 0 && (
-                  <span className="ml-1 inline-flex items-center justify-center px-1.5 h-5 text-xs text-white font-bold rounded-full bg-red-500">
-                    {unreadAnnouncementsCount}
-                  </span>
-                )}
-              </button>
-              
-              <button 
-                className="p-2 text-gray-500 hover:text-gray-700"
-                onClick={() => setIsOpen(false)}
-                aria-label="閉じる"
-              >
-                <X className="h-5 w-5" />
-              </button>
+        <>
+          {/* PC用の引き出し部分（三角マーク） */}
+          {!isMobile && (
+            <div className="hidden md:block absolute top-[calc(100%+8px)] right-2 w-4 h-4 bg-white border-t border-l border-gray-200 transform rotate-45 z-[51]"></div>
+          )}
+          <div 
+            className={isMobile 
+              ? "fixed bg-white shadow-lg border-x border-b border-gray-200 overflow-y-auto max-h-[80vh]"
+              : "absolute top-full right-0 mt-4 w-80 md:w-96 bg-white rounded-md shadow-lg z-50 border border-gray-200 max-h-[80vh] overflow-y-auto"
+            }
+            style={dropdownStyle}
+          >
+            <div className="border-b sticky top-0 bg-white z-10">
+              <div className="flex items-center">
+                <button 
+                  className={`flex-1 py-3 px-4 font-medium text-sm text-center ${activeTab !== 'notifications' ? 'text-gray-500' : 'text-black border-b-2 border-black'}`}
+                  onClick={() => handleTabChange('notifications')}
+                >
+                  通知
+                  {unreadCount > 0 && (
+                    <span className="ml-1 inline-flex items-center justify-center px-1.5 h-5 text-xs text-white font-bold rounded-full bg-red-500">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+                <button 
+                  className={`flex-1 py-3 px-4 font-medium text-sm text-center relative ${activeTab !== 'announcements' ? 'text-gray-500' : 'text-black border-b-2 border-black'}`}
+                  onClick={() => handleTabChange('announcements')}
+                >
+                  お知らせ
+                  {unreadAnnouncementsCount > 0 && (
+                    <span className="ml-1 inline-flex items-center justify-center px-1.5 h-5 text-xs text-white font-bold rounded-full bg-red-500">
+                      {unreadAnnouncementsCount}
+                    </span>
+                  )}
+                </button>
+                
+                <button 
+                  className="p-2 text-gray-500 hover:text-gray-700"
+                  onClick={() => setIsOpen(false)}
+                  aria-label="閉じる"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="py-2">
+              {activeData.length > 0 ? (
+                activeData.map((item) => (
+                  <div 
+                    key={item.id} 
+                    className="px-4 py-3 hover:bg-gray-50 cursor-pointer flex items-start gap-3 border-b border-gray-100 last:border-b-0"
+                  >
+                    {item.icon}
+                    <div className="flex-1 text-sm">
+                      <div>{item.content}</div>
+                      {item.time && <div className="text-gray-500 mt-1 text-xs">{item.time}</div>}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="px-4 py-6 text-center text-gray-500">
+                  {activeTab === 'notifications' ? '通知はありません' : 'お知らせはありません'}
+                </div>
+              )}
             </div>
           </div>
-
-          <div className="py-2">
-            {activeData.length > 0 ? (
-              activeData.map((item) => (
-                <div 
-                  key={item.id} 
-                  className="px-4 py-3 hover:bg-gray-50 cursor-pointer flex items-start gap-3 border-b border-gray-100 last:border-b-0"
-                >
-                  {item.icon}
-                  <div className="flex-1 text-sm">
-                    <div>{item.content}</div>
-                    {item.time && <div className="text-gray-500 mt-1 text-xs">{item.time}</div>}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="px-4 py-6 text-center text-gray-500">
-                {activeTab === 'notifications' ? '通知はありません' : 'お知らせはありません'}
-              </div>
-            )}
-          </div>
-        </div>
+        </>
       )}
     </div>
   );

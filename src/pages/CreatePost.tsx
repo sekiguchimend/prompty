@@ -661,10 +661,17 @@ const CreatePost = () => {
                     プロンプト #{promptNumber}
                   </span>
                 </div>
+                <Button 
+                  type="submit"
+                  className="bg-black hover:bg-gray-800 text-white"
+                >
+                  プロンプトを追加
+                </Button>
                 <div>
                   {wordCount} 文字
                 </div>
               </div>
+                
             </div>
             
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -673,12 +680,7 @@ const CreatePost = () => {
               </p>
               
               <div className="flex flex-wrap gap-3">
-                <Button 
-                  type="submit"
-                  className="bg-black hover:bg-gray-800 text-white"
-                >
-                  プロンプトを追加
-                </Button>
+               
                 <Button 
                   onClick={submitProject}
                   className="bg-black hover:bg-gray-800 text-white"

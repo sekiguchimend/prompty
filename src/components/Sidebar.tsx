@@ -1,5 +1,14 @@
 import React from 'react';
 import { ChevronDown, Twitter, Instagram, Facebook } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
+// 人気のハッシュタグリスト
+const popularHashtags = [
+  '有料記事書いてみた',
+  '春の旬食材レシピ',
+  '今日の晩酌',
+  'イチオシのおいしい一品'
+];
 
 const categories = [
   { id: 'all', name: 'すべて', active: true },
@@ -26,12 +35,15 @@ const categories = [
     { id: 'education', name: '教育', active: false },
     { id: 'books', name: '読書', active: false },
   ]},
+  { id: 'hashtags', name: '人気ハッシュタグ', active: false },
 ];
 
 const Sidebar = () => {
+  const navigate = useNavigate();
   const [expandedCategories, setExpandedCategories] = React.useState<Record<string, boolean>>({
     living: false,
     learning: false,
+    hashtags: false,
   });
 
   const toggleCategory = (categoryId: string) => {
@@ -39,6 +51,30 @@ const Sidebar = () => {
       ...prev,
       [categoryId]: !prev[categoryId]
     }));
+  };
+
+  const handleCategoryClick = (categoryId: string) => {
+    // カテゴリーに子要素がある場合は展開/折りたたみだけ行う
+    const category = categories.find(c => c.id === categoryId);
+    if (category?.children) {
+      toggleCategory(categoryId);
+      return;
+    }
+
+    // 特定のカテゴリーをクリックした場合の遷移処理
+    switch(categoryId) {
+      case 'posts':
+        navigate('/contests');
+        break;
+      default:
+        // その他のカテゴリーの処理（今後追加予定）
+        break;
+    }
+  };
+
+  const handleHashtagClick = (tag: string) => {
+    // エンコードしてURLパラメータとして渡す
+    navigate(`/hashtag/${encodeURIComponent(tag)}`);
   };
 
   return (
@@ -51,7 +87,7 @@ const Sidebar = () => {
                 className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm ${
                   category.active ? 'category-active' : 'text-gray-700 hover:bg-gray-100'
                 }`}
-                onClick={() => category.children && toggleCategory(category.id)}
+                onClick={() => handleCategoryClick(category.id)}
               >
                 <span>{category.name}</span>
                 {category.children && (
@@ -73,8 +109,24 @@ const Sidebar = () => {
                           ? 'category-active' 
                           : 'text-gray-700 hover:bg-gray-100'
                       }`}
+                      onClick={() => handleCategoryClick(subCategory.id)}
                     >
                       {subCategory.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* ハッシュタグリスト */}
+              {category.id === 'hashtags' && expandedCategories[category.id] && (
+                <div className="mt-1 space-y-1 pl-6">
+                  {popularHashtags.map(tag => (
+                    <button
+                      key={tag}
+                      className="flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => handleHashtagClick(tag)}
+                    >
+                      #{tag}
                     </button>
                   ))}
                 </div>

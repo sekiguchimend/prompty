@@ -24,7 +24,7 @@ const PromptSection: React.FC<PromptSectionProps> = ({
   const visiblePrompts = maxVisible ? prompts.slice(0, maxVisible) : prompts;
   
   return (
-    <section className="mt-12 first:mt-0">
+    <section className="mt-8 first:mt-0">
       <SectionHeader 
         title={title} 
         showMoreLink={showMoreLink} 
