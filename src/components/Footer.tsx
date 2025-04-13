@@ -1,6 +1,20 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
+// リンククリック時にページトップにスクロールする関数
+const ScrollLinkWrapper = ({ to, className, children }) => {
+  const handleClick = () => {
+    // リンククリック時に画面を最上部にスクロール
+    window.scrollTo(0, 0);
+  };
+
+  return (
+    <Link to={to} className={className} onClick={handleClick}>
+      {children}
+    </Link>
+  );
+};
+
 const Footer: React.FC = () => {
   // 全フッターリンクの定義（スマホとPC両方で使用）
   const footerLinks = [
@@ -49,13 +63,13 @@ const Footer: React.FC = () => {
             {[0, 1, 2].map((rowIndex) => (
               <div key={rowIndex} className="flex space-x-4">
                 {allLinks.slice(rowIndex * 3, (rowIndex + 1) * 3).map((link, index) => (
-                  <Link 
+                  <ScrollLinkWrapper 
                     key={index} 
                     to={link.url} 
                     className="text-xs text-gray-600 hover:text-gray-900 whitespace-nowrap px-1"
                   >
                     {link.text}
-                  </Link>
+                  </ScrollLinkWrapper>
                 ))}
               </div>
             ))}
@@ -75,9 +89,9 @@ const Footer: React.FC = () => {
                 <ul className="space-y-2">
                   {category.links.map((link, linkIndex) => (
                     <li key={linkIndex}>
-                      <Link to={link.url} className="text-gray-600 text-sm hover:text-gray-900">
+                      <ScrollLinkWrapper to={link.url} className="text-gray-600 text-sm hover:text-gray-900">
                         {link.text}
-                      </Link>
+                      </ScrollLinkWrapper>
                     </li>
                   ))}
                 </ul>

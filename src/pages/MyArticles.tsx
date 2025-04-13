@@ -261,7 +261,7 @@ const MyArticles = () => {
         <div className="note-page-container">
           {/* 左サイドバー - タブメニュー */}
           <div className="note-sidebar">
-            <h2>記事</h2>
+            <h2 className="md:block hidden">記事</h2>
             <SidebarTabs activeTab={activeTab} setActiveTab={setActiveTab} />
           </div>
           
@@ -269,8 +269,8 @@ const MyArticles = () => {
           <div className="note-content">
             <div className="note-content-header">
               <div className="import-export-buttons">
-                <button className="import-button">インポート</button>
-                <button className="export-button">エクスポート</button>
+                <button className="import-button hidden md:flex">インポート</button>
+                <button className="export-button hidden md:flex">エクスポート</button>
               </div>
             </div>
             
@@ -280,8 +280,8 @@ const MyArticles = () => {
             </div>
           </div>
           
-          {/* 右サイドバー - 直接実装 */}
-          <div className="note-right-sidebar">
+          {/* 右サイドバー - PC表示のみ */}
+          <div className="note-right-sidebar hidden md:block">
             {/* 記事の公開タイミングバナー */}
             <div className="publish-timing-banner">
               <div className="timing-content">

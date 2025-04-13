@@ -324,7 +324,7 @@ const Header = () => {
       <div className="pt-20 md:pt-16">
         {/* スマホ用タブコンテンツを表示 */}
         {isMobile && activeTab === 'following' && (
-          <div className="bg-white mt-14 md:mt-0">
+          <div className="mt-14 md:mt-0">
             <div className="pb-3 px-4 flex items-center">
               <h2 className="text-xl font-bold">フォロー中</h2>
               <span className="text-gray-500 ml-1">

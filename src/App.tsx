@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
+import ScrollToTop from "./components/utils/ScrollToTop";
 import Index from "./pages/Index";
 import PromptDetail from "./pages/PromptDetail";
 import NotFound from "./pages/NotFound";
@@ -71,6 +72,7 @@ const App = () => (
       <Sonner />
       <ResponsiveLayout />
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/prompts/:id" element={<PromptDetail />} />
