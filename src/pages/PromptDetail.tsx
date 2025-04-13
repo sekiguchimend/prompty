@@ -8,80 +8,48 @@ import PopularArticles from '@/components/PopularArticles';
 import AuthorSidebar from '@/components/prompt/AuthorSidebar';
 import PromptContent from '@/components/prompt/PromptContent';
 import PurchaseSection from '@/components/prompt/PurchaseSection';
+import { getDetailPost, getPopularPosts } from '@/data/posts';
 
 const PromptDetail = () => {
-  // Mock data for the prompt detail
+  // データファイルから詳細データを取得
+  const postData = getDetailPost();
+  
+  // コンポーネントの型に合わせて整形
   const prompt = {
-    id: '1',
-    imageUrl: '/lovable-uploads/92289d47-425e-44de-932b-d74594b9e9e7.png',
-    title: '努力できないのは才能じゃなくてやり方の問題！',
-    content: [
-      'こんにちは、末吉です。',
-      'あなたがこのnoteを見つけたということは、きっとこんな悩みを持っているのかもしれません。',
-      '・がんばって書いているのに、有料noteがなぜか売れない…」',
-      '・あの人は簡単に売れているのに、私と何が違うんだろう…？」',
-      '・自分の書いたnoteが売れていく感覚を味わってみたい…！',
-      'もし1つでも当てはまるなら、このnoteはあなたのために書きました。',
-      'じつは、有料noteが売れる人と売れない人の差は、「考え方」にあります。'
-    ],
-    author: {
-      name: '末吉宏臣 / 『発信をお金にかえる勇気』',
-      avatarUrl: 'https://i.pravatar.cc/150?img=3',
-      bio: '末吉宏臣 / 『発信をお金にかえる勇気』 著者',
-      publishedAt: '2025年3月15日 11:29',
-      website: 'https://hiroomisueyoshi.net/fx/mailmag', // Added the website property here
+    ...postData,
+    // AuthorSidebarの型に合わせる
+    authorForSidebar: {
+      name: postData.user.name,
+      avatarUrl: postData.user.avatarUrl,
+      bio: postData.user.bio || '著者情報なし' // 必須項目
     },
-    price: 3000,
-    likes: 97,
-    wordCount: 3493,
-    tags: [
-      '有料note', 
-      '末吉宏臣'
-    ],
-    website: 'https://hiroomisueyoshi.net/fx/mailmag',
-    systemImageUrl: '/lovable-uploads/4ed80f0e-6902-4a40-92fc-56fea3e5bd1c.png',
-    systemUrl: 'https://example.com/system-demo',
-    socialLinks: [
-      {icon: 'twitter', url: '#'},
-      {icon: 'facebook', url: '#'},
-      {icon: 'instagram', url: '#'},
-      {icon: 'youtube', url: '#'},
-      {icon: 'line', url: '#'},
-      {icon: 'tiktok', url: '#'},
-      {icon: 'google-business', url: '#'},
-      {icon: 'rss', url: '#'}
-    ],
-    reviewers: [
-      'https://i.pravatar.cc/150?img=1',
-      'https://i.pravatar.cc/150?img=2',
-      'https://i.pravatar.cc/150?img=3',
-      'https://i.pravatar.cc/150?img=4',
-      'https://i.pravatar.cc/150?img=5',
-      'https://i.pravatar.cc/150?img=6',
-      'https://i.pravatar.cc/150?img=7'
-    ]
+    // PromptContentの型に合わせる
+    authorForContent: {
+      name: postData.user.name,
+      avatarUrl: postData.user.avatarUrl,
+      bio: postData.user.bio || '著者情報なし', // 必須項目
+      publishedAt: postData.user.publishedAt || '投稿日時なし' // 必須項目
+    },
+    // PurchaseSectionの型に合わせる
+    authorForPurchase: {
+      name: postData.user.name,
+      avatarUrl: postData.user.avatarUrl,
+      bio: postData.user.bio || '著者情報なし', // 必須項目
+      website: postData.user.website || 'https://example.com' // 必須項目
+    }
   };
 
-  // Mock data for popular articles
-  const popularArticles = [
-    {
-      id: '2',
-      title: '『夢がかなう！ ファンが増える！ エッセイの書き方』【追記】自己啓発エッセイのススメ（動画セミナー）（2023.1.11）',
-      likes: 1814,
-      imageUrl: '/lovable-uploads/4ed80f0e-6902-4a40-92fc-56fea3e5bd1c.png'
-    },
-    {
-      id: '3',
-      title: 'たくさんお金を受け取って、たくさん好きな人やお店や会社に回せばいい。',
-      likes: 621
-    },
-    {
-      id: '4',
-      title: '『お金から自由になる14のヒント』追記：大切なことをはじめるとき、まずはお金のことを忘れよう（2022.7.4）',
-      likes: 1508,
-      imageUrl: '/lovable-uploads/4ed80f0e-6902-4a40-92fc-56fea3e5bd1c.png'
-    },
-  ];
+  // 人気記事データを取得
+  const popularPosts = getPopularPosts();
+  
+  // PopularArticlesコンポーネントの型に合わせてデータを変換
+  const popularArticles = popularPosts.map(post => ({
+    id: post.id,
+    title: post.title,
+    likes: post.likeCount,
+    thumbnailUrl: post.thumbnailUrl,
+    date: post.postedAt
+  }));
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -99,34 +67,34 @@ const PromptDetail = () => {
             {/* Left sidebar - Author info */}
             <div className="hidden md:block md:col-span-1">
               <AuthorSidebar 
-                author={prompt.author} 
-                tags={prompt.tags} 
-                website={prompt.author.website}
+                author={prompt.authorForSidebar} 
+                tags={prompt.tags || []} 
+                website={prompt.user.website || ''}
               />
             </div>
             
             {/* Main content */}
             <div className="md:col-span-2">
               <PromptContent 
-                imageUrl={prompt.imageUrl}
+                imageUrl={prompt.thumbnailUrl}
                 title={prompt.title}
-                content={prompt.content}
-                author={prompt.author}
-                price={prompt.price}
+                content={prompt.content || []}
+                author={prompt.authorForContent}
+                price={prompt.price || 0}
                 systemImageUrl={prompt.systemImageUrl}
                 systemUrl={prompt.systemUrl}
               />
               
               {/* Purchase section */}
               <PurchaseSection 
-                wordCount={prompt.wordCount}
-                price={prompt.price}
-                tags={prompt.tags}
-                reviewers={prompt.reviewers}
-                reviewCount={26}
-                likes={prompt.likes}
-                author={prompt.author}
-                socialLinks={prompt.socialLinks}
+                wordCount={prompt.wordCount || 0}
+                price={prompt.price || 0}
+                tags={prompt.tags || []}
+                reviewers={prompt.reviewers || []}
+                reviewCount={prompt.reviewCount || 0}
+                likes={prompt.likeCount}
+                author={prompt.authorForPurchase}
+                socialLinks={prompt.socialLinks || []}
               />
             </div>
           </div>

@@ -184,17 +184,17 @@ const NotificationDropdown: React.FC = () => {
   } as React.CSSProperties : {};
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative h-5 w-5 flex items-center justify-center" ref={dropdownRef}>
       <button 
         ref={buttonRef}
-        className="relative p-1 sm:p-2 rounded-full hover:bg-gray-100 transition-colors" 
+        className="relative text-gray-700 flex items-center justify-center w-full h-full" 
         onClick={toggleDropdown}
         aria-label="通知"
       >
-        <Bell className="h-5 w-5 text-gray-700" />
+        <Bell className="h-5 w-5" />
         {totalUnreadCount > 0 && (
-          <span className="absolute top-0 right-0 h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center text-xs text-white font-bold rounded-full bg-red-500">
-            {totalUnreadCount}
+          <span className="absolute -top-1 -right-1 h-2 w-2 flex items-center justify-center text-white font-bold rounded-full bg-red-500">
+            
           </span>
         )}
       </button>

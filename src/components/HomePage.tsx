@@ -5,6 +5,7 @@ import Footer from './Footer';
 import PromptSection from './PromptSection';
 import { featuredPrompts, aiGeneratedPrompts } from '../data/mockPrompts';
 import { useResponsive } from '../hooks/use-responsive';
+import { getPopularPosts } from '../data/posts';
 
 const HomePage: React.FC = () => {
   // より詳細な画面サイズ情報を取得
@@ -26,14 +27,21 @@ const HomePage: React.FC = () => {
   // 表示するプロンプト数
   const displayCount = getDisplayCount();
 
+  // 人気記事を取得
+  const popularPosts = getPopularPosts();
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
+      <Sidebar />
       
-      <div className="flex flex-1">
-        <Sidebar />
+      <div className="flex flex-1 pt-16">
+        {/* PC画面でのみサイドバーのスペースを確保 */}
+        <div className="hidden md:block w-[240px] flex-shrink-0">
+          {/* この空のdivはサイドバーのスペースを確保するためのもの */}
+        </div>
         
-        <main className="flex-1 pb-12">
+        <main className="flex-1 pb-12 overflow-x-hidden">
           <div className="container px-4 py-6 sm:px-6 md:px-8">
             {/* Featured prompts section */}
             <PromptSection 
@@ -41,6 +49,15 @@ const HomePage: React.FC = () => {
               prompts={featuredPrompts}
               showMoreLink={true}
               showRssIcon={true}
+              horizontalScroll={shouldUseHorizontalScroll}
+              maxVisible={displayCount}
+            />
+
+            {/* Popular posts section */}
+            <PromptSection 
+              title="人気の記事" 
+              prompts={popularPosts}
+              showMoreLink={true}
               horizontalScroll={shouldUseHorizontalScroll}
               maxVisible={displayCount}
             />

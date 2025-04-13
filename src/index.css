@@ -142,3 +142,13 @@
     min-width: 50vw; /* ビューポート幅の半分 */
   }
 }
+
+/* スクロールバーを非表示にする */
+.scrollbar-none {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari, Opera */
+}

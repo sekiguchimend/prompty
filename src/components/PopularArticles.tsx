@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Heart, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -10,7 +9,7 @@ interface Article {
   title: string;
   likes: number;
   date?: string;
-  imageUrl?: string;
+  thumbnailUrl?: string;
 }
 
 interface PopularArticlesProps {
@@ -42,10 +41,10 @@ const PopularArticles: React.FC<PopularArticlesProps> = ({ articles }) => {
                   <span className="text-sm">{article.likes.toLocaleString()}</span>
                 </div>
               </div>
-              {article.imageUrl && (
+              {article.thumbnailUrl && (
                 <div className="w-20 h-20 shrink-0 overflow-hidden rounded-md">
                   <img 
-                    src={article.imageUrl} 
+                    src={article.thumbnailUrl} 
                     alt={article.title} 
                     className="w-full h-full object-cover"
                   />
