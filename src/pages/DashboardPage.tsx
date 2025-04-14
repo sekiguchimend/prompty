@@ -412,9 +412,10 @@ const DashboardPage: React.FC = () => {
                   <p className="text-xs sm:text-sm text-gray-600 mb-2">
                     振込先口座が登録されていません。売上が発生した場合に振込を受け取るには、振込先口座の登録が必要です。
                   </p>
-                  <button className="text-blue-500 text-xs sm:text-sm font-medium">
+                  <Link to="/settings?tab=payment" className="text-blue-500 text-xs sm:text-sm font-medium hover:underline inline-flex items-center">
                     振込先口座を登録する
-                  </button>
+                    <ChevronRight className="h-3 w-3 ml-1" />
+                  </Link>
                 </div>
               </div>
             </div>

@@ -13,7 +13,7 @@ export const TabLabels: Record<DashboardTab, string> = {
   articles: 'コンテンツ',
   membership: 'メンバーシップ',
   magazine: 'マガジン',
-  likes: 'スキ',
+  likes: 'イイね',
   monthly: '月別',
   analytics: 'アクセス状況'
 };
@@ -168,7 +168,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                   </div>
                 </div>
                 <h3 className="text-center text-4xl font-bold text-gray-800">11</h3>
-                <p className="text-center text-gray-600 mt-2">スキ</p>
+                <p className="text-center text-gray-600 mt-2">イイね</p>
               </div>
             </div>
             
@@ -181,10 +181,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="text-left p-4 text-gray-600 font-medium">記事</th>
+                    <th className="text-left p-4 text-gray-600 font-medium">コンテンツ</th>
                     <th className="p-4 text-center text-gray-600 font-medium">ビュー</th>
                     <th className="p-4 text-center text-gray-600 font-medium">コメント</th>
-                    <th className="p-4 text-center text-gray-600 font-medium">スキ</th>
+                    <th className="p-4 text-center text-gray-600 font-medium">イイね</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -291,7 +291,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                   </div>
                 </div>
                 <h3 className="text-center text-4xl font-bold text-gray-800">11</h3>
-                <p className="text-center text-gray-600 mt-2">スキ</p>
+                <p className="text-center text-gray-600 mt-2">イイね</p>
               </div>
             </div>
             
@@ -307,7 +307,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                     <th className="text-left p-4 text-gray-600 font-medium">記事</th>
                     <th className="p-4 text-center text-gray-600 font-medium">ビュー</th>
                     <th className="p-4 text-center text-gray-600 font-medium">コメント</th>
-                    <th className="p-4 text-center text-gray-600 font-medium">スキ</th>
+                    <th className="p-4 text-center text-gray-600 font-medium">イイね</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -402,7 +402,7 @@ const DashboardSidebar: React.FC<{
           
           <SidebarButton 
             icon={<Heart className="h-5 w-5" />} 
-            label="スキ" 
+            label="イイね" 
             isActive={activeTab === 'likes'} 
             onClick={() => onTabChange('likes')}
           />

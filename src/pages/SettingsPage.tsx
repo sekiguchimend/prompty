@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import AccountSettings from '../components/settings/AccountSettings';
@@ -9,6 +9,7 @@ import PointsSettings from '../components/settings/PointsSettings';
 import CardSettings from '../components/settings/CardSettings';
 import PaymentSettings from '../components/settings/PaymentSettings';
 import PremiumSettings from '../components/settings/PremiumSettings';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 type SettingsTab = 
   | 'アカウント'
@@ -22,6 +23,45 @@ type SettingsTab =
 
 const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('アカウント');
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    // URLクエリパラメータからタブを取得
+    const searchParams = new URLSearchParams(location.search);
+    const tabParam = searchParams.get('tab');
+    
+    if (tabParam) {
+      switch (tabParam) {
+        case 'account':
+          setActiveTab('アカウント');
+          break;
+        case 'notification':
+          setActiveTab('通知');
+          break;
+        case 'reaction':
+          setActiveTab('リアクション');
+          break;
+        case 'purchase':
+          setActiveTab('購入・チップ履歴');
+          break;
+        case 'points':
+          setActiveTab('ポイント管理');
+          break;
+        case 'card':
+          setActiveTab('カード情報');
+          break;
+        case 'payment':
+          setActiveTab('お支払先');
+          break;
+        case 'premium':
+          setActiveTab('プレミアム');
+          break;
+        default:
+          setActiveTab('アカウント');
+      }
+    }
+  }, [location]);
   
   // タブの設定
   const tabs: SettingsTab[] = [
@@ -38,6 +78,37 @@ const SettingsPage: React.FC = () => {
   // タブの切り替え
   const handleTabChange = (tab: SettingsTab) => {
     setActiveTab(tab);
+    
+    // URLクエリパラメータを更新
+    let tabParam = '';
+    switch (tab) {
+      case 'アカウント':
+        tabParam = 'account';
+        break;
+      case '通知':
+        tabParam = 'notification';
+        break;
+      case 'リアクション':
+        tabParam = 'reaction';
+        break;
+      case '購入・チップ履歴':
+        tabParam = 'purchase';
+        break;
+      case 'ポイント管理':
+        tabParam = 'points';
+        break;
+      case 'カード情報':
+        tabParam = 'card';
+        break;
+      case 'お支払先':
+        tabParam = 'payment';
+        break;
+      case 'プレミアム':
+        tabParam = 'premium';
+        break;
+    }
+    
+    navigate(`/settings?tab=${tabParam}`, { replace: true });
   };
   
   // アクティブなタブに対応するコンポーネントを表示
