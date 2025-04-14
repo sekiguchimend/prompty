@@ -13,7 +13,7 @@ const purchaseHistory = [
   },
   {
     id: '2',
-    title: '有料記事「副業のはじめ方」',
+    title: '有料コンテンツ「副業のはじめ方」',
     author: '副業マスター',
     date: '2023年12月20日',
     amount: '500円',

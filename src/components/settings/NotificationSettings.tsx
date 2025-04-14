@@ -17,7 +17,7 @@ const NotificationSettings: React.FC = () => {
             </div>
             
             <div className="flex justify-between items-center">
-              <span className="text-sm">記事やノートへのいいね</span>
+              <span className="text-sm">コンテンツへのいいね</span>
               <Switch defaultChecked />
             </div>
             
@@ -37,7 +37,7 @@ const NotificationSettings: React.FC = () => {
             </div>
             
             <div className="flex justify-between items-center">
-              <span className="text-sm">スキ</span>
+              <span className="text-sm">イイね</span>
               <Switch defaultChecked />
             </div>
             
@@ -83,7 +83,7 @@ const NotificationSettings: React.FC = () => {
             </div>
             
             <div className="flex justify-between items-center">
-              <span className="text-sm">スキ</span>
+              <span className="text-sm">イイね</span>
               <Switch defaultChecked />
             </div>
           </div>

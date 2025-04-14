@@ -15,7 +15,7 @@ const ReactionsSettings: React.FC = () => {
               <div>
                 <span className="text-sm">コメントを許可する</span>
                 <p className="text-xs text-gray-500 mt-1">
-                  オフにすると、あなたの記事やノートにコメントできなくなります。
+                  オフにすると、あなたのコンテンツにコメントできなくなります。
                 </p>
               </div>
               <Switch defaultChecked />
@@ -25,7 +25,7 @@ const ReactionsSettings: React.FC = () => {
               <div>
                 <span className="text-sm">いいねを許可する</span>
                 <p className="text-xs text-gray-500 mt-1">
-                  オフにすると、あなたの記事やノートにいいねできなくなります。
+                  オフにすると、あなたのコンテンツにいいねできなくなります。
                 </p>
               </div>
               <Switch defaultChecked />
@@ -33,9 +33,9 @@ const ReactionsSettings: React.FC = () => {
             
             <div className="flex justify-between items-center">
               <div>
-                <span className="text-sm">スキを許可する</span>
+                <span className="text-sm">イイねを許可する</span>
                 <p className="text-xs text-gray-500 mt-1">
-                  オフにすると、あなたの記事やノートをスキできなくなります。
+                  オフにすると、あなたのコンテンツをイイねできなくなります。
                 </p>
               </div>
               <Switch defaultChecked />

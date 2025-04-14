@@ -95,9 +95,9 @@ const PointsSettings: React.FC = () => {
             </div>
             
             <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-              <h3 className="font-medium text-sm mb-2">記事執筆</h3>
-              <p className="text-xs text-gray-600 mb-2">記事を投稿するとポイントが獲得できます。</p>
-              <div className="text-sm font-medium text-green-600">+50 pt / 記事</div>
+              <h3 className="font-medium text-sm mb-2">コンテンツ執筆</h3>
+              <p className="text-xs text-gray-600 mb-2">コンテンツを投稿するとポイントが獲得できます。</p>
+              <div className="text-sm font-medium text-green-600">+50 pt / コンテンツ</div>
             </div>
             
             <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
@@ -114,16 +114,12 @@ const PointsSettings: React.FC = () => {
           
           <div className="grid gap-4 md:grid-cols-2">
             <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-              <h3 className="font-medium text-sm mb-2">有料記事の購入</h3>
-              <p className="text-xs text-gray-600 mb-2">ポイントを使って有料記事を購入できます。</p>
-              <div className="text-sm font-medium text-red-600">記事価格分</div>
+              <h3 className="font-medium text-sm mb-2">有料コンテンツの購入</h3>
+              <p className="text-xs text-gray-600 mb-2">ポイントを使って有料コンテンツを購入できます。</p>
+              <div className="text-sm font-medium text-red-600">コンテンツ価格分</div>
             </div>
             
-            <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-              <h3 className="font-medium text-sm mb-2">クリエイターへのチップ</h3>
-              <p className="text-xs text-gray-600 mb-2">応援したいクリエイターにチップとして送れます。</p>
-              <div className="text-sm font-medium text-red-600">任意の金額</div>
-            </div>
+        
             
             <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
               <h3 className="font-medium text-sm mb-2">AIプロンプト生成</h3>

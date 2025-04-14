@@ -75,7 +75,7 @@ const Business = () => {
       <div className="w-full md:w-1/2 flex flex-col items-center justify-center p-8">
         <Link to="/" className="mb-8">
           <div className="flex items-center">
-            <img src="/prompty_logo.jpg" alt="prompty" className="w-24 object-contain" />
+            <img src="/prompty_logo.jpg" alt="prompty" className="w-32 object-contain" />
 
           </div>
         </Link>

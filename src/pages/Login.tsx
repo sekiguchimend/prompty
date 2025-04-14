@@ -57,7 +57,7 @@ const Login = () => {
           <div className="flex items-center">
             {/* <span className="text-3xl font-bold text-prompty-primary">p<span className="text-black">rompty</span></span>
             <span className="ml-1 text-pink-400">🌸</span> */}
-            <img src="/prompty_logo.jpg" alt="Prompty" className="h-8" />
+            <img src="/prompty_logo.jpg" alt="Prompty" className="h-32" />
           </div>
         </Link>
 

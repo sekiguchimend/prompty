@@ -25,7 +25,7 @@ const PremiumSettings: React.FC = () => {
   // スタンダードプランとの比較
   const planComparison = [
     { 
-      feature: '有料記事作成', 
+      feature: '有料コンテンツ作成', 
       standard: '月2記事まで', 
       premium: '月5記事まで' 
     },

@@ -136,12 +136,10 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
         </div>
       </div>
       
-     
-      
       {/* Author profile - Smaller version */}
       <div className="border-t border-gray-200 pt-6 mb-8">
-        <div className="flex justify-between items-start">
-          <div className="flex items-start space-x-3">
+        <div className="flex flex-col">
+          <div className="flex items-start space-x-3 mb-4">
             <div className="w-12 h-12 rounded-md overflow-hidden flex-shrink-0">
               <img 
                 src={author.avatarUrl} 
@@ -176,9 +174,9 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
               isFollowing 
                 ? 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100' 
                 : 'bg-gray-700 text-white hover:bg-gray-600'
-            } rounded-sm text-xs py-1 px-3 h-auto transition-all duration-200 ${
+            } rounded-sm text-xs py-1 px-5 h-auto transition-all duration-200 ${
               isAnimating ? 'scale-95' : ''
-            }`}
+            } w-auto mx-auto block`}
             onClick={handleFollowClick}
           >
             {isFollowing ? 'フォロー中' : 'フォロー'}

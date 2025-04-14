@@ -191,7 +191,7 @@ const Header = () => {
             {/* サイト名 */}
             <div className={`flex items-center ${mobileSearchOpen ? 'hidden' : ''}`}>
               <Link to="/" className="flex items-center">
-                <img src="/prompty_logo.jpg" alt="Prompty" className="h-8" />
+                <img src="/prompty_logo.jpg" alt="Prompty" className="h-32" />
               </Link>
             </div>
             

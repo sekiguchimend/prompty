@@ -83,7 +83,7 @@ const UserMenu: React.FC<UserMenuProps> = ({
           <nav className="py-2">
             <Link to="/my-articles" className="flex items-center text-sm px-4 py-2 hover:bg-gray-50">
               <FilePen className="h-4 w-4 mr-3 text-gray-500" />
-              自分の記事
+              自分のコンテンツ
             </Link>
             
             <Link to="/my-articles?tab=purchasedArticles" className="flex items-center text-sm px-4 py-2 hover:bg-gray-50">

@@ -54,8 +54,8 @@ const Footer: React.FC = () => {
   );
 
   return (
-    <footer className="bg-white border-t border-gray-200 py-8">
-      <div className="container mx-auto px-4">
+    <footer className="bg-white border-t border-gray-200 py-12 mt-8 relative z-10">
+      <div className="container mx-auto px-4 md:px-8">
         {/* モバイル表示時のフッターナビゲーション (中央寄せ) */}
         <div className="md:hidden">
           <div className="flex flex-col items-center text-center space-y-4 mb-8">
@@ -82,7 +82,7 @@ const Footer: React.FC = () => {
         
         {/* デスクトップ表示時のフッター (従来のレイアウト) */}
         <div className="hidden md:block">
-          <div className="grid grid-cols-4 gap-8">
+          <div className="grid grid-cols-4 gap-8 max-w-5xl mx-auto">
             {footerLinks.map((category, index) => (
               <div key={index}>
                 <h3 className="text-sm font-semibold mb-3">{category.category}</h3>
@@ -99,7 +99,7 @@ const Footer: React.FC = () => {
             ))}
           </div>
           
-          <div className="mt-8 pt-6 border-t border-gray-200 flex justify-between items-center">
+          <div className="mt-8 pt-6 border-t border-gray-200 flex justify-between items-center max-w-5xl mx-auto">
             <div className="text-sm text-gray-500">
               <p>© {new Date().getFullYear()} Prompty, Inc.</p>
             </div>

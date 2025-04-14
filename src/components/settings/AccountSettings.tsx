@@ -40,7 +40,7 @@ const AccountSettings: React.FC = () => {
         <div className="border-b border-gray-200 pb-6">
           <div className="flex justify-between items-center">
             <div>
-              <label className="block text-sm font-medium text-gray-700">note ID</label>
+              <label className="block text-sm font-medium text-gray-700">prompty ID</label>
               <div className="mt-1 text-sm">{accountInfo.noteId}</div>
             </div>
             <Button 
@@ -94,8 +94,8 @@ const AccountSettings: React.FC = () => {
         <div className="border-b border-gray-200 pb-6">
           <div className="flex justify-between items-center">
             <div>
-              <label className="block text-sm font-medium text-gray-700">法人・個人としてnoteを利用する</label>
-              <div className="mt-1 text-xs text-gray-500">企業や団体など、ビジネス目的でnoteを利用される方はこちらをオンにしてください。<br />
+              <label className="block text-sm font-medium text-gray-700">法人・個人としてpromptyを利用する</label>
+              <div className="mt-1 text-xs text-gray-500">企業や団体など、ビジネス目的でpromptyを利用される方はこちらをオンにしてください。<br />
               ビジネスでの機能強化に向けて準備を進めています。</div>
             </div>
             <Switch
@@ -206,7 +206,7 @@ const AccountSettings: React.FC = () => {
               <div>
                 <span className="text-sm">公式SNSでの紹介、外部サイトへの転載、他メディアへの紹介を許可する</span>
                 <p className="text-xs text-gray-500 mt-1">
-                  noteが運営するXのSNSで紹介したり、SmartNewsやLINE NEWSなどの外部サイトへ転載したり、出版社に紹介したりすることがあります。
+                 promptyが運営するXのSNSで紹介したり、SmartNewsやLINE NEWSなどの外部サイトへ転載したり、出版社に紹介したりすることがあります。
                 </p>
               </div>
               <Switch defaultChecked />
@@ -231,14 +231,14 @@ const AccountSettings: React.FC = () => {
               <div>
                 <span className="text-sm">チップ機能を使った支払いを受け付ける</span>
                 <p className="text-xs text-gray-500 mt-1">
-                  note proを含め、すべての支払いを受け付けることができます。
+                  prompty proを含め、すべての支払いを受け付けることができます。
                 </p>
               </div>
               <Switch defaultChecked />
             </div>
             
             <div className="flex justify-between items-center">
-              <span className="text-sm">note未登録ユーザーの購入を許可する</span>
+              <span className="text-sm">prompty未登録ユーザーの購入を許可する</span>
               <Switch defaultChecked />
             </div>
             
