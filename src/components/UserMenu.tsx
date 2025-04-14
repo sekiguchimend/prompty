@@ -64,7 +64,7 @@ const UserMenu: React.FC<UserMenuProps> = ({
               </div>
               <div>
                 <p className="text-sm font-medium">クリエイターダッシュボード</p>
-                <p className="text-xs text-gray-500">記事や分析を管理</p>
+                <p className="text-xs text-gray-500">コンテンツや分析を管理</p>
               </div>
             </div>
           </Link>
@@ -88,12 +88,13 @@ const UserMenu: React.FC<UserMenuProps> = ({
             
             <Link to="/my-articles?tab=purchasedArticles" className="flex items-center text-sm px-4 py-2 hover:bg-gray-50">
               <span className="h-4 w-4 mr-3 flex items-center justify-center text-amber-800">¥</span>
-              <span className="text-amber-800">購入した記事</span>
+              <span className="text-amber-800">購入したコンテンツ
+              </span>
             </Link>
             
             <Link to="/my-articles?tab=likedArticles" className="flex items-center text-sm px-4 py-2 hover:bg-gray-50">
               <Heart className="h-4 w-4 mr-3 text-gray-500" />
-              イイねした記事
+              イイねしたコンテンツ
             </Link>
             
             <Link to="/settings" className="flex items-center text-sm px-4 py-2 hover:bg-gray-50">
@@ -125,12 +126,12 @@ const UserMenu: React.FC<UserMenuProps> = ({
             
             <Link to="/premium" className="block">
               <div className="border border-gray-200 rounded-md p-3 text-center">
-                <span className="text-xs font-medium">noteプレミアムサービス</span>
+                <span className="text-xs font-medium">promptyプレミアムサービス</span>
               </div>
             </Link>
             
             <div className="flex justify-center mt-3 text-xs text-gray-500">
-              <Link to="/terms" className="mx-2">note活用術</Link>
+              <Link to="/terms" className="mx-2">prompty活用術</Link>
               <span className="mx-1">/</span>
               <Link to="/help" className="mx-2">ヘルプセンター</Link>
             </div>
