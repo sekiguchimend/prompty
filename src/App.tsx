@@ -29,6 +29,9 @@ import SettingsPage from './pages/SettingsPage';
 import DashboardPage from './pages/DashboardPage';
 import Following from './pages/Following';
 import UserProfilePage from './pages/UserProfilePage';
+import Featured from './pages/Featured';
+import Popular from './pages/Popular';
+import AIGenerated from './pages/AIGenerated';
 const queryClient = new QueryClient();
 
 // 画面サイズに応じて柔軟にレイアウトを調整するコンポーネント
@@ -99,6 +102,12 @@ const App = () => (
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/following" element={<Following />} />
           <Route path="/users/:userId" element={<UserProfilePage />} />
+          
+          {/* 新しいカテゴリページのルート */}
+          <Route path="/featured" element={<Featured />} />
+          <Route path="/popular" element={<Popular />} />
+          <Route path="/ai-generated" element={<AIGenerated />} />
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -11,6 +11,8 @@ interface PromptSectionProps {
   horizontalScroll?: boolean;
   maxVisible?: number;
   className?: string;
+  categoryUrl?: string;
+  moreLinkUrl?: string;
 }
 
 const PromptSection: React.FC<PromptSectionProps> = ({ 
@@ -21,7 +23,9 @@ const PromptSection: React.FC<PromptSectionProps> = ({
   sectionPrefix = '',
   horizontalScroll = false,
   maxVisible,
-  className = ''
+  className = '',
+  categoryUrl,
+  moreLinkUrl
 }) => {
   const visiblePrompts = maxVisible ? prompts.slice(0, maxVisible) : prompts;
   
@@ -32,6 +36,8 @@ const PromptSection: React.FC<PromptSectionProps> = ({
         showMoreLink={showMoreLink} 
         showRssIcon={showRssIcon} 
         horizontalScroll={horizontalScroll}
+        categoryUrl={categoryUrl}
+        moreLinkUrl={moreLinkUrl || categoryUrl}
       />
       <PromptGrid 
         prompts={visiblePrompts} 

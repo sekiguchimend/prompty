@@ -1,11 +1,13 @@
 import React from 'react';
 import { ChevronRight, Rss, Search } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface SectionHeaderProps {
   title: string;
   showRssIcon?: boolean;
   showMoreLink?: boolean;
   moreLinkUrl?: string;
+  categoryUrl?: string; // カテゴリページへのURL
   horizontalScroll?: boolean;
   showSearchIcon?: boolean;
   onSearchClick?: () => void;
@@ -16,6 +18,7 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
   showRssIcon = false,
   showMoreLink = false,
   moreLinkUrl = '#',
+  categoryUrl,
   horizontalScroll = false,
   showSearchIcon = false,
   onSearchClick = () => {},
@@ -23,11 +26,21 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
   return (
     <div className="flex items-center justify-between py-4">
       <div className="flex items-center">
-        <h2 className="text-lg font-bold">{title}</h2>
+        {categoryUrl ? (
+          <Link to={categoryUrl} className="group">
+            <h2 className="text-lg font-bold group-hover:text-gray-700 transition-colors flex items-center">
+              {title}
+              <ChevronRight className="h-4 w-4 ml-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </h2>
+          </Link>
+        ) : (
+          <h2 className="text-lg font-bold">{title}</h2>
+        )}
         {showMoreLink && (
-          <a href={moreLinkUrl} className="ml-2 flex items-center text-sm text-gray-500 hover:text-gray-700">
+          <Link to={moreLinkUrl} className="ml-2 flex items-center text-sm text-gray-500 hover:text-gray-700">
+            <span className="hidden md:inline-block ml-1">もっと見る</span>
             <ChevronRight className="h-4 w-4" />
-          </a>
+          </Link>
         )}
       </div>
       
