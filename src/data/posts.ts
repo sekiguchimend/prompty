@@ -9,6 +9,7 @@ export interface PostItem {
     bio?: string;
     publishedAt?: string;
     website?: string;
+    userId: string;
   };
   postedAt: string;
   likeCount: number;
@@ -24,6 +25,7 @@ export interface PostItem {
   reviewers?: string[];
   reviewCount?: number;
   status?: 'normal' | 'following' | 'popular' | 'featured' | 'recommendation';
+  isLiked?: boolean;
 }
 
 // すべての投稿データ
@@ -32,7 +34,7 @@ const allPosts: PostItem[] = [
     id: '1',
     title: '不登校の生徒によって対応が違った中学校',
     thumbnailUrl: 'https://source.unsplash.com/random/200x150?school',
-    user: { name: 'なみさ', avatarUrl: 'https://i.pravatar.cc/150?img=3' },
+    user: { name: 'なみさ', avatarUrl: 'https://source.unsplash.com/random/100x100?face', userId: 'namisa123' },
     postedAt: '12',
     likeCount: 12,
     category: 'education',
@@ -42,7 +44,7 @@ const allPosts: PostItem[] = [
     id: '2',
     title: 'スターオブザカラー☆お気に入りのファンデーションが製造中止...',
     thumbnailUrl: 'https://source.unsplash.com/random/200x150?makeup',
-    user: { name: 'なみさ', avatarUrl: 'https://i.pravatar.cc/150?img=3' },
+    user: { name: 'なみさ', avatarUrl: 'https://source.unsplash.com/random/100x100?face', userId: 'namisa123' },
     postedAt: '17時間前',
     likeCount: 15,
     category: 'beauty',
@@ -52,7 +54,7 @@ const allPosts: PostItem[] = [
     id: '3',
     title: '中学校の教師になりたい人の心理が知りたい',
     thumbnailUrl: 'https://source.unsplash.com/random/200x150?teacher',
-    user: { name: 'なみさ', avatarUrl: 'https://i.pravatar.cc/150?img=3' },
+    user: { name: 'なみさ', avatarUrl: 'https://source.unsplash.com/random/100x100?face', userId: 'namisa123' },
     postedAt: '1日前',
     likeCount: 29,
     category: 'education',
@@ -62,7 +64,7 @@ const allPosts: PostItem[] = [
     id: '4',
     title: '学校とうまくいくためには話し合いしかない',
     thumbnailUrl: 'https://source.unsplash.com/random/200x150?school',
-    user: { name: 'なみさ', avatarUrl: 'https://i.pravatar.cc/150?img=3' },
+    user: { name: 'なみさ', avatarUrl: 'https://source.unsplash.com/random/100x100?face', userId: 'namisa123' },
     postedAt: '16',
     likeCount: 16,
     category: 'education',
@@ -72,7 +74,7 @@ const allPosts: PostItem[] = [
     id: '5',
     title: '学校と喧嘩してはダメだよ。',
     thumbnailUrl: 'https://source.unsplash.com/random/200x150?coffee',
-    user: { name: 'なみさ', avatarUrl: 'https://i.pravatar.cc/150?img=3' },
+    user: { name: 'なみさ', avatarUrl: 'https://source.unsplash.com/random/100x100?face', userId: 'namisa123' },
     postedAt: '34',
     likeCount: 34,
     category: 'education',
@@ -82,7 +84,7 @@ const allPosts: PostItem[] = [
     id: '101',
     title: '(元) 特別支援学級担任の本音①',
     thumbnailUrl: 'https://source.unsplash.com/random/200x150?teacher',
-    user: { name: 'taka_monologue', avatarUrl: 'https://i.pravatar.cc/150?img=8' },
+    user: { name: 'taka_monologue', avatarUrl: 'https://i.pravatar.cc/150?img=8', userId: 'taka_monologue123' },
     postedAt: '3日前',
     likeCount: 0,
     category: 'education',
@@ -92,7 +94,7 @@ const allPosts: PostItem[] = [
     id: '102',
     title: '【題未定】広末涼子のニュースが、不安の心に刺さる理由...',
     thumbnailUrl: 'https://source.unsplash.com/random/200x150?news',
-    user: { name: 'なみさ', avatarUrl: 'https://i.pravatar.cc/150?img=3' },
+    user: { name: 'なみさ', avatarUrl: 'https://i.pravatar.cc/150?img=3', userId: 'namisa123' },
     postedAt: '1日前',
     likeCount: 0,
     category: 'news',
@@ -117,7 +119,8 @@ const allPosts: PostItem[] = [
       avatarUrl: 'https://i.pravatar.cc/150?img=3',
       bio: '末吉宏臣 / 『発信をお金にかえる勇気』 著者',
       publishedAt: '2025年3月15日 11:29',
-      website: 'https://hiroomisueyoshi.net/fx/mailmag'
+      website: 'https://hiroomisueyoshi.net/fx/mailmag',
+      userId: 'hiroomisueyoshi123'
     },
     price: 3000,
     postedAt: '3日前',
@@ -157,7 +160,7 @@ const allPosts: PostItem[] = [
     id: 'popular-1',
     title: '『夢がかなう！ ファンが増える！ エッセイの書き方』【追記】自己啓発エッセイのススメ（動画セミナー）（2023.1.11）',
     thumbnailUrl: '/lovable-uploads/4ed80f0e-6902-4a40-92fc-56fea3e5bd1c.png',
-    user: { name: '末吉宏臣', avatarUrl: 'https://i.pravatar.cc/150?img=3' },
+    user: { name: '末吉宏臣', avatarUrl: 'https://i.pravatar.cc/150?img=3', userId: 'hiroomisueyoshi123' },
     postedAt: '2023年1月11日',
     likeCount: 1814,
     category: 'writing',
@@ -167,7 +170,7 @@ const allPosts: PostItem[] = [
     id: 'popular-2',
     title: 'たくさんお金を受け取って、たくさん好きな人やお店や会社に回せばいい。',
     thumbnailUrl: '',
-    user: { name: '末吉宏臣', avatarUrl: 'https://i.pravatar.cc/150?img=3' },
+    user: { name: '末吉宏臣', avatarUrl: 'https://i.pravatar.cc/150?img=3', userId: 'hiroomisueyoshi123' },
     postedAt: '2022年12月5日',
     likeCount: 621,
     category: 'finance',
@@ -177,7 +180,7 @@ const allPosts: PostItem[] = [
     id: 'popular-3',
     title: '『お金から自由になる14のヒント』追記：大切なことをはじめるとき、まずはお金のことを忘れよう（2022.7.4）',
     thumbnailUrl: '/lovable-uploads/4ed80f0e-6902-4a40-92fc-56fea3e5bd1c.png',
-    user: { name: '末吉宏臣', avatarUrl: 'https://i.pravatar.cc/150?img=3' },
+    user: { name: '末吉宏臣', avatarUrl: 'https://i.pravatar.cc/150?img=3', userId: 'hiroomisueyoshi123' },
     postedAt: '2022年7月4日',
     likeCount: 1508,
     category: 'finance',

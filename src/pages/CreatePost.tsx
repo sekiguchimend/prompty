@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 // まとめてインポート
 import {
   ProjectSettingsForm,
-  PromptGuide,
+  PromptGuideDialog,
   PromptForm,
   PromptHistory,
   AI_MODELS,
@@ -23,10 +23,12 @@ const CreatePost = () => {
   const [promptNumber, setPromptNumber] = useState(1);
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [showHistory, setShowHistory] = useState(true);
-  const [showGuide, setShowGuide] = useState(false);
   const [projectSettings, setProjectSettings] = useState<ProjectFormValues>({
     projectTitle: "新しいプロンプトプロジェクト",
     aiModel: "claude-3-5-sonnet",
+    customAiModel: "",
+    pricingType: "free",
+    price: 0,
     projectDescription: "",
     thumbnail: "",
     projectUrl: "",
@@ -86,13 +88,24 @@ const CreatePost = () => {
     
     console.log("プロジェクト全体を投稿:", projectData);
     
+    // 料金情報の表示
+    const priceInfo = projectSettings.pricingType === "paid" 
+      ? `${projectSettings.price}円` 
+      : "無料";
+    
     // ここでバックエンドにプロジェクト全体を送信する処理
-    alert("プロジェクトが投稿されました");
+    alert(`プロジェクトが投稿されました（${priceInfo}）`);
     navigate("/");
   };
 
   // AIモデルのラベルを取得
   const getModelLabel = (modelValue: string) => {
+    // カスタムモデルの場合はモデル名をそのまま返す
+    if (modelValue === "custom") {
+      return projectSettings.customAiModel || "カスタムモデル";
+    }
+    
+    // 定義済みモデルの場合はラベルを返す
     const model = AI_MODELS.find(m => m.value === modelValue);
     return model ? model.label : modelValue;
   };
@@ -111,14 +124,8 @@ const CreatePost = () => {
           </button>
           
           <div className="flex flex-wrap gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowGuide(!showGuide)}
-              className="border-gray-300 text-black text-sm"
-            >
-              <HelpCircle className="h-4 w-4 mr-2" />
-              ガイド
-            </Button>
+            <PromptGuideDialog onApplyExample={applyPromptExample} />
+            
             {prompts.length > 0 && (
               <Button 
                 variant="outline" 
@@ -136,11 +143,6 @@ const CreatePost = () => {
           onSave={handleProjectSave}
           defaultValues={projectSettings}
         />
-        
-        {/* プロンプト作成ガイド */}
-        {showGuide && (
-          <PromptGuide onApplyExample={applyPromptExample} />
-        )}
         
         {/* プロンプト履歴 */}
         {showHistory && prompts.length > 0 && (
@@ -169,20 +171,6 @@ const CreatePost = () => {
             プロジェクトを投稿
           </Button>
         </div>
-        
-        {/* プロンプト作成のヒント（フォーム下部に表示） */}
-        {!showGuide && (
-          <div className="mt-4 text-center">
-            <Button
-              variant="link"
-              onClick={() => setShowGuide(true)}
-              className="text-gray-500 hover:text-black"
-            >
-              <HelpCircle className="h-4 w-4 mr-1" />
-              効果的なプロンプトの書き方を見る
-            </Button>
-          </div>
-        )}
       </main>
       
       <Footer />

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import PromptCard from './PromptCard';
 
 export interface PromptItem {
@@ -11,6 +11,7 @@ export interface PromptItem {
   };
   postedAt: string;
   likeCount: number;
+  isLiked?: boolean;
 }
 
 interface PromptGridProps {
@@ -21,6 +22,19 @@ interface PromptGridProps {
 
 const PromptGrid: React.FC<PromptGridProps> = ({ prompts, sectionPrefix = '', horizontalScroll = false }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [visiblePrompts, setVisiblePrompts] = useState<PromptItem[]>(prompts);
+
+  // プロンプトを非表示にする関数
+  const handleHidePrompt = (id: string) => {
+    setVisiblePrompts(prev => prev.filter(prompt => 
+      sectionPrefix ? `${sectionPrefix}-${prompt.id}` !== id : prompt.id !== id
+    ));
+  };
+
+  // propsが変わったら表示中のプロンプトを更新
+  useEffect(() => {
+    setVisiblePrompts(prompts);
+  }, [prompts]);
 
   // 横スクロール時に最後の記事まで確実にスクロールできるようにする
   useEffect(() => {
@@ -29,7 +43,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({ prompts, sectionPrefix = '', ho
     // スクロール領域を調整する関数
     const adjustScrollArea = () => {
       const container = scrollContainerRef.current;
-      if (!container || prompts.length === 0) return;
+      if (!container || visiblePrompts.length === 0) return;
       
       // コンテナの幅を取得
       const containerWidth = container.clientWidth;
@@ -58,7 +72,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({ prompts, sectionPrefix = '', ho
       window.removeEventListener('resize', adjustScrollArea);
       clearTimeout(timer);
     };
-  }, [horizontalScroll, prompts.length]);
+  }, [horizontalScroll, visiblePrompts.length]);
 
   const gridClasses = horizontalScroll
     ? "flex overflow-x-auto pb-4 space-x-4 hide-scrollbar scroll-smooth"
@@ -82,12 +96,17 @@ const PromptGrid: React.FC<PromptGridProps> = ({ prompts, sectionPrefix = '', ho
     }
   `;
 
+  // 表示するプロンプトがない場合
+  if (visiblePrompts.length === 0) {
+    return <div className="text-gray-500 text-center py-6">表示するコンテンツがありません</div>;
+  }
+
   return (
     <>
       <style>{scrollbarHideStyle}</style>
       
       <div className={gridClasses} ref={scrollContainerRef}>
-        {prompts.map((prompt, index) => (
+        {visiblePrompts.map((prompt, index) => (
           <div 
             key={`${sectionPrefix}${prompt.id}`} 
             className={`${cardClasses}`}
@@ -99,6 +118,8 @@ const PromptGrid: React.FC<PromptGridProps> = ({ prompts, sectionPrefix = '', ho
               user={prompt.user}
               postedAt={prompt.postedAt}
               likeCount={prompt.likeCount}
+              isLiked={prompt.isLiked}
+              onHide={handleHidePrompt}
             />
           </div>
         ))}

@@ -1,16 +1,18 @@
-
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import PromptGrid from '@/components/PromptGrid';
 import { featuredPrompts, aiGeneratedPrompts } from '@/data/mockPrompts';
 import { Search as SearchIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const Search = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const query = searchParams.get('q') || '';
+  const [searchInput, setSearchInput] = useState(query);
   const [isLoading, setIsLoading] = useState(true);
   const [results, setResults] = useState([]);
 
@@ -22,7 +24,7 @@ const Search = () => {
       // For demo purposes, filter the mock data based on the query
       const combinedPrompts = [...featuredPrompts, ...aiGeneratedPrompts];
       const filteredResults = combinedPrompts.filter(prompt => 
-        prompt.title.toLowerCase().includes(query.toLowerCase()) || 
+        prompt.title.toLowerCase().includes(query.toLowerCase()) ||
         prompt.user.name.toLowerCase().includes(query.toLowerCase())
       );
       
@@ -33,12 +35,20 @@ const Search = () => {
     return () => clearTimeout(timer);
   }, [query]);
 
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchInput.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchInput.trim())}`);
+    }
+  };
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
       
-      <main className="flex-1 pb-12">
+      <main className="flex-1 pb-12 mt-12">
         <div className="container px-4 py-6 sm:px-6 md:px-8">
+          {/* 検索フォームを追加 */}
           <div className="mb-8">
             <h1 className="text-2xl font-bold mb-2">
               "<span className="text-prompty-primary">{query}</span>" の検索結果

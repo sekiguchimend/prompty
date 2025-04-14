@@ -27,6 +27,8 @@ import ContestPage from './pages/ContestPage';
 import HashtagPage from './pages/HashtagPage';
 import SettingsPage from './pages/SettingsPage';
 import DashboardPage from './pages/DashboardPage';
+import Following from './pages/Following';
+import UserProfilePage from './pages/UserProfilePage';
 const queryClient = new QueryClient();
 
 // 画面サイズに応じて柔軟にレイアウトを調整するコンポーネント
@@ -95,6 +97,8 @@ const App = () => (
           <Route path="/hashtag/:tag" element={<HashtagPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/following" element={<Following />} />
+          <Route path="/users/:userId" element={<UserProfilePage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -261,7 +261,7 @@ const MyArticles = () => {
         <div className="note-page-container">
           {/* 左サイドバー - タブメニュー */}
           <div className="note-sidebar">
-            <h2 className="md:block hidden">記事</h2>
+            <h2 className="md:block hidden">コンテンツ</h2>
             <SidebarTabs activeTab={activeTab} setActiveTab={setActiveTab} />
           </div>
           
@@ -285,7 +285,7 @@ const MyArticles = () => {
             {/* 記事の公開タイミングバナー */}
             <div className="publish-timing-banner">
               <div className="timing-content">
-                <h3>記事の公開</h3>
+                <h3>コンテンツの公開</h3>
                 <p>タイミングの参考に</p>
               </div>
               <div className="timing-calendar">
@@ -295,10 +295,10 @@ const MyArticles = () => {
             
             {/* 創作のヒント */}
             <div className="creation-hints">
-              <h3>創作のヒント</h3>
+              <h3>コンテンツのヒント</h3>
               <div className="hint-section">
-                <h4>記事を有料販売してみよう</h4>
-                <p>有料記事を作成して、自分の創作で収益化しませんか？</p>
+                <h4>コンテンツを有料販売してみよう</h4>
+                <p>有料コンテンツを作成する</p>
                 <button className="hint-button">くわしくみる</button>
               </div>
             </div>

@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, EyeOff, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,6 +18,8 @@ interface BusinessFormValues {
 
 const Business = () => {
   const [showPassword, setShowPassword] = React.useState(false);
+  const [isFormValid, setIsFormValid] = useState(false);
+  
   const form = useForm<BusinessFormValues>({
     defaultValues: {
       email: '',
@@ -28,6 +29,23 @@ const Business = () => {
       termsAccepted: false,
     },
   });
+
+  // フォームの入力状態を監視し、ボタンの色を切り替える
+  useEffect(() => {
+    const subscription = form.watch((value) => {
+      const email = value.email || '';
+      const password = value.password || '';
+      const promptyId = value.promptyId || '';
+      setIsFormValid(
+        email.trim() !== '' && 
+        password.trim() !== '' && 
+        promptyId.trim() !== '' && 
+        value.termsAccepted === true
+      );
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form.watch]);
 
   const onSubmit = (data: BusinessFormValues) => {
     console.log('Business registration data:', data);
@@ -57,8 +75,8 @@ const Business = () => {
       <div className="w-full md:w-1/2 flex flex-col items-center justify-center p-8">
         <Link to="/" className="mb-8">
           <div className="flex items-center">
-            <span className="text-3xl font-bold text-prompty-primary">p<span className="text-black">rompty</span></span>
-            <span className="ml-1 text-pink-400">🌸</span>
+            <img src="/prompty_logo.jpg" alt="prompty" className="w-24 object-contain" />
+
           </div>
         </Link>
 
@@ -188,7 +206,12 @@ const Business = () => {
                 
                 <Button 
                   type="submit" 
-                  className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 mt-6"
+                  className={`w-full transition-colors ${
+                    isFormValid 
+                      ? 'bg-gray-900 hover:bg-gray-800 text-white' 
+                      : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                  }`}
+                  mt-6
                 >
                   同意して登録する
                 </Button>

@@ -21,15 +21,18 @@ export const PROMPT_EXAMPLES = [
 
 interface PromptGuideProps {
   onApplyExample: (example: typeof PROMPT_EXAMPLES[0]) => void;
+  inDialog?: boolean; // ダイアログ内に表示される場合のプロパティ
 }
 
-const PromptGuide: React.FC<PromptGuideProps> = ({ onApplyExample }) => {
+const PromptGuide: React.FC<PromptGuideProps> = ({ onApplyExample, inDialog = false }) => {
   return (
-    <div className="mb-6 border border-gray-200 rounded-lg bg-gray-50 p-4">
-      <div className="flex items-center mb-2">
-        <Lightbulb className="h-5 w-5 text-gray-700 mr-2" />
-        <h3 className="text-lg font-medium text-gray-800">効果的なプロンプトの書き方</h3>
-      </div>
+    <div className={`${inDialog ? '' : 'mb-6 border border-gray-200 rounded-lg bg-gray-50'} p-4`}>
+      {!inDialog && (
+        <div className="flex items-center mb-2">
+          <Lightbulb className="h-5 w-5 text-gray-700 mr-2" />
+          <h3 className="text-lg font-medium text-gray-800">効果的なプロンプトの書き方</h3>
+        </div>
+      )}
       
       <Accordion type="single" collapsible className="w-full">
         <AccordionItem value="item-1">

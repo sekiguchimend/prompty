@@ -2,48 +2,64 @@ import React from 'react';
 import { ChevronDown, Twitter, Instagram, Facebook } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-// 人気のハッシュタグリスト
-const popularHashtags = [
-  '有料記事書いてみた',
-  '春の旬食材レシピ',
-  '今日の晩酌',
-  'イチオシのおいしい一品'
+// 人気のタグリスト
+const popularTags = [
+  'Selenium',
+  'BeautifulSoup',
+  'Scrapy',
+  'Puppeteer',
+  'API連携'
 ];
 
 const categories = [
   { id: 'all', name: 'すべて', active: true },
+  { id: 'following', name: 'フォロー中', active: false },
   { id: 'posts', name: '投稿企画', active: false },
-  { id: 'trials', name: 'やってみた', active: false },
-  { id: 'living', name: 'くらし', active: false, children: [
-    { id: 'home', name: '家庭', active: false },
-    { id: 'food', name: 'フード', active: false },
-    { id: 'lifestyle', name: 'ライフスタイル', active: false },
-    { id: 'shopping', name: 'ショッピング', active: false },
-    { id: 'parenting', name: '育児', active: false },
-    { id: 'health', name: '健康', active: false },
-    { id: 'travel', name: '旅行・おでかけ', active: false },
-    { id: 'pets', name: 'ペット', active: false },
-    { id: 'column', name: 'コラム・エッセイ', active: false },
-    { id: 'beauty', name: '美容', active: false },
-    { id: 'fashion', name: 'ファッション', active: false },
-    { id: 'diy', name: 'DIY', active: false },
-    { id: 'crafts', name: '造形', active: false },
-    { id: 'handcrafts', name: '手芸', active: false },
-    { id: 'outdoor', name: 'アウトドア', active: false },
+  { id: 'erp', name: 'ERPシステム', active: false, children: [
+    { id: 'sap', name: 'SAP', active: false },
+    { id: 'oracle', name: 'Oracle ERP', active: false },
+    { id: 'dynamics', name: 'Microsoft Dynamics', active: false },
+    { id: 'odoo', name: 'Odoo', active: false },
+    { id: 'salesforce', name: 'Salesforce', active: false },
+    { id: 'workday', name: 'Workday', active: false },
+    { id: 'custom-erp', name: 'カスタムERP開発', active: false },
   ]},
-  { id: 'learning', name: 'まなび', active: false, children: [
-    { id: 'education', name: '教育', active: false },
-    { id: 'books', name: '読書', active: false },
+  { id: 'scraping', name: 'スクレイピング・自動化', active: false, children: [
+    { id: 'web-scraping', name: 'Webスクレイピング', active: false },
+    { id: 'data-extraction', name: 'データ抽出', active: false },
+    { id: 'automation', name: '自動化ツール', active: false },
+    { id: 'selenium', name: 'Selenium', active: false },
+    { id: 'puppeteer', name: 'Puppeteer', active: false },
+    { id: 'beautifulsoup', name: 'BeautifulSoup', active: false },
+    { id: 'scrapy', name: 'Scrapy', active: false },
+    { id: 'rpa', name: 'RPA', active: false },
   ]},
-  { id: 'hashtags', name: '人気ハッシュタグ', active: false },
+  { id: 'data-integration', name: 'データ連携', active: false, children: [
+    { id: 'etl', name: 'ETL', active: false },
+    { id: 'api-integration', name: 'API連携', active: false },
+    { id: 'data-pipeline', name: 'データパイプライン', active: false },
+    { id: 'webhooks', name: 'Webhooks', active: false },
+    { id: 'database', name: 'データベース連携', active: false },
+  ]},
+  { id: 'enterprise-systems', name: '業務システム', active: false, children: [
+    { id: 'accounting', name: '会計システム', active: false },
+    { id: 'hr', name: '人事給与', active: false },
+    { id: 'crm', name: 'CRM', active: false },
+    { id: 'inventory', name: '在庫管理', active: false },
+    { id: 'scm', name: 'サプライチェーン', active: false },
+    { id: 'bi', name: 'BI・分析', active: false },
+  ]},
+  { id: 'popular-tags', name: '人気タグ', active: false },
 ];
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const [expandedCategories, setExpandedCategories] = React.useState<Record<string, boolean>>({
-    living: false,
-    learning: false,
-    hashtags: false,
+    erp: false,
+    scraping: false,
+    'data-integration': false,
+    'enterprise-systems': false,
+    'popular-tags': false,
   });
 
   const toggleCategory = (categoryId: string) => {
@@ -66,19 +82,26 @@ const Sidebar = () => {
       case 'posts':
         navigate('/contests');
         break;
+      case 'following':
+        navigate('/following');
+        break;
+      case 'all':
+        navigate('/');
+        break;
       default:
-        // その他のカテゴリーの処理（今後追加予定）
+        // その他のカテゴリーの処理
+        navigate(`/category/${categoryId}`);
         break;
     }
   };
 
-  const handleHashtagClick = (tag: string) => {
+  const handleTagClick = (tag: string) => {
     // エンコードしてURLパラメータとして渡す
-    navigate(`/hashtag/${encodeURIComponent(tag)}`);
+    navigate(`/tag/${encodeURIComponent(tag)}`);
   };
 
   return (
-    <aside className="hidden md:block fixed left-0 top-16 w-[240px] h-[calc(100vh-64px)] flex-shrink-0 border-r bg-white overflow-y-auto">
+    <aside className="hidden md:block fixed left-0 top-16 w-[240px] h-[calc(100vh-64px)] flex-shrink-0 border-r bg-white overflow-y-auto scrollbar-none">
       <nav className="flex flex-col h-full py-4">
         <div className="space-y-1 px-3 flex-grow">
           {categories.map(category => (
@@ -117,14 +140,14 @@ const Sidebar = () => {
                 </div>
               )}
 
-              {/* ハッシュタグリスト */}
-              {category.id === 'hashtags' && expandedCategories[category.id] && (
+              {/* タグリスト */}
+              {category.id === 'popular-tags' && expandedCategories[category.id] && (
                 <div className="mt-1 space-y-1 pl-6">
-                  {popularHashtags.map(tag => (
+                  {popularTags.map(tag => (
                     <button
                       key={tag}
                       className="flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => handleHashtagClick(tag)}
+                      onClick={() => handleTagClick(tag)}
                     >
                       #{tag}
                     </button>

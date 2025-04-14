@@ -1,6 +1,7 @@
 // 分割したコンポーネントを一括エクスポート
 export { default as ProjectSettingsForm } from './ProjectSettingsForm';
 export { default as PromptGuide } from './PromptGuide';
+export { default as PromptGuideDialog } from './PromptGuideDialog';
 export { default as PromptForm } from './PromptForm';
 export { default as PromptHistory } from './PromptHistory';
 

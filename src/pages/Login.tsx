@@ -1,6 +1,5 @@
-
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Apple, Twitter, Mail, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +15,9 @@ interface LoginFormValues {
 }
 
 const Login = () => {
+  const navigate = useNavigate();
+  const [isFormValid, setIsFormValid] = useState(false);
+  
   const form = useForm<LoginFormValues>({
     defaultValues: {
       email: '',
@@ -24,9 +26,27 @@ const Login = () => {
     },
   });
 
+  // フォームの入力状態を監視し、ボタンの色を切り替える
+  useEffect(() => {
+    const subscription = form.watch((value) => {
+      const email = value.email || '';
+      const password = value.password || '';
+      setIsFormValid(email.trim() !== '' && password.trim() !== '');
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form.watch]);
+
   const onSubmit = (data: LoginFormValues) => {
     console.log('Login attempt with:', data);
-    // Here you would handle the authentication logic
+    // ここでは認証ロジックを省略し、単純にホームページへリダイレクト
+    navigate('/');
+  };
+
+  const handleSocialLogin = (provider: string) => {
+    console.log(`Login with ${provider}`);
+    // ソーシャルログイン処理を省略してホームページへリダイレクト
+    navigate('/');
   };
 
   return (
@@ -35,8 +55,9 @@ const Login = () => {
       <div className="w-full flex flex-col items-center justify-center p-8">
         <Link to="/" className="mb-8">
           <div className="flex items-center">
-            <span className="text-3xl font-bold text-prompty-primary">p<span className="text-black">rompty</span></span>
-            <span className="ml-1 text-pink-400">🌸</span>
+            {/* <span className="text-3xl font-bold text-prompty-primary">p<span className="text-black">rompty</span></span>
+            <span className="ml-1 text-pink-400">🌸</span> */}
+            <img src="/prompty_logo.jpg" alt="Prompty" className="h-8" />
           </div>
         </Link>
 
@@ -46,7 +67,12 @@ const Login = () => {
             
             {/* Social Login Options */}
             <div className="flex justify-center space-x-4 mb-8">
-              <Button variant="outline" size="icon" className="rounded-full w-12 h-12">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="rounded-full w-12 h-12"
+                onClick={() => handleSocialLogin('Google')}
+              >
                 <svg className="h-5 w-5 text-red-500" viewBox="0 0 24 24">
                   <path
                     fill="currentColor"
@@ -55,11 +81,21 @@ const Login = () => {
                 </svg>
                 <span className="sr-only">Google</span>
               </Button>
-              <Button variant="outline" size="icon" className="rounded-full w-12 h-12">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="rounded-full w-12 h-12"
+                onClick={() => handleSocialLogin('Twitter')}
+              >
                 <Twitter className="h-5 w-5 text-blue-400" />
                 <span className="sr-only">Twitter</span>
               </Button>
-              <Button variant="outline" size="icon" className="rounded-full w-12 h-12">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="rounded-full w-12 h-12"
+                onClick={() => handleSocialLogin('Apple')}
+              >
                 <Apple className="h-5 w-5" />
                 <span className="sr-only">Apple</span>
               </Button>
@@ -115,7 +151,7 @@ const Login = () => {
                   )}
                 />
                 
-                <div className="flex items-center justify-between">
+                <div className="">
                   <div className="flex items-center">
                     <Checkbox id="remember" />
                     <label 
@@ -135,7 +171,11 @@ const Login = () => {
                 
                 <Button 
                   type="submit" 
-                  className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800"
+                  className={`w-full transition-colors ${
+                    isFormValid 
+                      ? 'bg-gray-900 hover:bg-gray-800 text-white' 
+                      : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                  }`}
                 >
                   ログイン
                 </Button>

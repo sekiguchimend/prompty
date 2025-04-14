@@ -51,7 +51,7 @@ const UserMenu: React.FC<UserMenuProps> = ({
               </Avatar>
               <div>
                 <h1 className="text-base font-medium">{username}</h1>
-                <p className="text-sm text-gray-500">クリエイターページ</p>
+                <Link to={`/users/me`} className="text-sm text-gray-500 hover:text-gray-700">クリエイターページ</Link>
               </div>
             </div>
           </div>
@@ -151,7 +151,7 @@ const UserMenu: React.FC<UserMenuProps> = ({
           </Avatar>
           <div>
             <h1 className="text-base font-medium">{username}</h1>
-            <p className="text-sm text-gray-500">クリエイターページ</p>
+            <Link to={`/users/me`} className="text-sm text-gray-500 hover:text-gray-700">クリエイターページ</Link>
           </div>
         </div>
         <button

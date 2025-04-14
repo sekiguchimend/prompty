@@ -1,7 +1,7 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { toast } from '@/components/ui/use-toast';
 
 interface AuthorSidebarProps {
   author: {
@@ -14,6 +14,32 @@ interface AuthorSidebarProps {
 }
 
 const AuthorSidebar: React.FC<AuthorSidebarProps> = ({ author, tags, website }) => {
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  const handleFollowClick = () => {
+    setIsAnimating(true);
+    
+    // アニメーション用のタイムアウト
+    setTimeout(() => {
+      setIsAnimating(false);
+      setIsFollowing(!isFollowing);
+      
+      // トースト通知表示
+      if (!isFollowing) {
+        toast({
+          title: `${author.name}さんをフォローしました`,
+          description: "新しい投稿があればお知らせします",
+        });
+      } else {
+        toast({
+          title: `${author.name}さんのフォローを解除しました`,
+          variant: "destructive"
+        });
+      }
+    }, 300);
+  };
+
   return (
     <div className="sticky top-20">
       <div className="flex flex-col items-start">
@@ -49,10 +75,18 @@ const AuthorSidebar: React.FC<AuthorSidebarProps> = ({ author, tags, website }) 
         </div>
         
         <Button 
-          variant="outline" 
-          className="w-full mb-4 bg-gray-900 text-white hover:bg-gray-800 rounded-sm text-sm py-1 h-auto"
+          variant={isFollowing ? "outline" : "default"}
+          className={`w-full mb-4 ${
+            isFollowing 
+              ? 'border border-gray-300 hover:bg-gray-100 text-gray-900' 
+              : 'bg-gray-900 text-white hover:bg-gray-800'
+          } rounded-sm text-sm py-1 h-auto transition-all duration-200 ${
+            isAnimating ? 'scale-95' : ''
+          }`}
+          onClick={handleFollowClick}
         >
-          <span className="mr-1">👤</span> フォロー
+          <span className="mr-1">{isFollowing ? '✓' : '👤'}</span> 
+          {isFollowing ? 'フォロー中' : 'フォロー'}
         </Button>
       </div>
     </div>
