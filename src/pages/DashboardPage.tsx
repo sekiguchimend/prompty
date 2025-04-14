@@ -193,7 +193,7 @@ const DashboardPage: React.FC = () => {
                   <div className="bg-white p-3 sm:p-6 rounded-md flex flex-col items-center justify-center relative shadow-sm">
                     <Heart className="h-4 w-4 sm:h-6 sm:w-6 text-pink-500 mb-1 sm:mb-3" />
                     <div className="text-xl sm:text-3xl md:text-4xl font-bold text-pink-500">11</div>
-                    <div className="text-[10px] sm:text-sm text-gray-500 mt-1 sm:mt-2">スキ</div>
+                    <div className="text-[10px] sm:text-sm text-gray-500 mt-1 sm:mt-2">イイね</div>
                     <div className="absolute top-1 right-1 sm:top-2 sm:right-2">
                       <HelpCircle className="h-3 w-3 sm:h-5 sm:w-5 text-gray-300" />
                     </div>
@@ -216,7 +216,7 @@ const DashboardPage: React.FC = () => {
                     </span>
                   </div>
                   <div className="px-3 text-sm text-gray-500 font-medium w-24 text-center">コメント</div>
-                  <div className="px-3 text-sm text-gray-500 font-medium w-24 text-center">スキ</div>
+                  <div className="px-3 text-sm text-gray-500 font-medium w-24 text-center">イイね</div>
                 </div>
                 
                 {articles.map((article, index) => (
