@@ -13,20 +13,15 @@ globalThis.__BUILD_MANIFEST = {
   ],
   "rootMainFilesTree": {},
   "pages": {
-    "/Business": [
+    "/ContestPage": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/Business.js"
+      "static/chunks/pages/ContestPage.js"
     ],
-    "/PaymentDisclosure": [
+    "/MyArticles": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/PaymentDisclosure.js"
-    ],
-    "/Premium": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/Premium.js"
+      "static/chunks/pages/MyArticles.js"
     ],
     "/_app": [
       "static/chunks/webpack.js",

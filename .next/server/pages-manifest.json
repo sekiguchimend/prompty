@@ -2,8 +2,8 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/PaymentDisclosure": "pages/PaymentDisclosure.js",
-  "/Premium": "pages/Premium.js",
-  "/Business": "pages/Business.js",
-  "/prompts/[id]": "pages/prompts/[id].js"
+  "/Following": "pages/Following.js",
+  "/ContestPage": "pages/ContestPage.js",
+  "/prompts/[id]": "pages/prompts/[id].js",
+  "/MyArticles": "pages/MyArticles.js"
 }

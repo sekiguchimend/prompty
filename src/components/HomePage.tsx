@@ -69,7 +69,7 @@ const HomePage: React.FC = () => {
                   title="今日の注目プロンプト" 
                   prompts={processingFeaturedPrompts}
                   showMoreLink={true}
-                  showRssIcon={true}
+                  showRssIcon={false}
                   horizontalScroll={shouldUseHorizontalScroll}
                   maxVisible={displayCount}
                   className="mt-0"

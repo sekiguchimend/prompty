@@ -15,9 +15,9 @@ import { PostItem, getFollowingPosts, getTodayForYouPosts } from '../data/posts'
 // カテゴリタブ
 const categoryTabs = [
   { id: 'all', name: 'すべて', path: '/' },
-  { id: 'following', name: 'フォロー中', path: '/following' },
+  { id: 'following', name: 'フォロー中', path: '/Following' },
   // { id: 'featured', name: '注目', path: '/featured' },
-  { id: 'posts', name: '投稿企画', path: '/contests' },
+  { id: 'posts', name: '投稿企画', path: '/ContestPage' },
 ];
 
 const Header = () => {

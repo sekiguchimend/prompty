@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger
 } from '../components/ui/dropdown-menu';
 import { useToast } from '../components/ui/use-toast';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 
 const Following: React.FC = () => {
   // データ取得
@@ -144,7 +144,7 @@ const Following: React.FC = () => {
             <div className="hidden md:grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 px-4">
               {followingPosts.map((post) => (
                 <div key={post.id} className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm">
-                  <Link to={`/prompts/${post.id}`} className="block">
+                  <Link href={`/prompts/${post.id}`} className="block">
                     <div className="relative pb-[56.25%]">
                       <img 
                         src={post.thumbnailUrl} 
@@ -155,7 +155,7 @@ const Following: React.FC = () => {
                   </Link>
                   <div className="flex flex-col p-3">
                     <div className="flex justify-between items-start mb-2">
-                      <Link to={`/prompts/${post.id}`} className="line-clamp-2 font-medium hover:text-prompty-primary flex-1 mr-2">
+                      <Link href={`/prompts/${post.id}`} className="line-clamp-2 font-medium hover:text-prompty-primary flex-1 mr-2">
                         {post.title}
                       </Link>
                       
@@ -177,14 +177,14 @@ const Following: React.FC = () => {
                     
                     <div className="mt-auto">
                       <div className="flex items-center gap-2">
-                        <Link to={`/users/${post.user.name}`} className="block h-6 w-6 overflow-hidden rounded-full">
+                        <Link href={`/users/${post.user.name}`} className="block h-6 w-6 overflow-hidden rounded-full">
                           <img 
                             src={post.user.avatarUrl} 
                             alt={post.user.name} 
                             className="h-full w-full object-cover"
                           />
                         </Link>
-                        <Link to={`/users/${post.user.name}`} className="text-xs text-gray-600 hover:underline">
+                        <Link href={`/users/${post.user.name}`} className="text-xs text-gray-600 hover:underline">
                           {post.user.name}
                         </Link>
                         <span className="text-xs text-gray-500">{post.postedAt}</span>
@@ -279,7 +279,7 @@ const Following: React.FC = () => {
             <div className="hidden md:grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 px-4">
               {todayForYouPosts.map((post) => (
                 <div key={post.id} className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm">
-                  <Link to={`/prompts/${post.id}`} className="block">
+                  <Link href={`/prompts/${post.id}`} className="block">
                     <div className="relative pb-[56.25%]">
                       <img 
                         src={post.thumbnailUrl} 
@@ -290,7 +290,7 @@ const Following: React.FC = () => {
                   </Link>
                   <div className="flex flex-col p-3">
                     <div className="flex justify-between items-start mb-2">
-                      <Link to={`/prompts/${post.id}`} className="line-clamp-2 font-medium hover:text-prompty-primary flex-1 mr-2">
+                      <Link href={`/prompts/${post.id}`} className="line-clamp-2 font-medium hover:text-prompty-primary flex-1 mr-2">
                         {post.title}
                       </Link>
                       
@@ -312,14 +312,14 @@ const Following: React.FC = () => {
                     
                     <div className="mt-auto">
                       <div className="flex items-center gap-2">
-                        <Link to={`/users/${post.user.name}`} className="block h-6 w-6 overflow-hidden rounded-full">
+                        <Link href={`/users/${post.user.name}`} className="block h-6 w-6 overflow-hidden rounded-full">
                           <img 
                             src={post.user.avatarUrl} 
                             alt={post.user.name} 
                             className="h-full w-full object-cover"
                           />
                         </Link>
-                        <Link to={`/users/${post.user.name}`} className="text-xs text-gray-600 hover:underline">
+                        <Link href={`/users/${post.user.name}`} className="text-xs text-gray-600 hover:underline">
                           {post.user.name}
                         </Link>
                         <span className="text-xs text-gray-500">{post.postedAt}</span>

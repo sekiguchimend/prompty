@@ -73,15 +73,35 @@ const Sidebar = () => {
   };
 
   const handleCategoryClick = (category: string) => {
-    setExpandedCategories({
-      ...expandedCategories,
-      [category]: !expandedCategories[category]
-    });
+    // カテゴリーによって異なる動作をする
+    if (category === 'following') {
+      // フォロー中ページに遷移
+      router.push('/Following');
+    } else if (category === 'posts') {
+      // 投稿企画ページに遷移
+      router.push('/ContestPage');
+    } else if (category === 'all') {
+      // トップページに遷移
+      router.push('/');
+    } else {
+      // その他のカテゴリーは展開/折りたたみのみ行う
+      setExpandedCategories({
+        ...expandedCategories,
+        [category]: !expandedCategories[category]
+      });
+    }
+  };
+
+  const handleSubCategoryClick = (subCategory: string) => {
+    // サブカテゴリークリック時の処理
+    // 現在は何も動作しない
+    console.log(`サブカテゴリーがクリックされました: ${subCategory}`);
   };
 
   const handleTagClick = (tag: string) => {
-    // エンコードしてURLパラメータとして渡す
-    router.push(`/tag/${encodeURIComponent(tag)}`);
+    // タグクリック時の処理
+    // 現在は何も動作しない
+    console.log(`タグがクリックされました: ${tag}`);
   };
 
   return (
@@ -116,7 +136,7 @@ const Sidebar = () => {
                           ? 'category-active' 
                           : 'text-gray-700 hover:bg-gray-100'
                       }`}
-                      onClick={() => handleCategoryClick(subCategory.id)}
+                      onClick={() => handleSubCategoryClick(subCategory.id)}
                     >
                       {subCategory.name}
                     </button>
