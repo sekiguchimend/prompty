@@ -1,8 +1,7 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { X, LayoutDashboard, FilePen, Heart, Image, Book, Settings, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-
+import Link from 'next/link';
 interface UserMenuProps {
   isOpen: boolean;
   onClose: () => void;

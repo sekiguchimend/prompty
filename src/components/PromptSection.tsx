@@ -31,14 +31,14 @@ const PromptSection: React.FC<PromptSectionProps> = ({
   
   return (
     <section className={`mt-8 md:mt-10 first:mt-0 ${className}`}>
-      <SectionHeader 
+      {/* <SectionHeader 
         title={title} 
         showMoreLink={showMoreLink} 
         showRssIcon={showRssIcon} 
         horizontalScroll={horizontalScroll}
         categoryUrl={categoryUrl}
         moreLinkUrl={moreLinkUrl || categoryUrl}
-      />
+      /> */}
       <PromptGrid 
         prompts={visiblePrompts} 
         sectionPrefix={sectionPrefix} 

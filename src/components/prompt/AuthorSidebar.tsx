@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '../../components/ui/button';
 import { Link } from 'react-router-dom';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '../../components/ui/use-toast';
 
 interface AuthorSidebarProps {
   author: {

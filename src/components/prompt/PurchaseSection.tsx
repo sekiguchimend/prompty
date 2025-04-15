@@ -1,22 +1,22 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '../../components/ui/button';
 import { Link } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
-import AvatarGroup from '@/components/AvatarGroup';
+import { Badge } from '../../components/ui/badge';
+import AvatarGroup from '../../components/AvatarGroup';
 import { Heart, Share2, MessageSquare, MoreHorizontal, FileText, PenTool, Flag, X, Send } from 'lucide-react';
 import PurchaseDialog from './PurchaseDialog';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
-import { toast } from '@/components/ui/use-toast';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from '../../components/ui/dialog';
+import { toast } from '../../components/ui/use-toast';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+} from '../../components/ui/dropdown-menu';
+import { Textarea } from '../../components/ui/textarea';
+import { ScrollArea } from '../../components/ui/scroll-area';
+import { Separator } from '../../components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 
 interface PurchaseSectionProps {
   wordCount: number;

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { useToast } from './ui/use-toast';
 import ReportDialog from './ReportDialog';
-
+import Image from 'next/image';
 interface PromptCardProps {
   id: string;
   title: string;
@@ -69,8 +69,10 @@ const PromptCard: React.FC<PromptCardProps> = ({
     <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm">
       <Link href={`/prompts/${promptId}`} className="block">
         <div className="relative pb-[56.25%]">
-          <img 
-            src={thumbnailUrl} 
+          <Image 
+            width={100}
+            height={100}
+            src={thumbnailUrl || '/placeholder.jpg'}
             alt={title} 
             className="absolute inset-0 h-full w-full object-cover"
           />

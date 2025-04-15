@@ -1,16 +1,9 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import {useRouter} from 'next/router';
 import { Button } from '@/components/ui/button';
 import { Check, Lock, FileText, Info } from 'lucide-react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
+
+import { Badge } from '../../components/ui/badge';
 import { ExternalLink } from 'lucide-react'; // Using ExternalLink icon which is similar to the one in the image
 
 interface PromptContentProps {
@@ -42,7 +35,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
   systemUrl
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(true);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   // コンテンツが配列の場合は結合して文字列にする
   const contentText = Array.isArray(content) ? content.join('\n') : content;
@@ -54,7 +47,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
 
   const handlePurchase = () => {
     setIsDialogOpen(true);
-    navigate('/checkout');
+    router.push('/checkout');
   };
 
   return (
