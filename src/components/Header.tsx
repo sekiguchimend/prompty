@@ -261,7 +261,7 @@ const Header = () => {
                         variant="secondary" 
                         size="sm" 
                         className="bg-black text-white hover:bg-gray-800 hidden md:flex shadow-sm"
-                        onClick={() => router.push('/create-post')}
+                        onClick={() => router.push('/CreatePost')}
                       >
                         <PenSquare className="mr-2 h-4 w-4" />
                         投稿

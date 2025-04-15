@@ -1,6 +1,6 @@
 // components/SidebarTabs.jsx
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useRouter } from 'next/router';
 import '../../styles/NotePage.css';
 import { 
   FileText, 
@@ -16,13 +16,15 @@ interface SidebarTabsProps {
 }
 
 const SidebarTabs: React.FC<SidebarTabsProps> = ({ activeTab, setActiveTab }) => {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
 
   const handleTabClick = (tab: string) => {
     setActiveTab(tab);
     // URLクエリパラメータを更新する
-    navigate(`${location.pathname}?tab=${tab}`);
+    router.push({
+      pathname: router.pathname,
+      query: { tab }
+    }, undefined, { shallow: true });
   };
 
   // タブリスト定義（アイコン付き）

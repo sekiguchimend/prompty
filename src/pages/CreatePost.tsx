@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { HelpCircle, Send } from 'lucide-react';
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import { useNavigate } from "react-router-dom";
-
+import Header from "../components/Header";
+import Footer from "../components/Footer";
+import { useRouter } from 'next/router';
 // まとめてインポート
 import {
   ProjectSettingsForm,
@@ -16,10 +15,10 @@ import {
   type ProjectFormValues,
   type PromptFormValues,
   type Prompt
-} from '@/components/create-post';
+} from '../components/create-post';
 
 const CreatePost = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [promptNumber, setPromptNumber] = useState(1);
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [showHistory, setShowHistory] = useState(true);
@@ -95,7 +94,7 @@ const CreatePost = () => {
     
     // ここでバックエンドにプロジェクト全体を送信する処理
     alert(`プロジェクトが投稿されました（${priceInfo}）`);
-    navigate("/");
+    router.push("/");
   };
 
   // AIモデルのラベルを取得
@@ -117,7 +116,7 @@ const CreatePost = () => {
       <main className="flex-1 container max-w-4xl mx-auto px-4 py-8 mt-10">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
           <button 
-            onClick={() => navigate(-1)}
+            onClick={() => router.back()}
             className="text-gray-500 hover:text-black"
           >
             ← 戻る

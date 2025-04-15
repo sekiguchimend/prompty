@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { Eye, EyeOff, Info } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Card, CardContent } from '../components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '../components/ui/form';
 import { useForm } from 'react-hook-form';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Checkbox } from '../components/ui/checkbox';
 
 interface BusinessFormValues {
   email: string;
@@ -73,7 +73,7 @@ const Business = () => {
 
       {/* Right side - Registration form */}
       <div className="w-full md:w-1/2 flex flex-col items-center justify-center p-8">
-        <Link to="/" className="mb-8">
+        <Link href="/" className="mb-8">
           <div className="flex items-center">
             <img src="/prompty_logo.jpg" alt="prompty" className="w-32 object-contain" />
 
@@ -85,7 +85,7 @@ const Business = () => {
             <h2 className="text-2xl font-bold text-center mb-6">法人として会員登録</h2>
             
             <div className="flex justify-end mb-2">
-              <Link to="/register" className="text-sm text-gray-700 hover:underline">
+              <Link href="/register" className="text-sm text-gray-700 hover:underline">
                 個人の方
               </Link>
             </div>
@@ -96,7 +96,7 @@ const Business = () => {
 
             <div className="bg-blue-50 p-4 rounded-md mb-6">
               <p className="text-sm text-gray-700">
-                クリエイターから受け取れる <span className="font-semibold">チップ機能がオフの状態</span>でアカウント<Link to="/register" className="text-prompty-primary hover:underline">登録</Link>されます。登録後、<Link to="/login" className="text-prompty-primary hover:underline">オン</Link>にすることも可能です。
+                クリエイターから受け取れる <span className="font-semibold">チップ機能がオフの状態</span>でアカウント<Link href="/register" className="text-prompty-primary hover:underline">登録</Link>されます。登録後、<Link href="/login" className="text-prompty-primary hover:underline">オン</Link>にすることも可能です。
               </p>
             </div>
             
@@ -198,7 +198,7 @@ const Business = () => {
                         />
                       </FormControl>
                       <div className="text-sm">
-                        会員登録には、<Link to="/terms" className="text-prompty-primary hover:underline">利用規約</Link> と <Link to="/privacy" className="text-prompty-primary hover:underline">プライバシーポリシー</Link>への同意が必要です。
+                        会員登録には、<Link href="/terms" className="text-prompty-primary hover:underline">利用規約</Link> と <Link href="/privacy" className="text-prompty-primary hover:underline">プライバシーポリシー</Link>への同意が必要です。
                       </div>
                     </FormItem>
                   )}
@@ -219,11 +219,11 @@ const Business = () => {
             </Form>
             
             <div className="mt-8 text-center">
-              <Link to="/login" className="text-prompty-primary hover:underline text-sm">
+              <Link href="/login" className="text-prompty-primary hover:underline text-sm">
                 ログインはこちら
               </Link>
               <div className="mt-4">
-                <Link to="/register" className="text-prompty-primary hover:underline text-sm">
+                <Link href="/register" className="text-prompty-primary hover:underline text-sm">
                   登録でお困りの方
                 </Link>
               </div>

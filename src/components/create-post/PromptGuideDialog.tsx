@@ -5,8 +5,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+} from "../../components/ui/dialog";
+import { Button } from "../../components/ui/button";
 import { HelpCircle } from 'lucide-react';
 import PromptGuide from './PromptGuide';
 import { PROMPT_EXAMPLES } from './PromptGuide';

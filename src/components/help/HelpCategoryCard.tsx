@@ -1,7 +1,6 @@
-
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
+import Link from 'next/link';
+import { Card, CardContent } from '../ui/card';
 
 interface HelpCategoryCardProps {
   title: string;
@@ -17,7 +16,7 @@ const HelpCategoryCard: React.FC<HelpCategoryCardProps> = ({
   url
 }) => {
   return (
-    <Link to={url}>
+    <Link href={url}>
       <Card className="h-full transition-all duration-200 hover:shadow-md hover:border-prompty-primary/50">
         <CardContent className="p-6">
           <div className="flex flex-col space-y-2">

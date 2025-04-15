@@ -3,9 +3,10 @@ import { ChevronDown, Eye, MessageSquare, Heart, HelpCircle, Menu, X, Award, Dol
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { useRouter } from 'next/router';
 
 const DashboardPage: React.FC = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('analytics');
   const [timePeriod, setTimePeriod] = useState('全期間');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

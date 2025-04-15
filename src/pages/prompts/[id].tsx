@@ -9,11 +9,84 @@ import PromptContent from '../../components/prompt/PromptContent';
 import PurchaseSection from '../../components/prompt/PurchaseSection';
 import { getDetailPost, getPopularPosts } from '../../data/posts';
 import Link from 'next/link';
+import { GetStaticProps, GetStaticPaths } from 'next';
+import { featuredPrompts, aiGeneratedPrompts } from '../../data/mockPrompts';
+import { PostItem } from '../../data/posts';
 
-const PromptDetail = () => {
-  // データファイルから詳細データを取得
-  const postData = getDetailPost();
+// mockPromptsの型を定義
+interface PromptItem {
+  id: string;
+  title: string;
+  thumbnailUrl: string;
+  user: {
+    name: string;
+    avatarUrl: string;
+  };
+  postedAt: string;
+  likeCount: number;
+  isLiked?: boolean;
+}
+
+// GetStaticPathsを追加して、ビルド時に生成するパスを定義
+export const getStaticPaths: GetStaticPaths = async () => {
+  // featuredPromptsとaiGeneratedPromptsからすべてのIDを取得
+  const allPrompts = [...featuredPrompts, ...aiGeneratedPrompts];
+  const paths = allPrompts.map(prompt => ({
+    params: { id: prompt.id }
+  }));
+
+  return {
+    paths,
+    fallback: 'blocking' // 存在しないパスへのアクセス時はサーバーサイドでレンダリング
+  };
+};
+
+// GetStaticPropsを追加して、指定されたIDのデータを取得
+export const getStaticProps: GetStaticProps = async ({ params }) => {
+  const id = params?.id as string;
   
+  // IDを使って実際のデータを取得
+  // featuredPromptsとaiGeneratedPromptsを使って指定されたIDのプロンプトを探す
+  const allPrompts = [...featuredPrompts, ...aiGeneratedPrompts];
+  const promptData = allPrompts.find(prompt => prompt.id === id);
+  
+  // 該当するデータが見つからない場合は404を返す
+  if (!promptData) {
+    return {
+      notFound: true,
+    };
+  }
+  
+  // 人気記事データを取得
+  const popularPosts = getPopularPosts();
+  
+  // postDataの代わりにpromptDataを使用
+  // ただし、getDetailPostから得られる追加データも必要なので、両方をマージする
+  const postData = {
+    ...getDetailPost(),
+    ...promptData,
+    title: promptData.title,
+    thumbnailUrl: promptData.thumbnailUrl,
+    likeCount: promptData.likeCount,
+    postedAt: promptData.postedAt,
+    user: {
+      ...getDetailPost().user,
+      name: promptData.user.name,
+      avatarUrl: promptData.user.avatarUrl,
+    }
+  };
+  
+  return {
+    props: {
+      postData,
+      popularPosts
+    },
+    revalidate: 60 // 60秒ごとに再生成（必要に応じて調整）
+  };
+};
+
+// propsを受け取るようにコンポーネントを修正
+const PromptDetail = ({ postData, popularPosts }: { postData: PostItem; popularPosts: PostItem[] }) => {
   // コンポーネントの型に合わせて整形
   const prompt = {
     ...postData,
@@ -38,12 +111,9 @@ const PromptDetail = () => {
       website: postData.user.website || 'https://example.com' // 必須項目
     }
   };
-
-  // 人気記事データを取得
-  const popularPosts = getPopularPosts();
   
   // PopularArticlesコンポーネントの型に合わせてデータを変換
-  const popularArticles = popularPosts.map(post => ({
+  const popularArticles = popularPosts.map((post: PostItem) => ({
     id: post.id,
     title: post.title,
     likes: post.likeCount,

@@ -50,13 +50,13 @@ const UserMenu: React.FC<UserMenuProps> = ({
               </Avatar>
               <div>
                 <h1 className="text-base font-medium">{username}</h1>
-                <Link to={`/users/me`} className="text-sm text-gray-500 hover:text-gray-700">クリエイターページ</Link>
+                <Link href={`/UserProfilePage`} className="text-sm text-gray-500 hover:text-gray-700">クリエイターページ</Link>
               </div>
             </div>
           </div>
           
           {/* クリエイターダッシュボードリンク */}
-          <Link to="/dashboard" className="block px-4 py-3 border-b hover:bg-gray-50">
+          <Link href="/DashboardPage" className="block px-4 py-3 border-b hover:bg-gray-50">
             <div className="flex items-center">
               <div className="flex flex-shrink-0 items-center justify-center bg-gray-50 rounded-lg w-10 h-10 mr-3">
                 <LayoutDashboard className="h-5 w-5 text-gray-700" />
@@ -80,37 +80,37 @@ const UserMenu: React.FC<UserMenuProps> = ({
           
           {/* メニューナビゲーション */}
           <nav className="py-2">
-            <Link to="/my-articles" className="flex items-center text-sm px-4 py-2 hover:bg-gray-50">
+            <Link href="/MyArticles" className="flex items-center text-sm px-4 py-2 hover:bg-gray-50">
               <FilePen className="h-4 w-4 mr-3 text-gray-500" />
               自分のコンテンツ
             </Link>
             
-            <Link to="/my-articles?tab=purchasedArticles" className="flex items-center text-sm px-4 py-2 hover:bg-gray-50">
+            <Link href="/MyArticles?tab=purchasedArticles" className="flex items-center text-sm px-4 py-2 hover:bg-gray-50">
               <span className="h-4 w-4 mr-3 flex items-center justify-center text-amber-800">¥</span>
               <span className="text-amber-800">購入したコンテンツ
               </span>
             </Link>
             
-            <Link to="/my-articles?tab=likedArticles" className="flex items-center text-sm px-4 py-2 hover:bg-gray-50">
+            <Link href="/MyArticles?tab=likedArticles" className="flex items-center text-sm px-4 py-2 hover:bg-gray-50">
               <Heart className="h-4 w-4 mr-3 text-gray-500" />
               イイねしたコンテンツ
             </Link>
             
-            <Link to="/settings" className="flex items-center text-sm px-4 py-2 hover:bg-gray-50">
+            <Link href="/SettingsPage" className="flex items-center text-sm px-4 py-2 hover:bg-gray-50">
               <Settings className="h-4 w-4 mr-3 text-gray-500" />
               設定
             </Link>
             
             <div className="border-t my-1"></div>
             
-            <Link to="/logout" className="flex items-center text-sm px-4 py-2 hover:bg-gray-50">
+            <Link href="/Logout" className="flex items-center text-sm px-4 py-2 hover:bg-gray-50">
               <LogOut className="h-4 w-4 mr-3 text-gray-500" />
               ログアウト
             </Link>
           </nav>
           
           <div className="p-4 border-t">
-            <Link to="/membership" className="block mb-3">
+            <Link href="/Membership" className="block mb-3">
               <div className="bg-gray-50 rounded-md p-3 flex justify-center items-center">
                 <span className="text-xs font-medium">月額サブスクをつくれる<br/>メンバーシップ</span>
                 <div className="h-12 w-16 ml-2 flex items-center justify-center">
@@ -123,16 +123,16 @@ const UserMenu: React.FC<UserMenuProps> = ({
               </div>
             </Link>
             
-            <Link to="/premium" className="block">
+            <Link href="/Premium" className="block">
               <div className="border border-gray-200 rounded-md p-3 text-center">
                 <span className="text-xs font-medium">promptyプレミアムサービス</span>
               </div>
             </Link>
             
             <div className="flex justify-center mt-3 text-xs text-gray-500">
-              <Link to="/terms" className="mx-2">prompty活用術</Link>
+              <Link href="/Terms" className="mx-2">prompty活用術</Link>
               <span className="mx-1">/</span>
-              <Link to="/help" className="mx-2">ヘルプセンター</Link>
+              <Link href="/help" className="mx-2">ヘルプセンター</Link>
             </div>
           </div>
         </div>
@@ -151,7 +151,7 @@ const UserMenu: React.FC<UserMenuProps> = ({
           </Avatar>
           <div>
             <h1 className="text-base font-medium">{username}</h1>
-            <Link to={`/users/me`} className="text-sm text-gray-500 hover:text-gray-700">クリエイターページ</Link>
+            <Link href={`/UserProfilePage`} className="text-sm text-gray-500 hover:text-gray-700">クリエイターページ</Link>
           </div>
         </div>
         <button
@@ -164,7 +164,7 @@ const UserMenu: React.FC<UserMenuProps> = ({
       </div>
       
       {/* クリエイターダッシュボードリンク */}
-      <Link to="/dashboard" className="block px-4 py-3 border-b hover:bg-gray-50">
+      <Link href="/DashboardPage" className="block px-4 py-3 border-b hover:bg-gray-50">
         <div className="flex items-center">
           <div className="flex flex-shrink-0 items-center justify-center bg-gray-50 rounded-lg w-12 h-12 mr-3">
             <LayoutDashboard className="h-6 w-6 text-gray-700" />
@@ -188,36 +188,36 @@ const UserMenu: React.FC<UserMenuProps> = ({
       
       {/* メニューナビゲーション */}
       <nav className="p-4 space-y-4">
-        <Link to="/my-articles" className="flex items-center text-base py-2 border-b border-gray-100 pb-4">
+        <Link href="/MyArticles" className="flex items-center text-base py-2 border-b border-gray-100 pb-4">
           <FilePen className="h-5 w-5 mr-3 text-gray-500" />
           自分の記事
         </Link>
         
-        <Link to="/my-articles?tab=purchasedArticles" className="flex items-center text-base py-2 border-b border-gray-100 pb-4">
+        <Link href="/MyArticles?tab=purchasedArticles" className="flex items-center text-base py-2 border-b border-gray-100 pb-4">
           <span className="h-5 w-5 mr-3 flex items-center justify-center text-amber-800">¥</span>
           <span className="text-amber-800">購入した記事</span>
         </Link>
         
-        <Link to="/my-articles?tab=likedArticles" className="flex items-center text-base py-2 border-b border-gray-100 pb-4">
+        <Link href="/MyArticles?tab=likedArticles" className="flex items-center text-base py-2 border-b border-gray-100 pb-4">
           <Heart className="h-5 w-5 mr-3 text-gray-500" />
           スキした記事
         </Link>
         
-        <Link to="/settings" className="flex items-center text-base py-2 border-b border-gray-100 pb-4">
+        <Link href="/SettingsPage" className="flex items-center text-base py-2 border-b border-gray-100 pb-4">
           <Settings className="h-5 w-5 mr-3 text-gray-500" />
           設定
         </Link>
       </nav>
       
       <div className="p-4 mt-4">
-        <Link to="/logout" className="flex items-center text-base py-2">
+        <Link href="/Logout" className="flex items-center text-base py-2">
           <LogOut className="h-5 w-5 mr-3 text-gray-500" />
           ログアウト
         </Link>
       </div>
       
       <div className="fixed bottom-0 left-0 right-0 border-t border-gray-100">
-        <Link to="/membership" className="block p-4">
+        <Link href="/Membership" className="block p-4">
           <div className="bg-gray-50 rounded-md p-3 flex justify-center items-center">
             <span className="text-sm font-medium">月額サブスクをつくれる<br/>メンバーシップ</span>
             <div className="h-16 w-20 ml-2 flex items-center justify-center">
@@ -230,16 +230,16 @@ const UserMenu: React.FC<UserMenuProps> = ({
           </div>
         </Link>
         
-        <Link to="/premium" className="block p-4 pt-0">
+        <Link href="/Premium" className="block p-4 pt-0">
           <div className="bg-white border border-gray-200 rounded-md p-3 text-center">
             <span className="text-sm font-medium">noteプレミアムサービス</span>
           </div>
         </Link>
         
         <div className="flex justify-center pb-4 text-sm text-gray-500">
-          <Link to="/terms" className="mx-2">note活用術</Link>
+          <Link href="/Terms" className="mx-2">note活用術</Link>
           <span className="mx-1">/</span>
-          <Link to="/help" className="mx-2">ヘルプセンター</Link>
+          <Link href="/Help" className="mx-2">ヘルプセンター</Link>
         </div>
       </div>
     </div>

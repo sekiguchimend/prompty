@@ -1,5 +1,6 @@
 import React from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
@@ -101,7 +102,8 @@ const hashtagInfo = {
 };
 
 const HashtagPage: React.FC = () => {
-  const { tag } = useParams<{ tag: string }>();
+  const params = useParams<{ tag: string }>();
+  const tag = params?.tag as string;
   const decodedTag = tag ? decodeURIComponent(tag) : '';
   
   // ハッシュタグ情報を取得（存在しない場合はデフォルト値）

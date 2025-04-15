@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useRouter } from 'next/router';
+import Link from 'next/link';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
@@ -46,14 +47,18 @@ interface MagazineData {
 }
 
 const UserProfilePage: React.FC = () => {
-  const { userId } = useParams<{ userId: string }>();
+  const router = useRouter();
+  const { userId } = router.query;
   const [activeTab, setActiveTab] = useState<string>('新着');
   const [isFollowing, setIsFollowing] = useState(false);
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [windowWidth, setWindowWidth] = useState(0);
   const { toast } = useToast();
   
   // 画面サイズを検出
   useEffect(() => {
+    // クライアントサイドでのみwindowオブジェクトにアクセス
+    setWindowWidth(window.innerWidth);
+    
     const handleResize = () => {
       setWindowWidth(window.innerWidth);
     };
@@ -205,7 +210,7 @@ const UserProfilePage: React.FC = () => {
         )}
         
         <div className="flex-1">
-          <Link to={`/posts/${post.id}`} className="block">
+          <Link href={`/posts/${post.id}`} className="block">
             <h2 className="text-base md:text-lg font-bold text-gray-800 hover:text-gray-600 mb-2 md:mb-3 line-clamp-2">
               {post.title}
             </h2>
@@ -363,7 +368,7 @@ const UserProfilePage: React.FC = () => {
               <div className="mb-6 md:mb-8 bg-white p-4 rounded-md border border-gray-100 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-bold">マガジン</h2>
-                  <Link to={`/users/${userId}/magazines`} className="flex items-center text-gray-500 text-sm">
+                  <Link href={`/users/${userId}/magazines`} className="flex items-center text-gray-500 text-sm">
                     すべて見る
                     <ChevronRight className="h-4 w-4 ml-1" />
                   </Link>
@@ -371,7 +376,7 @@ const UserProfilePage: React.FC = () => {
                 
                 <div className="space-y-4">
                   {magazines.map((magazine) => (
-                    <Link to={`/magazines/${magazine.id}`} key={magazine.id} className="block">
+                    <Link href={`/magazines/${magazine.id}`} key={magazine.id} className="block">
                       <div className="flex items-start">
                         <div className="w-16 h-16 bg-gray-100 rounded-md overflow-hidden mr-3 flex-shrink-0">
                           <img 

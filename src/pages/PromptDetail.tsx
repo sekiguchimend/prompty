@@ -1,14 +1,14 @@
 import React from 'react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 import { ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Separator } from '@/components/ui/separator';
-import PopularArticles from '@/components/PopularArticles';
-import AuthorSidebar from '@/components/prompt/AuthorSidebar';
-import PromptContent from '@/components/prompt/PromptContent';
-import PurchaseSection from '@/components/prompt/PurchaseSection';
-import { getDetailPost, getPopularPosts } from '@/data/posts';
+import { Separator } from '../components/ui/separator';
+import PopularArticles from '../components/PopularArticles';
+import AuthorSidebar from '../components/prompt/AuthorSidebar';
+import PromptContent from '../components/prompt/PromptContent';
+import PurchaseSection from '../components/prompt/PurchaseSection';
+import { getDetailPost, getPopularPosts } from '../data/posts';
 
 const PromptDetail = () => {
   // データファイルから詳細データを取得

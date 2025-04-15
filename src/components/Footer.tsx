@@ -23,29 +23,29 @@ const Footer: React.FC = () => {
     {
       category: 'Prompty',
       links: [
-        { text: 'ビジネス', url: '/business' },
-        { text: 'フィードバック', url: '/feedback' }
+        { text: 'ビジネス', url: '/Business' },
+        { text: 'フィードバック', url: '/Feedback' }
       ]
     },
     {
       category: 'サービス',
       links: [
-        { text: 'プレミアム', url: '/premium' },
-        { text: 'コンテスト', url: '/contests' }
+        { text: 'プレミアム', url: '/Premium' },
+        { text: 'コンテスト', url: '/ContestPage' }
       ]
     },
     {
       category: 'ヘルプ',
       links: [
-        { text: 'ヘルプセンター', url: '/help-center' }
+        { text: 'ヘルプセンター', url: '/HelpCenter' }
       ]
     },
     {
       category: '法的情報',
       links: [
-        { text: '利用規約', url: '/terms' },
-        { text: 'プライバシーポリシー', url: '/privacy' },
-        { text: '特定商取引法', url: '/payment-disclosure' }
+        { text: '利用規約', url: '/Terms' },
+        { text: 'プライバシーポリシー', url: '/Privacy' },
+        { text: '特定商取引法', url: '/PaymentDisclosure' }
       ]
     }
   ];

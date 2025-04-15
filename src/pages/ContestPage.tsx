@@ -1,13 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
 import { ChevronRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
 
 const ContestPage: React.FC = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'募集中' | 'その他のお題'>('募集中');
+  const [foodCounts, setFoodCounts] = useState<number[]>([]);
+  const [foodCounts2, setFoodCounts2] = useState<number[]>([]);
+  
+  // useEffectでクライアントサイドのみでランダム値を生成
+  useEffect(() => {
+    // フード関連のハッシュタグ表示用の件数
+    setFoodCounts([
+      Math.floor(Math.random() * 10000),
+      Math.floor(Math.random() * 10000),
+      Math.floor(Math.random() * 10000),
+      Math.floor(Math.random() * 10000)
+    ]);
+    
+    // 2つ目のフード関連のハッシュタグ表示用の件数
+    setFoodCounts2([
+      Math.floor(Math.random() * 30000),
+      Math.floor(Math.random() * 30000),
+      Math.floor(Math.random() * 30000),
+      Math.floor(Math.random() * 30000)
+    ]);
+  }, []);
   
   // 募集中のコンテスト情報（サンプルデータ）
   const activeContests = [
@@ -93,14 +114,14 @@ const ContestPage: React.FC = () => {
     // ハッシュタグから#を取り除く
     const tagName = tag.startsWith('#') ? tag.substring(1) : tag;
     // エンコードしてURLパラメータとして渡す
-    navigate(`/hashtag/${encodeURIComponent(tagName)}`);
+    router.push(`/hashtag/${encodeURIComponent(tagName)}`);
   };
 
   // コンテストをクリックした時の処理
   const handleContestClick = (contest: { hashtag: string }) => {
     // タグ名を抽出して遷移（#を取り除く）
     const tagName = contest.hashtag.startsWith('#') ? contest.hashtag.substring(1) : contest.hashtag;
-    navigate(`/hashtag/${encodeURIComponent(tagName)}`);
+    router.push(`/hashtag/${encodeURIComponent(tagName)}`);
   };
 
   // タブ切り替え処理
@@ -239,7 +260,7 @@ const ContestPage: React.FC = () => {
                           <span className="text-red-500 mr-2">#</span>
                           <div>
                             <p className="font-medium text-sm">{hashtag.substring(1)}</p>
-                            <p className="text-gray-500 text-xs mt-1">{Math.floor(Math.random() * 10000)}件</p>
+                            <p className="text-gray-500 text-xs mt-1">{foodCounts[index] || 5000}件</p>
                           </div>
                         </div>
                       </div>
@@ -257,7 +278,7 @@ const ContestPage: React.FC = () => {
                           <span className={`text-${['red', 'orange', 'green', 'orange'][index]}-500 mr-2`}>#</span>
                           <div>
                             <p className="font-medium text-sm">{hashtag.substring(1)}</p>
-                            <p className="text-gray-500 text-xs mt-1">{Math.floor(Math.random() * 30000)}件</p>
+                            <p className="text-gray-500 text-xs mt-1">{foodCounts2[index] || 15000}件</p>
                           </div>
                         </div>
                       </div>

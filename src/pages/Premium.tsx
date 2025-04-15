@@ -1,8 +1,9 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
-import  Header  from '@/components/Header';
+import  Header  from '../components/Header';
+import Footer from '../components/Footer';
 const Premium = () => {
   return (
     <div className="min-h-screen bg-white relative overflow-hidden mt-10">
@@ -258,6 +259,7 @@ const Premium = () => {
           </p>
         </div>
       </main>
+      <Footer />
     </div>
   );
 };

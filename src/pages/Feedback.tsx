@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useToast } from '@/components/ui/use-toast';
-import Header from '@/components/Header';
+import { Textarea } from '../components/ui/textarea';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { useToast } from '../components/ui/use-toast';
+import Header from '../components/Header';
 import {
   Select,
   SelectContent,
@@ -11,7 +11,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '../components/ui/select';
 
 const Feedback = () => {
   const [feedbackType, setFeedbackType] = useState('');

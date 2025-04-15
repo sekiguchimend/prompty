@@ -1,6 +1,6 @@
 // MyArticles.tsx - メインページコンポーネント
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useRouter } from 'next/router';
 import SidebarTabs from '../components/myArticle/SidebarTabs';
 import LikedArticles from '../components/myArticle/LikedArticles';
 import PurchasedArticles from '../components/myArticle/PurchasedArticles';
@@ -15,23 +15,21 @@ import { toast } from '../components/ui/use-toast';
 const MyArticles = () => {
   const [activeTab, setActiveTab] = useState('myArticles');
   const [selectedArticles, setSelectedArticles] = useState<string[]>([]);
-  const location = useLocation();
+  const router = useRouter();
+  const { tab } = router.query;
 
   // URLのクエリパラメータからタブを取得する
   useEffect(() => {
-    const queryParams = new URLSearchParams(location.search);
-    const tabParam = queryParams.get('tab');
-    
     // タブが指定されていれば、activeTabを更新
-    if (tabParam) {
+    if (tab && typeof tab === 'string') {
       // 有効なタブIDを確認
       const validTabs = ['myArticles', 'likedArticles', 'purchasedArticles', 'bookmarkedArticles', 'recentlyViewedArticles'];
-      if (validTabs.includes(tabParam)) {
-        setActiveTab(tabParam);
-        console.log(`タブを変更しました: ${tabParam}`);
+      if (validTabs.includes(tab)) {
+        setActiveTab(tab);
+        console.log(`タブを変更しました: ${tab}`);
       }
     }
-  }, [location.search]); // locationではなくlocation.searchに依存させる
+  }, [tab]); // tabクエリパラメータに依存させる
 
   // 記事の操作ハンドラー
   const handleEditArticle = (id: string) => {

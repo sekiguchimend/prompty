@@ -1,20 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import PromptGrid from '@/components/PromptGrid';
-import { featuredPrompts, aiGeneratedPrompts } from '@/data/mockPrompts';
+import { useSearchParams, useRouter } from 'next/navigation';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
+import PromptGrid from '../components/PromptGrid';
+import { featuredPrompts, aiGeneratedPrompts } from '../data/mockPrompts';
 import { Search as SearchIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { PromptItem } from '../components/PromptGrid';
 
 const Search = () => {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const query = searchParams.get('q') || '';
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const query = searchParams?.get('q') || '';
   const [searchInput, setSearchInput] = useState(query);
   const [isLoading, setIsLoading] = useState(true);
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState<PromptItem[]>([]);
 
   useEffect(() => {
     // Simulate API call with a delay
@@ -35,10 +36,10 @@ const Search = () => {
     return () => clearTimeout(timer);
   }, [query]);
 
-  const handleSearch = (e) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchInput.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchInput.trim())}`);
+      router.push(`/search?q=${encodeURIComponent(searchInput.trim())}`);
     }
   };
 

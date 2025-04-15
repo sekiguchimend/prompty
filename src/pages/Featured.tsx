@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import Sidebar from '@/components/Sidebar';
-import PromptGrid from '@/components/PromptGrid';
-import { featuredPrompts } from '@/data/mockPrompts';
-import { useResponsive } from '@/hooks/use-responsive';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
+import Sidebar from '../components/Sidebar';
+import PromptGrid from '../components/PromptGrid';
+import { featuredPrompts } from '../data/mockPrompts';
+import { useResponsive } from '../hooks/use-responsive';
 import { Helmet } from 'react-helmet';
-import { PromptItem } from '@/components/PromptGrid';
+import { PromptItem } from '../components/PromptGrid';
 
 const Featured: React.FC = () => {
   const { isMobile, isTablet } = useResponsive();
