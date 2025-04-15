@@ -54,9 +54,9 @@ const PromptGrid: React.FC<PromptGridProps> = ({ prompts, sectionPrefix = '', ho
         // モバイル表示かどうかを判定
         const isMobile = window.innerWidth < 768;
         
-        // モバイル表示時は画面幅の半分程度の余白を確保
+        // モバイル表示時は画面幅の5%程度の余白を確保
         // これにより最後の要素まで確実にスクロールできる
-        const spacerWidth = isMobile ? Math.floor(containerWidth * 0.5) : 100;
+        const spacerWidth = isMobile ? Math.floor(containerWidth * 0.05) : 100;
         dummyElement.style.minWidth = `${spacerWidth}px`;
       }
     };
@@ -79,7 +79,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({ prompts, sectionPrefix = '', ho
     : "grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5";
 
   const cardClasses = horizontalScroll
-    ? "w-[80%] max-w-[280px] flex-shrink-0"
+    ? "w-[65%] max-w-[260px] flex-shrink-0"
     : "";
 
   const scrollbarHideStyle = `

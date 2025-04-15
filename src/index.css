@@ -139,7 +139,7 @@
   
   /* モバイルではスペーサーを大きく */
   .scroll-end-spacer {
-    min-width: 50vw; /* ビューポート幅の半分 */
+    min-width: 5vw; /* ビューポート幅の5% */
   }
 }
 

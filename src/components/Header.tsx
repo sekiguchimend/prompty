@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, PenSquare, Bell, ChevronRight, Heart, MessageSquare } from 'lucide-react';
+import { Search, PenSquare, Bell, ChevronRight, Heart, MessageSquare, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -209,7 +209,15 @@ const Header = () => {
                       onChange={handleSearchChange}
                       autoFocus
                     />
-                    {/* X (閉じる) ボタンを削除 */}
+                    {/* 閉じるボタンを追加 */}
+                    <button
+                      type="button"
+                      onClick={closeMobileSearch}
+                      className="absolute right-3 text-gray-500 hover:text-gray-700 transition-colors"
+                      aria-label="検索を閉じる"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
                   </div>
                 </form>
               </div>

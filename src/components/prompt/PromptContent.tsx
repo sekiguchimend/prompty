@@ -144,52 +144,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
           )}
         </div>
       </div>
-      
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md rounded-sm">
-          <DialogHeader>
-            <DialogTitle>プロンプトを購入する</DialogTitle>
-            <DialogDescription>
-              購入すると、このプロンプトの全文およびモデルに関する詳細情報にアクセスできます。
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium">プロンプト全文</span>
-              <Lock className="h-4 w-4 text-gray-500" />
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium">使用モデルの詳細情報</span>
-              <Lock className="h-4 w-4 text-gray-500" />
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium">カスタマイズ用サンプル</span>
-              <Lock className="h-4 w-4 text-gray-500" />
-            </div>
-          </div>
-          
-          <DialogFooter className="sm:justify-start">
-            <div className="w-full flex flex-col gap-3">
-              <Button 
-                type="button"
-                className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-sm"
-                onClick={handlePurchase}
-              >
-                ¥{price.toLocaleString()} で購入する
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full border-gray-300 text-gray-700 hover:bg-gray-100 rounded-sm"
-                onClick={() => setIsDialogOpen(false)}
-              >
-                キャンセル
-              </Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+    
     </div>
   );
 };
