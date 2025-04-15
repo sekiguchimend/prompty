@@ -61,8 +61,8 @@ const HomePage: React.FC = () => {
         <Sidebar />
         
         <div className="flex flex-col flex-1 md:ml-[240px]">
-          <main className="flex-1 pb-12 overflow-x-hidden pt-10 md:mt-0 mt-5">
-            <div className="container px-4 py-6 sm:px-6 md:px-8">
+          <main className="flex-1 pb-12 overflow-x-hidden pt-2 md:mt-0 mt-2">
+            <div className="container px-4 py-2 sm:px-6 md:px-8">
               {/* Featured prompts section */}
               <div className="mt-0">
                 <PromptSection 
