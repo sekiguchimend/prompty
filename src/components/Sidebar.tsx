@@ -1,6 +1,9 @@
+"use client";
+
 import React from 'react';
 import { ChevronDown, Twitter, Instagram, Facebook } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 // 人気のタグリスト
 const popularTags = [
@@ -53,7 +56,7 @@ const categories = [
 ];
 
 const Sidebar = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [expandedCategories, setExpandedCategories] = React.useState<Record<string, boolean>>({
     erp: false,
     scraping: false,
@@ -69,35 +72,16 @@ const Sidebar = () => {
     }));
   };
 
-  const handleCategoryClick = (categoryId: string) => {
-    // カテゴリーに子要素がある場合は展開/折りたたみだけ行う
-    const category = categories.find(c => c.id === categoryId);
-    if (category?.children) {
-      toggleCategory(categoryId);
-      return;
-    }
-
-    // 特定のカテゴリーをクリックした場合の遷移処理
-    switch(categoryId) {
-      case 'posts':
-        navigate('/contests');
-        break;
-      case 'following':
-        navigate('/following');
-        break;
-      case 'all':
-        navigate('/');
-        break;
-      default:
-        // その他のカテゴリーの処理
-        navigate(`/category/${categoryId}`);
-        break;
-    }
+  const handleCategoryClick = (category: string) => {
+    setExpandedCategories({
+      ...expandedCategories,
+      [category]: !expandedCategories[category]
+    });
   };
 
   const handleTagClick = (tag: string) => {
     // エンコードしてURLパラメータとして渡す
-    navigate(`/tag/${encodeURIComponent(tag)}`);
+    router.push(`/tag/${encodeURIComponent(tag)}`);
   };
 
   return (

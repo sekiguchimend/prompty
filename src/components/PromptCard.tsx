@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Heart, Bookmark, MoreVertical } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { useToast } from './ui/use-toast';
 import ReportDialog from './ReportDialog';
@@ -67,7 +67,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
   
   return (
     <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm">
-      <Link to={`/prompts/${promptId}`} className="block">
+      <Link href={`/prompts/${promptId}`} className="block">
         <div className="relative pb-[56.25%]">
           <img 
             src={thumbnailUrl} 
@@ -78,7 +78,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
       </Link>
       <div className="flex flex-col p-3">
         <div className="flex justify-between items-start mb-2">
-          <Link to={`/prompts/${promptId}`} className="line-clamp-2 font-medium hover:text-prompty-primary flex-1 mr-2">
+          <Link href={`/prompts/${promptId}`} className="line-clamp-2 font-medium hover:text-prompty-primary flex-1 mr-2">
             {title}
           </Link>
           
@@ -100,14 +100,14 @@ const PromptCard: React.FC<PromptCardProps> = ({
         
         <div className="mt-auto">
           <div className="flex items-center gap-2">
-            <Link to={`/users/${user.name}`} className="block h-6 w-6 overflow-hidden rounded-full">
+            <Link href={`/users/${user.name}`} className="block h-6 w-6 overflow-hidden rounded-full">
               <img 
                 src={user.avatarUrl} 
                 alt={user.name} 
                 className="h-full w-full object-cover"
               />
             </Link>
-            <Link to={`/users/${user.name}`} className="text-xs text-gray-600 hover:underline">
+            <Link href={`/users/${user.name}`} className="text-xs text-gray-600 hover:underline">
               {user.name}
             </Link>
             <span className="text-xs text-gray-500">{postedAt}</span>

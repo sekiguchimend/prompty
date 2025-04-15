@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from 'react';
 import Header from './Header';
 import Sidebar from './Sidebar';

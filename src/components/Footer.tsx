@@ -1,15 +1,17 @@
+"use client";
+
 import React from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 
 // リンククリック時にページトップにスクロールする関数
-const ScrollLinkWrapper = ({ to, className, children }) => {
+const ScrollLinkWrapper = ({ to, className, children }: { to: string; className?: string; children: React.ReactNode }) => {
   const handleClick = () => {
     // リンククリック時に画面を最上部にスクロール
     window.scrollTo(0, 0);
   };
 
   return (
-    <Link to={to} className={className} onClick={handleClick}>
+    <Link href={to} className={className} onClick={handleClick}>
       {children}
     </Link>
   );

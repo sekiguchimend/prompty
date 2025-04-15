@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronRight, Rss, Search } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 
 interface SectionHeaderProps {
   title: string;
@@ -27,7 +27,7 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
     <div className="flex items-center justify-between py-4">
       <div className="flex items-center">
         {categoryUrl ? (
-          <Link to={categoryUrl} className="group">
+          <Link href={categoryUrl} className="group">
             <h2 className="text-lg font-bold group-hover:text-gray-700 transition-colors flex items-center">
               {title}
               <ChevronRight className="h-4 w-4 ml-1 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -37,7 +37,7 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
           <h2 className="text-lg font-bold">{title}</h2>
         )}
         {showMoreLink && (
-          <Link to={moreLinkUrl} className="ml-2 flex items-center text-sm text-gray-500 hover:text-gray-700">
+          <Link href={moreLinkUrl} className="ml-2 flex items-center text-sm text-gray-500 hover:text-gray-700">
             <span className="hidden md:inline-block ml-1">もっと見る</span>
             <ChevronRight className="h-4 w-4" />
           </Link>
@@ -60,9 +60,9 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
       {/* 右側のRSSアイコン */}
       <div>
         {showRssIcon && (
-          <a href="/rss" className="text-gray-500 hover:text-gray-700">
+          <Link href="/rss" className="text-gray-500 hover:text-gray-700">
             <Rss className="h-5 w-5" />
-          </a>
+          </Link>
         )}
       </div>
     </div>

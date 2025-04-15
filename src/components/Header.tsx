@@ -1,8 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+"use client";
+
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, PenSquare, Bell, ChevronRight, Heart, MessageSquare, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from './ui/use-toast';
 import NotificationDropdown from './NotificationDropdown';
@@ -18,8 +21,8 @@ const categoryTabs = [
 ];
 
 const Header = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
   // This would normally come from an auth context
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -53,7 +56,7 @@ const Header = () => {
 
   // URLパスに基づいてアクティブタブを更新
   useEffect(() => {
-    const currentPath = location.pathname;
+    const currentPath = pathname || '/';
     
     // 現在のパスに一致するタブを検索
     const matchingTab = categoryTabs.find(tab => {
@@ -66,7 +69,7 @@ const Header = () => {
     if (matchingTab) {
       setActiveTab(matchingTab.id);
     }
-  }, [location.pathname]);
+  }, [pathname]);
 
   // モバイル向けタッチフィードバックを向上
   useEffect(() => {
@@ -114,7 +117,7 @@ const Header = () => {
     e.preventDefault();
     if (searchQuery.trim()) {
       setMobileSearchOpen(false);
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
       setSearchQuery('');
     } else {
       toast({
@@ -145,7 +148,7 @@ const Header = () => {
     if (!selectedTab) return;
     
     // 対応するパスに遷移
-    navigate(selectedTab.path);
+    router.push(selectedTab.path);
     
     // モバイル向けに、DOM操作で即座に選択状態を反映（React状態の更新を待たずに）
     if (isMobile) {
@@ -182,6 +185,10 @@ const Header = () => {
     setUserMenuOpen(!userMenuOpen);
   };
 
+  const setTabButtonRef = useCallback((index: number) => (el: HTMLButtonElement | null) => {
+    tabButtonsRef.current[index] = el;
+  }, []);
+
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
@@ -190,7 +197,7 @@ const Header = () => {
           <div className="flex h-16 items-center justify-between">
             {/* サイト名 */}
             <div className={`flex items-center ${mobileSearchOpen ? 'hidden' : ''}`}>
-              <Link to="/" className="flex items-center">
+              <Link href="/" className="flex items-center">
                 <img src="/prompty_logo.jpg" alt="Prompty" className="h-32" />
               </Link>
             </div>
@@ -254,7 +261,7 @@ const Header = () => {
                         variant="secondary" 
                         size="sm" 
                         className="bg-black text-white hover:bg-gray-800 hidden md:flex shadow-sm"
-                        onClick={() => navigate('/create-post')}
+                        onClick={() => router.push('/create-post')}
                       >
                         <PenSquare className="mr-2 h-4 w-4" />
                         投稿
@@ -279,7 +286,7 @@ const Header = () => {
                         {/* 投稿アイコン */}
                         <button
                           className="bg-black text-white p-2 rounded-full flex items-center justify-center shadow-sm hover:bg-gray-800 transition-colors"
-                          onClick={() => navigate('/create-post')}
+                          onClick={() => router.push('/create-post')}
                           aria-label="投稿する"
                         >
                           <PenSquare className="h-4 w-4" />
@@ -320,12 +327,12 @@ const Header = () => {
                         
                         {/* モバイル表示のログインボタン類 */}
                         <div className="flex items-center gap-2">
-                          <Link to="/login">
+                          <Link href="/login">
                             <Button variant="ghost" className="text-gray-700 text-xs px-2 py-1 hover:bg-gray-100 transition-colors">
                               ログイン
                             </Button>
                           </Link>
-                          <Link to="/register">
+                          <Link href="/register">
                             <Button className="bg-black text-white hover:bg-gray-800 text-xs px-2 py-1 shadow-sm transition-colors">
                               会員登録
                             </Button>
@@ -335,12 +342,12 @@ const Header = () => {
                       
                       {/* PC表示のログインボタン類 */}
                       <div className="hidden md:flex items-center gap-2">
-                        <Link to="/login">
+                        <Link href="/login">
                           <Button variant="ghost" className="text-gray-700 text-sm px-3 py-1.5 hover:bg-gray-100 transition-colors">
                             ログイン
                           </Button>
                         </Link>
-                        <Link to="/register">
+                        <Link href="/register">
                           <Button className="bg-black text-white hover:bg-gray-800 text-sm px-3 py-1.5 shadow-sm transition-colors">
                             会員登録
                           </Button>
@@ -368,7 +375,7 @@ const Header = () => {
               {categoryTabs.map((tab, index) => (
                 <button
                   key={tab.id}
-                  ref={el => tabButtonsRef.current[index] = el}
+                  ref={setTabButtonRef(index)}
                   data-tab-id={tab.id}
                   className={`py-1.5 px-4 rounded-full text-xs font-medium transition-colors active:scale-95 touch-manipulation ${
                     tab.id === activeTab
@@ -400,6 +407,34 @@ const Header = () => {
         isDesktop={!isMobile}
         anchorPosition={{ top: 64, right: 16 }}
       />
+
+      {/* 投稿ボタン（モバイルでは右下フローティングボタン） */}
+      <Button 
+        variant="link" 
+        size="sm" 
+        className="fixed right-4 bottom-20 z-50 md:hidden bg-black text-white p-4 rounded-full shadow-lg"
+        onClick={() => router.push('/create-post')}
+      >
+        <PenSquare className="h-6 w-6" />
+      </Button>
+
+      {/* モバイル表示でのメニュー（ボトムナビゲーション） */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center h-16 md:hidden z-40 px-2">
+        <Button variant="ghost" size="sm" className="flex flex-col items-center justify-center h-full" onClick={() => router.push('/')}>
+          <Search className="h-5 w-5 text-gray-600" />
+          <span className="text-xs text-gray-600 mt-1">検索</span>
+        </Button>
+        
+        <Button variant="ghost" size="sm" className="flex flex-col items-center justify-center h-full" onClick={() => router.push('/popular')}>
+          <Heart className="h-5 w-5 text-gray-600" />
+          <span className="text-xs text-gray-600 mt-1">おすすめ</span>
+        </Button>
+        
+        <Button variant="ghost" size="sm" className="flex flex-col items-center justify-center h-full" onClick={() => router.push('/messages')}>
+          <MessageSquare className="h-5 w-5 text-gray-600" />
+          <span className="text-xs text-gray-600 mt-1">メッセージ</span>
+        </Button>
+      </div>
     </>
   );
 };

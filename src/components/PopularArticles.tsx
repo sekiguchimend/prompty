@@ -1,6 +1,6 @@
 import React from 'react';
 import { Heart, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 
@@ -26,7 +26,7 @@ const PopularArticles: React.FC<PopularArticlesProps> = ({ articles }) => {
           {articles.map((article) => (
             <div key={article.id} className="flex items-start gap-4 py-3 border-b border-gray-100">
               <div className="flex-1">
-                <Link to={`/prompts/${article.id}`} className="group">
+                <Link href={`/prompts/${article.id}`} className="group">
                   <h3 className="font-medium leading-snug group-hover:text-blue-600 transition-colors">
                     {article.title}
                   </h3>
@@ -65,7 +65,7 @@ const PopularArticles: React.FC<PopularArticlesProps> = ({ articles }) => {
             <div className="flex items-start">
               <div className="flex-1">
                 <h3 className="font-medium text-sm mb-2">前の記事</h3>
-                <Link to="#" className="text-lg font-medium leading-tight hover:text-blue-600 transition-colors line-clamp-2">
+                <Link href="#" className="text-lg font-medium leading-tight hover:text-blue-600 transition-colors line-clamp-2">
                   noteを書くだけで夢が動き出す—未来を引き寄せる言葉の力
                 </Link>
               </div>
@@ -79,7 +79,7 @@ const PopularArticles: React.FC<PopularArticlesProps> = ({ articles }) => {
             <div className="flex items-start">
               <div className="flex-1">
                 <h3 className="font-medium text-sm mb-2">次の記事</h3>
-                <Link to="#" className="text-lg font-medium leading-tight hover:text-blue-600 transition-colors line-clamp-2">
+                <Link href="#" className="text-lg font-medium leading-tight hover:text-blue-600 transition-colors line-clamp-2">
                   「これ言ったら嫌われるかも」の壁を越えたら、人生が劇的に面白くなった話
                 </Link>
               </div>
@@ -97,7 +97,7 @@ const PopularArticles: React.FC<PopularArticlesProps> = ({ articles }) => {
               <CardContent className="p-4">
                 <div className="flex gap-4">
                   <div className="flex-1">
-                    <Link to="#" className="font-medium text-lg hover:text-blue-600 transition-colors">
+                    <Link href="#" className="font-medium text-lg hover:text-blue-600 transition-colors">
                       目に止まったnote
                     </Link>
                     <div className="flex items-center mt-3 text-sm text-gray-600">
@@ -120,7 +120,7 @@ const PopularArticles: React.FC<PopularArticlesProps> = ({ articles }) => {
               <CardContent className="p-4">
                 <div className="flex gap-4">
                   <div className="flex-1">
-                    <Link to="#" className="font-medium text-lg hover:text-blue-600 transition-colors">
+                    <Link href="#" className="font-medium text-lg hover:text-blue-600 transition-colors">
                       先達に学ぶ描き方書き方届け方のコツ
                     </Link>
                     <div className="flex items-center mt-3 text-sm text-gray-600">
