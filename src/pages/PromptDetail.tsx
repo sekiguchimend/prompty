@@ -56,26 +56,28 @@ const PromptDetail = () => {
       <Header />
       
       <main className="flex-1 bg-white mt-14 md:mt-10">
-        <div className="container px-4 md:px-8 py-6 max-w-6xl mx-auto">
+        <div className="container px-4 md:px-6 py-6 max-w-7xl mx-auto">
           {/* Back link */}
           <Link to="/" className="inline-flex items-center text-gray-500 mb-6">
             <ChevronLeft className="h-4 w-4 mr-1" />
             <span className="text-sm">戻る</span>
           </Link>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Left sidebar - Author info */}
-            <div className="hidden md:block md:col-span-1">
-              <AuthorSidebar 
-                author={prompt.authorForSidebar} 
-                tags={prompt.tags || []} 
-                website={prompt.user.website || ''}
-              />
+          <div className="flex flex-col md:flex-row">
+            {/* Left sidebar - Author info (smaller) */}
+            <div className="hidden md:block md:w-56 flex-shrink-0 pr-6">
+              <div className="sticky top-20">
+                <AuthorSidebar
+                  author={prompt.authorForSidebar}
+                  tags={prompt.tags || []}
+                  website={prompt.user.website || ''}
+                />
+              </div>
             </div>
             
-            {/* Main content */}
-            <div className="md:col-span-2">
-              <PromptContent 
+            {/* Main content (centered) */}
+            <div className="flex-1 max-w-3xl mx-auto">
+              <PromptContent
                 imageUrl={prompt.thumbnailUrl}
                 title={prompt.title}
                 content={prompt.content || []}
@@ -86,7 +88,7 @@ const PromptDetail = () => {
               />
               
               {/* Purchase section */}
-              <PurchaseSection 
+              <PurchaseSection
                 wordCount={prompt.wordCount || 0}
                 price={prompt.price || 0}
                 tags={prompt.tags || []}
@@ -97,6 +99,9 @@ const PromptDetail = () => {
                 socialLinks={prompt.socialLinks || []}
               />
             </div>
+            
+            {/* Empty right space for balance */}
+            <div className="hidden md:block md:w-56 flex-shrink-0"></div>
           </div>
         </div>
         

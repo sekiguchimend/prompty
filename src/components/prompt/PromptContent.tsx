@@ -11,6 +11,7 @@ import {
   DialogTitle 
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { ExternalLink } from 'lucide-react'; // Using ExternalLink icon which is similar to the one in the image
 
 interface PromptContentProps {
   imageUrl?: string;
@@ -82,9 +83,15 @@ const PromptContent: React.FC<PromptContentProps> = ({
 
             {/* 価格表示 - モバイルでも表示 */}
             {price > 0 && (
+              // <div className="text-right">
+              //   <p className="text-lg font-medium text-gray-600 border-2 border-gray-600 bg-white rounded-md px-3 py-1 inline-block">¥{price.toLocaleString()}</p>
+              // </div>
               <div className="text-right">
-                <p className="text-lg font-medium text-gray-600 border-2 border-gray-600 bg-white rounded-md px-3 py-1 inline-block">¥{price.toLocaleString()}</p>
-              </div>
+  <p className="text-sm font-normal text-gray-600 border border-gray-500 bg-white rounded px-2 py-0.5 inline-block">
+    ¥{price.toLocaleString()}
+  </p>
+</div>
+
             )}
           </div>
         </div>
@@ -99,7 +106,13 @@ const PromptContent: React.FC<PromptContentProps> = ({
             />
           </div>
         )}
-
+ <button 
+      // onClick={onClick}
+      className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium py-1 px-2 rounded transition-colors"
+    >
+      <ExternalLink className="w-4 h-4" />
+      <span>システムを見る</span>
+    </button>
         {/* Content section */}
         <div className="relative prose max-w-none">
           {isPreview ? (
@@ -124,7 +137,6 @@ const PromptContent: React.FC<PromptContentProps> = ({
                       <h3 className="text-xl font-medium text-gray-800 mb-4">モデルとプロンプトが必要ですか?</h3>
                       <p className="text-gray-600 mb-1">{characterCount}字</p>
                       <p className="text-4xl font-bold mb-2">¥ {price.toLocaleString()}</p>
-                      <p className="text-sm text-gray-600 mb-6">Amazon Payで支払いで総額2,025万円を山分け！ <span className="text-blue-600 underline cursor-pointer">詳細</span></p>
                       
                       {/* Added information items with icons */}
                       <div className="space-y-3 mb-6">
