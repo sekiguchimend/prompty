@@ -76,11 +76,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
             </div>
             
             {/* 価格表示 - モバイルでも表示 */}
-            {price > 0 && (
-              <div className="text-right">
-                <p className="text-lg font-medium text-gray-600 border-2 border-gray-600 bg-white rounded-md px-3 py-1 inline-block">¥{price.toLocaleString()}</p>
-              </div>
-            )}
+         
           </div>
         </div>
         
