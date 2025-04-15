@@ -56,72 +56,70 @@ const HomePage: React.FC = () => {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <Sidebar />
       
-      <div className="flex flex-1 pt-10">
-        {/* PC画面でのみサイドバーのスペースを確保 */}
-        <div className="hidden md:block w-[240px] flex-shrink-0">
-          {/* この空のdivはサイドバーのスペースを確保するためのもの */}
-        </div>
+      <div className="flex flex-1 relative">
+        <Sidebar />
         
-        <main className="flex-1 pb-12 overflow-x-hidden md:mt-0 mt-5">
-          <div className="container px-4 py-6 sm:px-6 md:px-8">
-            {/* Featured prompts section */}
-            <div className="mt-0">
+        <div className="flex flex-col flex-1 md:ml-[240px]">
+          <main className="flex-1 pb-12 overflow-x-hidden pt-10 md:mt-0 mt-5">
+            <div className="container px-4 py-6 sm:px-6 md:px-8">
+              {/* Featured prompts section */}
+              <div className="mt-0">
+                <PromptSection 
+                  title="今日の注目プロンプト" 
+                  prompts={processingFeaturedPrompts}
+                  showMoreLink={true}
+                  showRssIcon={true}
+                  horizontalScroll={shouldUseHorizontalScroll}
+                  maxVisible={displayCount}
+                  className="mt-0"
+                  categoryUrl="/featured"
+                  moreLinkUrl="/featured"
+                />
+              </div>
+
+              {/* Popular posts section */}
               <PromptSection 
-                title="今日の注目プロンプト" 
-                prompts={processingFeaturedPrompts}
+                title="人気の記事" 
+                prompts={processingPopularPosts}
                 showMoreLink={true}
-                showRssIcon={true}
                 horizontalScroll={shouldUseHorizontalScroll}
                 maxVisible={displayCount}
-                className="mt-0"
-                categoryUrl="/featured"
-                moreLinkUrl="/featured"
+                className="mt-12"
+                categoryUrl="/popular"
+                moreLinkUrl="/popular"
+              />
+
+              {/* AI Generated prompts section */}
+              <PromptSection 
+                title="生成AI" 
+                prompts={processingAIGeneratedPrompts}
+                showMoreLink={true}
+                horizontalScroll={shouldUseHorizontalScroll}
+                maxVisible={displayCount}
+                className="mt-12"
+                categoryUrl="/ai-generated"
+                moreLinkUrl="/ai-generated"
+              />
+
+              {/* Contest prompts section */}
+              <PromptSection 
+                title="コンテスト・コラボ企画" 
+                prompts={processingFeaturedPrompts}
+                showMoreLink={true}
+                sectionPrefix="contest"
+                horizontalScroll={shouldUseHorizontalScroll}
+                maxVisible={Math.min(4, displayCount)}
+                className="mt-12"
+                categoryUrl="/contests"
+                moreLinkUrl="/contests"
               />
             </div>
-
-            {/* Popular posts section */}
-            <PromptSection 
-              title="人気の記事" 
-              prompts={processingPopularPosts}
-              showMoreLink={true}
-              horizontalScroll={shouldUseHorizontalScroll}
-              maxVisible={displayCount}
-              className="mt-12"
-              categoryUrl="/popular"
-              moreLinkUrl="/popular"
-            />
-
-            {/* AI Generated prompts section */}
-            <PromptSection 
-              title="生成AI" 
-              prompts={processingAIGeneratedPrompts}
-              showMoreLink={true}
-              horizontalScroll={shouldUseHorizontalScroll}
-              maxVisible={displayCount}
-              className="mt-12"
-              categoryUrl="/ai-generated"
-              moreLinkUrl="/ai-generated"
-            />
-
-            {/* Contest prompts section */}
-            <PromptSection 
-              title="コンテスト・コラボ企画" 
-              prompts={processingFeaturedPrompts}
-              showMoreLink={true}
-              sectionPrefix="contest"
-              horizontalScroll={shouldUseHorizontalScroll}
-              maxVisible={Math.min(4, displayCount)}
-              className="mt-12"
-              categoryUrl="/contests"
-              moreLinkUrl="/contests"
-            />
-          </div>
-        </main>
+          </main>
+          
+          <Footer />
+        </div>
       </div>
-      
-      <Footer />
     </div>
   );
 };
