@@ -20,24 +20,24 @@ interface Announcement {
 
 // 管理者メールアドレスリスト
 const ADMIN_EMAILS = [
-  'queue@queuetech.jp', 
-  'admin@queuetech.jp', 
-  'queue@queue-tech.jp',
-  'admin@example.com',
-  'taniguchi.kouhei@gmail.com'
+  'queue@queue-tech.jp'
 ];
 
 // 管理者かどうかをチェックする関数
 const isAdminUser = (email: string | undefined): boolean => {
   if (!email) return false;
   
-  // 特定のメールアドレスリストに含まれるかチェック
-  if (ADMIN_EMAILS.includes(email)) {
-    return true;
-  }
+  console.log('ANNOUNCEMENTS - ADMIN CHECK - Email:', email);
   
-  // 特定のドメインを持つメールアドレスかチェック
-  return email.endsWith('@queuetech.jp') || email.endsWith('@queue-tech.jp');
+  // 特定のメールアドレスリストに含まれるかチェック
+  // 大文字小文字を区別せずに比較
+  const normalizedEmail = email.toLowerCase().trim();
+  const normalizedAdminEmails = ADMIN_EMAILS.map(e => e.toLowerCase().trim());
+  
+  const isAdmin = normalizedAdminEmails.includes(normalizedEmail);
+  console.log('ANNOUNCEMENTS - ADMIN CHECK - Result:', isAdmin);
+  
+  return isAdmin;
 };
 
 export default function AnnouncementsAdminPage() {

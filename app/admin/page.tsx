@@ -8,6 +8,8 @@ import { useAuth } from '../../src/lib/auth-context';
 import { formatDistanceToNow } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import FeedbackDropdown from '../../src/components/FeedbackDropdown';
+import Link from 'next/link';
+import { Button } from '../../src/components/ui/button';
 
 // 問い合わせタイプの定義
 interface Contact {
@@ -33,14 +35,11 @@ interface Feedback {
 
 // 管理者メールアドレスのリスト
 const ADMIN_EMAILS = [
-  'admin@example.com',
-  'taniguchi.kouhei@gmail.com',
+  'queue@queue-tech.jp'
 ];
 
 // 特定のドメインを管理者として認証
-const ADMIN_DOMAINS = [
-  'queuecorp.jp',
-];
+const ADMIN_DOMAINS: string[] = [];
 
 // 管理者かどうかを判定する関数
 const isAdminUser = (email?: string | null): boolean => {
@@ -71,12 +70,15 @@ export default function AdminPage() {
   useEffect(() => {
     // 非ログインユーザーはリダイレクト
     if (!user) {
+      console.log('未ログインユーザー - ホームへリダイレクト');
       router.push('/');
       return;
     }
     
-    // 管理者権限のないユーザーはリダイレクト
-    if (!isAdminUser(user?.email)) {
+    // 管理者権限チェック
+    const isAdmin = isAdminUser(user.email);
+    if (!isAdmin) {
+      console.log('管理者権限がありません - ホームへリダイレクト');
       router.push('/');
       return;
     }
@@ -236,6 +238,9 @@ export default function AdminPage() {
               </span>
             )}
           </TabsTrigger>
+          <TabsTrigger value="announcements">
+            お知らせ管理
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="contacts">
@@ -358,6 +363,30 @@ export default function AdminPage() {
               <p className="text-gray-500">フィードバックはありません</p>
             </div>
           )}
+        </TabsContent>
+        
+        <TabsContent value="announcements">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold">お知らせ管理</h2>
+              <Link href="/admin/announcements">
+                <Button className="bg-black text-white hover:bg-gray-800">
+                  お知らせ管理ページへ
+                </Button>
+              </Link>
+            </div>
+            <div className="prose max-w-none">
+              <p>お知らせを作成・編集・削除するには、お知らせ管理ページへ移動してください。</p>
+              <p className="mt-4">お知らせ管理ページでは以下の操作が可能です：</p>
+              <ul className="mt-2">
+                <li>新規お知らせの作成</li>
+                <li>既存お知らせの編集</li>
+                <li>お知らせの削除</li>
+                <li>お知らせの有効/無効の切り替え</li>
+                <li>表示期間の設定</li>
+              </ul>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

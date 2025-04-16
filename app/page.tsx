@@ -4,9 +4,9 @@ import React, { Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import '../src/index.css';
 
-// Dynamically import the HomePage component to prevent hydration issues
+// Dynamically import the HomePage component with SSR enabled but use suspense to handle hydration issues
 const HomePage = dynamic(() => import('../src/components/HomePage'), {
-  ssr: false,
+  ssr: true,
   loading: () => <div className="h-screen flex items-center justify-center">Loading...</div>
 });
 

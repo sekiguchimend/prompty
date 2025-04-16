@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Textarea } from '../components/ui/textarea';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -44,14 +44,8 @@ const Feedback = () => {
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
   const { toast } = useToast();
   
-  // マウント後のみレンダリングを行う
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -125,11 +119,6 @@ const Feedback = () => {
   const handleReset = () => {
     setIsSubmitted(false);
   };
-
-  // クライアントサイドでのみレンダリング
-  if (!isMounted) {
-    return null;
-  }
 
   // 送信完了画面
   if (isSubmitted) {

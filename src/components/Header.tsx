@@ -333,19 +333,22 @@ const Header = () => {
                           
                           {/* 管理者ページへのリンク（管理者ユーザーの場合のみ表示） */}
                           {user?.email && isAdminUser(user.email) && (
-                            <button
-                              onClick={() => {
-                                console.log('管理ページへ移動します', user.email);
-                                // 遷移前に確認ダイアログを表示
-                                if (window.confirm('管理ページに移動しますか？')) {
-                                  // 直接URLを使用して遷移
-                                  window.location.href = '/admin';
-                                }
-                              }}
-                              className="hidden md:inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 mr-2"
-                            >
-                              管理ページ
-                            </button>
+                            <Link href="/admin" passHref>
+                              <Button
+                                variant="outline"
+                                className="hidden md:inline-flex items-center justify-center mr-2"
+                                onClick={(e) => {
+                                  // クリック時の確認ダイアログを表示
+                                  if (!window.confirm('管理ページに移動しますか？')) {
+                                    e.preventDefault(); // キャンセル時は遷移を中止
+                                  } else {
+                                    console.log('管理ページへ移動します', user.email);
+                                  }
+                                }}
+                              >
+                                管理ページ
+                              </Button>
+                            </Link>
                           )}
                           
                           {/* アバター */}

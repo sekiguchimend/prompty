@@ -9,7 +9,7 @@ const nextConfig = {
     unoptimized: process.env.NODE_ENV === 'development',
   },
   experimental: {
-    optimizeCss: false,
+    optimizeCss: true,
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
   },
   compiler: {
