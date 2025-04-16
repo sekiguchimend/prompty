@@ -36,12 +36,7 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
         ) : (
           <h2 className="text-lg font-bold">{title}</h2>
         )}
-        {showMoreLink && (
-          <Link href={moreLinkUrl} className="ml-2 flex items-center text-sm text-gray-500 hover:text-gray-700">
-            <span className="hidden md:inline-block ml-1">もっと見る</span>
-            <ChevronRight className="h-4 w-4" />
-          </Link>
-        )}
+     
       </div>
       
       {/* 検索アイコン（中央に配置） */}

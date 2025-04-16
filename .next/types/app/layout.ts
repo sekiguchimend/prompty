@@ -1,4 +1,4 @@
-// File: C:\Users\tanig\Downloads\propmt\prompty\app\layout.tsx
+// File: C:\Users\sekig\OneDrive\ドキュメント\会社内のプロダクト\prompty\app\layout.tsx
 import * as entry from '../../../app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

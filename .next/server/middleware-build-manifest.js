@@ -12,25 +12,20 @@ self.__BUILD_MANIFEST = {
     "static/chunks/main-app.js"
   ],
   "pages": {
-    "/ContestPage": [
+    "/DashboardPage": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/ContestPage.js"
+      "static/chunks/pages/DashboardPage.js"
     ],
-    "/CreatePost": [
+    "/Register": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/CreatePost.js"
+      "static/chunks/pages/Register.js"
     ],
-    "/HelpCenter": [
+    "/SettingsPage": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/HelpCenter.js"
-    ],
-    "/Premium": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/Premium.js"
+      "static/chunks/pages/SettingsPage.js"
     ],
     "/_app": [
       "static/chunks/webpack.js",
