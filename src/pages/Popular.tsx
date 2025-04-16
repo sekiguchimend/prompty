@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import Sidebar from '@/components/Sidebar';
-import PromptGrid from '@/components/PromptGrid';
-import { getPopularPosts } from '@/data/posts';
-import { useResponsive } from '@/hooks/use-responsive';
-import { Helmet } from 'react-helmet';
-import { PromptItem } from '@/components/PromptGrid';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
+import Sidebar from '../components/Sidebar';
+import PromptGrid from '../components/PromptGrid';
+import { getPopularPosts } from '../data/posts';
+import { useResponsive } from '../hooks/use-responsive';
+// import { Helmet } from 'react-helmet';
+import { PromptItem } from '../components/PromptGrid';
 
 const Popular: React.FC = () => {
   const { isMobile, isTablet } = useResponsive();
@@ -29,9 +29,9 @@ const Popular: React.FC = () => {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Helmet>
+      {/* <Helmet>
         <title>人気の記事 | prompty</title>
-      </Helmet>
+      </Helmet> */}
       <Header />
       <Sidebar />
       

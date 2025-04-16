@@ -17,11 +17,6 @@ self.__BUILD_MANIFEST = {
       "static/chunks/main.js",
       "static/chunks/pages/DashboardPage.js"
     ],
-    "/Register": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/Register.js"
-    ],
     "/SettingsPage": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",

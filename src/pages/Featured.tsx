@@ -5,7 +5,7 @@ import Sidebar from '../components/Sidebar';
 import PromptGrid from '../components/PromptGrid';
 import { featuredPrompts } from '../data/mockPrompts';
 import { useResponsive } from '../hooks/use-responsive';
-import { Helmet } from 'react-helmet';
+// import { Helmet } from 'react-helmet';
 import { PromptItem } from '../components/PromptGrid';
 
 const Featured: React.FC = () => {
@@ -26,9 +26,9 @@ const Featured: React.FC = () => {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Helmet>
+      {/* <Helmet>
         <title>今日の注目プロンプト | prompty</title>
-      </Helmet>
+      </Helmet> */}
       <Header />
       <Sidebar />
       
