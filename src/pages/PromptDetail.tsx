@@ -2,7 +2,7 @@ import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { ChevronLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { Separator } from '../components/ui/separator';
 import PopularArticles from '../components/PopularArticles';
 import AuthorSidebar from '../components/prompt/AuthorSidebar';
@@ -58,7 +58,7 @@ const PromptDetail = () => {
       <main className="flex-1 bg-white mt-14 md:mt-10">
         <div className="container px-4 md:px-6 py-6 max-w-7xl mx-auto">
           {/* Back link */}
-          <Link to="/" className="inline-flex items-center text-gray-500 mb-6">
+          <Link href="/" className="inline-flex items-center text-gray-500 mb-6">
             <ChevronLeft className="h-4 w-4 mr-1" />
             <span className="text-sm">戻る</span>
           </Link>

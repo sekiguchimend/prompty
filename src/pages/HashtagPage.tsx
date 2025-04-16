@@ -78,7 +78,13 @@ const samplePosts = [
 ];
 
 // ハッシュタグごとの情報マップ
-const hashtagInfo = {
+interface HashtagData {
+  description: string;
+  entryCount: number;
+  backgroundColor: string;
+}
+
+const hashtagInfo: Record<string, HashtagData> = {
   '有料記事書いてみた': {
     description: '4月は新たな挑戦を始めるのにふさわしい月です。副収入を求める会社員の方が増えている今、あなたが副業を始めたきっかけや、実際に取り組んだリアルな体験、そして役立つノウハウといった、これから副業に挑戦する人々への道しるべとなりますので、ぜひ、あなたの経験を記事にしてシェアしてください。',
     entryCount: 60992,

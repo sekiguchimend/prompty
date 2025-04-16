@@ -1,38 +1,52 @@
 {
   "..\\app\\page.tsx -> ../src/components/HomePage": {
-    "id": "..\\app\\page.tsx -> ../src/components/HomePage",
+    "id": 88698,
     "files": [
-      "static/chunks/_app-pages-browser_src_components_HomePage_tsx.js"
+      "static/chunks/7026-09aeb11286bbe7af.js",
+      "static/chunks/5569-e191c21a609cdd6c.js",
+      "static/chunks/2972-36215157cb884478.js",
+      "static/chunks/901-0de997021b7dd555.js",
+      "static/chunks/278-068844b69691cc74.js",
+      "static/chunks/3145-4ea8b604054162b9.js",
+      "static/chunks/5705.5b4c9604b48b2141.js",
+      "static/chunks/2493-5b257207e2f6b02e.js",
+      "static/chunks/8698.596f0c9b4fe263bd.js"
     ]
   },
   "..\\node_modules\\@supabase\\auth-js\\dist\\module\\lib\\helpers.js -> @supabase/node-fetch": {
-    "id": "..\\node_modules\\@supabase\\auth-js\\dist\\module\\lib\\helpers.js -> @supabase/node-fetch",
+    "id": 89743,
     "files": []
   },
   "..\\node_modules\\@supabase\\functions-js\\dist\\module\\helper.js -> @supabase/node-fetch": {
-    "id": "..\\node_modules\\@supabase\\functions-js\\dist\\module\\helper.js -> @supabase/node-fetch",
+    "id": 89743,
     "files": []
   },
   "..\\node_modules\\@supabase\\realtime-js\\dist\\module\\RealtimeClient.js -> @supabase/node-fetch": {
-    "id": "..\\node_modules\\@supabase\\realtime-js\\dist\\module\\RealtimeClient.js -> @supabase/node-fetch",
+    "id": 89743,
     "files": []
   },
   "..\\node_modules\\@supabase\\realtime-js\\dist\\module\\RealtimeClient.js -> ws": {
-    "id": "..\\node_modules\\@supabase\\realtime-js\\dist\\module\\RealtimeClient.js -> ws",
+    "id": 57026,
     "files": [
-      "static/chunks/_app-pages-browser_node_modules_ws_browser_js.js",
-      "static/chunks/node_modules_ws_browser_js.js"
+      "static/chunks/3363.4dfdc66e77282930.js",
+      "static/chunks/5223.dd6428e02df6946a.js"
     ]
   },
   "..\\node_modules\\@supabase\\storage-js\\dist\\module\\lib\\helpers.js -> @supabase/node-fetch": {
-    "id": "..\\node_modules\\@supabase\\storage-js\\dist\\module\\lib\\helpers.js -> @supabase/node-fetch",
+    "id": 89743,
     "files": []
   },
   "components\\HeaderAnnouncements.tsx -> framer-motion": {
-    "id": "components\\HeaderAnnouncements.tsx -> framer-motion",
+    "id": 53473,
     "files": [
-      "static/chunks/_app-pages-browser_node_modules_framer-motion_dist_es_index_mjs.js",
-      "static/chunks/node_modules_framer-motion_dist_es_index_mjs.js"
+      "static/chunks/8811.f2fe81235f66a01d.js",
+      "static/chunks/3473.5aa4a55fcfdfeb28.js"
+    ]
+  },
+  "pages\\Feedback.tsx -> framer-motion": {
+    "id": 53473,
+    "files": [
+      "static/chunks/3473.5aa4a55fcfdfeb28.js"
     ]
   }
 }

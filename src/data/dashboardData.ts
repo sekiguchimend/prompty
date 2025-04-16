@@ -53,25 +53,25 @@ export interface HelpContentSection {
   items: string[];
 }
 
-// アイコンをアイコンタイプに基づいて取得する関数
-export const getIconByType = (iconType: string, className: string) => {
+// アイコンタイプに基づいてアイコン名の文字列を返す関数
+export const getIconNameByType = (iconType: string): string => {
   switch (iconType) {
     case 'eye':
-      return <Eye className={className} />;
+      return 'Eye';
     case 'award':
-      return <Award className={className} />;
+      return 'Award';
     case 'heart':
-      return <Heart className={className} />;
+      return 'Heart';
     case 'message-square':
-      return <MessageSquare className={className} />;
+      return 'MessageSquare';
     case 'dollar-sign':
-      return <DollarSign className={className} />;
+      return 'DollarSign';
     case 'credit-card':
-      return <CreditCard className={className} />;
+      return 'CreditCard';
     case 'clock':
-      return <Clock className={className} />;
+      return 'Clock';
     default:
-      return <Eye className={className} />;
+      return 'Eye';
   }
 };
 

@@ -1,8 +1,1 @@
-{
-  "/_app": "pages/_app.js",
-  "/_error": "pages/_error.js",
-  "/_document": "pages/_document.js",
-  "/Register": "pages/Register.js",
-  "/SettingsPage": "pages/SettingsPage.js",
-  "/DashboardPage": "pages/DashboardPage.js"
-}
+{"/_app":"pages/_app.js","/_error":"pages/_error.js","/AIGenerated":"pages/AIGenerated.html","/CommercialTransaction":"pages/CommercialTransaction.html","/Business":"pages/Business.html","/ContestPage":"pages/ContestPage.html","/CreatePost":"pages/CreatePost.html","/DashboardPage":"pages/DashboardPage.html","/Featured":"pages/Featured.html","/Following":"pages/Following.html","/Feedback":"pages/Feedback.html","/ForgotPassword":"pages/ForgotPassword.html","/HashtagPage":"pages/HashtagPage.html","/HelpCenter":"pages/HelpCenter.html","/HowToUse":"pages/HowToUse.html","/Index":"pages/Index.html","/Login":"pages/Login.html","/NotFound":"pages/NotFound.html","/MyArticles":"pages/MyArticles.html","/PaymentDisclosure":"pages/PaymentDisclosure.html","/Popular":"pages/Popular.html","/Premium":"pages/Premium.html","/Privacy":"pages/Privacy.html","/PromptDetail":"pages/PromptDetail.html","/Search":"pages/Search.html","/Register":"pages/Register.html","/Terms":"pages/Terms.html","/SettingsPage":"pages/SettingsPage.html","/api/auth/save-profile":"pages/api/auth/save-profile.js","/UserProfilePage":"pages/UserProfilePage.html","/api/auth/signin":"pages/api/auth/signin.js","/api/auth/signup":"pages/api/auth/signup.js","/api/auth/social-signin":"pages/api/auth/social-signin.js","/api/auth/social-signup":"pages/api/auth/social-signup.js","/auth/callback":"pages/auth/callback.html","/users/[user]":"pages/users/[user].html","/prompts/[id]":"pages/prompts/[id].js","/_document":"pages/_document.js","/404":"pages/404.html"}

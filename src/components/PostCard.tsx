@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
 
 // Post型の定義
@@ -19,7 +19,7 @@ interface Post {
 const PostCard = ({ post }: { post: Post }) => {
   return (
     <div className="flex items-center">
-      <Link to={`/users/${post.user.userId}`} className="flex items-center">
+      <Link href={`/users/${post.user.userId}`} className="flex items-center">
         <Avatar className="h-5 w-5 mr-1.5">
           <AvatarImage src={post.user.avatarUrl} alt={post.user.name} />
           <AvatarFallback>{post.user.name[0]}</AvatarFallback>

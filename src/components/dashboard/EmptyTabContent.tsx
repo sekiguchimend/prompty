@@ -1,7 +1,7 @@
 import React from 'react';
 import { Inbox, FileQuestion, Plus } from 'lucide-react';
 import { Button } from '../ui/button';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 
 interface EmptyTabContentProps {
   tabName: string;
@@ -42,7 +42,7 @@ const EmptyTabContent: React.FC<EmptyTabContentProps> = ({ tabName }) => {
         </p>
         
         <div className="flex justify-center space-x-4">
-          <Link to="/create-post">
+          <Link href="/create-post">
             <Button className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 rounded-lg shadow-sm">
               <Plus className="h-4 w-4 mr-2" />
               {tabName === 'コンテンツ' ? '新規作成' : 

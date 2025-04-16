@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Settings, MoreHorizontal, Eye, Heart, MessageSquare, BarChart, Home, BookOpen, Users, Bookmark, Calendar, PenSquare } from 'lucide-react';
 import { Button } from '../ui/button';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 
 // タブの型定義
 export type DashboardTab = 'home' | 'articles' | 'membership' | 'magazine' | 'likes' | 'monthly' | 'analytics';
@@ -417,7 +417,7 @@ const DashboardSidebar: React.FC<{
       </div>
       
       <div className="mt-auto p-6 border-t border-gray-800">
-        <Link to="/create-post">
+        <Link href="/create-post">
           <Button className="w-full bg-gray-800 hover:bg-gray-700 text-white shadow-sm transition-all hover:shadow-md rounded-md">
             <PenSquare className="h-4 w-4 mr-2" />
             新規投稿を作成

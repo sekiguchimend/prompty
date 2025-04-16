@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { ArrowLeft, Mail } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
@@ -49,7 +48,7 @@ const ForgotPassword = () => {
 
   return (
     <div className="container flex min-h-screen flex-col items-center justify-center px-4 md:px-8">
-      <Link to="/login" className="mb-8 flex items-center text-sm text-gray-500 hover:text-gray-700">
+      <Link href="/login" className="mb-8 flex items-center text-sm text-gray-500 hover:text-gray-700">
         <ArrowLeft className="mr-2 h-4 w-4" />
         ログインに戻る
       </Link>
@@ -120,7 +119,7 @@ const ForgotPassword = () => {
         <CardFooter className="flex flex-col space-y-4 border-t px-6 py-4">
           <div className="text-center text-sm">
             <span className="text-gray-500">アカウントをお持ちでない方は</span>{' '}
-            <Link to="/register" className="font-medium text-pink-400 hover:text-pink-500">
+            <Link href="/register" className="font-medium text-pink-400 hover:text-pink-500">
               会員登録
             </Link>
           </div>

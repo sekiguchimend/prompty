@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useRouter } from 'next/router';
 
 /**
  * ページ遷移時に画面トップにスクロールするコンポーネント
  * パスや検索パラメータが変わったときにトップにスクロールします
  */
 export const ScrollToTop = () => {
-  const location = useLocation();
+  const router = useRouter();
 
   useEffect(() => {
     // ページ遷移時に強制的に先頭にスクロール
@@ -22,7 +22,7 @@ export const ScrollToTop = () => {
     }, 10);
     
     return () => clearTimeout(timeoutId);
-  }, [location]); // パスとクエリパラメータ両方の変更を監視
+  }, [router.asPath]); // パスとクエリパラメータ両方の変更を監視
 
   return null;
 };

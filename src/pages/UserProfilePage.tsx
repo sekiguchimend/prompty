@@ -48,6 +48,7 @@ interface PostData {
   comment_count: number;
   is_premium: boolean;
   price: number;
+  author?: any; // 保存されたポストのために追加
 }
 
 // Magazine data type definition
@@ -92,6 +93,12 @@ const UserProfilePage: React.FC = () => {
       setLoading(true);
       
       try {
+        // ユーザーがnullの場合は処理をスキップ
+        if (!user) {
+          setLoading(false);
+          return;
+        }
+        
         // Fetch profile data
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
@@ -179,14 +186,29 @@ const UserProfilePage: React.FC = () => {
           thumbnail_url: post.thumbnail_url,
           created_at: formatDate(post.created_at),
           view_count: post.view_count,
-          like_count: post.likes.count,
-          comment_count: post.comments.count,
+          like_count: post.likes?.[0]?.count || 0,
+          comment_count: post.comments?.[0]?.count || 0,
           is_premium: post.is_premium,
           price: post.price
         })));
         
         setSavedPosts(bookmarksData.map(bookmark => {
-          const post = bookmark.prompts;
+          const post = bookmark.prompts?.[0]; // 配列の最初の要素にアクセス
+          if (!post) {
+            // nullの代わりに空のPostDataオブジェクトを返す
+            return {
+              id: '',
+              title: '',
+              description: '',
+              created_at: '',
+              view_count: 0,
+              like_count: 0,
+              comment_count: 0,
+              is_premium: false,
+              price: 0
+            };
+          }
+          
           return {
             id: post.id,
             title: post.title,
@@ -194,13 +216,13 @@ const UserProfilePage: React.FC = () => {
             thumbnail_url: post.thumbnail_url,
             created_at: formatDate(post.created_at),
             view_count: post.view_count,
-            like_count: post.likes.count,
-            comment_count: post.comments.count,
+            like_count: post.likes?.[0]?.count || 0,
+            comment_count: post.comments?.[0]?.count || 0,
             is_premium: post.is_premium,
             price: post.price,
             author: post.profiles
           };
-        }));
+        }).filter(post => post.id !== '')); // 空のIDを持つオブジェクトをフィルタリング
         
         if (!magazinesError && magazinesData) {
           setMagazines(magazinesData);
