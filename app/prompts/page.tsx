@@ -20,7 +20,7 @@ const mockPrompts = [
       name: '山田太郎',
       avatarUrl: 'https://via.placeholder.com/50x50',
     },
-    createdAt: '2024-04-10T12:00:00Z',
+    createdAt: '2024-04-10T12:00:10Z',
     category: 'プロンプトエンジニアリング',
     likeCount: 120,
   },
