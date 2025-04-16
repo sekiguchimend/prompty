@@ -1,13 +1,13 @@
 "use client";
 
 import React from 'react';
-import type { Metadata } from 'next';
+// import type { Metadata } from 'next';
 import PromptCard from '@/components/prompt/prompt-card';
 
-export const metadata: Metadata = {
-  title: 'プロンプト一覧',
-  description: '様々なプロンプトを探索しましょう',
-};
+// export const metadata: Metadata = {
+//   title: 'プロンプト一覧',
+//   description: '様々なプロンプトを探索しましょう',
+// };
 
 // モックデータ
 const mockPrompts = [

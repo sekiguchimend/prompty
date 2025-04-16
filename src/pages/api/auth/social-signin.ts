@@ -27,31 +27,88 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     // プロバイダー別の処理
     switch (provider) {
-      case 'google': {
-        // Googleサインインへのリダイレクトをセットアップ
-        result = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo,
-            queryParams: {
-              access_type: 'offline',
-              prompt: 'consent',
+      case 'google':
+      case 'Google':
+        // Handle Google login
+        try {
+          const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: redirectTo,
+              scopes: 'email profile',
             },
-          },
-        });
-        break;
-      }
+          });
+
+          if (error) {
+            return res.status(400).json({ 
+              error: error.message,
+              error_code: error.code || 'authentication_error',
+              msg: error.message 
+            });
+          }
+
+          return res.status(200).json({ url: data.url });
+        } catch (error: any) {
+          return res.status(500).json({ 
+            error: error.message,
+            error_code: 'server_error',
+            msg: 'Error during Google sign-in' 
+          });
+        }
         
-      case 'twitter': {
-        // X（Twitter）サインインへのリダイレクトをセットアップ
-        result = await supabase.auth.signInWithOAuth({
-          provider: 'twitter',
-          options: {
-            redirectTo,
-          },
-        });
-        break;
-      }
+      case 'github':
+        // Handle GitHub login
+        try {
+          const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'github',
+            options: {
+              redirectTo: redirectTo,
+            },
+          });
+
+          if (error) {
+            return res.status(400).json({ 
+              error: error.message,
+              error_code: error.code || 'authentication_error',
+              msg: error.message 
+            });
+          }
+
+          return res.status(200).json({ url: data.url });
+        } catch (error: any) {
+          return res.status(500).json({ 
+            error: error.message,
+            error_code: 'server_error',
+            msg: 'Error during GitHub sign-in' 
+          });
+        }
+      
+      case 'twitter':
+        // Handle Twitter login
+        try {
+          const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'twitter',
+            options: {
+              redirectTo: redirectTo,
+            },
+          });
+
+          if (error) {
+            return res.status(400).json({ 
+              error: error.message,
+              error_code: error.code || 'authentication_error',
+              msg: error.message 
+            });
+          }
+
+          return res.status(200).json({ url: data.url });
+        } catch (error: any) {
+          return res.status(500).json({ 
+            error: error.message,
+            error_code: 'server_error',
+            msg: 'Error during Twitter sign-in' 
+          });
+        }
         
       case 'apple': {
         // Appleサインインへのリダイレクトをセットアップ
@@ -64,23 +121,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         break;
       }
       
-      case 'github': {
-        // GitHubサインインへのリダイレクトをセットアップ
-        result = await supabase.auth.signInWithOAuth({
-          provider: 'github',
-          options: {
-            redirectTo,
-            scopes: 'user:email', // メールアドレスにアクセスするためのスコープを指定
-          },
-        });
-        break;
-      }
-        
       default:
         return res.status(400).json({ 
-          error: '無効なプロバイダーです',
+          error: `Unsupported provider: ${provider}`,
           error_code: 'invalid_provider',
-          msg: `サポートされていないプロバイダー: ${provider}`
+          msg: `プロバイダー「${provider}」はサポートされていません` 
         });
     }
     
