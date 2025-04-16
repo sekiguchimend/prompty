@@ -12,15 +12,25 @@ self.__BUILD_MANIFEST = {
     "static/chunks/main-app.js"
   ],
   "pages": {
-    "/Login": [
+    "/ContestPage": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/Login.js"
+      "static/chunks/pages/ContestPage.js"
     ],
-    "/Register": [
+    "/CreatePost": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/Register.js"
+      "static/chunks/pages/CreatePost.js"
+    ],
+    "/HelpCenter": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/HelpCenter.js"
+    ],
+    "/Premium": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/Premium.js"
     ],
     "/_app": [
       "static/chunks/webpack.js",
@@ -31,11 +41,6 @@ self.__BUILD_MANIFEST = {
       "static/chunks/webpack.js",
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
-    ],
-    "/prompts/[id]": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/prompts/[id].js"
     ]
   },
   "ampFirstPages": []

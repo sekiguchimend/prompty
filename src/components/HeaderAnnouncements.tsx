@@ -6,7 +6,20 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { useAuth } from '../lib/auth-context';
 import { Loader2, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import dynamic from 'next/dynamic';
+
+// サーバーサイドレンダリングを無効化
+const AnimatePresence = dynamic(() => 
+  import('framer-motion').then(mod => mod.AnimatePresence), 
+  { ssr: false }
+);
+
+const Motion = {
+  div: dynamic(() => 
+    import('framer-motion').then(mod => mod.motion.div), 
+    { ssr: false }
+  ),
+};
 
 interface Announcement {
   id: string;
@@ -385,7 +398,7 @@ const HeaderAnnouncements: React.FC<{ onClose?: () => void }> = ({ onClose }) =>
       ) : announcements.length > 0 ? (
         <AnimatePresence>
           {announcements.map((announcement) => (
-            <motion.div 
+            <Motion.div 
               key={announcement.id}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -401,7 +414,7 @@ const HeaderAnnouncements: React.FC<{ onClose?: () => void }> = ({ onClose }) =>
               </div>
               <AnimatePresence>
                 {!announcement.is_read && (
-                  <motion.span 
+                  <Motion.div 
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
@@ -409,7 +422,7 @@ const HeaderAnnouncements: React.FC<{ onClose?: () => void }> = ({ onClose }) =>
                   />
                 )}
               </AnimatePresence>
-            </motion.div>
+            </Motion.div>
           ))}
         </AnimatePresence>
       ) : (

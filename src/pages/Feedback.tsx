@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Textarea } from '../components/ui/textarea';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -15,7 +15,20 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import { CheckCircle2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import dynamic from 'next/dynamic';
+
+// サーバーサイドレンダリングを無効化
+const MotionDiv = dynamic(() => import('framer-motion').then(mod => ({ 
+  default: mod.motion.div 
+})), { ssr: false });
+
+const MotionH1 = dynamic(() => import('framer-motion').then(mod => ({ 
+  default: mod.motion.h1 
+})), { ssr: false });
+
+const MotionP = dynamic(() => import('framer-motion').then(mod => ({ 
+  default: mod.motion.p 
+})), { ssr: false });
 
 // フィードバックのタイプ定義
 interface FeedbackData {
@@ -31,7 +44,13 @@ const Feedback = () => {
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const { toast } = useToast();
+  
+  // マウント後のみレンダリングを行う
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,18 +87,14 @@ const Feedback = () => {
     }
     
     try {
-      // Supabaseにデータを送信
-      console.log('Sending feedback data:', feedbackData);
-      
       // まず標準のinsertを試す
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('feedback')
         .insert([feedbackData]);
       
       if (error) {
-        console.error('Insert error:', error);
         // 通常のinsertが失敗した場合はRPCを試す
-        const { data: rpcData, error: rpcError } = await supabase.rpc('insert_feedback', {
+        const { error: rpcError } = await supabase.rpc('insert_feedback', {
           p_feedback_type: feedbackData.feedback_type,
           p_email: feedbackData.email || null,
           p_message: feedbackData.message,
@@ -97,7 +112,6 @@ const Feedback = () => {
       setEmail('');
       setMessage('');
     } catch (error: any) {
-      console.error('フィードバック送信エラー:', error);
       toast({
         title: "送信に失敗しました",
         description: error.message || "通信エラーが発生しました。しばらく経ってからもう一度お試しください。",
@@ -112,6 +126,11 @@ const Feedback = () => {
     setIsSubmitted(false);
   };
 
+  // クライアントサイドでのみレンダリング
+  if (!isMounted) {
+    return null;
+  }
+
   // 送信完了画面
   if (isSubmitted) {
     return (
@@ -119,31 +138,31 @@ const Feedback = () => {
         <Header />
         
         <main className="flex-1 container max-w-3xl mx-auto px-4 py-12 flex items-center justify-center">
-          <motion.div 
+          <MotionDiv 
             className="bg-white rounded-lg shadow-sm border border-gray-100 p-8 text-center w-full"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
           >
-            <motion.div
+            <MotionDiv
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
               className="flex justify-center mb-6"
             >
               <CheckCircle2 className="w-16 h-16 text-green-500" />
-            </motion.div>
+            </MotionDiv>
             
-            <motion.h1 
+            <MotionH1 
               className="text-2xl font-bold mb-4"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.4 }}
             >
               フィードバックを送信しました
-            </motion.h1>
+            </MotionH1>
             
-            <motion.p 
+            <MotionP 
               className="text-gray-600 mb-8"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -151,9 +170,9 @@ const Feedback = () => {
             >
               貴重なご意見ありがとうございます。<br />
               いただいたフィードバックはサービス改善に活用させていただきます。
-            </motion.p>
+            </MotionP>
             
-            <motion.div
+            <MotionDiv
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.6 }}
@@ -171,8 +190,8 @@ const Feedback = () => {
               >
                 ホームに戻る
               </Button>
-            </motion.div>
-          </motion.div>
+            </MotionDiv>
+          </MotionDiv>
         </main>
         
         <Footer />
@@ -248,7 +267,7 @@ const Feedback = () => {
                 className="w-full md:w-auto bg-black hover:bg-gray-800"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? '送信中...' : '送信する'}
+                {isSubmitting ? '送信中...' : 'フィードバックを送信'}
               </Button>
             </div>
           </form>
