@@ -74,8 +74,8 @@ const Register = () => {
 
       // サインアップ成功
       setIsModalOpen(false);
-      // ホーム画面に直接遷移
-      router.push('/');
+      // プロフィール設定ページに遷移
+      router.push('/setup-profile');
     } catch (err) {
       console.error('サインアップエラー:', err);
       setError(err instanceof Error ? err.message : '予期せぬエラーが発生しました');
@@ -124,8 +124,8 @@ const Register = () => {
         return;
       }
       
-      // それ以外はホーム画面に遷移
-      router.push('/');
+      // それ以外はプロフィール設定ページに遷移
+      router.push('/setup-profile');
     } catch (err) {
       console.error(`${provider}サインアップエラー:`, err);
       setError(err instanceof Error ? err.message : '予期せぬエラーが発生しました');

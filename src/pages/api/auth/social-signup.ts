@@ -21,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     );
     
     // リダイレクトURL
-    const redirectTo = `${process.env.NEXT_PUBLIC_BASE_URL || ''}/auth/callback`;
+    const redirectTo = `http://localhost:3000/auth/callback`;
     
     let result;
     

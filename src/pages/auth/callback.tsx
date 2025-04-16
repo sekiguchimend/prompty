@@ -136,16 +136,23 @@ export default function AuthCallback() {
               const result = await response.json();
               console.log('🟢 プロフィール情報が保存されました', result);
             }
+            
+            // 常にプロフィール設定ページにリダイレクト
+            console.log('🔄 プロフィール設定ページにリダイレクトします');
+            window.location.href = '/setup-profile';
+            return;
+            
           } catch (profileError) {
             console.error('🔴 プロフィール保存中にエラーが発生:', profileError);
-            // プロフィール保存に失敗してもログインは続行
+            // プロフィール保存に失敗してもプロフィール設定ページにリダイレクト
+            console.log('🔄 プロフィール設定ページにリダイレクトします');
+            window.location.href = '/setup-profile';
+            return;
           }
           
-          // 認証成功、ホームページにリダイレクト
-          console.log('🔄 ホームページにリダイレクトします');
-          setTimeout(() => {
-            window.location.href = '/'; // router.pushではなくlocation.hrefを使用
-          }, 500);
+          // 注：以下のコードは到達しないはずだが、念のために残しておく
+          console.log('🔄 プロフィール設定ページにリダイレクトします');
+          window.location.href = '/setup-profile';
         } else {
           throw new Error('ユーザーセッションが見つかりません');
         }

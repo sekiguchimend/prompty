@@ -73,8 +73,8 @@ const HomePage: React.FC = () => {
                   horizontalScroll={shouldUseHorizontalScroll}
                   maxVisible={displayCount}
                   className="mt-0"
-                  categoryUrl="/featured"
-                  moreLinkUrl="/featured"
+                  categoryUrl="/Featured"
+                  moreLinkUrl="/Featured"
                 />
               </div>
 
@@ -86,8 +86,8 @@ const HomePage: React.FC = () => {
                 horizontalScroll={shouldUseHorizontalScroll}
                 maxVisible={displayCount}
                 className="mt-12"
-                categoryUrl="/popular"
-                moreLinkUrl="/popular"
+                categoryUrl="/Popular"
+                moreLinkUrl="/Popular"
               />
 
               {/* AI Generated prompts section */}
@@ -98,8 +98,8 @@ const HomePage: React.FC = () => {
                 horizontalScroll={shouldUseHorizontalScroll}
                 maxVisible={displayCount}
                 className="mt-12"
-                categoryUrl="/ai-generated"
-                moreLinkUrl="/ai-generated"
+                categoryUrl="/AIGenerated"
+                moreLinkUrl="/AIGenerated"
               />
 
               {/* Contest prompts section */}
@@ -111,8 +111,8 @@ const HomePage: React.FC = () => {
                 horizontalScroll={shouldUseHorizontalScroll}
                 maxVisible={Math.min(4, displayCount)}
                 className="mt-12"
-                categoryUrl="/contests"
-                moreLinkUrl="/contests"
+                categoryUrl="/ContestPage"
+                moreLinkUrl="/ContestPage"
               />
             </div>
           </main>

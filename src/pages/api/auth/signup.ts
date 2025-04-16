@@ -27,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       email,
       password,
       options: {
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/callback`,
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/setup-profile`,
         data: {
           // auth.usersにカスタムデータを保存（オプション）
           preferred_username: username || undefined,

@@ -15,7 +15,7 @@ const Popular: React.FC = () => {
   useEffect(() => {
     // 人気記事を取得
     const popularPosts = getPopularPosts();
-    
+
     // ランダムにいいね状態を追加する関数
     const addRandomLikeState = (items: PromptItem[]): PromptItem[] => {
       return items.map(item => ({
@@ -29,6 +29,8 @@ const Popular: React.FC = () => {
 
   return (
     <div className="flex min-h-screen flex-col">
+     <div className="flex flex-col flex-1 md:ml-[240px]">
+
       <Helmet>
         <title>人気の記事 | prompty</title>
       </Helmet>
@@ -37,9 +39,6 @@ const Popular: React.FC = () => {
       
       <div className="flex flex-1 pt-10">
         {/* PC画面でのみサイドバーのスペースを確保 */}
-        <div className="hidden md:block w-[240px] flex-shrink-0">
-          {/* この空のdivはサイドバーのスペースを確保するためのもの */}
-        </div>
         
         <main className="flex-1 pb-12 overflow-x-hidden md:mt-0 mt-5">
           <div className="container px-4 py-6 sm:px-6 md:px-8">
@@ -57,6 +56,7 @@ const Popular: React.FC = () => {
       </div>
       
       <Footer />
+      </div>
     </div>
   );
 };
