@@ -2,7 +2,21 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
 
-const PostCard = ({ post }) => {
+// Post型の定義
+interface PostUser {
+  userId: string;
+  name: string;
+  avatarUrl?: string;
+}
+
+interface Post {
+  id: string;
+  user: PostUser;
+  postedAt: string;
+  // 必要に応じて他のプロパティを追加
+}
+
+const PostCard = ({ post }: { post: Post }) => {
   return (
     <div className="flex items-center">
       <Link to={`/users/${post.user.userId}`} className="flex items-center">
