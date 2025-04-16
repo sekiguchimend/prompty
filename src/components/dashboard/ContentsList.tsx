@@ -67,7 +67,7 @@ const ContentsList: React.FC<ContentsListProps> = ({ contents }) => {
                 ? 'bg-gray-900 text-white shadow-sm' 
                 : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
             }`}
-            onClick={() => setSelectedFilter('すべてです')}
+            onClick={() => setSelectedFilter('すべて')}
           >
             すべて
           </button>
