@@ -2,6 +2,9 @@ import React from 'react';
 import { X, LayoutDashboard, FilePen, Heart, Image, Book, Settings, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../lib/auth-context';
+
 interface UserMenuProps {
   isOpen: boolean;
   onClose: () => void;
@@ -19,7 +22,33 @@ const UserMenu: React.FC<UserMenuProps> = ({
   isDesktop = false,
   anchorPosition = { top: 64, right: 16 }
 }) => {
+  const router = useRouter();
+  const { signOut } = useAuth();
+  
   if (!isOpen) return null;
+  
+  // ログアウト処理
+  const handleLogout = async () => {
+    try {
+      // ユーザーメニューを閉じる
+      onClose();
+      
+      console.log('🔄 Logging out user...');
+      
+      // AuthContextのsignOut関数を呼び出し
+      await signOut();
+      
+      console.log('🟢 Logged out successfully!');
+      
+      // ログインページにリダイレクト
+      setTimeout(() => {
+        window.location.href = '/Login'; // 完全なページリロードのためlocation.hrefを使用
+      }, 100);
+    } catch (error) {
+      console.error('🔴 Logout error:', error);
+      alert('ログアウト中にエラーが発生しました。ページをリロードしてください。');
+    }
+  };
   
   // PC画面用のドロップダウンメニュー
   if (isDesktop) {
@@ -44,12 +73,12 @@ const UserMenu: React.FC<UserMenuProps> = ({
           {/* ユーザー情報 */}
           <div className="flex items-center p-4 border-b">
             <div className="flex items-center">
-              <Avatar className="h-10 w-10 mr-3">
+              <Avatar className="h-10 w-10 mr-3 flex-shrink-0">
                 <AvatarImage src={avatarUrl} alt={username} />
                 <AvatarFallback>ユ</AvatarFallback>
               </Avatar>
-              <div>
-                <h1 className="text-base font-medium">{username}</h1>
+              <div className="min-w-0">
+                <h1 className="text-base font-medium truncate max-w-[170px]">{username}</h1>
                 <Link href={`/UserProfilePage`} className="text-sm text-gray-500 hover:text-gray-700">クリエイターページ</Link>
               </div>
             </div>
@@ -103,10 +132,13 @@ const UserMenu: React.FC<UserMenuProps> = ({
             
             <div className="border-t my-1"></div>
             
-            <Link href="/Logout" className="flex items-center text-sm px-4 py-2 hover:bg-gray-50">
+            <button 
+              onClick={handleLogout}
+              className="flex w-full items-center text-sm px-4 py-2 hover:bg-gray-50 text-left"
+            >
               <LogOut className="h-4 w-4 mr-3 text-gray-500" />
               ログアウト
-            </Link>
+            </button>
           </nav>
           
           <div className="p-4 border-t">
@@ -145,12 +177,12 @@ const UserMenu: React.FC<UserMenuProps> = ({
     <div className="fixed inset-0 z-50 bg-white">
       <div className="flex justify-between items-center p-4 border-b">
         <div className="flex items-center">
-          <Avatar className="h-10 w-10 mr-3">
+          <Avatar className="h-10 w-10 mr-3 flex-shrink-0">
             <AvatarImage src={avatarUrl} alt={username} />
             <AvatarFallback>ユ</AvatarFallback>
           </Avatar>
-          <div>
-            <h1 className="text-base font-medium">{username}</h1>
+          <div className="min-w-0">
+            <h1 className="text-base font-medium truncate max-w-[200px]">{username}</h1>
             <Link href={`/UserProfilePage`} className="text-sm text-gray-500 hover:text-gray-700">クリエイターページ</Link>
           </div>
         </div>
@@ -210,10 +242,13 @@ const UserMenu: React.FC<UserMenuProps> = ({
       </nav>
       
       <div className="p-4 mt-4">
-        <Link href="/Logout" className="flex items-center text-base py-2">
+        <button 
+          onClick={handleLogout}
+          className="flex w-full items-center text-base py-2"
+        >
           <LogOut className="h-5 w-5 mr-3 text-gray-500" />
           ログアウト
-        </Link>
+        </button>
       </div>
       
       <div className="fixed bottom-0 left-0 right-0 border-t border-gray-100">

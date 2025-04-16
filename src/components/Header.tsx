@@ -11,6 +11,7 @@ import { useToast } from './ui/use-toast';
 import NotificationDropdown from './NotificationDropdown';
 import UserMenu from './UserMenu';
 import { PostItem, getFollowingPosts, getTodayForYouPosts } from '../data/posts';
+import { useAuth } from '../lib/auth-context'; // AuthContextからuseAuthをインポート
 
 // カテゴリタブ
 const categoryTabs = [
@@ -24,8 +25,8 @@ const Header = () => {
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
-  // This would normally come from an auth context
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // useAuthフックを使用してログイン状態を取得
+  const { user, isLoading, signOut } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false); // モバイル検索表示状態
   const [isMobile, setIsMobile] = useState(false);
@@ -101,11 +102,6 @@ const Header = () => {
       };
     });
   }, [isMobile, activeTab]);
-
-  // Toggle login state (for demo purposes)
-  const toggleLogin = () => {
-    setIsLoggedIn(!isLoggedIn);
-  };
 
   // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -185,6 +181,26 @@ const Header = () => {
     setUserMenuOpen(!userMenuOpen);
   };
 
+  // ログアウト処理を追加
+  const handleLogout = async () => {
+    try {
+      console.log('🔄 Header: Logging out user...');
+      
+      // AuthContextのsignOut関数を呼び出し
+      await signOut();
+      
+      console.log('🟢 Header: Logged out successfully!');
+      
+      // ログインページにリダイレクト
+      setTimeout(() => {
+        window.location.href = '/Login'; // 完全なページリロードのためlocation.hrefを使用
+      }, 100);
+    } catch (error) {
+      console.error('🔴 Header: Logout error:', error);
+      alert('ログアウト中にエラーが発生しました。ページをリロードしてください。');
+    }
+  };
+
   const setTabButtonRef = useCallback((index: number) => (el: HTMLButtonElement | null) => {
     tabButtonsRef.current[index] = el;
   }, []);
@@ -254,112 +270,112 @@ const Header = () => {
               
                 {/* 右側のアイコングループ */}
                 <div className="flex items-center gap-4">
-                  {isLoggedIn ? (
+                  {/* isLoadingを考慮してUIを表示 */}
+                  {!isLoading && (
                     <>
-                      {/* PCでのみ表示する投稿ボタン */}
-                      <Button 
-                        variant="secondary" 
-                        size="sm" 
-                        className="bg-black text-white hover:bg-gray-800 hidden md:flex shadow-sm"
-                        onClick={() => router.push('/CreatePost')}
-                      >
-                        <PenSquare className="mr-2 h-4 w-4" />
-                        投稿
-                      </Button>
-                      
-                      {/* スマホ画面のアイコン群 - 右寄せ */}
-                      <div className="flex items-center gap-3 md:hidden">
-                        {/* 検索アイコン */}
-                        <button 
-                          className="text-gray-700 p-1.5 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-                          onClick={openMobileSearch}
-                          aria-label="検索"
-                        >
-                          <Search className="h-5 w-5" />
-                        </button>
-                        
-                        {/* 通知ドロップダウン */}
-                        <div className="p-1.5 flex items-center justify-center">
-                          <NotificationDropdown />
-                        </div>
-                        
-                        {/* 投稿アイコン */}
-                        <button
-                          className="bg-black text-white p-2 rounded-full flex items-center justify-center shadow-sm hover:bg-gray-800 transition-colors"
-                          onClick={() => router.push('/create-post')}
-                          aria-label="投稿する"
-                        >
-                          <PenSquare className="h-4 w-4" />
-                        </button>
-                      </div>
-                      
-                      {/* PC画面での通知ドロップダウン */}
-                      <div className="hidden md:block">
-                        <NotificationDropdown />
-                      </div>
-                      
-                      {/* アバター */}
-                      <div className="flex items-center">
-                        <Button 
-                          variant="ghost" 
-                          className="p-0.5 ml-0 rounded-full hover:bg-gray-100 transition-colors"
-                          onClick={toggleUserMenu} // ユーザーメニューを表示
-                        >
-                          <Avatar className="h-7 w-7 border border-gray-200">
-                            <AvatarImage src="https://github.com/shadcn.png" alt="User" />
-                            <AvatarFallback className="bg-gray-100 text-gray-700 text-xs">U</AvatarFallback>
-                          </Avatar>
-                        </Button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      {/* 未ログイン時のモバイルアイコン */}
-                      <div className="flex items-center gap-3 md:hidden">
-                        {/* 検索アイコン */}
-                        <button 
-                          className="text-gray-700 p-1.5 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-                          onClick={openMobileSearch}
-                          aria-label="検索"
-                        >
-                          <Search className="h-5 w-5" />
-                        </button>
-                        
-                        {/* モバイル表示のログインボタン類 */}
-                        <div className="flex items-center gap-2">
-                          <Link href="/login">
-                            <Button variant="ghost" className="text-gray-700 text-xs px-2 py-1 hover:bg-gray-100 transition-colors">
-                              ログイン
-                            </Button>
-                          </Link>
-                          <Link href="/register">
-                            <Button className="bg-black text-white hover:bg-gray-800 text-xs px-2 py-1 shadow-sm transition-colors">
-                              会員登録
-                            </Button>
-                          </Link>
-                        </div>
-                      </div>
-                      
-                      {/* PC表示のログインボタン類 */}
-                      <div className="hidden md:flex items-center gap-2">
-                        <Link href="/login">
-                          <Button variant="ghost" className="text-gray-700 text-sm px-3 py-1.5 hover:bg-gray-100 transition-colors">
-                            ログイン
+                      {user ? (
+                        <>
+                          {/* PCでのみ表示する投稿ボタン */}
+                          <Button 
+                            variant="secondary" 
+                            size="sm" 
+                            className="bg-black text-white hover:bg-gray-800 hidden md:flex shadow-sm"
+                            onClick={() => router.push('/CreatePost')}
+                          >
+                            <PenSquare className="mr-2 h-4 w-4" />
+                            投稿
                           </Button>
-                        </Link>
-                        <Link href="/register">
-                          <Button className="bg-black text-white hover:bg-gray-800 text-sm px-3 py-1.5 shadow-sm transition-colors">
-                            会員登録
-                          </Button>
-                        </Link>
-                        <Button 
-                          variant="ghost" 
-                          onClick={toggleLogin}
-                          className="text-gray-700 text-sm px-3 py-1.5 hover:bg-gray-100 transition-colors"
-                        >
-                          デモ切替
-                        </Button>
-                      </div>
+                          
+                          {/* スマホ画面のアイコン群 - 右寄せ */}
+                          <div className="flex items-center gap-3 md:hidden">
+                            {/* 検索アイコン */}
+                            <button 
+                              className="text-gray-700 p-1.5 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                              onClick={openMobileSearch}
+                              aria-label="検索"
+                            >
+                              <Search className="h-5 w-5" />
+                            </button>
+                            
+                            {/* 通知ドロップダウン */}
+                            <div className="p-1.5 flex items-center justify-center">
+                              <NotificationDropdown />
+                            </div>
+                            
+                            {/* 投稿アイコン */}
+                            <button
+                              className="bg-black text-white p-2 rounded-full flex items-center justify-center shadow-sm hover:bg-gray-800 transition-colors"
+                              onClick={() => router.push('/create-post')}
+                              aria-label="投稿する"
+                            >
+                              <PenSquare className="h-4 w-4" />
+                            </button>
+                          </div>
+                          
+                          {/* PC画面での通知ドロップダウン */}
+                          <div className="hidden md:block">
+                            <NotificationDropdown />
+                          </div>
+                          
+                          {/* アバター */}
+                          <div className="flex items-center">
+                            <Button 
+                              variant="ghost" 
+                              className="p-0.5 ml-0 rounded-full hover:bg-gray-100 transition-colors"
+                              onClick={toggleUserMenu} // ユーザーメニューを表示
+                            >
+                              <Avatar className="h-7 w-7 border border-gray-200">
+                                <AvatarImage src={user?.user_metadata?.avatar_url || "https://github.com/shadcn.png"} alt={user?.email || "User"} />
+                                <AvatarFallback className="bg-gray-100 text-gray-700 text-xs">
+                                  {user?.email ? user.email.charAt(0).toUpperCase() : 'U'}
+                                </AvatarFallback>
+                              </Avatar>
+                            </Button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          {/* 未ログイン時のモバイルアイコン */}
+                          <div className="flex items-center gap-3 md:hidden">
+                            {/* 検索アイコン */}
+                            <button 
+                              className="text-gray-700 p-1.5 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                              onClick={openMobileSearch}
+                              aria-label="検索"
+                            >
+                              <Search className="h-5 w-5" />
+                            </button>
+                            
+                            {/* モバイル表示のログインボタン類 */}
+                            <div className="flex items-center gap-2">
+                              <Link href="/Login">
+                                <Button variant="ghost" className="text-gray-700 text-xs px-2 py-1 hover:bg-gray-100 transition-colors">
+                                  ログイン
+                                </Button>
+                              </Link>
+                              <Link href="/Register">
+                                <Button className="bg-black text-white hover:bg-gray-800 text-xs px-2 py-1 shadow-sm transition-colors">
+                                  会員登録
+                                </Button>
+                              </Link>
+                            </div>
+                          </div>
+                          
+                          {/* PC表示のログインボタン類 */}
+                          <div className="hidden md:flex items-center gap-2">
+                            <Link href="/Login">
+                              <Button variant="ghost" className="text-gray-700 text-sm px-3 py-1.5 hover:bg-gray-100 transition-colors">
+                                ログイン
+                              </Button>
+                            </Link>
+                            <Link href="/Register">
+                              <Button className="bg-black text-white hover:bg-gray-800 text-sm px-3 py-1.5 shadow-sm transition-colors">
+                                会員登録
+                              </Button>
+                            </Link>
+                          </div>
+                        </>
+                      )}
                     </>
                   )}
                 </div>
@@ -398,25 +414,29 @@ const Header = () => {
         {/* スマホ用タブコンテンツは削除 - フォロー中ページに移行 */}
       </div>
 
-      {/* ユーザーメニュー */}
-      <UserMenu 
-        isOpen={userMenuOpen} 
-        onClose={() => setUserMenuOpen(false)}
-        username="しゅんや@準備中のアプリ運営"
-        avatarUrl="https://github.com/shadcn.png"
-        isDesktop={!isMobile}
-        anchorPosition={{ top: 64, right: 16 }}
-      />
+      {/* ユーザーメニュー - ユーザーがログインしている場合のみ表示 */}
+      {user && (
+        <UserMenu 
+          isOpen={userMenuOpen} 
+          onClose={() => setUserMenuOpen(false)}
+          username={user?.user_metadata?.full_name || user?.email?.split('@')[0] || "ユーザー"}
+          avatarUrl={user?.user_metadata?.avatar_url || "https://github.com/shadcn.png"}
+          isDesktop={!isMobile}
+          anchorPosition={{ top: 64, right: 16 }}
+        />
+      )}
 
-      {/* 投稿ボタン（モバイルでは右下フローティングボタン） */}
-      <Button 
-        variant="link" 
-        size="sm" 
-        className="fixed right-4 bottom-20 z-50 md:hidden bg-black text-white p-4 rounded-full shadow-lg"
-        onClick={() => router.push('/create-post')}
-      >
-        <PenSquare className="h-6 w-6" />
-      </Button>
+      {/* 投稿ボタン（モバイルでは右下フローティングボタン） - ユーザーがログインしている場合のみ表示 */}
+      {user && (
+        <Button 
+          variant="link" 
+          size="sm" 
+          className="fixed right-4 bottom-20 z-50 md:hidden bg-black text-white p-4 rounded-full shadow-lg"
+          onClick={() => router.push('/create-post')}
+        >
+          <PenSquare className="h-6 w-6" />
+        </Button>
+      )}
 
       {/* モバイル表示でのメニュー（ボトムナビゲーション） */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center h-16 md:hidden z-40 px-2">

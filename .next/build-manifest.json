@@ -14,17 +14,16 @@
     "static/chunks/webpack.js",
     "static/chunks/main-app.js"
   ],
-  "rootMainFilesTree": {},
   "pages": {
-    "/ContestPage": [
+    "/Login": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/ContestPage.js"
+      "static/chunks/pages/Login.js"
     ],
-    "/MyArticles": [
+    "/Register": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/MyArticles.js"
+      "static/chunks/pages/Register.js"
     ],
     "/_app": [
       "static/chunks/webpack.js",

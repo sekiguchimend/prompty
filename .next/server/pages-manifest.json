@@ -2,8 +2,7 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/Following": "pages/Following.js",
-  "/ContestPage": "pages/ContestPage.js",
-  "/prompts/[id]": "pages/prompts/[id].js",
-  "/MyArticles": "pages/MyArticles.js"
+  "/Login": "pages/Login.js",
+  "/Register": "pages/Register.js",
+  "/prompts/[id]": "pages/prompts/[id].js"
 }

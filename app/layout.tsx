@@ -1,14 +1,14 @@
 "use client";
 
 import React from 'react';
-import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import '../src/index.css';
 import './globals.css';
 import Header from '../src/components/Header';
 import { RouterProvider } from '../src/components/RouterProvider';
-
+import { AuthProvider } from '../src/lib/auth-context';
 // フォントの設定
+
 const inter = Inter({ subsets: ['latin'] });
 
 // Metadata cannot be used in Client Components
@@ -27,12 +27,14 @@ export default function RootLayout({
         <meta name="description" content={description} />
       </head>
       <body className={inter.className}>
+      <AuthProvider>
         <RouterProvider>
           <div className="relative flex min-h-screen flex-col">
             <Header />
             <main className="flex-1">{children}</main>
           </div>
         </RouterProvider>
+        </AuthProvider>
       </body>
     </html>
   );
