@@ -37,7 +37,8 @@ const Footer: React.FC = () => {
     {
       category: 'ヘルプ',
       links: [
-        { text: 'ヘルプセンター', url: '/HelpCenter' }
+        { text: 'ヘルプセンター', url: '/HelpCenter' },
+        { text: 'お問い合わせ', url: '/contact' }
       ]
     },
     {

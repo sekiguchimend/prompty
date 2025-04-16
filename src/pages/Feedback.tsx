@@ -4,6 +4,8 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { useToast } from '../components/ui/use-toast';
 import Header from '../components/Header';
+import Footer from '../components/Footer';
+import { supabase } from '../lib/supabaseClient';
 import {
   Select,
   SelectContent,
@@ -12,12 +14,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
+import { CheckCircle2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+
+// フィードバックのタイプ定義
+interface FeedbackData {
+  feedback_type: string;
+  email?: string;
+  message: string;
+  is_read?: boolean;
+}
 
 const Feedback = () => {
   const [feedbackType, setFeedbackType] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,20 +55,130 @@ const Feedback = () => {
     // 送信中状態に設定
     setIsSubmitting(true);
     
-    // 実際のAPI送信の代わりに、送信成功をシミュレーション
-    setTimeout(() => {
-      toast({
-        title: "フィードバックを送信しました",
-        description: "ご意見ありがとうございます。検討させていただきます。",
-      });
+    // フィードバックデータを構築
+    const feedbackData: FeedbackData = {
+      feedback_type: feedbackType,
+      message: message.trim(),
+      is_read: false // 初期値は未読
+    };
+    
+    // メールアドレスが入力されている場合のみ追加
+    if (email.trim()) {
+      feedbackData.email = email.trim();
+    }
+    
+    try {
+      // Supabaseにデータを送信
+      console.log('Sending feedback data:', feedbackData);
+      
+      // まず標準のinsertを試す
+      const { data, error } = await supabase
+        .from('feedback')
+        .insert([feedbackData]);
+      
+      if (error) {
+        console.error('Insert error:', error);
+        // 通常のinsertが失敗した場合はRPCを試す
+        const { data: rpcData, error: rpcError } = await supabase.rpc('insert_feedback', {
+          p_feedback_type: feedbackData.feedback_type,
+          p_email: feedbackData.email || null,
+          p_message: feedbackData.message,
+          p_is_read: false
+        });
+        
+        if (rpcError) throw rpcError;
+      }
+      
+      // 送信成功
+      setIsSubmitted(true);
       
       // フォームをリセット
       setFeedbackType('');
       setEmail('');
       setMessage('');
+    } catch (error: any) {
+      console.error('フィードバック送信エラー:', error);
+      toast({
+        title: "送信に失敗しました",
+        description: error.message || "通信エラーが発生しました。しばらく経ってからもう一度お試しください。",
+        variant: "destructive",
+      });
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
+
+  const handleReset = () => {
+    setIsSubmitted(false);
+  };
+
+  // 送信完了画面
+  if (isSubmitted) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        
+        <main className="flex-1 container max-w-3xl mx-auto px-4 py-12 flex items-center justify-center">
+          <motion.div 
+            className="bg-white rounded-lg shadow-sm border border-gray-100 p-8 text-center w-full"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
+              className="flex justify-center mb-6"
+            >
+              <CheckCircle2 className="w-16 h-16 text-green-500" />
+            </motion.div>
+            
+            <motion.h1 
+              className="text-2xl font-bold mb-4"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              フィードバックを送信しました
+            </motion.h1>
+            
+            <motion.p 
+              className="text-gray-600 mb-8"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.5 }}
+            >
+              貴重なご意見ありがとうございます。<br />
+              いただいたフィードバックはサービス改善に活用させていただきます。
+            </motion.p>
+            
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.6 }}
+            >
+              <Button 
+                onClick={handleReset}
+                className="mr-4 bg-black hover:bg-gray-800"
+              >
+                新しいフィードバックを送信
+              </Button>
+              
+              <Button 
+                variant="outline"
+                onClick={() => window.location.href = '/'}
+              >
+                ホームに戻る
+              </Button>
+            </motion.div>
+          </motion.div>
+        </main>
+        
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -155,6 +278,8 @@ const Feedback = () => {
           </div>
         </div>
       </main>
+      
+      <Footer />
     </div>
   );
 };

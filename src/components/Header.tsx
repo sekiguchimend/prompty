@@ -19,7 +19,12 @@ const categoryTabs = [
   { id: 'following', name: 'フォロー中', path: '/Following' },
   // { id: 'featured', name: '注目', path: '/featured' },
   { id: 'posts', name: '投稿企画', path: '/ContestPage' },
+  { id: 'contact', name: 'お問い合わせ', path: '/contact' },
+  { id: 'feedback', name: 'フィードバック', path: '/Feedback' },
 ];
+
+// 管理者リストを定義
+const ADMIN_EMAILS = ['queue@queuetech.jp', 'admin@queuetech.jp', 'queue@queue-tech.jp']; 
 
 const Header = () => {
   const router = useRouter();
@@ -201,6 +206,15 @@ const Header = () => {
     }
   };
 
+  // 管理者かどうかをチェックする関数を追加
+  const isAdminUser = (email: string | undefined) => {
+    if (!email) return false;
+    // 特定のメールアドレスリストに含まれるかチェック
+    if (ADMIN_EMAILS.includes(email)) return true;
+    // queuetech.jpドメインのメールアドレスかチェック
+    return email.endsWith('@queuetech.jp') || email.endsWith('@queue-tech.jp');
+  };
+
   const setTabButtonRef = useCallback((index: number) => (el: HTMLButtonElement | null) => {
     tabButtonsRef.current[index] = el;
   }, []);
@@ -316,6 +330,23 @@ const Header = () => {
                           <div className="hidden md:block">
                             <NotificationDropdown />
                           </div>
+                          
+                          {/* 管理者ページへのリンク（管理者ユーザーの場合のみ表示） */}
+                          {user?.email && isAdminUser(user.email) && (
+                            <button
+                              onClick={() => {
+                                console.log('管理ページへ移動します', user.email);
+                                // 遷移前に確認ダイアログを表示
+                                if (window.confirm('管理ページに移動しますか？')) {
+                                  // 直接URLを使用して遷移
+                                  window.location.href = '/admin';
+                                }
+                              }}
+                              className="hidden md:inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 mr-2"
+                            >
+                              管理ページ
+                            </button>
+                          )}
                           
                           {/* アバター */}
                           <div className="flex items-center">

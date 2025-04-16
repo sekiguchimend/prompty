@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, Eye, MessageSquare, Heart, HelpCircle, Menu, X, Award, DollarSign, CreditCard, Clock, AlertCircle, ChevronRight } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
+import Announcements from '../components/Announcements';
 
 const DashboardPage: React.FC = () => {
   const router = useRouter();
@@ -11,10 +12,13 @@ const DashboardPage: React.FC = () => {
   const [timePeriod, setTimePeriod] = useState('全期間');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileHelpOpen, setIsMobileHelpOpen] = useState(false);
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [windowWidth, setWindowWidth] = useState(0);
   
   // 画面サイズを検出
   useEffect(() => {
+    // クライアントサイドでのみwindowオブジェクトを使用
+    setWindowWidth(window.innerWidth);
+    
     const handleResize = () => {
       setWindowWidth(window.innerWidth);
       
@@ -413,9 +417,11 @@ const DashboardPage: React.FC = () => {
                   <p className="text-xs sm:text-sm text-gray-600 mb-2">
                     振込先口座が登録されていません。売上が発生した場合に振込を受け取るには、振込先口座の登録が必要です。
                   </p>
-                  <Link to="/settings?tab=payment" className="text-blue-500 text-xs sm:text-sm font-medium hover:underline inline-flex items-center">
-                    振込先口座を登録する
-                    <ChevronRight className="h-3 w-3 ml-1" />
+                  <Link href="/settings?tab=payment">
+                    <span className="text-blue-500 text-xs sm:text-sm font-medium hover:underline inline-flex items-center cursor-pointer">
+                      振込先口座を登録する
+                      <ChevronRight className="h-3 w-3 ml-1" />
+                    </span>
                   </Link>
                 </div>
               </div>
@@ -646,15 +652,19 @@ const DashboardPage: React.FC = () => {
     {isDesktop && (
       <aside className="w-80 bg-white p-6 rounded-lg shadow-sm self-start sticky top-24">
         <div className="mb-6">
-          <div className="flex items-center justify-center bg-gray-100 rounded-md py-4 px-4 mb-6">
-            <div className="flex items-center">
-              <span className="text-sm mr-2">promptyで作品や体験を</span>
-              <span className="text-base font-bold">収益化してみよう</span>
-              <div className="bg-black text-white rounded-full p-1.5 ml-2">
-                <ChevronRight className="h-4 w-4" />
+          <Announcements />
+          
+          <Link href="/monetization">
+            <div className="flex items-center justify-center bg-gray-100 rounded-md py-4 px-4 mb-6 cursor-pointer hover:bg-gray-200">
+              <div className="flex items-center">
+                <span className="text-sm mr-2">promptyで作品や体験を</span>
+                <span className="text-base font-bold">収益化してみよう</span>
+                <div className="bg-black text-white rounded-full p-1.5 ml-2">
+                  <ChevronRight className="h-4 w-4" />
+                </div>
               </div>
             </div>
-          </div>
+          </Link>
           
           <h3 className="text-lg font-bold mb-4">もっと読まれるには</h3>
           
@@ -672,9 +682,11 @@ const DashboardPage: React.FC = () => {
             </div>
           ))}
           
-          <button className="w-full bg-gray-50 text-sm py-2 rounded-md hover:bg-gray-100 mt-2">
-            すべて表示
-          </button>
+          <Link href="/help">
+            <button className="w-full bg-gray-50 text-sm py-2 rounded-md hover:bg-gray-100 mt-2">
+              すべて表示
+            </button>
+          </Link>
         </div>
       </aside>
     )}

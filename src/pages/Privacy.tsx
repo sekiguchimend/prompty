@@ -1,15 +1,14 @@
-
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { Helmet } from 'react-helmet';
+import Head from 'next/head';
 
 const Privacy: React.FC = () => {
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
-      <Helmet>
+      <Head>
         <title>プライバシーポリシー | prompty</title>
-      </Helmet>
+      </Head>
       <Header />
       <main className="flex-1 py-12">
         <div className="container max-w-3xl mx-auto px-4">
