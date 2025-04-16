@@ -13,7 +13,7 @@ const HowToUse: React.FC = () => {
       <Header />
       <main className="flex-1 py-12">
         <div className="container max-w-3xl mx-auto px-4">
-          <h1 className="text-3xl font-bold mb-8">よくある質問・promptyの使い方</h1>
+          <h1 className="text-3xl font-bold mb-8">よくある質問・promptyの使い方.</h1>
           
           <div className="space-y-8">
             <section className="bg-white p-6 rounded-lg shadow-sm">
