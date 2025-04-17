@@ -44,9 +44,8 @@ const AuthorSidebar: React.FC<AuthorSidebarProps> = ({ author, tags, website }) 
     <div className="sticky top-20">
       <div className="flex flex-col items-start">
         {/* Author profile section */}
-        <div className="mb-3">
-          <div className="flex items-center mb-2">
-            <div className="w-14 h-14 rounded-full overflow-hidden mr-2">
+        <div className="flex items-center mb-2">
+            <div className="w-10 h-10 overflow-hidden mr-2 rounded-lg">
               <img 
                 src={author.avatarUrl} 
                 alt={author.name} 
@@ -57,7 +56,7 @@ const AuthorSidebar: React.FC<AuthorSidebarProps> = ({ author, tags, website }) 
               <h3 className="text-sm font-medium">{author.name}</h3>
               <p className="text-xs text-gray-500">{author.bio}</p>
             </div>
-          </div>
+          
         </div>
         
         <div className="text-xs text-gray-500 space-y-2 mb-4">

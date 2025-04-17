@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import {useRouter} from 'next/router';
+import { useRouter } from 'next/router';
 import { Button } from '@/components/ui/button';
-import { Check, Lock, FileText, Info } from 'lucide-react';
-
+import { Check, Lock, FileText, Info, Link } from 'lucide-react';
 import { Badge } from '../../components/ui/badge';
-import { ExternalLink } from 'lucide-react'; // Using ExternalLink icon which is similar to the one in the image
+import { ExternalLink } from 'lucide-react';
+import PurchaseDialog from './PurchaseDialog'; // Import the PurchaseDialog component
 
 interface PromptContentProps {
   imageUrl?: string;
@@ -34,7 +34,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
   systemImageUrl,
   systemUrl
 }) => {
-  const [isDialogOpen, setIsDialogOpen] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false); // Changed to false as default
   const router = useRouter();
 
   // コンテンツが配列の場合は結合して文字列にする
@@ -46,10 +46,13 @@ const PromptContent: React.FC<PromptContentProps> = ({
     : contentText.length;
 
   const handlePurchase = () => {
-    setIsDialogOpen(true);
-    router.push('/checkout');
+    setIsDialogOpen(true); // Open the dialog instead of redirecting
   };
 
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+  };
+ 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="flex flex-col gap-6">
@@ -58,33 +61,30 @@ const PromptContent: React.FC<PromptContentProps> = ({
           <h1 className="text-3xl font-bold text-gray-800">{title}</h1>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-md overflow-hidden">
-                <img 
-                  src={author.avatarUrl} 
-                  alt={author.name} 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-700">{author.name}</p>
-                <p className="text-xs text-gray-500">
-                  {author.publishedAt || 'プロンプトエンジニア'}
-                </p>
-              </div>
-            </div>
-
+          <div className="flex items-center space-x-3">
+  <div className="w-10 h-10 rounded-full overflow-hidden">
+    <img 
+      src={author.avatarUrl} 
+      alt={author.name} 
+      className="w-full h-full object-cover"
+    />
+  </div>
+  <div>
+    <p className="text-sm font-medium text-gray-700">{author.name}</p>
+    <p className="text-xs text-gray-500">
+      {author.publishedAt || 'プロンプトエンジニア'}
+    </p>
+  </div>
+</div>
             {/* 価格表示 - モバイルでも表示 */}
             {price > 0 && (
-              // <div className="text-right">
-              //   <p className="text-lg font-medium text-gray-600 border-2 border-gray-600 bg-white rounded-md px-3 py-1 inline-block">¥{price.toLocaleString()}</p>
-              // </div>
-              <div className="text-right">
-  <p className="text-sm font-normal text-gray-600 border border-gray-500 bg-white rounded px-2 py-0.5 inline-block">
-    ¥{price.toLocaleString()}
-  </p>
-</div>
-
+              
+                <div className="text-right"onClick={handlePurchase}>
+                  <p className="text-sm font-normal text-gray-600 border border-gray-500 bg-white rounded px-2 py-0.5 inline-block">
+                    ¥{price.toLocaleString()}
+                  </p>
+                </div>
+             
             )}
           </div>
         </div>
@@ -99,13 +99,13 @@ const PromptContent: React.FC<PromptContentProps> = ({
             />
           </div>
         )}
- <button 
-      // onClick={onClick}
-      className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium py-1 px-2 rounded transition-colors"
-    >
-      <ExternalLink className="w-4 h-4" />
-      <span>システムを見る</span>
-    </button>
+        <button 
+          // onClick={onClick}
+          className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium py-1 px-2 rounded transition-colors"
+        >
+          <ExternalLink className="w-4 h-4" />
+          <span>システムを見る</span>
+        </button>
         {/* Content section */}
         <div className="relative prose max-w-none">
           {isPreview ? (
@@ -146,7 +146,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
                       {/* Full-width purchase button */}
                       <Button
                         className="w-full bg-gray-800 text-white hover:bg-gray-700 rounded-md py-6 text-lg font-medium"
-                        onClick={() => setIsDialogOpen(true)}
+                        onClick={handlePurchase} // Use the same handler as the price button
                       >
                         購入手続きへ
                       </Button>
@@ -167,6 +167,17 @@ const PromptContent: React.FC<PromptContentProps> = ({
           )}
         </div>
       </div>
+      
+      {/* Add PurchaseDialog component here */}
+      <PurchaseDialog 
+        isOpen={isDialogOpen}
+        onClose={handleCloseDialog}
+        prompt={{
+          title,
+          author,
+          price
+        }}
+      />
     </div>
   );
 };

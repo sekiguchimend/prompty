@@ -448,20 +448,20 @@ const Header = () => {
         {/* スマホ用タブコンテンツは削除 - フォロー中ページに移行 */}
       </div>
 
-      {/* ユーザーメニュー - ユーザーがログインしている場合のみ表示 */}
-      {user && (
+    {/* ユーザーメニュー - ユーザーがログインしている場合のみ表示 */}
+      {/* {user && (
         <UserMenu 
-          isOpen={userMenuOpen} 
+            isOpen={userMenuOpen} 
           onClose={() => setUserMenuOpen(false)}
           username={user?.user_metadata?.full_name || user?.email?.split('@')[0] || "ユーザー"}
           avatarUrl={user?.user_metadata?.avatar_url || "https://github.com/shadcn.png"}
           isDesktop={!isMobile}
           anchorPosition={{ top: 64, right: 16 }}
         />
-      )}
+      )} */}
 
       {/* 投稿ボタン（モバイルでは右下フローティングボタン） - ユーザーがログインしている場合のみ表示 */}
-      {user && (
+      {/* {user && (
         <Button 
           variant="link" 
           size="sm" 
@@ -470,10 +470,10 @@ const Header = () => {
         >
           <PenSquare className="h-6 w-6" />
         </Button>
-      )}
+      )} */}
 
       {/* モバイル表示でのメニュー（ボトムナビゲーション） */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center h-16 md:hidden z-40 px-2">
+      {/* <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center h-16 md:hidden z-40 px-2">
         <Button variant="ghost" size="sm" className="flex flex-col items-center justify-center h-full" onClick={() => router.push('/')}>
           <Search className="h-5 w-5 text-gray-600" />
           <span className="text-xs text-gray-600 mt-1">検索</span>
@@ -488,7 +488,7 @@ const Header = () => {
           <MessageSquare className="h-5 w-5 text-gray-600" />
           <span className="text-xs text-gray-600 mt-1">メッセージ</span>
         </Button>
-      </div>
+      </div> */}
     </>
   );
 };

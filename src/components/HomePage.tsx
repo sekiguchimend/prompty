@@ -8,7 +8,7 @@ import PromptSection from './PromptSection';
 import { featuredPrompts, aiGeneratedPrompts } from '../data/mockPrompts';
 import { useResponsive } from '../hooks/use-responsive';
 import { getPopularPosts } from '../data/posts';
-import { PromptItem } from './PromptGrid';
+import { PromptItem } from '../pages/prompts/[id]';
 
 const HomePage: React.FC = () => {
   // より詳細な画面サイズ情報を取得

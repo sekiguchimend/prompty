@@ -1,5 +1,5 @@
 import { Award, Clock, CreditCard, DollarSign, Eye, Heart, MessageSquare } from 'lucide-react';
-import React from 'react';
+import React, { createElement } from 'react';
 
 export interface Article {
   id: string;
@@ -57,21 +57,21 @@ export interface HelpContentSection {
 export const getIconByType = (iconType: string, className: string): React.ReactNode => {
   switch (iconType) {
     case 'eye':
-      return <Eye className={className} />;
+      return createElement(Eye, { className });
     case 'award':
-      return <Award className={className} />;
+      return createElement(Award, { className });
     case 'heart':
-      return <Heart className={className} />;
+      return createElement(Heart, { className });
     case 'message-square':
-      return <MessageSquare className={className} />;
+      return createElement(MessageSquare, { className });
     case 'dollar-sign':
-      return <DollarSign className={className} />;
+      return createElement(DollarSign, { className });
     case 'credit-card':
-      return <CreditCard className={className} />;
+      return createElement(CreditCard, { className });
     case 'clock':
-      return <Clock className={className} />;
+      return createElement(Clock, { className });
     default:
-      return <Eye className={className} />;
+      return createElement(Eye, { className });
   }
 };
 

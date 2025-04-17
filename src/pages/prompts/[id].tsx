@@ -14,13 +14,14 @@ import { featuredPrompts, aiGeneratedPrompts } from '../../data/mockPrompts';
 import { PostItem } from '../../data/posts';
 
 // mockPromptsの型を定義
-interface PromptItem {
+export interface PromptItem {
   id: string;
   title: string;
   thumbnailUrl: string;
   user: {
     name: string;
     avatarUrl: string;
+    account_name?: string;
   };
   postedAt: string;
   likeCount: number;
