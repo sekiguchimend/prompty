@@ -3,7 +3,7 @@ export const featuredPrompts = [
   {
     id: '1',
     title: 'GPT-4によるウェブデザイン生成 〜1年間の進化とプロンプト改良ポイント〜',
-    thumbnailUrl: 'https://picsum.photos/id/1/600/400',
+    thumbnailUrl: './hp.png',
     user: {
       name: 'Tanaka',
       account_name: 'Tanaka',
@@ -14,8 +14,8 @@ export const featuredPrompts = [
   },
   {
     id: '2',
-    title: 'プロンプトエンジニアリング入門：効果的な指示の書き方マニュアル',
-    thumbnailUrl: 'https://picsum.photos/id/2/600/400',
+    title: '業務効率化アプリプロンプト',
+    thumbnailUrl: './kanri.png',
     user: {
       name: 'Kimura書店',
       account_name: 'Kimura書店',
@@ -26,8 +26,8 @@ export const featuredPrompts = [
   },
   {
     id: '3',
-    title: 'AIによる画像生成の秘訣：構図、スタイル、詳細度の調整方法',
-    thumbnailUrl: 'https://picsum.photos/id/3/600/400',
+    title: 'かわいいボタンデザイン',
+    thumbnailUrl: './button.png',
     user: {
       name: 'わかまつき',
       account_name: 'わかまつき',
@@ -38,8 +38,8 @@ export const featuredPrompts = [
   },
   {
     id: '4',
-    title: '小規模ビジネス向けマーケティングAIの活用法',
-    thumbnailUrl: 'https://picsum.photos/id/4/600/400',
+    title: 'チャットアプリ',
+    thumbnailUrl: './chat.png',
     user: {
       name: '三宅 英史',
       account_name: '三宅 英史',
@@ -50,8 +50,8 @@ export const featuredPrompts = [
   },
   {
     id: '5',
-    title: 'AIチャットボット作成術：顧客対応を自動化する方法',
-    thumbnailUrl: 'https://picsum.photos/id/5/600/400',
+    title: '社内のデータをグラフ化し簡単にkpiをたてることができる社内システム',
+    thumbnailUrl: './gragh.png',
     user: {
       name: '福西',
       account_name: '福西',
@@ -66,8 +66,8 @@ export const featuredPrompts = [
 export const aiGeneratedPrompts = [
   {
     id: '6',
-    title: 'AI生成コンテンツの著作権問題と対策',
-    thumbnailUrl: 'https://picsum.photos/id/6/600/400',
+    title: '見積書作成を自動化するためのシステムを作ることができるプロンプト',
+    thumbnailUrl: './mitumori.png',
     user: {
       name: '株式会社イマクリエ',
       account_name: '株式会社イマクリエ',
@@ -78,8 +78,8 @@ export const aiGeneratedPrompts = [
   },
   {
     id: '7',
-    title: 'Supershipが放つ「広告クリエイティブ生成AIシステム」、その強みとは？',
-    thumbnailUrl: 'https://picsum.photos/id/7/600/400',
+    title: '完全自動化システムを複雑なプロンプトで作ることができる方法を見つけました',
+    thumbnailUrl: './auto.png',
     user: {
       name: 'Supership社内報',
       account_name: 'Supership社内報',
@@ -90,11 +90,11 @@ export const aiGeneratedPrompts = [
   },
   {
     id: '8',
-    title: '生成AI時代、デザイナーに求められる役割とは？',
-    thumbnailUrl: 'https://picsum.photos/id/8/600/400',
+    title: '最速でSaaSを作ってみたので共有します！',
+    thumbnailUrl: './saas.png',
     user: {
-      name: 'freee公式note',
-      account_name: 'freee公式note',
+      name: '石器ー',
+      account_name: '石器ー',
       avatarUrl: 'https://i.pravatar.cc/150?img=8',
     },
     postedAt: '2日前',
@@ -102,8 +102,8 @@ export const aiGeneratedPrompts = [
   },
   {
     id: '9',
-    title: '「EC・ファッション」から"清掃"まで。ユニークな生成AI活用と2025年の展望',
-    thumbnailUrl: 'https://picsum.photos/id/9/600/400',
+    title: 'uiはこだわりがない機能を詰め込んだシステムが作れるプロンプトを共有します',
+    thumbnailUrl: './system.png',
     user: {
       name: '東洋テックCVC',
       account_name: '東洋テックCVC',

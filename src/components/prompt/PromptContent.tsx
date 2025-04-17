@@ -5,7 +5,7 @@ import { Check, Lock, FileText, Info, Link } from 'lucide-react';
 import { Badge } from '../../components/ui/badge';
 import { ExternalLink } from 'lucide-react';
 import PurchaseDialog from './PurchaseDialog'; // Import the PurchaseDialog component
-
+import Image from 'next/image';
 interface PromptContentProps {
   imageUrl?: string;
   title: string;
@@ -61,42 +61,63 @@ const PromptContent: React.FC<PromptContentProps> = ({
           <h1 className="text-3xl font-bold text-gray-800">{title}</h1>
 
           <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-  <div className="w-10 h-10 rounded-full overflow-hidden">
-    <img 
-      src={author.avatarUrl} 
-      alt={author.name} 
-      className="w-full h-full object-cover"
-    />
-  </div>
-  <div>
-    <p className="text-sm font-medium text-gray-700">{author.name}</p>
-    <p className="text-xs text-gray-500">
-      {author.publishedAt || 'プロンプトエンジニア'}
-    </p>
-  </div>
-</div>
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-full overflow-hidden">
+                {author.avatarUrl && (
+                  author.avatarUrl.startsWith('http') ? (
+                    <img 
+                      src={author.avatarUrl} 
+                      alt={author.name} 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Image 
+                      src={author.avatarUrl} 
+                      alt={author.name}
+                      width={40}
+                      height={40}
+                      className="w-full h-full object-cover"
+                    />
+                  )
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-700">{author.name}</p>
+                <p className="text-xs text-gray-500">
+                  {author.publishedAt || 'プロンプトエンジニア'}
+                </p>
+              </div>
+            </div>
             {/* 価格表示 - モバイルでも表示 */}
             {price > 0 && (
-              
-                <div className="text-right"onClick={handlePurchase}>
-                  <p className="text-sm font-normal text-gray-600 border border-gray-500 bg-white rounded px-2 py-0.5 inline-block">
-                    ¥{price.toLocaleString()}
-                  </p>
-                </div>
-             
+              <div className="text-right" onClick={handlePurchase}>
+                <p className="text-sm font-normal text-gray-600 border border-gray-500 bg-white rounded px-2 py-0.5 inline-block">
+                  ¥{price.toLocaleString()}
+                </p>
+              </div>
             )}
           </div>
         </div>
 
         {/* メイン画像（あれば表示） */}
         {imageUrl && (
-          <div className="rounded-md overflow-hidden aspect-video mb-2">
-            <img 
-              src={imageUrl} 
-              alt={title} 
-              className="w-full h-full object-cover"
-            />
+          <div className="rounded-md overflow-hidden aspect-video mb-2 relative">
+           
+           {imageUrl.startsWith('http') ? (
+              <img 
+                src={imageUrl} 
+                alt={title} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Image 
+                src={`/${imageUrl}`}
+                alt={title}
+                width={800}
+                height={450}
+                className="w-full h-full object-cover"
+              />
+            )}
           </div>
         )}
         <button 
