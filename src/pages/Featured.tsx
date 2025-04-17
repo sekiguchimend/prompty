@@ -34,9 +34,6 @@ const Featured: React.FC = () => {
       <div className="flex flex-col flex-1 md:ml-[240px]">
 
       <div className="flex flex-1 pt-10">
-        {/* PC画面でのみサイドバーのスペースを確保 */}
-       
-        
         <main className="flex-1 pb-12 overflow-x-hidden md:mt-0 mt-5">
           <div className="container px-4 py-6 sm:px-6 md:px-8">
             <h1 className="text-2xl font-bold mb-6">今日の注目プロンプト</h1>

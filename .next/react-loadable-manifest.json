@@ -31,6 +31,7 @@
   "components\\HeaderAnnouncements.tsx -> framer-motion": {
     "id": "components\\HeaderAnnouncements.tsx -> framer-motion",
     "files": [
+      "static/chunks/node_modules_framer-motion_dist_es_index_mjs.js",
       "static/chunks/_app-pages-browser_node_modules_framer-motion_dist_es_index_mjs.js"
     ]
   }

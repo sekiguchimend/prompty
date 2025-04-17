@@ -25,7 +25,14 @@ export default function RootLayout({
       <head>
         <title>{title}</title>
         <meta name="description" content={description} />
-        <link rel="icon" href="/prompty-logo.jpg" />
+        <link rel="icon" href="/prompty_logo.jpg?v=2" sizes="192x192" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/prompty_logo.jpg?v=2" />
+        <link rel="icon" type="image/jpeg" sizes="192x192" href="/prompty_logo.jpg?v=2" />
+        <link rel="apple-touch-icon" sizes="192x192" href="/prompty_logo.jpg?v=2" />
+        <link rel="manifest" href="/site.webmanifest?v=2" />
+        <meta name="theme-color" content="#ffffff" />
+        <meta name="msapplication-TileImage" content="/prompty_logo.jpg?v=2" />
+        <meta name="msapplication-TileColor" content="#ffffff" />
       </head>
       <body className={inter.className}>
       <AuthProvider>

@@ -2,7 +2,7 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/auth/callback": "pages/auth/callback.js",
-  "/api/auth/save-profile": "pages/api/auth/save-profile.js",
-  "/setup-profile": "pages/setup-profile.js"
+  "/CreatePost": "pages/CreatePost.js",
+  "/Following": "pages/Following.js",
+  "/prompts/[id]": "pages/prompts/[id].js"
 }

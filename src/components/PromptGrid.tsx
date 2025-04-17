@@ -182,7 +182,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
 }) => {
   // 横スクロール用のコンテナクラス
   const containerClass = horizontalScroll 
-    ? 'flex overflow-x-auto pb-4 gap-4 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100' 
+    ? 'flex overflow-x-auto pb-4 gap-4 snap-x snap-mandatory pr-4 -mr-4 scroll-smooth scrollbar-none' 
     : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4';
   
   // カードのクラス

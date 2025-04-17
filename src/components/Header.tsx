@@ -13,7 +13,7 @@ import UserMenu from './UserMenu';
 import { PostItem, getFollowingPosts, getTodayForYouPosts } from '../data/posts';
 import { useAuth } from '../lib/auth-context'; // AuthContextからuseAuthをインポート
 
-// カテゴリタブ
+// カテゴリタブMen
 const categoryTabs = [
   { id: 'all', name: 'すべて', path: '/' },
   { id: 'following', name: 'フォロー中', path: '/Following' },
@@ -319,7 +319,7 @@ const Header = () => {
                             {/* 投稿アイコン */}
                             <button
                               className="bg-black text-white p-2 rounded-full flex items-center justify-center shadow-sm hover:bg-gray-800 transition-colors"
-                              onClick={() => router.push('/create-post')}
+                              onClick={() => router.push('/CreatePost')}
                               aria-label="投稿する"
                             >
                               <PenSquare className="h-4 w-4" />
@@ -356,7 +356,7 @@ const Header = () => {
                             <Button 
                               variant="ghost" 
                               className="p-0.5 ml-0 rounded-full hover:bg-gray-100 transition-colors"
-                              onClick={toggleUserMenu} // ユーザーメニューを表示
+                              onClick={() => setUserMenuOpen(!userMenuOpen)}  
                             >
                               <Avatar className="h-7 w-7 border border-gray-200">
                                 <AvatarImage src={user?.user_metadata?.avatar_url || "https://github.com/shadcn.png"} alt={user?.email || "User"} />
@@ -449,7 +449,7 @@ const Header = () => {
       </div>
 
     {/* ユーザーメニュー - ユーザーがログインしている場合のみ表示 */}
-      {/* {user && (
+      {user && (
         <UserMenu 
             isOpen={userMenuOpen} 
           onClose={() => setUserMenuOpen(false)}
@@ -458,7 +458,7 @@ const Header = () => {
           isDesktop={!isMobile}
           anchorPosition={{ top: 64, right: 16 }}
         />
-      )} */}
+      )}
 
       {/* 投稿ボタン（モバイルでは右下フローティングボタン） - ユーザーがログインしている場合のみ表示 */}
       {/* {user && (

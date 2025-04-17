@@ -365,128 +365,148 @@ const HeaderAnnouncements: React.FC<{ onClose?: () => void }> = ({ onClose }) =>
 
   // 通知タブの内容
   const renderNotificationsTab = () => (
-    <div className="py-2">
-      {notifications.length > 0 ? (
-        notifications.map((notification) => (
-          <div 
-            key={notification.id} 
-            className={`px-4 py-3 hover:bg-gray-50 cursor-pointer flex items-start gap-3 border-b border-gray-100 last:border-b-0 ${!notification.is_read ? 'font-semibold' : ''}`}
-          >
-            <div className="flex-1 text-sm">
-              <div>{notification.content}</div>
-              <div className="text-gray-500 mt-1 text-xs">{notification.time}</div>
+    <Motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.2 }}
+      className="bg-white shadow-lg rounded-lg max-h-[80vh] overflow-hidden flex flex-col w-full mx-auto"
+    >
+      {/* ヘッダー部分 */}
+      <div className="bg-white p-4 flex items-center justify-between border-b sticky top-0 z-10">
+        <h2 className="text-lg font-medium">通知</h2>
+        <button
+          onClick={onClose}
+          className="rounded-full p-2 hover:bg-gray-100 transition-colors"
+        >
+          <X className="h-5 w-5 text-gray-500" />
+        </button>
+      </div>
+
+      <div className="py-2">
+        {notifications.length > 0 ? (
+          notifications.map((notification) => (
+            <div 
+              key={notification.id} 
+              className={`px-4 py-3 hover:bg-gray-50 cursor-pointer flex items-start gap-3 border-b border-gray-100 last:border-b-0 ${!notification.is_read ? 'font-semibold' : ''}`}
+            >
+              <div className="flex-1 text-sm">
+                <div>{notification.content}</div>
+                <div className="text-gray-500 mt-1 text-xs">{notification.time}</div>
+              </div>
             </div>
+          ))
+        ) : (
+          <div className="px-4 py-6 text-center text-gray-500">
+            通知はありません
           </div>
-        ))
-      ) : (
-        <div className="px-4 py-6 text-center text-gray-500">
-          通知はありません
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </Motion.div>
   );
 
   // お知らせタブの内容
   const renderAnnouncementsTab = () => (
-    <div className="py-2">
-      {loading ? (
-        <div className="animate-pulse p-4">
-          <div className="h-4 bg-gray-200 rounded mb-3 w-1/3"></div>
-          <div className="h-3 bg-gray-200 rounded mb-2"></div>
-          <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-        </div>
-      ) : announcements.length > 0 ? (
-        <AnimatePresence>
-          {announcements.map((announcement) => (
-            <Motion.div 
-              key={announcement.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className={`px-4 py-3 hover:bg-gray-50 cursor-pointer flex items-start gap-3 border-b border-gray-100 last:border-b-0 ${!announcement.is_read ? 'font-semibold' : ''}`}
-              onClick={() => markAnnouncementAsRead(announcement.id)}
-            >
-              {getIconComponent(announcement.icon, announcement.icon_color)}
-              <div className="flex-1 text-sm">
-                <div className="font-medium">{announcement.title}</div>
-                <div>{announcement.content}</div>
-                <div className="text-gray-500 mt-1 text-xs">{getTimeAgo(announcement.start_date)}</div>
-              </div>
-              <AnimatePresence>
-                {!announcement.is_read && (
-                  <Motion.div 
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    exit={{ scale: 0 }}
-                    className="w-2 h-2 bg-blue-500 rounded-full mt-2"
-                  />
-                )}
-              </AnimatePresence>
-            </Motion.div>
-          ))}
-        </AnimatePresence>
-      ) : (
-        <div className="px-4 py-6 text-center text-gray-500">
-          お知らせはありません
-        </div>
-      )}
-    </div>
+    <Motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.2 }}
+      className="bg-white shadow-lg rounded-lg max-h-[80vh] overflow-hidden flex flex-col w-full mx-auto"
+    >
+      {/* ヘッダー部分 */}
+      <div className="bg-white p-4 flex items-center justify-between border-b sticky top-0 z-10">
+        <h2 className="text-lg font-medium">お知らせ</h2>
+        <button
+          onClick={onClose}
+          className="rounded-full p-2 hover:bg-gray-100 transition-colors"
+        >
+          <X className="h-5 w-5 text-gray-500" />
+        </button>
+      </div>
+
+      <div className="py-2">
+        {loading ? (
+          <div className="animate-pulse p-4">
+            <div className="h-4 bg-gray-200 rounded mb-3 w-1/3"></div>
+            <div className="h-3 bg-gray-200 rounded mb-2"></div>
+            <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+          </div>
+        ) : announcements.length > 0 ? (
+          <AnimatePresence>
+            {announcements.map((announcement) => (
+              <Motion.div 
+                key={announcement.id}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className={`px-4 py-3 hover:bg-gray-50 cursor-pointer flex items-start gap-3 border-b border-gray-100 last:border-b-0 ${!announcement.is_read ? 'font-semibold' : ''}`}
+                onClick={() => markAnnouncementAsRead(announcement.id)}
+              >
+                {getIconComponent(announcement.icon, announcement.icon_color)}
+                <div className="flex-1 text-sm">
+                  <div className="font-medium">{announcement.title}</div>
+                  <div>{announcement.content}</div>
+                  <div className="text-gray-500 mt-1 text-xs">{getTimeAgo(announcement.start_date)}</div>
+                </div>
+                <AnimatePresence>
+                  {!announcement.is_read && (
+                    <Motion.div 
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      className="w-2 h-2 bg-blue-500 rounded-full mt-2"
+                    />
+                  )}
+                </AnimatePresence>
+              </Motion.div>
+            ))}
+          </AnimatePresence>
+        ) : (
+          <div className="px-4 py-6 text-center text-gray-500">
+            お知らせはありません
+          </div>
+        )}
+      </div>
+    </Motion.div>
   );
 
   return (
-    <div ref={dropdownRef} className="bg-white rounded-md shadow-lg border border-gray-200 w-full max-w-md overflow-hidden">
-      <div className="border-b sticky top-0 bg-white z-10 flex items-center">
-        <div className="flex-1 flex items-center">
-          <button 
-            className={`flex-1 py-3 px-4 font-medium text-sm text-center ${
-              activeTab !== '通知' ? 'text-gray-500' : 'text-black border-b-2 border-black'
-            }`}
-            onClick={() => handleTabChange('通知')}
-          >
-            通知
-            {unreadNotifications > 0 && (
-              <span className="ml-1 inline-flex items-center justify-center px-1.5 h-5 text-xs text-white font-bold rounded-full bg-red-500">
-                {unreadNotifications}
-              </span>
-            )}
-          </button>
-          <button 
-            className={`flex-1 py-3 px-4 font-medium text-sm text-center relative ${
-              activeTab !== 'お知らせ' ? 'text-gray-500' : 'text-black border-b-2 border-black'
-            }`}
-            onClick={() => handleTabChange('お知らせ')}
-          >
-            お知らせ
-            {unreadAnnouncements > 0 && (
-              <span className="ml-1 inline-flex items-center justify-center px-1.5 h-5 text-xs text-white font-bold rounded-full bg-red-500">
-                {unreadAnnouncements}
-              </span>
-            )}
-          </button>
-        </div>
-        {onClose && (
-          <button 
-            onClick={() => {
-              // 閉じる前に既読処理を確実に実行
-              if (activeTab === 'お知らせ' && unreadAnnouncements > 0) {
-                markAllAnnouncementsRead();
-              }
-              
-              // 少し遅延させて確実に既読処理が完了してから閉じる
-              setTimeout(() => {
-                if (onClose) onClose();
-              }, 100);
-            }}
-            className="p-2 text-gray-500 hover:text-gray-700"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
+    <div ref={dropdownRef} className="w-full max-w-sm sm:max-w-md mx-auto shadow-lg rounded-lg overflow-hidden">
+      <div className="flex border-b">
+        <button
+          onClick={() => handleTabChange('お知らせ')}
+          className={`flex-1 py-3 text-center font-medium relative transition-colors ${activeTab === 'お知らせ' ? 'text-black' : 'text-gray-500 hover:text-gray-700'}`}
+        >
+          お知らせ
+          {unreadAnnouncements > 0 && (
+            <span className="absolute top-2 right-1/4 inline-block w-5 h-5 text-xs font-bold leading-5 text-center text-white bg-red-500 rounded-full">
+              {unreadAnnouncements > 9 ? '9+' : unreadAnnouncements}
+            </span>
+          )}
+          {activeTab === 'お知らせ' && (
+            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-black"></span>
+          )}
+        </button>
+        <button
+          onClick={() => handleTabChange('通知')}
+          className={`flex-1 py-3 text-center font-medium relative transition-colors ${activeTab === '通知' ? 'text-black' : 'text-gray-500 hover:text-gray-700'}`}
+        >
+          通知
+          {unreadNotifications > 0 && (
+            <span className="absolute top-2 right-1/4 inline-block w-5 h-5 text-xs font-bold leading-5 text-center text-white bg-red-500 rounded-full">
+              {unreadNotifications > 9 ? '9+' : unreadNotifications}
+            </span>
+          )}
+          {activeTab === '通知' && (
+            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-black"></span>
+          )}
+        </button>
       </div>
 
-      <div className="max-h-[400px] overflow-y-auto">
-        {activeTab === '通知' ? renderNotificationsTab() : renderAnnouncementsTab()}
-      </div>
+      <AnimatePresence mode="wait">
+        {activeTab === 'お知らせ' ? renderAnnouncementsTab() : renderNotificationsTab()}
+      </AnimatePresence>
     </div>
   );
 };

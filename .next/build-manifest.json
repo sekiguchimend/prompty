@@ -15,6 +15,16 @@
     "static/chunks/main-app.js"
   ],
   "pages": {
+    "/CreatePost": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/CreatePost.js"
+    ],
+    "/Following": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/Following.js"
+    ],
     "/_app": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
@@ -25,15 +35,10 @@
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
-    "/auth/callback": [
+    "/prompts/[id]": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/auth/callback.js"
-    ],
-    "/setup-profile": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/setup-profile.js"
+      "static/chunks/pages/prompts/[id].js"
     ]
   },
   "ampFirstPages": []

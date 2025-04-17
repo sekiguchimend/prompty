@@ -163,7 +163,8 @@ const NotificationDropdown: React.FC = () => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 z-50 w-screen max-w-sm sm:max-w-md">
+        <div className="absolute right-0 mt-2 z-100 w-screen max-w-sm sm:max-w-md">
+
           <HeaderAnnouncements onClose={() => setIsOpen(false)} />
         </div>
       )}
