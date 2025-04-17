@@ -25,6 +25,7 @@ export default function RootLayout({
       <head>
         <title>{title}</title>
         <meta name="description" content={description} />
+        <link rel="icon" href="/prompty-logo.jpg" />
       </head>
       <body className={inter.className}>
       <AuthProvider>
