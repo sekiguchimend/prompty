@@ -2,6 +2,6 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/UserProfilePage": "pages/UserProfilePage.js",
-  "/CreatePost": "pages/CreatePost.js"
+  "/CreatePost": "pages/CreatePost.js",
+  "/api/prompts/create": "pages/api/prompts/create.js"
 }

@@ -71,10 +71,32 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
       const file = e.target.files[0];
       const reader = new FileReader();
       
+      // ファイルサイズチェック
+      const maxSizeMB = 5;
+      if (file.size > maxSizeMB * 1024 * 1024) {
+        alert(`サムネイル画像は${maxSizeMB}MB以下にしてください`);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+        return;
+      }
+      
+      console.log('サムネイル画像を読み込み中...', {
+        name: file.name,
+        type: file.type,
+        size: `${(file.size / 1024).toFixed(2)} KB`
+      });
+      
       reader.onload = (event) => {
         const result = event.target?.result as string;
+        console.log('サムネイル読み込み完了:', result.substring(0, 50) + '...');
         setThumbnailPreview(result);
         projectForm.setValue("thumbnail", result);
+      };
+      
+      reader.onerror = (error) => {
+        console.error('ファイル読み込みエラー:', error);
+        alert('画像の読み込み中にエラーが発生しました');
       };
       
       reader.readAsDataURL(file);

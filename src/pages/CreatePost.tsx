@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { HelpCircle, Send } from 'lucide-react';
+import { HelpCircle, Send, Loader2, ArrowLeft } from 'lucide-react';
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useRouter } from 'next/router';
@@ -16,9 +16,16 @@ import {
   type PromptFormValues,
   type Prompt
 } from '../components/create-post';
+import { useToast } from "../components/ui/use-toast";
+import { useAuth } from "../lib/auth-context";
+import { v4 as uuidv4 } from 'uuid';
+import { createClient } from '@supabase/supabase-js';
 
 const CreatePost = () => {
   const router = useRouter();
+  const { toast } = useToast();
+  const { user, session } = useAuth(); // 認証情報の取得
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [promptNumber, setPromptNumber] = useState(1);
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [showHistory, setShowHistory] = useState(true);
@@ -32,12 +39,245 @@ const CreatePost = () => {
     thumbnail: "",
     projectUrl: "",
   });
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [authorId, setAuthorId] = useState<string | null>(null);
+  const [isAnonymousSubmission, setIsAnonymousSubmission] = useState(false);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   
+  // Supabase クライアントの初期化
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  
+  useEffect(() => {
+    // ユーザーIDをステートに設定
+    if (user) {
+      setAuthorId(user.id);
+      setIsAnonymousSubmission(false);
+    } else {
+      // 匿名ユーザーの場合は一時的なIDを生成
+      setAuthorId(`anon-${uuidv4()}`);
+      setIsAnonymousSubmission(true);
+    }
+  }, [user]);
+
   // プロジェクト設定の保存
   const handleProjectSave = (data: ProjectFormValues) => {
     console.log("Project settings updated:", data);
     setProjectSettings(data);
-    alert("プロジェクト設定が保存されました");
+    
+    // サムネイル画像があれば保存
+    if (data.thumbnail && data.thumbnail.startsWith('data:')) {
+      handleThumbnailUpload(data.thumbnail);
+    }
+    
+    toast({
+      title: "設定保存完了",
+      description: "プロジェクト設定が保存されました",
+      variant: "default",
+    });
+  };
+  
+  // サムネイル画像をBase64からFileオブジェクトに変換
+  const dataURLtoFile = (dataurl: string, filename: string): File => {
+    try {
+      const arr = dataurl.split(',');
+      if (arr.length < 2) {
+        console.error('無効なデータURL形式:', dataurl.substring(0, 50) + '...');
+        throw new Error('無効なデータURL形式');
+      }
+      
+      const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      
+      return new File([u8arr], filename, { type: mime });
+    } catch (error) {
+      console.error('dataURLtoFile 変換エラー:', error);
+      throw new Error('画像データの処理中にエラーが発生しました');
+    }
+  };
+  
+  // サムネイル画像のアップロード処理
+  const handleThumbnailUpload = async (thumbnailDataUrl: string) => {
+    try {
+      if (!thumbnailDataUrl || thumbnailDataUrl.length < 100) {
+        console.warn('無効なサムネイルデータ:', thumbnailDataUrl);
+        return;
+      }
+      
+      console.log('サムネイルデータ (最初の100文字):', thumbnailDataUrl.substring(0, 100));
+      
+      // Base64データURLをFileオブジェクトに変換
+      const file = dataURLtoFile(thumbnailDataUrl, `thumbnail-${Date.now()}.png`);
+      
+      console.log('サムネイルファイル情報:', {
+        name: file.name,
+        size: file.size,
+        type: file.type
+      });
+      
+      setThumbnailFile(file);
+      console.log('サムネイル画像の準備完了:', file.name);
+    } catch (error) {
+      console.error('サムネイル画像の準備エラー:', error);
+      toast({
+        title: "エラー",
+        description: error instanceof Error ? error.message : "サムネイル画像の準備中にエラーが発生しました",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // ストレージにサムネイル画像をアップロード
+  const uploadThumbnailToStorage = async (): Promise<string | null> => {
+    if (!thumbnailFile) return null;
+    
+    try {
+      console.log('サムネイルアップロード開始...');
+      
+      // バケット名
+      const bucketName = 'prompt-thumbnails';
+      
+      // ファイル情報設定
+      const fileExt = thumbnailFile.name.split('.').pop();
+      const fileName = `thumbnail-${Date.now()}`;
+      const filePath = `${fileName}.${fileExt}`;
+      
+      console.log(`ファイル '${filePath}' をアップロード準備中...`);
+      
+      try {
+        // バケットの存在チェック
+        const { data: buckets } = await supabase.storage.listBuckets();
+        const bucketExists = buckets?.some(b => b.name === bucketName);
+        
+        // バケットが存在しない場合は作成
+        if (!bucketExists) {
+          console.log(`バケット '${bucketName}' が存在しないため作成します`);
+          const { data: newBucket, error: createError } = await supabase.storage.createBucket(
+            bucketName,
+            { public: true }
+          );
+          
+          if (createError) {
+            console.error('バケット作成エラー:', createError);
+            
+            // RLSポリシーの設定（サーバーサイドで実行する必要があるかもしれません）
+            try {
+              // 代替手段：APIエンドポイントを通じてバケット作成をリクエスト
+              const response = await fetch('/api/create-bucket', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  bucketName: bucketName,
+                }),
+              });
+              
+              if (!response.ok) {
+                throw new Error('バケット作成APIエラー');
+              }
+              
+              console.log('APIを通じてバケットを作成しました');
+              
+              // バケットポリシーを設定
+              const policyResponse = await fetch('/api/set-bucket-policy', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  bucketName: bucketName,
+                }),
+              });
+              
+              if (!policyResponse.ok) {
+                console.warn('バケットポリシー設定APIエラー');
+                // エラーは警告として記録するだけで、処理は継続
+              } else {
+                console.log('バケットポリシーを設定しました');
+              }
+            } catch (apiError) {
+              console.error('バケット作成API呼び出しエラー:', apiError);
+              toast({
+                title: "エラー",
+                description: "画像保存用のバケットを作成できませんでした。管理者に連絡してください。",
+                variant: "destructive",
+              });
+              return null;
+            }
+          } else {
+            console.log('バケット作成成功:', newBucket);
+            
+            // バケットポリシーを設定
+            try {
+              const policyResponse = await fetch('/api/set-bucket-policy', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  bucketName: bucketName,
+                }),
+              });
+              
+              if (!policyResponse.ok) {
+                console.warn('バケットポリシー設定APIエラー');
+                // エラーは警告として記録するだけで、処理は継続
+              } else {
+                console.log('バケットポリシーを設定しました');
+              }
+            } catch (policyError) {
+              console.warn('ポリシー設定エラー:', policyError);
+              // エラーは警告として記録するだけで、処理は継続
+            }
+          }
+        }
+      } catch (bucketError) {
+        console.error('バケット確認エラー:', bucketError);
+        // バケットの確認に失敗しても、アップロードは試行する
+      }
+      
+      // ファイルアップロード
+      console.log(`ファイル '${filePath}' をアップロード中...`);
+      const { data, error } = await supabase.storage
+        .from(bucketName)
+        .upload(filePath, thumbnailFile, {
+          cacheControl: '3600',
+          upsert: true
+        });
+      
+      if (error) {
+        console.error('アップロードエラー:', error);
+        throw error;
+      }
+      
+      console.log('アップロード成功:', data);
+      
+      // 公開URLを取得
+      const { data: urlData } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(filePath);
+      
+      console.log('公開URL:', urlData.publicUrl);
+      
+      // アップロードしたサムネイルへの正しいURLを返す
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error('サムネイルのアップロードエラー:', error);
+      toast({
+        title: "サムネイルエラー",
+        description: "画像のアップロードに失敗しました。別の画像を試すか、管理者に連絡してください。",
+        variant: "destructive",
+      });
+      return null;
+    }
   };
 
   // プロンプトの追加
@@ -58,43 +298,201 @@ const CreatePost = () => {
     setPromptNumber(data.promptNumber + 1);
     
     // 成功メッセージ
-    alert(`プロンプト #${data.promptNumber} が追加されました`);
+    toast({
+      title: "プロンプト追加",
+      description: `プロンプト #${data.promptNumber} が追加されました`,
+      variant: "default",
+    });
   };
 
   // 既存プロンプトの編集
   const handleEditPrompt = (prompt: Prompt) => {
     // 編集は新しいプロンプトとして追加する形で実装
     setPromptNumber(prompt.id);
+    toast({
+      title: "編集モード",
+      description: `プロンプト #${prompt.id} を編集モードにしました`,
+      variant: "default",
+    });
   };
 
   // プロンプト例の適用
   const applyPromptExample = (example: typeof PROMPT_EXAMPLES[0]) => {
     // プロンプトフォームは子コンポーネントで管理するため、ここでは何もしない
     // 実際の処理はPromptFormコンポーネントに委譲
+    toast({
+      title: "例の適用",
+      description: "選択したプロンプト例を適用しました",
+      variant: "default",
+    });
+  };
+
+  // APIとの通信関数
+  const saveProject = async (promptData: any) => {
+    try {
+      // リクエストヘッダーの設定
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      
+      // 認証情報が存在する場合は追加
+      if (user && session) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      
+      // APIリクエストの実行
+      const response = await fetch('/api/prompts', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(promptData),
+      });
+      
+      // レスポンスのパース
+      const result = await response.json();
+      
+      // エラーハンドリング
+      if (!response.ok) {
+        // APIから返されたエラーコードに基づいたハンドリング
+        if (result.code === 'title_length') {
+          throw new Error('タイトルは5文字以上である必要があります');
+        } else if (result.code === 'content_length') {
+          throw new Error('コンテンツは10文字以上である必要があります');
+        } else if (result.code === 'permission_denied') {
+          throw new Error('この投稿を行う権限がありません。ログイン状態を確認してください。');
+        } else if (result.code === 'invalid_api_key') {
+          throw new Error('サーバー設定エラー: API キーが無効です。管理者にお問い合わせください。');
+        } else {
+          throw new Error(result.error || '投稿中にエラーが発生しました');
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('投稿エラー:', error);
+      throw error;
+    }
   };
 
   // プロジェクト全体を投稿
-  const submitProject = () => {
+  const submitProject = async () => {
     if (prompts.length === 0) {
-      alert("少なくとも1つのプロンプトを追加してください");
+      toast({
+        title: "エラー",
+        description: "少なくとも1つのプロンプトを追加してください",
+        variant: "destructive",
+      });
       return;
     }
     
-    const projectData = {
-      ...projectSettings,
-      prompts: prompts
-    };
+    // author_idがnullの場合は一時的なIDを生成
+    if (!authorId) {
+      setAuthorId(`anon-${uuidv4()}`);
+    }
     
-    console.log("プロジェクト全体を投稿:", projectData);
+    setIsSubmitting(true);
     
-    // 料金情報の表示
-    const priceInfo = projectSettings.pricingType === "paid" 
-      ? `${projectSettings.price}円` 
-      : "無料";
+    try {
+      // サムネイル画像のアップロード
+      let thumbnailUrl = null;
+      if (thumbnailFile) {
+        toast({
+          title: "処理中",
+          description: "サムネイル画像をアップロード中...",
+          variant: "default",
+        });
+        thumbnailUrl = await uploadThumbnailToStorage();
+      }
+      
+      console.log('サムネイルURL:', thumbnailUrl);
+      
+      // リクエストヘッダーの設定
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      
+      // 認証情報が存在する場合は追加
+      if (user && session) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
     
-    // ここでバックエンドにプロジェクト全体を送信する処理
-    alert(`プロジェクトが投稿されました（${priceInfo}）`);
-    router.push("/");
+      toast({
+        title: "処理中",
+        description: "プロンプトデータを送信中...",
+        variant: "default",
+      });
+      
+      // まず、プロンプトプロジェクトのメインデータを保存
+      const requestBody = {
+        title: projectSettings.projectTitle || "無題のプロンプト",
+        description: projectSettings.projectDescription || "",
+        content: prompts[0].content, // 最初のプロンプトの内容をメインコンテンツとして使用
+        thumbnail_url: thumbnailUrl, // アップロードしたサムネイルのURL
+        category_id: null, // カテゴリIDがあれば指定
+        price: projectSettings.pricingType === "paid" ? projectSettings.price : 0,
+        is_free: projectSettings.pricingType === "free",
+        ai_model: projectSettings.aiModel === "custom" 
+          ? projectSettings.customAiModel 
+          : projectSettings.aiModel,
+        author_id: authorId || `anon-${uuidv4()}` // 作者IDを追加
+      };
+      
+      console.log('リクエストデータ:', JSON.stringify(requestBody, null, 2));
+      
+      const mainPromptResponse = await fetch('/api/prompts/create', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(requestBody),
+      });
+      
+      console.log('レスポンスステータス:', mainPromptResponse.status);
+      
+      const responseText = await mainPromptResponse.text();
+      console.log('レスポンステキスト:', responseText);
+      
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('JSONパースエラー:', parseError);
+        throw new Error(`サーバーからの応答の解析に失敗しました: ${responseText}`);
+      }
+      
+      if (!mainPromptResponse.ok || !responseData.success) {
+        const errorMessage = responseData.message || responseData.error || 'プロンプト保存中にエラーが発生しました';
+        console.error('APIエラー:', responseData);
+        throw new Error(errorMessage);
+      }
+      
+      const promptId = responseData.data?.id || responseData.promptId;
+      console.log('保存されたプロンプトID:', promptId);
+      
+      if (!promptId) {
+        console.warn('警告: プロンプトIDが返されませんでした');
+      }
+      
+      // 複数のプロンプトを関連付けて保存（実装方法はバックエンドに依存）
+      if (prompts.length > 1) {
+        // 追加のプロンプトを関連付ける処理
+        // 実装方法はバックエンドAPIの設計に依存します
+      }
+      
+      toast({
+        title: "投稿成功",
+        description: "プロジェクトが投稿されました",
+        variant: "default",
+      });
+      
+      router.push("/");
+    } catch (error) {
+      console.error("プロジェクト投稿エラー:", error);
+      toast({
+        title: "投稿エラー",
+        description: error instanceof Error ? error.message : "サーバーエラーが発生しました",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // AIモデルのラベルを取得
@@ -117,9 +515,9 @@ const CreatePost = () => {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
           <button 
             onClick={() => router.back()}
-            className="text-gray-500 hover:text-black"
+            className="text-gray-500 hover:text-black flex items-center"
           >
-            ← 戻る
+            <ArrowLeft className="h-4 w-4 mr-1" /> 戻る
           </button>
           
           <div className="flex flex-wrap gap-2">
@@ -136,6 +534,16 @@ const CreatePost = () => {
             )}
           </div>
         </div>
+        
+        {/* 認証状態表示 */}
+        {isAnonymousSubmission && (
+          <div className="w-full max-w-3xl mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+            <p className="text-yellow-800">
+              現在ログインしていません。プロンプトは「匿名」として投稿されます。
+              自分の名前で投稿したい場合は、<a href="/login" className="underline text-blue-600">ログイン</a>してください。
+            </p>
+          </div>
+        )}
         
         {/* プロジェクト設定フォーム */}
         <ProjectSettingsForm
@@ -164,10 +572,19 @@ const CreatePost = () => {
           <Button 
             onClick={submitProject}
             className="bg-black hover:bg-gray-800 text-white"
-            disabled={prompts.length === 0}
+            disabled={prompts.length === 0 || isSubmitting}
           >
-            <Send className="h-4 w-4 mr-2" />
-            プロジェクトを投稿
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                送信中...
+              </>
+            ) : (
+              <>
+                <Send className="h-4 w-4 mr-2" />
+                プロジェクトを投稿
+              </>
+            )}
           </Button>
         </div>
       </main>
