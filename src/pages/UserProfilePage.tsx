@@ -24,7 +24,7 @@ import { supabase } from '../lib/supabaseClient';
 // Profile data type definition
 interface ProfileData {
   id: string;
-  username: string;
+  account_name: string;
   display_name: string;
   bio: string;
   avatar_url: string;
@@ -144,7 +144,7 @@ const UserProfilePage: React.FC = () => {
               price,
               likes:likes(count),
               comments:comments(count),
-              profiles:profiles(username, display_name, avatar_url)
+              profiles:profiles(account_name, display_name, avatar_url)
             )
           `)
           .eq('user_id', user.id)
@@ -167,8 +167,8 @@ const UserProfilePage: React.FC = () => {
         // Process the data
         setProfileData({
           id: profileData.id,
-          username: profileData.username,
-          display_name: profileData.display_name || profileData.username,
+          account_name: profileData.account_name,
+          display_name: profileData.display_name || profileData.account_name,
           bio: profileData.bio || '',
           avatar_url: profileData.avatar_url,
           website: profileData.website || '',
@@ -424,9 +424,9 @@ const UserProfilePage: React.FC = () => {
               <div className="flex-1 text-center md:text-left">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
-                    <h1 className="text-xl font-bold">{profileData.display_name}</h1>
+                    <h1 className="text-xl font-bold">{profileData.display_name || profileData.account_name}</h1>
                     <p className="text-gray-500 text-sm">
-                      @{profileData.username}
+                      @{profileData.account_name}
                     </p>
                   </div>
                   

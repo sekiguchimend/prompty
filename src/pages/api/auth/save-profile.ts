@@ -6,7 +6,6 @@ interface ProfileUpdateData {
   username?: string;
   updated_at?: string;
   display_name?: string;
-  account_name?: string;
   bio?: string | null;
 }
 
@@ -18,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     console.log('📥 save-profile API リクエスト受信:', JSON.stringify(req.body));
-    const { userId, email, username, user_metadata, account_name, bio } = req.body;
+    const { userId, email, username, user_metadata, display_name, bio } = req.body;
     
     if (!userId) {
       return res.status(400).json({ error: 'ユーザーIDは必須です' });
@@ -87,13 +86,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       
       // account_nameが提供されていれば更新
-      if (account_name) {
-        updateData.account_name = account_name;
-        console.log('🟢 account_nameフィールドを更新します:', account_name);
-      } else if (username && !existingProfile.account_name) {
-        // account_nameがない場合はusernameを設定
-        updateData.account_name = username;
-        console.log('🟢 account_nameフィールドをusernameで設定します:', username);
+      if (display_name) {
+        updateData.display_name = display_name;
+        console.log('🟢 display_nameフィールドを更新します:', display_name);
+      } else if (username && !existingProfile.display_name) {
+        // display_nameがない場合はusernameを設定
+        updateData.display_name = username;
+        console.log('🟢 display_nameフィールドをusernameで設定します:', username);
       }
       
       // bioが提供されていれば更新
@@ -150,7 +149,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       // account_nameフィールドが存在するか確認
       if (profileColumns && profileColumns.length > 0 && 'account_name' in profileColumns[0]) {
-        newProfile.account_name = account_name || username || null;
+        newProfile.account_name = username || null;
         console.log('🟢 account_nameフィールドも設定します:', newProfile.account_name);
       }
       

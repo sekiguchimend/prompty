@@ -113,8 +113,14 @@ const CreatePost = () => {
       
       console.log('サムネイルデータ (最初の100文字):', thumbnailDataUrl.substring(0, 100));
       
+      // 画像タイプを取得
+      const mimeMatch = thumbnailDataUrl.match(/data:([^;]+);/);
+      const mimeType = mimeMatch ? mimeMatch[1] : 'image/png';
+      const fileExt = mimeType.split('/')[1] || 'png';
+      
       // Base64データURLをFileオブジェクトに変換
-      const file = dataURLtoFile(thumbnailDataUrl, `thumbnail-${Date.now()}.png`);
+      const fileName = `thumbnail-${Date.now()}.${fileExt}`;
+      const file = dataURLtoFile(thumbnailDataUrl, fileName);
       
       console.log('サムネイルファイル情報:', {
         name: file.name,
@@ -151,106 +157,45 @@ const CreatePost = () => {
       
       console.log(`ファイル '${filePath}' をアップロード準備中...`);
       
+      // 必ずサーバー側でバケットを作成・設定
       try {
-        // バケットの存在チェック
-        const { data: buckets } = await supabase.storage.listBuckets();
-        const bucketExists = buckets?.some(b => b.name === bucketName);
+        const bucketResponse = await fetch('/api/create-bucket', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            bucketName: bucketName,
+          }),
+        });
         
-        // バケットが存在しない場合は作成
-        if (!bucketExists) {
-          console.log(`バケット '${bucketName}' が存在しないため作成します`);
-          const { data: newBucket, error: createError } = await supabase.storage.createBucket(
-            bucketName,
-            { public: true }
-          );
-          
-          if (createError) {
-            console.error('バケット作成エラー:', createError);
-            
-            // RLSポリシーの設定（サーバーサイドで実行する必要があるかもしれません）
-            try {
-              // 代替手段：APIエンドポイントを通じてバケット作成をリクエスト
-              const response = await fetch('/api/create-bucket', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  bucketName: bucketName,
-                }),
-              });
-              
-              if (!response.ok) {
-                throw new Error('バケット作成APIエラー');
-              }
-              
-              console.log('APIを通じてバケットを作成しました');
-              
-              // バケットポリシーを設定
-              const policyResponse = await fetch('/api/set-bucket-policy', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  bucketName: bucketName,
-                }),
-              });
-              
-              if (!policyResponse.ok) {
-                console.warn('バケットポリシー設定APIエラー');
-                // エラーは警告として記録するだけで、処理は継続
-              } else {
-                console.log('バケットポリシーを設定しました');
-              }
-            } catch (apiError) {
-              console.error('バケット作成API呼び出しエラー:', apiError);
-              toast({
-                title: "エラー",
-                description: "画像保存用のバケットを作成できませんでした。管理者に連絡してください。",
-                variant: "destructive",
-              });
-              return null;
-            }
-          } else {
-            console.log('バケット作成成功:', newBucket);
-            
-            // バケットポリシーを設定
-            try {
-              const policyResponse = await fetch('/api/set-bucket-policy', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  bucketName: bucketName,
-                }),
-              });
-              
-              if (!policyResponse.ok) {
-                console.warn('バケットポリシー設定APIエラー');
-                // エラーは警告として記録するだけで、処理は継続
-              } else {
-                console.log('バケットポリシーを設定しました');
-              }
-            } catch (policyError) {
-              console.warn('ポリシー設定エラー:', policyError);
-              // エラーは警告として記録するだけで、処理は継続
-            }
-          }
+        if (!bucketResponse.ok) {
+          console.error('バケット作成APIエラー');
+          throw new Error('バケット作成に失敗しました');
         }
+        
+        console.log('バケット作成リクエスト完了');
       } catch (bucketError) {
-        console.error('バケット確認エラー:', bucketError);
-        // バケットの確認に失敗しても、アップロードは試行する
+        console.error('バケット作成リクエストエラー:', bucketError);
+        throw new Error('バケット設定中にエラーが発生しました');
       }
       
       // ファイルアップロード
       console.log(`ファイル '${filePath}' をアップロード中...`);
+      
+      // アップロード前のファイル情報ログ
+      console.log('アップロードファイル情報:', {
+        name: thumbnailFile.name,
+        type: thumbnailFile.type,
+        size: thumbnailFile.size
+      });
+      
       const { data, error } = await supabase.storage
         .from(bucketName)
         .upload(filePath, thumbnailFile, {
           cacheControl: '3600',
-          upsert: true
+          upsert: true,
+          contentType: thumbnailFile.type // ContentTypeを明示的に指定
         });
       
       if (error) {
@@ -264,6 +209,12 @@ const CreatePost = () => {
       const { data: urlData } = supabase.storage
         .from(bucketName)
         .getPublicUrl(filePath);
+      
+      // 処理が成功したことを確認
+      if (!urlData || !urlData.publicUrl) {
+        console.error('公開URL取得エラー:', urlData);
+        throw new Error('公開URLの取得に失敗しました');
+      }
       
       console.log('公開URL:', urlData.publicUrl);
       

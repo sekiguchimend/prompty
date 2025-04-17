@@ -46,11 +46,25 @@ const HomePage: React.FC = () => {
 
     // 人気記事を取得
     const popularPosts = getPopularPosts();
+    
+    // account_nameが存在しなければ追加
+    const postsWithAccountName = popularPosts.map(post => {
+      if (!post.user.account_name) {
+        return {
+          ...post,
+          user: {
+            ...post.user,
+            account_name: post.user.name
+          }
+        };
+      }
+      return post;
+    });
 
     // いいね状態を各プロンプトリストに追加
     setProcessingFeaturedPrompts(addRandomLikeState(featuredPrompts));
     setProcessingAIGeneratedPrompts(addRandomLikeState(aiGeneratedPrompts));
-    setProcessingPopularPosts(addRandomLikeState(popularPosts));
+    setProcessingPopularPosts(addRandomLikeState(postsWithAccountName));
   }, []);
 
   return (

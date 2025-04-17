@@ -1,4 +1,3 @@
-
 // Mock data for prompts
 export const featuredPrompts = [
   {
@@ -7,6 +6,7 @@ export const featuredPrompts = [
     thumbnailUrl: 'https://picsum.photos/id/1/600/400',
     user: {
       name: 'Tanaka',
+      account_name: 'Tanaka',
       avatarUrl: 'https://i.pravatar.cc/150?img=1',
     },
     postedAt: '1日前',
@@ -18,6 +18,7 @@ export const featuredPrompts = [
     thumbnailUrl: 'https://picsum.photos/id/2/600/400',
     user: {
       name: 'Kimura書店',
+      account_name: 'Kimura書店',
       avatarUrl: 'https://i.pravatar.cc/150?img=2',
     },
     postedAt: '4日前',
@@ -29,6 +30,7 @@ export const featuredPrompts = [
     thumbnailUrl: 'https://picsum.photos/id/3/600/400',
     user: {
       name: 'わかまつき',
+      account_name: 'わかまつき',
       avatarUrl: 'https://i.pravatar.cc/150?img=3',
     },
     postedAt: '1日前',
@@ -40,6 +42,7 @@ export const featuredPrompts = [
     thumbnailUrl: 'https://picsum.photos/id/4/600/400',
     user: {
       name: '三宅 英史',
+      account_name: '三宅 英史',
       avatarUrl: 'https://i.pravatar.cc/150?img=4',
     },
     postedAt: '1日前',
@@ -51,6 +54,7 @@ export const featuredPrompts = [
     thumbnailUrl: 'https://picsum.photos/id/5/600/400',
     user: {
       name: '福西',
+      account_name: '福西',
       avatarUrl: 'https://i.pravatar.cc/150?img=5',
     },
     postedAt: '2日前',
@@ -66,6 +70,7 @@ export const aiGeneratedPrompts = [
     thumbnailUrl: 'https://picsum.photos/id/6/600/400',
     user: {
       name: '株式会社イマクリエ',
+      account_name: '株式会社イマクリエ',
       avatarUrl: 'https://i.pravatar.cc/150?img=6',
     },
     postedAt: '2日前',
@@ -77,6 +82,7 @@ export const aiGeneratedPrompts = [
     thumbnailUrl: 'https://picsum.photos/id/7/600/400',
     user: {
       name: 'Supership社内報',
+      account_name: 'Supership社内報',
       avatarUrl: 'https://i.pravatar.cc/150?img=7',
     },
     postedAt: '1日前',
@@ -88,6 +94,7 @@ export const aiGeneratedPrompts = [
     thumbnailUrl: 'https://picsum.photos/id/8/600/400',
     user: {
       name: 'freee公式note',
+      account_name: 'freee公式note',
       avatarUrl: 'https://i.pravatar.cc/150?img=8',
     },
     postedAt: '2日前',
@@ -99,6 +106,7 @@ export const aiGeneratedPrompts = [
     thumbnailUrl: 'https://picsum.photos/id/9/600/400',
     user: {
       name: '東洋テックCVC',
+      account_name: '東洋テックCVC',
       avatarUrl: 'https://i.pravatar.cc/150?img=9',
     },
     postedAt: '2日前',
@@ -110,6 +118,7 @@ export const aiGeneratedPrompts = [
     thumbnailUrl: 'https://picsum.photos/id/10/600/400',
     user: {
       name: 'note株式会社',
+      account_name: 'note株式会社',
       avatarUrl: 'https://i.pravatar.cc/150?img=10',
     },
     postedAt: '3日前',

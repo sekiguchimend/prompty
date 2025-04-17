@@ -5,12 +5,15 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useToast } from './ui/use-toast';
 import ReportDialog from './ReportDialog';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+
 interface PromptCardProps {
   id: string;
   title: string;
   thumbnailUrl: string;
   user: {
     name: string;
+    account_name?: string;
     avatarUrl: string;
   };
   postedAt: string;
@@ -29,15 +32,16 @@ const PromptCard: React.FC<PromptCardProps> = ({
   isLiked = false,
   onHide,
 }) => {
-  // Extract the base ID without any prefix for the actual prompt ID
-  const promptId = id.includes('-') ? id.split('-')[1] : id;
-  
-  // 状態管理
+  const router = useRouter();
   const [liked, setLiked] = useState(isLiked);
   const [currentLikeCount, setCurrentLikeCount] = useState(likeCount);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
   
   const { toast } = useToast();
+  
+  // Extract the base ID without any prefix for the actual prompt ID
+  const promptId = id.includes('-') ? id.split('-')[1] : id;
   
   // いいねをトグルする関数
   const toggleLike = (e: React.MouseEvent) => {
@@ -65,9 +69,20 @@ const PromptCard: React.FC<PromptCardProps> = ({
     setReportDialogOpen(true);
   };
   
+  // オプションメニューの表示切替
+  const toggleOptions = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowOptions(!showOptions);
+  };
+  
+  // カードクリック時の処理（詳細ページへ遷移）
+  const handleCardClick = () => {
+    router.push(`/prompts/${promptId}`);
+  };
+  
   return (
     <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm">
-      <Link href={`/prompts/${promptId}`} className="block">
+      <Link href={`/prompts/${promptId}`} className="block" onClick={handleCardClick}>
         <div className="relative pb-[56.25%]">
           <Image 
             width={100}
@@ -85,19 +100,25 @@ const PromptCard: React.FC<PromptCardProps> = ({
           </Link>
           
           {/* 三点メニュー */}
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center justify-center p-1 rounded-full text-gray-400 hover:bg-gray-100">
+          <div className="relative">
+            <button 
+              className="text-gray-400 hover:text-gray-600 p-1 rounded-full"
+              onClick={toggleOptions}
+            >
               <MoreVertical className="h-4 w-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={openReportDialog}>
-                報告する
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleHide}>
-                非表示にする
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </button>
+            
+            {showOptions && (
+              <div className="absolute right-0 bottom-full mb-1 bg-white shadow-lg rounded-md border border-gray-200 py-1 z-10 w-32">
+                <button 
+                  className="w-full text-left px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  onClick={handleHide}
+                >
+                  非表示にする
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         
         <div className="mt-auto">
@@ -105,12 +126,12 @@ const PromptCard: React.FC<PromptCardProps> = ({
             <Link href={`/users/${user.name}`} className="block h-6 w-6 overflow-hidden rounded-full">
               <img 
                 src={user.avatarUrl} 
-                alt={user.name} 
+                alt={user.account_name || user.name} 
                 className="h-full w-full object-cover"
               />
             </Link>
             <Link href={`/users/${user.name}`} className="text-xs text-gray-600 hover:underline">
-              {user.name}
+              {user.account_name || user.name}
             </Link>
             <span className="text-xs text-gray-500">{postedAt}</span>
           </div>

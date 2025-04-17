@@ -5,6 +5,7 @@ export interface PostItem {
   thumbnailUrl: string;
   user: {
     name: string;
+    account_name?: string;
     avatarUrl: string;
     bio?: string;
     publishedAt?: string;
