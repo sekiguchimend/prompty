@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/button';
 import Link from 'next/link';
 import { Badge } from '../../components/ui/badge';
@@ -17,6 +17,9 @@ import { Textarea } from '../../components/ui/textarea';
 import { ScrollArea } from '../../components/ui/scroll-area';
 import { Separator } from '../../components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
+import { formatDistanceToNow } from 'date-fns';
+import { ja } from 'date-fns/locale';
+import { supabase } from '../../lib/supabaseClient';
 
 interface PurchaseSectionProps {
   wordCount: number;
@@ -37,6 +40,19 @@ interface PurchaseSectionProps {
   }[];
 }
 
+// コメントの型定義
+interface CommentType {
+  id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  user?: {
+    username?: string;
+    display_name?: string;
+    avatar_url?: string;
+  };
+}
+
 const PurchaseSection: React.FC<PurchaseSectionProps> = ({ 
   wordCount, 
   price, 
@@ -53,26 +69,113 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
   const [liked, setLiked] = useState(false);
   const [likes, setLikes] = useState(initialLikes);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
-  const [isCommentSectionVisible, setIsCommentSectionVisible] = useState(false);
-  const [comments, setComments] = useState<Array<{id: number, author: string, avatarUrl: string, text: string, timestamp: string}>>([
-    {
-      id: 1,
-      author: "山田太郎",
-      avatarUrl: "https://i.pravatar.cc/150?img=1",
-      text: "このプロンプトは素晴らしいですね！使ってみます。",
-      timestamp: "1日前"
-    },
-    {
-      id: 2,
-      author: "佐藤花子",
-      avatarUrl: "https://i.pravatar.cc/150?img=2",
-      text: "詳細な説明があって参考になりました。ありがとうございます。",
-      timestamp: "5時間前"
-    }
-  ]);
+  const [isCommentSectionVisible, setIsCommentSectionVisible] = useState(true);
+  const [comments, setComments] = useState<CommentType[]>([]);
+  const [commentCount, setCommentCount] = useState(0);
   const [newComment, setNewComment] = useState("");
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [promptId, setPromptId] = useState<string>("");
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [reportReason, setReportReason] = useState("");
+  const [isCommentsLoading, setIsCommentsLoading] = useState(false);
+
+  // Get the prompt ID from the URL
+  useEffect(() => {
+    const pathname = window.location.pathname;
+    const id = pathname.split('/').pop();
+    if (id) {
+      setPromptId(id);
+      // プロンプトIDが取得できたらすぐにコメントを読み込む
+      fetchComments(id);
+    }
+  }, []);
+
+  // Get current user
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setCurrentUser(session.user);
+      }
+    };
+    
+    fetchUser();
+    
+    // Listen for auth changes
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setCurrentUser(session?.user || null);
+    });
+    
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
+  }, []);
+
+  const fetchComments = async (promptId: string) => {
+    if (!promptId) {
+      console.error("プロンプトIDが指定されていません");
+      return;
+    }
+    
+    setIsCommentsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('comments')
+        .select(`
+          *,
+          user:profiles(id, username, display_name, avatar_url)
+        `)
+        .eq('prompt_id', promptId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("コメント取得エラー:", error);
+        toast({
+          title: "コメントの取得に失敗しました",
+          description: "しばらくしてから再度お試しください",
+          variant: "destructive",
+        });
+      } else {
+        setComments(data || []);
+        setCommentCount(data?.length || 0);
+      }
+    } catch (err) {
+      console.error("コメント取得中の例外:", err);
+    } finally {
+      setIsCommentsLoading(false);
+    }
+  };
+
+  // Fetch comments when section is visible and promptId is available
+  useEffect(() => {
+    if (promptId) {
+      fetchComments(promptId);
+
+      const channel = supabase
+        .channel(`comments-${promptId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'comments',
+            filter: `prompt_id=eq.${promptId}`
+          },
+          () => {
+            fetchComments(promptId);
+          }
+        )
+        .subscribe((status) => {
+          if (status !== 'SUBSCRIBED') {
+            console.warn('リアルタイム接続に問題が発生しました:', status);
+          }
+        });
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [promptId]);
 
   const handleFollowClick = () => {
     setIsAnimating(true);
@@ -113,23 +216,65 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
 
   const handleCommentClick = () => {
     setIsCommentSectionVisible(!isCommentSectionVisible);
+    if (!isCommentSectionVisible && promptId) {
+      fetchComments(promptId);
+    }
   };
 
-  const handleCommentSubmit = (e: React.FormEvent) => {
+  const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newComment.trim()) {
-      const newCommentObj = {
-        id: comments.length + 1,
-        author: "あなた",
-        avatarUrl: "https://github.com/shadcn.png",
-        text: newComment,
-        timestamp: "たった今"
-      };
-      setComments([...comments, newCommentObj]);
-      setNewComment("");
+    
+    if (!currentUser) {
       toast({
-        title: "コメントを投稿しました",
+        title: "ログインが必要です",
+        description: "コメントを投稿するにはログインしてください",
+        variant: "destructive",
       });
+      return;
+    }
+    
+    if (!promptId) {
+      console.error("プロンプトIDが指定されていません");
+      return;
+    }
+    
+    if (!newComment.trim()) return;
+    
+    setIsSubmittingComment(true);
+    
+    try {
+      const { error } = await supabase
+        .from('comments')
+        .insert({
+          prompt_id: promptId,
+          user_id: currentUser.id,
+          content: newComment.trim(),
+        });
+      
+      if (error) {
+        console.error("コメント投稿エラー:", error);
+        toast({
+          title: "コメントの投稿に失敗しました",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        setNewComment('');
+        toast({
+          title: "コメントを投稿しました",
+          variant: "default",
+        });
+        // リアルタイム更新があるので再取得は不要
+      }
+    } catch (err) {
+      console.error("コメント投稿中の例外:", err);
+      toast({
+        title: "エラーが発生しました",
+        description: "コメントの投稿中に問題が発生しました",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingComment(false);
     }
   };
 
@@ -190,7 +335,7 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
             onClick={handleCommentClick}
           >
             <MessageSquare className={`h-5 w-5 ${isCommentSectionVisible ? 'text-blue-500' : ''}`} />
-            <span className="ml-1 text-sm">{comments.length}</span>
+            <span className="ml-1 text-sm">{commentCount}</span>
           </button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -259,50 +404,73 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
       {/* コメントセクション */}
       {isCommentSectionVisible && (
         <div className="mt-8 border-t border-gray-200 pt-6">
-          <h3 className="text-lg font-medium mb-4">コメント ({comments.length})</h3>
+          <h3 className="text-lg font-medium mb-4">コメント ({commentCount})</h3>
           
           {/* コメント一覧 */}
           <div className="space-y-6 mb-6">
-            {comments.map((comment) => (
-              <div key={comment.id} className="flex space-x-3">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src={comment.avatarUrl} alt={comment.author} />
-                  <AvatarFallback>{comment.author.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm">{comment.author}</span>
-                    <span className="text-xs text-gray-500">{comment.timestamp}</span>
+            {comments.length === 0 ? (
+              <p className="text-center text-gray-500 py-4">まだコメントはありません。最初のコメントを投稿しませんか？</p>
+            ) : (
+              comments.map((comment) => (
+                <div key={comment.id} className="flex space-x-3 p-3 rounded-md hover:bg-gray-50">
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage src={comment.user?.avatar_url || ''} alt={comment.user?.display_name || comment.user?.username || '匿名ユーザー'} />
+                    <AvatarFallback>{(comment.user?.display_name || comment.user?.username || '匿名')?.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm">{comment.user?.display_name || comment.user?.username || '匿名ユーザー'}</span>
+                      <span className="text-xs text-gray-500">
+                        {formatDistanceToNow(new Date(comment.created_at), { 
+                          addSuffix: true,
+                          locale: ja 
+                        })}
+                      </span>
+                    </div>
+                    <p className="text-sm mt-1 text-gray-700 whitespace-pre-wrap break-words">{comment.content}</p>
                   </div>
-                  <p className="text-sm mt-1 text-gray-700">{comment.text}</p>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
           
           {/* コメント入力フォーム */}
           <form onSubmit={handleCommentSubmit} className="mt-4 flex flex-col gap-3">
-            <div className="flex gap-3">
-              <Avatar className="h-9 w-9">
-                <AvatarImage src="https://github.com/shadcn.png" alt="あなた" />
-                <AvatarFallback>あ</AvatarFallback>
-              </Avatar>
-              <div className="flex-1 relative">
-                <Textarea 
-                  placeholder="コメントを入力..." 
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  className="resize-none min-h-[80px] p-3 pr-10"
-                />
-                <button 
-                  type="submit" 
-                  disabled={!newComment.trim()} 
-                  className="absolute bottom-3 right-3 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed"
-                >
-                  <Send className="h-5 w-5" />
-                </button>
+            {currentUser ? (
+              <div className="flex gap-3">
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src={currentUser?.user_metadata?.avatar_url || ''} alt="あなた" />
+                  <AvatarFallback>{currentUser?.email?.charAt(0) || 'あ'}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 relative">
+                  <Textarea 
+                    placeholder="コメントを入力..." 
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    className="resize-none min-h-[80px] p-3 pr-10"
+                    disabled={isSubmittingComment}
+                  />
+                  <button 
+                    type="submit" 
+                    disabled={isSubmittingComment || !newComment.trim()} 
+                    className="absolute bottom-3 right-3 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed"
+                  >
+                    <Send className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="text-center p-4 border border-gray-200 rounded-md">
+                <p className="text-sm text-gray-500 mb-2">
+                  コメントするにはログインしてください
+                </p>
+                <Link href="/login">
+                  <Button size="sm" variant="outline">
+                    ログイン
+                  </Button>
+                </Link>
+              </div>
+            )}
           </form>
         </div>
       )}
@@ -358,7 +526,7 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
                   onClick={() => window.open("https://line.me/R/msg/text/?" + window.location.href, "_blank")}
                 >
                   <svg viewBox="0 0 24 24" className="h-5 w-5 mr-2" fill="#06C755">
-                    <path d="M24 10.304c0-5.369-5.383-9.738-12-9.738-6.616 0-12 4.369-12 9.738 0 4.814 4.269 8.846 10.036 9.608.391.084.922.258 1.057.592.121.303.079.778.039 1.085l-.171 1.027c-.053.303-.242 1.186 1.039.647 1.281-.54 6.911-4.069 9.428-6.967 1.739-1.907 2.572-3.844 2.572-5.992zm-18.988-2.595c.129 0 .234.105.234.234v4.153h2.287c.129 0 .233.104.233.233v.842a.233.233 0 01-.233.234H4.781a.233.233 0 01-.234-.234V7.943c0-.129.105-.234.234-.234h.465zm14.701 0c.129 0 .233.105.233.234v.842a.232.232 0 01-.233.234h-2.287v.922h2.287c.129 0 .233.105.233.234v.842a.232.232 0 01-.233.234h-2.287v.922h2.287c.129 0 .233.105.233.234v.842a.232.232 0 01-.233.234h-3.363a.233.233 0 01-.234-.234V7.943c0-.129.105-.234.234-.234h3.363zm-10.12.002c.128 0 .233.104.233.233v4.153c0 .129-.105.234-.233.234h-.842a.233.233 0 01-.234-.234V7.944c0-.129.105-.233.234-.233h.842zm2.894 0a.233.233 0 01.233.233v4.153a.232.232 0 01-.233.234h-.842a.232.232 0 01-.233-.234V7.944c0-.129.104-.233.233-.233h.842z" />
+                    <path d="M24 10.304c0-5.369-5.383-9.738-12-9.738-6.616 0-12 4.369-12 9.738 0 4.814 4.269 8.846 10.036 9.608.391.084.922.258 1.057.592.121.303.079.778.039 1.085l-.171 1.027c-.053.303-.242 1.186 1.039.647 1.281-.54 6.911-4.069 9.428-6.967 1.739-1.907 2.572-3.844 2.572-5.992zm-18.988-2.595c.129 0 .234.105.234v4.153h2.287c.129 0 .233.104.233.233v.842a.233.233 0 01-.233.234H4.781a.233.233 0 01-.234-.234V7.943c0-.129.105-.234.234-.234h.465zm14.701 0c.129 0 .233.105.233.234v.842a.232.232 0 01-.233.234h-2.287v.922h2.287c.129 0 .233.105.233.234v.842a.232.232 0 01-.233.234h-2.287v.922h2.287c.129 0 .233.105.233.234v.842a.232.232 0 01-.233.234h-3.363a.233.233 0 01-.234-.234V7.943c0-.129.105-.234.234-.234h3.363zm-10.12.002c.128 0 .233.104.233.233v4.153c0 .129-.105.234-.233.234h-.842a.233.233 0 01-.234-.234V7.944c0-.129.105-.233.234-.233h.842zm2.894 0a.233.233 0 01.233.233v4.153a.232.232 0 01-.233.234h-.842a.232.232 0 01-.233-.234V7.944c0-.129.104-.233.233-.233h.842z" />
                   </svg>
                   LINE
                 </Button>

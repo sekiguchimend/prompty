@@ -131,7 +131,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
         <div className="relative prose max-w-none">
           {isPreview ? (
             <div className="relative">
-              <div className="mb-6">
+              <div className="mb-2">
                 <div dangerouslySetInnerHTML={{ __html: contentText.slice(0, 500) + '...' }} />
               </div>
 
@@ -140,20 +140,20 @@ const PromptContent: React.FC<PromptContentProps> = ({
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white"></div>
                 </div>
 
-                <div className="flex flex-col items-center justify-center py-8 relative">
-                  <Badge variant="outline" className="mb-2 rounded-sm">プレミアムコンテンツ</Badge>
-                  <div className="space-y-4 py-4">
+                <div className="flex flex-col items-center justify-center py-2 relative">
+                  <Badge variant="outline" className="mb-1 rounded-sm">プレミアムコンテンツ</Badge>
+                  <div className="space-y-2 py-2">
                   </div>
 
-                  <div className="flex flex-col items-center justify-center py-6 relative w-full max-w-md">
+                  <div className="flex flex-col items-center justify-center py-2 relative w-full max-w-md">
                     {/* Updated purchase section to match the image */}
-                    <div className="text-center mb-6 w-full">
-                      <h3 className="text-xl font-medium text-gray-800 mb-4">モデルとプロンプトが必要ですか?</h3>
+                    <div className="text-center mb-1 w-full">
+                      <h3 className="text-xl font-medium text-gray-800 mb-2">モデルとプロンプトが必要ですか?</h3>
                       <p className="text-gray-600 mb-1">{characterCount}字</p>
-                      <p className="text-4xl font-bold mb-2">¥ {price.toLocaleString()}</p>
+                      <p className="text-4xl font-bold mb-1">¥ {price.toLocaleString()}</p>
                       
                       {/* Added information items with icons */}
-                      <div className="space-y-3 mb-6">
+                      <div className="space-y-2 mb-1">
                         <div className="flex items-center text-left text-sm text-gray-700">
                           <FileText className="h-5 w-5 mr-2 text-gray-500 flex-shrink-0" />
                           <span>使用されたモデルについての詳細な情報</span>
@@ -166,8 +166,8 @@ const PromptContent: React.FC<PromptContentProps> = ({
                       
                       {/* Full-width purchase button */}
                       <Button
-                        className="w-full bg-gray-800 text-white hover:bg-gray-700 rounded-md py-6 text-lg font-medium"
-                        onClick={handlePurchase} // Use the same handler as the price button
+                        className="w-full bg-gray-800 text-white hover:bg-gray-700 rounded-md py-2 text-lg font-medium"
+                        onClick={handlePurchase}
                       >
                         購入手続きへ
                       </Button>
