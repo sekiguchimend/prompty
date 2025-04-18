@@ -56,25 +56,59 @@ const CreatePost = () => {
     }
   }, [user, isLoading]);
 
-  // プロジェクト設定の保存
+  // プロジェクト設定の保存（ProjectSettingsFormから自動的に呼び出される）
   const handleProjectSave = (data: ProjectFormValues) => {
-    console.log("Project settings updated:", data);
-    setProjectSettings(prev => ({
-      ...prev,
+    // プロジェクト設定を更新
+    setProjectSettings({
       ...data,
-      thumbnail: data.thumbnail // Base64データを必ずセット
-    }));
-    
-    // サムネイル画像があれば保存
-    if (data.thumbnail && data.thumbnail.startsWith('data:')) {
-      handleThumbnailUpload(data.thumbnail);
-    }
-    
-    toast({
-      title: "設定保存完了",
-      description: "プロジェクト設定が保存されました",
-      variant: "default",
+      thumbnail: data.thumbnail || "" 
     });
+    
+    // サムネイル画像があれば処理
+    if (data.thumbnail && data.thumbnail.startsWith('data:')) {
+      console.log('サムネイル画像を検出、Fileオブジェクトに変換します');
+      // サムネイル処理を実行
+      handleThumbnailChange(data.thumbnail);
+    } else {
+      // サムネイルがない場合は明示的にnullをセット
+      setThumbnailFile(null);
+    }
+  };
+  
+  // サムネイル画像を直接処理する関数（同期的に状態を更新）
+  const handleThumbnailChange = (thumbnailDataUrl: string) => {
+    try {
+      if (!thumbnailDataUrl || !thumbnailDataUrl.startsWith('data:')) {
+        console.warn('無効なサムネイルデータ');
+        setThumbnailFile(null);
+        return;
+      }
+      
+      console.log('サムネイルデータ処理開始');
+      
+      // 画像タイプを取得
+      const mimeMatch = thumbnailDataUrl.match(/data:([^;]+);/);
+      const mimeType = mimeMatch ? mimeMatch[1] : 'image/png';
+      const fileExt = mimeType.split('/')[1] || 'png';
+      
+      // Base64データURLをFileオブジェクトに変換
+      const fileName = `thumbnail-${Date.now()}.${fileExt}`;
+      const file = dataURLtoFile(thumbnailDataUrl, fileName);
+      
+      console.log('サムネイルファイル作成完了:', {
+        name: file.name,
+        size: file.size,
+        type: file.type
+      });
+      
+      // 状態を直接更新
+      setThumbnailFile(file);
+      console.log('thumbnailFileを更新しました');
+      
+    } catch (error) {
+      console.error('サムネイル処理エラー:', error);
+      setThumbnailFile(null);
+    }
   };
   
   // サムネイル画像をBase64からFileオブジェクトに変換
@@ -95,6 +129,12 @@ const CreatePost = () => {
         u8arr[n] = bstr.charCodeAt(n);
       }
       
+      console.log('dataURLtoFile 変換成功:', {
+        filename,
+        mime,
+        contentLength: bstr.length
+      });
+      
       return new File([u8arr], filename, { type: mime });
     } catch (error) {
       console.error('dataURLtoFile 変換エラー:', error);
@@ -102,54 +142,22 @@ const CreatePost = () => {
     }
   };
   
-  // サムネイル画像のアップロード処理
-  const handleThumbnailUpload = async (thumbnailDataUrl: string): Promise<File | null> => {
-    try {
-      if (!thumbnailDataUrl || thumbnailDataUrl.length < 100) {
-        console.warn('無効なサムネイルデータ:', thumbnailDataUrl);
-        return null;
-      }
-      
-      console.log('サムネイルデータ (最初の100文字):', thumbnailDataUrl.substring(0, 100));
-      
-      // 画像タイプを取得
-      const mimeMatch = thumbnailDataUrl.match(/data:([^;]+);/);
-      const mimeType = mimeMatch ? mimeMatch[1] : 'image/png';
-      const fileExt = mimeType.split('/')[1] || 'png';
-      
-      // Base64データURLをFileオブジェクトに変換
-      const fileName = `thumbnail-${Date.now()}.${fileExt}`;
-      const file = dataURLtoFile(thumbnailDataUrl, fileName);
-      
-      console.log('サムネイルファイル情報:', {
-        name: file.name,
-        size: file.size,
-        type: file.type
-      });
-      
-      setThumbnailFile(file);
-      console.log('サムネイル画像の準備完了:', file.name);
-      return file;
-    } catch (error) {
-      console.error('サムネイル画像の準備エラー:', error);
-      toast({
-        title: "エラー",
-        description: error instanceof Error ? error.message : "サムネイル画像の準備中にエラーが発生しました",
-        variant: "destructive",
-      });
-      return null;
-    }
-  };
-  
   // ストレージにサムネイル画像をアップロード
   const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
-    if (!file) return null;
+    if (!file) {
+      console.error('サムネイルアップロード: ファイルがnullです');
+      return null;
+    }
     try {
-      console.log('サムネイルアップロード開始...');
+      console.log('サムネイルアップロード開始...', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type
+      });
       // バケット名
       const bucketName = 'prompt-thumbnails';
       // ファイル情報設定
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split('.').pop() || 'png';
       const fileName = `thumbnail-${Date.now()}`;
       const filePath = `${fileName}.${fileExt}`;
       console.log(`ファイル '${filePath}' をアップロード準備中...`);
@@ -164,8 +172,12 @@ const CreatePost = () => {
             bucketName: bucketName,
           }),
         });
+        
+        const bucketData = await bucketResponse.json();
+        console.log('バケット作成APIレスポンス:', bucketData);
+        
         if (!bucketResponse.ok) {
-          console.error('バケット作成APIエラー');
+          console.error('バケット作成APIエラー:', bucketData);
           throw new Error('バケット作成に失敗しました');
         }
         console.log('バケット作成リクエスト完了');
@@ -189,7 +201,7 @@ const CreatePost = () => {
           contentType: file.type // ContentTypeを明示的に指定
         });
       if (error) {
-        console.error('アップロードエラー:', error);
+        console.error('アップロードエラー詳細:', error);
         throw error;
       }
       console.log('アップロード成功:', data);
@@ -207,7 +219,7 @@ const CreatePost = () => {
       // アップロードしたサムネイルへの正しいURLを返す
       return urlData.publicUrl;
     } catch (error) {
-      console.error('サムネイルのアップロードエラー:', error);
+      console.error('サムネイルのアップロードエラー詳細:', error);
       toast({
         title: "サムネイルエラー",
         description: "画像のアップロードに失敗しました。別の画像を試すか、管理者に連絡してください。",
@@ -323,7 +335,10 @@ const CreatePost = () => {
       return;
     }
 
-    console.log('[DEBUG] submitProject時のprojectSettings.thumbnail:', projectSettings.thumbnail);
+    console.log('[DEBUG] submitProject時の状態:');
+    console.log('[DEBUG] - projectSettings.thumbnail:', projectSettings.thumbnail ? `存在します(${projectSettings.thumbnail.length}文字)` : 'なし');
+    console.log('[DEBUG] - thumbnailFile:', thumbnailFile ? `存在します(${thumbnailFile.name})` : 'なし');
+    
     if (prompts.length === 0) {
       toast({
         title: "エラー",
@@ -338,26 +353,50 @@ const CreatePost = () => {
     try {
       // サムネイル画像のアップロード
       let thumbnailUrl = null;
-      // もしthumbnailFileがnullかつprojectSettings.thumbnailがBase64データなら、その場でhandleThumbnailUploadを実行し、その返り値を使う
       let fileToUpload = thumbnailFile;
-      console.log('[DEBUG] 投稿時のthumbnailFile:', thumbnailFile);
-      if (!fileToUpload && projectSettings.thumbnail && projectSettings.thumbnail.startsWith('data:')) {
-        console.log('[DEBUG] 投稿時にBase64サムネイルからFileを生成してセットします', projectSettings.thumbnail.substring(0, 100));
-        fileToUpload = await handleThumbnailUpload(projectSettings.thumbnail);
-        console.log('[DEBUG] handleThumbnailUploadの返り値:', fileToUpload);
-      }
+      
+      // もし直接thumbnailFileがあればそれを使用
       if (fileToUpload) {
-        setThumbnailFile(fileToUpload); // 念のため状態も更新
+        console.log('[DEBUG] thumbnailFileが存在します。これを使用します:', fileToUpload.name);
+      } 
+      // なければprojectSettings.thumbnailからFileを生成
+      else if (projectSettings.thumbnail && projectSettings.thumbnail.startsWith('data:')) {
+        console.log('[DEBUG] thumbnailFileがないためprojectSettings.thumbnailから生成します');
+        // 同期的に変換処理を行う
+        handleThumbnailChange(projectSettings.thumbnail);
+        // 状態更新が非同期のため、直接変換結果を取得
+        fileToUpload = dataURLtoFile(
+          projectSettings.thumbnail,
+          `thumbnail-${Date.now()}.${projectSettings.thumbnail.match(/data:image\/([^;]+);/)?.[1] || 'png'}`
+        );
+        console.log('[DEBUG] 生成したファイル:', fileToUpload.name);
+      } else {
+        console.log('[DEBUG] サムネイルデータがないためスキップします');
+      }
+      
+      // ファイルがあればアップロードを実行
+      if (fileToUpload) {
         toast({
           title: "処理中",
           description: "サムネイル画像をアップロード中...",
           variant: "default",
         });
-        console.log('[DEBUG] uploadThumbnailToStorageに渡すfile:', fileToUpload);
+        console.log('[DEBUG] uploadThumbnailToStorageにファイルを渡します:', fileToUpload.name);
         thumbnailUrl = await uploadThumbnailToStorage(fileToUpload);
-        console.log('[DEBUG] アップロードした画像のURL:', thumbnailUrl);
+        console.log('[DEBUG] アップロード結果URL:', thumbnailUrl || 'アップロード失敗');
+        
+        if (!thumbnailUrl) {
+          const continueWithoutThumbnail = window.confirm(
+            'サムネイル画像のアップロードに失敗しました。サムネイルなしで投稿を続けますか？'
+          );
+          
+          if (!continueWithoutThumbnail) {
+            setIsSubmitting(false);
+            return;
+          }
+        }
       } else {
-        console.log('[DEBUG] サムネイルファイルが用意できなかったためアップロードをスキップ');
+        console.log('[DEBUG] サムネイルファイルがないためアップロードをスキップします');
       }
 
       // 投稿直前に認証状態を再取得

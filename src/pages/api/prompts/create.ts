@@ -27,8 +27,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('📥 create-prompt API リクエスト受信:', JSON.stringify(req.body, null, 2));
     const promptData: CreatePromptRequest = req.body;
     
-    // サムネイルURLの受け取りを明示的にログ出力
-    console.log('受信したthumbnail_url:', promptData.thumbnail_url);
+    // サムネイルURLの受信を詳細にログ出力
+    console.log('📸 受信したthumbnail_url:', promptData.thumbnail_url);
+    console.log('📸 thumbnail_urlの型:', typeof promptData.thumbnail_url);
+    if (promptData.thumbnail_url) {
+      console.log('📸 thumbnail_urlの長さ:', promptData.thumbnail_url.length);
+      console.log('📸 thumbnail_urlの部分表示:', promptData.thumbnail_url.substring(0, 100) + '...');
+    }
     
     // 必須フィールドの検証
     if (!promptData.author_id) {
@@ -66,29 +71,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
     
-    // デモ環境では匿名キーを使用
-    console.log('🔑 認証情報:', { 
-      url: supabaseUrl.substring(0, 20) + '...',
-      keyLength: supabaseAnonKey.length,
-      serviceKeyAvailable: !!supabaseServiceKey
-    });
+    // 環境変数のデバッグログ
+    console.log('🔑 Supabase URL:', supabaseUrl);
+    console.log('🔑 Anon Key 長さ:', supabaseAnonKey.length);
+    console.log('🔑 Service Role Key 長さ:', supabaseServiceKey.length);
     
-    // サーバーサイドではサービスロールキーを使用（RLS回避のため）
-    const supabase = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonKey);
-    
-    // クライアント接続テスト
-    try {
-      console.log('🔍 Supabase接続テスト開始...');
-      const { data: testData, error: testError } = await supabase.from('profiles').select('id').limit(1);
-      
-      if (testError) {
-        console.error('❌ Supabase接続テストエラー:', testError);
-      } else {
-        console.log('✅ Supabase接続テスト成功:', testData);
-      }
-    } catch (testErr) {
-      console.error('❌ Supabase接続テスト例外:', testErr);
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('❌ Supabase環境変数が設定されていません');
+      return res.status(500).json({
+        success: false,
+        error: 'サーバー設定エラー',
+        code: 'missing_env_vars'
+      });
     }
+    
+    // サービスロールキーを使用してクライアントを初期化
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     // データの準備
     const insertData = {
@@ -96,7 +94,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       title: promptData.title,
       description: promptData.description || '',
       content: promptData.content,
-      thumbnail_url: promptData.thumbnail_url && promptData.thumbnail_url !== '' ? promptData.thumbnail_url : null,
+      thumbnail_url: promptData.thumbnail_url || null,
       category_id: promptData.category_id === 'none' ? null : promptData.category_id || null,
       price: promptData.price || 0,
       is_free: promptData.is_free !== undefined ? promptData.is_free : true,
@@ -106,15 +104,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       published: promptData.published !== undefined ? promptData.published : true
     };
     
-    // サムネイルURLのDB保存値をログ出力
-    console.log('DBに保存するthumbnail_url:', insertData.thumbnail_url);
-    
     console.log('🔄 挿入データ:', JSON.stringify({
       author_id: insertData.author_id,
       title: insertData.title,
       description: insertData.description,
       content: insertData.content.substring(0, 50) + '...',
-      thumbnail_url: insertData.thumbnail_url,
+      thumbnail_url: insertData.thumbnail_url ? '存在します(URLの長さ:' + insertData.thumbnail_url.length + ')' : 'null',
       is_free: insertData.is_free
     }, null, 2));
     
@@ -159,33 +154,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log('✅ 挿入成功:', data?.[0]?.id);
       console.log('返却データ:', JSON.stringify(data?.[0] || {}, null, 2));
       
-      return res.status(201).json({
+      return res.status(200).json({
         success: true,
-        message: 'プロンプトが正常に保存されました',
-        data: data?.[0] || null,
-        promptId: data?.[0]?.id || null
+        promptId: data?.[0]?.id,
+        data: data?.[0]
       });
-    } catch (dbError) {
+    } catch (dbError: any) {
       console.error('❌ データベース例外:', dbError);
       return res.status(500).json({
         success: false,
-        error: 'データベース操作中に例外が発生しました',
-        message: dbError instanceof Error ? dbError.message : String(dbError)
+        error: 'データベース処理中に例外が発生しました',
+        message: dbError.message
       });
     }
-    
-  } catch (err) {
-    console.error('🔴 サーバーエラー:', err);
-    
-    // エラーオブジェクトの安全な変換
-    const errorMessage = err instanceof Error ? err.message : String(err);
-    const errorName = err instanceof Error ? err.name : 'UnknownError';
-    
-    return res.status(500).json({ 
+  } catch (error: any) {
+    console.error('❌ 予期せぬエラー:', error);
+    return res.status(500).json({
       success: false,
-      error: '予期しないエラーが発生しました',
-      message: errorMessage,
-      name: errorName
+      error: '予期せぬエラーが発生しました',
+      message: error.message
     });
   }
 } 

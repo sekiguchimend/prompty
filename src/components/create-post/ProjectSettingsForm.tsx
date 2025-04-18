@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Form, FormControl, FormField, FormItem, FormLabel } from "../../components/ui/form";
 import { Input } from "../../components/ui/input";
 import { Textarea } from "../../components/ui/textarea";
@@ -90,8 +90,12 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
       reader.onload = (event) => {
         const result = event.target?.result as string;
         console.log('サムネイル読み込み完了:', result.substring(0, 50) + '...');
+        console.log('サムネイルデータ長さ:', result.length);
         setThumbnailPreview(result);
         projectForm.setValue("thumbnail", result);
+        
+        // 設定が変更されたら自動的に親コンポーネントに通知
+        autoSaveChanges({...projectForm.getValues(), thumbnail: result});
       };
       
       reader.onerror = (error) => {
@@ -105,15 +109,43 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
 
   // サムネイル画像をクリア
   const clearThumbnail = () => {
+    console.log('サムネイル画像をクリアします');
     setThumbnailPreview(null);
     projectForm.setValue("thumbnail", "");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+    
+    // クリア時も親コンポーネントに通知
+    autoSaveChanges({...projectForm.getValues(), thumbnail: ""});
+  };
+  
+  // 変更を自動保存する関数
+  const autoSaveChanges = (data: ProjectFormValues) => {
+    // カスタムAIモデルの処理
+    if (data.aiModel === "custom" && data.customAiModel) {
+      data.aiModel = data.customAiModel;
+    }
+    
+    // 無料の場合は価格を0に設定
+    if (data.pricingType === "free") {
+      data.price = 0;
+    }
+    
+    // 親コンポーネントに通知
+    onSave(data);
   };
 
   // フォーム送信
   const onSubmit = (data: ProjectFormValues) => {
+    console.log('プロジェクト設定送信前データ:', {
+      title: data.projectTitle,
+      aiModel: data.aiModel,
+      thumbnailExists: !!data.thumbnail,
+      thumbnailLength: data.thumbnail?.length || 0,
+      thumbnailPreview: thumbnailPreview ? '設定済み' : 'なし'
+    });
+    
     // カスタムAIモデルの処理
     if (data.aiModel === "custom" && data.customAiModel) {
       data.aiModel = data.customAiModel;
@@ -130,17 +162,44 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
   const handleAiModelChange = (value: string) => {
     projectForm.setValue("aiModel", value);
     setIsCustomModel(value === "custom");
+    
+    // モデル変更時も自動保存
+    setTimeout(() => {
+      autoSaveChanges(projectForm.getValues());
+    }, 100);
   };
 
   const handlePricingTypeChange = (value: string) => {
     projectForm.setValue("pricingType", value as "free" | "paid");
+    
+    // 料金タイプ変更時も自動保存
+    setTimeout(() => {
+      autoSaveChanges(projectForm.getValues());
+    }, 100);
   };
+  
+  // フォームの値が変更されたら自動保存する
+  useEffect(() => {
+    const subscription = projectForm.watch((value) => {
+      // 値が変更されるたびに自動保存（ただしdebounce処理をする）
+      // 連続した変更の場合、最後の変更から500ms後に保存する
+      const timeoutId = setTimeout(() => {
+        if (Object.keys(value).length > 0) {
+          autoSaveChanges(projectForm.getValues());
+        }
+      }, 500);
+      
+      return () => clearTimeout(timeoutId);
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [projectForm.watch]);
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 mb-6">
       <Form {...projectForm}>
         <form onSubmit={projectForm.handleSubmit(onSubmit)}>
-          <div className="p-6 border-b border-gray-200">
+          <div className="p-6">
             <h2 className="text-lg font-semibold mb-4">プロジェクト設定</h2>
             
             <div className="md:flex gap-8">
@@ -360,15 +419,7 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
             </div>
           </div>
           
-          <div className="flex justify-end p-4 bg-gray-50 rounded-b-lg">
-            <Button 
-              type="submit"
-              className="bg-black hover:bg-gray-800 text-white"
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              設定を保存
-            </Button>
-          </div>
+          {/* 保存ボタンは非表示（自動保存するため） */}
         </form>
       </Form>
     </div>

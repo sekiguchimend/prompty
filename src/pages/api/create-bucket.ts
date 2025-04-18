@@ -7,110 +7,70 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const { bucketName } = req.body;
+
+  if (!bucketName) {
+    return res.status(400).json({ error: 'バケット名が必要です' });
+  }
+
   try {
-    const { bucketName } = req.body;
-    
-    if (!bucketName) {
-      return res.status(400).json({ error: 'bucketNameは必須です' });
-    }
-    
-    console.log('📦 バケット作成リクエスト:', bucketName);
-    
-    // Supabaseクライアントの初期化（サービスロールキーを使用）
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-    
-    if (!supabaseServiceKey) {
-      console.error('❌ サービスロールキーが設定されていません');
-      return res.status(500).json({ 
-        error: 'サーバー設定エラー',
-        message: 'サービスロールキーが設定されていません'
-      });
-    }
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // バケットの存在チェック
-    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
-    
+    // サービスロールキーを使用してクライアントを初期化
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    // バケットが存在するか確認
+    const { data: existingBuckets, error: listError } = await supabase
+      .storage
+      .listBuckets();
+
     if (listError) {
-      console.error('❌ バケット一覧取得エラー:', listError);
-      return res.status(500).json({ 
-        error: 'バケット一覧の取得に失敗しました',
-        message: listError.message
-      });
+      console.error('バケット一覧取得エラー:', listError);
+      return res.status(500).json({ error: 'バケット一覧の取得に失敗しました' });
     }
-    
-    const bucketExists = buckets?.some(b => b.name === bucketName);
-    
-    // バケットが既に存在する場合
-    if (bucketExists) {
-      console.log('✅ バケットは既に存在します:', bucketName);
-      
-      // バケットを公開に設定
-      try {
-        const { error: updateError } = await supabase.storage.updateBucket(bucketName, {
+
+    const bucketExists = existingBuckets.some(bucket => bucket.name === bucketName);
+
+    if (!bucketExists) {
+      // バケットが存在しない場合は作成
+      const { data, error } = await supabase
+        .storage
+        .createBucket(bucketName, {
           public: true,
+          fileSizeLimit: 5242880 // 5MB
         });
-        
-        if (updateError) {
-          console.error('⚠️ バケット公開設定エラー:', updateError);
-        } else {
-          console.log('✅ バケットを公開に設定しました:', bucketName);
-        }
-      } catch (updateErr) {
-        console.error('⚠️ バケット更新例外:', updateErr);
+
+      if (error) {
+        console.error('バケット作成エラー:', error);
+        return res.status(500).json({ error: 'バケットの作成に失敗しました' });
       }
-      
-      return res.status(200).json({
-        success: true,
-        message: 'バケットは既に存在します',
-        bucket: bucketName
-      });
+
+      console.log(`バケット '${bucketName}' を作成しました`);
+    } else {
+      console.log(`バケット '${bucketName}' は既に存在します`);
     }
-    
-    // バケットを作成
-    console.log('🔄 バケット作成中:', bucketName);
-    const { data, error } = await supabase.storage.createBucket(bucketName, {
-      public: true
-    });
-    
-    if (error) {
-      console.error('❌ バケット作成エラー:', error);
-      return res.status(500).json({ 
-        error: 'バケットの作成に失敗しました',
-        message: error.message
-      });
-    }
-    
-    console.log('✅ バケット作成成功:', bucketName);
-    
-    // バケットが正しく公開設定されているか確認
-    try {
-      const { error: updateError } = await supabase.storage.updateBucket(bucketName, {
-        public: true,
-      });
-      
-      if (updateError) {
-        console.error('⚠️ バケット公開設定エラー:', updateError);
-      } else {
-        console.log('✅ バケットを公開に設定しました:', bucketName);
+
+    // ポリシーの更新 (オプション)
+    const policies = [
+      {
+        name: `${bucketName}:アップロード`,
+        definition: `auth.role() = 'authenticated' AND bucket_id = '${bucketName}'`,
+        operation: 'INSERT'
+      },
+      {
+        name: `${bucketName}:閲覧`,
+        definition: `bucket_id = '${bucketName}'`,
+        operation: 'SELECT'
       }
-    } catch (updateErr) {
-      console.error('⚠️ バケット更新例外:', updateErr);
-    }
-    
-    return res.status(201).json({
-      success: true,
-      message: 'バケットが正常に作成されました',
-      bucket: bucketName
-    });
-    
-  } catch (err) {
-    console.error('🔴 サーバーエラー:', err);
-    return res.status(500).json({ 
-      error: '予期しないエラーが発生しました',
-      message: err instanceof Error ? err.message : 'Unknown error'
-    });
+    ];
+
+    // ポリシーは必要に応じて更新
+    // 実際のポリシー設定はマイグレーションスクリプトで行うことを推奨
+
+    return res.status(200).json({ success: true, bucketName });
+  } catch (error) {
+    console.error('バケット作成処理エラー:', error);
+    return res.status(500).json({ error: '予期せぬエラーが発生しました' });
   }
 } 
