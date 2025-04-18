@@ -18,17 +18,29 @@ const Search = () => {
   const [results, setResults] = useState<PromptItem[]>([]);
 
   useEffect(() => {
+    setSearchInput(query);
+    
     // Simulate API call with a delay
     setIsLoading(true);
+    console.log('🔍 検索クエリ:', query);
     
     const timer = setTimeout(() => {
       // For demo purposes, filter the mock data based on the query
       const combinedPrompts = [...featuredPrompts, ...aiGeneratedPrompts];
+      
+      // 検索クエリがない場合は全件表示
+      if (!query.trim()) {
+        setResults(combinedPrompts);
+        setIsLoading(false);
+        return;
+      }
+      
       const filteredResults = combinedPrompts.filter(prompt => 
         prompt.title.toLowerCase().includes(query.toLowerCase()) ||
         prompt.user.name.toLowerCase().includes(query.toLowerCase())
       );
       
+      console.log('🔍 検索結果:', filteredResults.length, '件');
       setResults(filteredResults);
       setIsLoading(false);
     }, 800);
@@ -39,7 +51,14 @@ const Search = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchInput.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchInput.trim())}`);
+      const searchUrl = `/search?q=${encodeURIComponent(searchInput.trim())}`;
+      
+      // 現在のURLと同じ検索クエリの場合、強制的にページをリロード
+      if (searchParams?.get('q') === searchInput.trim()) {
+        window.location.href = searchUrl; // 完全なページリロード
+      } else {
+        router.push(searchUrl);
+      }
     }
   };
 
@@ -49,10 +68,23 @@ const Search = () => {
       
       <main className="flex-1 pb-12 mt-12">
         <div className="container px-4 py-6 sm:px-6 md:px-8">
-          {/* 検索フォームを追加 */}
+          <form onSubmit={handleSearch} className="mb-6 flex">
+            <div className="relative flex-1 max-w-lg">
+              <SearchIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="キーワードやクリエイターで検索"
+                className="w-full pl-10"
+              />
+            </div>
+            <Button type="submit" className="ml-2">検索</Button>
+          </form>
+          
           <div className="mb-8">
             <h1 className="text-2xl font-bold mb-2">
-              "<span className="text-prompty-primary">{query}</span>" の検索結果
+              {query ? `"${query}" の検索結果` : "すべての検索結果"}
             </h1>
             <p className="text-gray-500">
               {isLoading ? '検索中...' : `${results.length}件の結果が見つかりました`}

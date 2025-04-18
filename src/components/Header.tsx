@@ -5,7 +5,7 @@ import { Search, PenSquare, Bell, ChevronRight, Heart, MessageSquare, X } from '
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from './ui/use-toast';
 import NotificationDropdown from './NotificationDropdown';
@@ -29,6 +29,7 @@ const ADMIN_EMAILS = ['queue@queuetech.jp', 'admin@queuetech.jp', 'queue@queue-t
 const Header = () => {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   // useAuthフックを使用してログイン状態を取得
   const { user, isLoading, signOut } = useAuth();
@@ -118,7 +119,16 @@ const Header = () => {
     e.preventDefault();
     if (searchQuery.trim()) {
       setMobileSearchOpen(false);
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      // URLを直接構築して遷移（検索キーワードを確実に反映）
+      const searchUrl = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
+      console.log('🔍 検索URL:', searchUrl);
+      
+      // 現在のURLと同じ検索クエリの場合、強制的にページをリロード
+      if (pathname === '/search' && searchParams?.get('q') === searchQuery.trim()) {
+        window.location.href = searchUrl; // 完全なページリロード
+      } else {
+        router.push(searchUrl);
+      }
       setSearchQuery('');
     } else {
       toast({
@@ -272,9 +282,9 @@ const Header = () => {
                         value={searchQuery}
                         onChange={handleSearchChange}
                       />
-                      <button 
-                        type="submit" 
-                        className="absolute right-2.5 top-2.5 hidden h-5 select-none items-center gap-1 rounded bg-transparent hover:bg-gray-200 px-1.5 text-xs text-gray-500 md:flex"
+                      <button
+                        type="submit"
+                        className="absolute right-2.5 top-2.5 h-5 select-none items-center gap-1 rounded bg-transparent hover:bg-gray-200 px-1.5 text-xs text-gray-500 flex"
                       >
                         検索
                       </button>

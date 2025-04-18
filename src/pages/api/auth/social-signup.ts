@@ -21,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     );
     
     // リダイレクトURL
-    const redirectTo = `https://prompty-zeta.vercel.app/auth/callback`;
+    const redirectTo = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://prompty-zeta.vercel.app'}/auth/callback?mode=signup`;
     
     let result;
     

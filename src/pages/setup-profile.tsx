@@ -157,21 +157,56 @@ export default function SetupProfile() {
       );
 
       // プロフィールを更新
-      const { error } = await supabase
-        .from('profiles')
-        .update({ 
-          account_name: accountName.trim(),
-          bio: bio.trim() || null
-        })
-        .eq('id', userId);
-
-      if (error) throw error;
+      try {
+        // APIエンドポイントを使用してプロフィールを更新
+        const response = await fetch('/api/auth/update-profile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId,
+            accountName: accountName.trim(),
+            bio: bio.trim() || null
+          }),
+        });
+        
+        // レスポンスのステータスコードをチェック
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || errorData.error || 'プロフィール更新に失敗しました');
+        }
+        
+        // 成功した場合はSupabaseのプロフィールも直接更新（バックアップとして）
+        const { error } = await supabase
+          .from('profiles')
+          .update({ 
+            display_name: accountName.trim(),
+            bio: bio.trim() || null
+          })
+          .eq('id', userId);
+          
+        if (error) {
+          console.warn('Supabaseプロフィール更新の警告:', error);
+          // APIでの更新が成功した場合はSupabaseでのエラーは無視する
+        }
+      } catch (apiError) {
+        console.error('API経由のプロフィール更新エラー:', apiError);
+        throw apiError;
+      }
 
       // 設定が完了したらホームに遷移
       router.push('/');
     } catch (err) {
       console.error('プロフィール設定エラー:', err);
-      setError(err instanceof Error ? err.message : '予期せぬエラーが発生しました');
+      // エラーオブジェクトの処理を改善
+      if (err instanceof Error) {
+        setError(err.message);
+      } else if (err && typeof err === 'object') {
+        setError('プロフィール設定エラー: ' + JSON.stringify(err));
+      } else {
+        setError('予期せぬエラーが発生しました');
+      }
     } finally {
       setIsSaving(false);
     }

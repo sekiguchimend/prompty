@@ -312,6 +312,17 @@ const CreatePost = () => {
 
   // プロジェクト全体を投稿
   const submitProject = async () => {
+    // 未ログインユーザーは投稿できないように
+    if (isAnonymousSubmission) {
+      toast({
+        title: "ログインが必要です",
+        description: "投稿するにはログインしてください",
+        variant: "destructive",
+      });
+      router.push('/Login');
+      return;
+    }
+
     console.log('[DEBUG] submitProject時のprojectSettings.thumbnail:', projectSettings.thumbnail);
     if (prompts.length === 0) {
       toast({
@@ -495,22 +506,24 @@ const CreatePost = () => {
         
         {/* 認証状態表示 */}
         {isAnonymousSubmission && (
-          <div className="w-full max-w-3xl mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-            <p className="text-yellow-800">
-              現在ログインしていません。プロンプトは「匿名」として投稿されます。
-              自分の名前で投稿したい場合は、<a href="/login" className="underline text-blue-600">ログイン</a>してください。
+          <div className="w-full max-w-3xl mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-red-800">
+              現在ログインしていません。プロンプトの投稿にはログインが必要です。
+              <a href="/Login" className="underline text-blue-600 font-bold ml-1">ログイン</a>して投稿してください。
             </p>
           </div>
         )}
         
         {/* プロジェクト設定フォーム */}
-        <ProjectSettingsForm
-          onSave={handleProjectSave}
-          defaultValues={projectSettings}
-        />
+        {!isAnonymousSubmission && (
+          <ProjectSettingsForm
+            onSave={handleProjectSave}
+            defaultValues={projectSettings}
+          />
+        )}
         
         {/* プロンプト履歴 */}
-        {showHistory && prompts.length > 0 && (
+        {!isAnonymousSubmission && showHistory && prompts.length > 0 && (
           <PromptHistory
             prompts={prompts}
             onEditPrompt={handleEditPrompt}
@@ -518,19 +531,21 @@ const CreatePost = () => {
         )}
         
         {/* プロンプト入力フォーム */}
-        <PromptForm
-          onSubmit={handlePromptSubmit}
-          initialPromptNumber={promptNumber}
-          aiModel={projectSettings.aiModel}
-          modelLabel={getModelLabel(projectSettings.aiModel)}
-        />
+        {!isAnonymousSubmission && (
+          <PromptForm
+            onSubmit={handlePromptSubmit}
+            initialPromptNumber={promptNumber}
+            aiModel={projectSettings.aiModel}
+            modelLabel={getModelLabel(projectSettings.aiModel)}
+          />
+        )}
         
         {/* プロジェクト投稿ボタン */}
         <div className="mt-6 flex justify-end">
           <Button 
             onClick={submitProject}
             className="bg-black hover:bg-gray-800 text-white"
-            disabled={prompts.length === 0 || isSubmitting}
+            disabled={isAnonymousSubmission || prompts.length === 0 || isSubmitting}
           >
             {isSubmitting ? (
               <>
@@ -540,7 +555,7 @@ const CreatePost = () => {
             ) : (
               <>
                 <Send className="h-4 w-4 mr-2" />
-                プロジェクトを投稿
+                {isAnonymousSubmission ? "ログインが必要です" : "プロジェクトを投稿"}
               </>
             )}
           </Button>

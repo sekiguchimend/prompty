@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, Bookmark, MoreVertical } from 'lucide-react';
 import Link from 'next/link';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
@@ -7,6 +7,9 @@ import ReportDialog from './ReportDialog';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { PromptItem } from '../pages/prompts/[id]';
+import { likePrompt, unlikePrompt } from '../lib/like-service';
+import { useAuth } from '../lib/auth-context';
+import { checkIfLiked } from '../lib/like-service';
 
 // PromptGrid.tsx用のコンポーネント
 export type { PromptItem };
@@ -41,19 +44,90 @@ const PromptCard: React.FC<PromptCardProps> = ({
   const [currentLikeCount, setCurrentLikeCount] = useState(likeCount);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
+  const [isLikeProcessing, setIsLikeProcessing] = useState(false);
   
   const { toast } = useToast();
+  const { user: currentUser, isLoading } = useAuth();
   
   // IDはそのまま使う
   const promptId = id;
   
+  // コンポーネントマウント時にサーバーからいいね状態を取得
+  useEffect(() => {
+    const checkLikeStatus = async () => {
+      // 未ログインの場合はチェックしない
+      if (!currentUser || isLoading) return;
+      
+      try {
+        // Supabaseからいいねの状態を取得 (importしたcheckIfLikedを使います)
+        const isLikedByUser = await checkIfLiked(promptId, currentUser.id);
+        
+        // サーバーから取得した状態と現在の状態が異なる場合は更新
+        if (isLikedByUser !== liked) {
+          setLiked(isLikedByUser);
+        }
+      } catch (error) {
+        console.error('いいね状態確認エラー:', error);
+      }
+    };
+    
+    checkLikeStatus();
+  }, [promptId, currentUser, isLoading]);
+  
   // いいねをトグルする関数
-  const toggleLike = (e: React.MouseEvent) => {
+  const toggleLike = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    setLiked(!liked);
-    setCurrentLikeCount(prevCount => liked ? prevCount - 1 : prevCount + 1);
+    // 未ログインの場合はログインを促す
+    if (!currentUser) {
+      toast({
+        title: "ログインが必要です",
+        description: "イイねするにはログインしてください。",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // 同時に複数回処理されないようにする
+    if (isLikeProcessing) return;
+    
+    try {
+      setIsLikeProcessing(true);
+      
+      // いいねの状態を楽観的に更新（UI応答性向上のため）
+      setLiked(!liked);
+      setCurrentLikeCount(prevCount => liked ? prevCount - 1 : prevCount + 1);
+      
+      // APIでいいね状態を更新
+      if (liked) {
+        // いいねを取り消す
+        const result = await unlikePrompt(promptId, currentUser.id);
+        if (!result.success) {
+          throw new Error('いいねの取り消しに失敗しました');
+        }
+      } else {
+        // いいねを追加
+        const result = await likePrompt(promptId, currentUser.id);
+        if (!result.success) {
+          throw new Error('いいねの追加に失敗しました');
+        }
+      }
+    } catch (error) {
+      console.error('いいね処理エラー:', error);
+      
+      // エラーが発生した場合、状態を元に戻す
+      setLiked(liked);
+      setCurrentLikeCount(prevCount => liked ? prevCount + 1 : prevCount - 1);
+      
+      toast({
+        title: "エラーが発生しました",
+        description: "操作をやり直してください。",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLikeProcessing(false);
+    }
   };
   
   // 非表示にする関数

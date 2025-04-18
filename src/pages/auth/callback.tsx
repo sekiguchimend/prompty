@@ -48,6 +48,14 @@ export default function AuthCallback() {
           const userMetadata = session.user.user_metadata || {};
           const provider = session.user.app_metadata?.provider;
           
+          // URLから認証モードを取得（新規登録かログインか）
+          const urlParams = new URLSearchParams(window.location.search);
+          const isSignup = urlParams.get('mode') === 'signup';
+          
+          // 新規登録の場合はプロフィール設定ページに、ログインの場合はホームページにリダイレクト
+          const redirectPath = isSignup ? '/setup-profile' : '/';
+          console.log(`🔍 認証モード: ${isSignup ? '新規登録' : 'ログイン'}, リダイレクト先: ${redirectPath}`);
+          
           // プロバイダー別の名前取得ロジック
           let username;
           
@@ -137,22 +145,22 @@ export default function AuthCallback() {
               console.log('🟢 プロフィール情報が保存されました', result);
             }
             
-            // 常にプロフィール設定ページにリダイレクト
-            console.log('🔄 プロフィール設定ページにリダイレクトします');
-            window.location.href = '/setup-profile';
+            // 認証モードに応じたページにリダイレクト
+            console.log(`🔄 ${redirectPath}にリダイレクトします`);
+            window.location.href = redirectPath;
             return;
             
           } catch (profileError) {
             console.error('🔴 プロフィール保存中にエラーが発生:', profileError);
-            // プロフィール保存に失敗してもプロフィール設定ページにリダイレクト
-            console.log('🔄 プロフィール設定ページにリダイレクトします');
-            window.location.href = '/setup-profile';
+            // プロフィール保存に失敗しても認証モードに応じたページにリダイレクト
+            console.log(`🔄 ${redirectPath}にリダイレクトします`);
+            window.location.href = redirectPath;
             return;
           }
           
           // 注：以下のコードは到達しないはずだが、念のために残しておく
-          console.log('🔄 プロフィール設定ページにリダイレクトします');
-          window.location.href = '/setup-profile';
+          console.log(`🔄 ${redirectPath}にリダイレクトします`);
+          window.location.href = redirectPath;
         } else {
           throw new Error('ユーザーセッションが見つかりません');
         }

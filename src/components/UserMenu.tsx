@@ -174,8 +174,8 @@ const UserMenu: React.FC<UserMenuProps> = ({
   
   // モバイル画面用のフルスクリーンメニュー
   return (
-    <div className="fixed inset-0 z-50 bg-white">
-      <div className="flex justify-between items-center p-4 border-b">
+    <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
+      <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-white z-10">
         <div className="flex items-center">
           <Avatar className="h-10 w-10 mr-3 flex-shrink-0">
             <AvatarImage src={avatarUrl} alt={username} />
@@ -232,26 +232,24 @@ const UserMenu: React.FC<UserMenuProps> = ({
         
         <Link href="/MyArticles?tab=likedArticles" className="flex items-center text-base py-2 border-b border-gray-100 pb-4">
           <Heart className="h-5 w-5 mr-3 text-gray-500" />
-          スキした記事
+          イイねした記事
         </Link>
         
         <Link href="/SettingsPage" className="flex items-center text-base py-2 border-b border-gray-100 pb-4">
           <Settings className="h-5 w-5 mr-3 text-gray-500" />
           設定
         </Link>
-      </nav>
-      
-      <div className="p-4 mt-4">
+        
         <button 
           onClick={handleLogout}
-          className="flex w-full items-center text-base py-2"
+          className="flex w-full items-center text-base py-2 border-b border-gray-100 pb-4"
         >
           <LogOut className="h-5 w-5 mr-3 text-gray-500" />
           ログアウト
         </button>
-      </div>
+      </nav>
       
-      <div className="fixed bottom-0 left-0 right-0 border-t border-gray-100">
+      <div className="border-t border-gray-100 bg-white mt-4">
         <Link href="/Membership" className="block p-4">
           <div className="bg-gray-50 rounded-md p-3 flex justify-center items-center">
             <span className="text-sm font-medium">月額サブスクをつくれる<br/>メンバーシップ</span>
@@ -267,12 +265,12 @@ const UserMenu: React.FC<UserMenuProps> = ({
         
         <Link href="/Premium" className="block p-4 pt-0">
           <div className="bg-white border border-gray-200 rounded-md p-3 text-center">
-            <span className="text-sm font-medium">noteプレミアムサービス</span>
+            <span className="text-sm font-medium">promptyプレミアムサービス</span>
           </div>
         </Link>
         
         <div className="flex justify-center pb-4 text-sm text-gray-500">
-          <Link href="/Terms" className="mx-2">note活用術</Link>
+          <Link href="/Terms" className="mx-2">prompty活用術</Link>
           <span className="mx-1">/</span>
           <Link href="/Help" className="mx-2">ヘルプセンター</Link>
         </div>

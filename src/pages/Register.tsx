@@ -156,8 +156,8 @@ const Register = () => {
       </div>
 
       {/* Right side - Registration form */}
-      <div className="w-full md:w-1/2 flex flex-col items-center justify-center p-8">
-        <Link href="/" className="mb-8">
+      <div className="w-full md:w-1/2 flex flex-col items-center justify-start p-0 pt-0 md:justify-center md:p-8">
+        <Link href="/" className="mb-2 mt-2 md:mb-8">
           <div className="flex items-center">
             {/* <span className="text-3xl font-bold text-prompty-primary">p<span className="text-black">rompty</span></span>
             <span className="ml-1 text-pink-400">🌸</span> */}
