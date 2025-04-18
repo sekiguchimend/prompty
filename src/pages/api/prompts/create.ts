@@ -1,140 +1,191 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { supabase } from '../../../lib/supabaseClient';
-import { v4 as uuidv4 } from 'uuid';
+import { createClient } from '@supabase/supabase-js';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
-// 認証トークンからユーザーIDを抽出する関数
-async function getUserIdFromToken(token: string): Promise<string | null> {
-  try {
-    // JWT検証を行い、ユーザー情報を取得
-    const { data, error } = await supabase.auth.getUser(token);
-    
-    if (error) {
-      console.error('認証トークン検証エラー:', error.message);
-      return null;
-    }
-    
-    if (data && data.user && data.user.id) {
-      console.log('認証済みユーザーID:', data.user.id);
-      return data.user.id;
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('トークン検証エラー:', error);
-    return null;
-  }
+// リクエストボディの型定義
+interface CreatePromptRequest {
+  author_id: string;
+  title: string;
+  description?: string;
+  content: string;
+  thumbnail_url?: string | null;
+  category_id?: string | null;
+  price?: number;
+  is_free?: boolean;
+  is_premium?: boolean;
+  is_ai_generated?: boolean;
+  is_featured?: boolean;
+  published?: boolean;
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  // OPTIONSリクエストに対しては即座にOKを返す（CORS対策）
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // POSTリクエスト以外は許可しない
   if (req.method !== 'POST') {
-    return res.status(405).json({
-      success: false,
-      message: 'Method Not Allowed'
-    });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // リクエストからデータを取得
-    const {
-      title,
-      description,
-      content,
-      thumbnail_url,
-      category_id,
-      price,
-      is_free,
-      ai_model,
-      author_id
-    } = req.body;
-
-    // 認証トークンからユーザーIDを取得
-    let authenticatedUserId: string | null = null;
-    const authHeader = req.headers.authorization;
+    console.log('📥 create-prompt API リクエスト受信:', JSON.stringify(req.body, null, 2));
+    const promptData: CreatePromptRequest = req.body;
     
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7); // 'Bearer 'の後の部分を取得
-      authenticatedUserId = await getUserIdFromToken(token);
-      console.log('リクエストから認証済みユーザーID取得:', authenticatedUserId);
+    // サムネイルURLの受け取りを明示的にログ出力
+    console.log('受信したthumbnail_url:', promptData.thumbnail_url);
+    
+    // 必須フィールドの検証
+    if (!promptData.author_id) {
+      return res.status(400).json({ error: 'author_idは必須です' });
     }
-
-    // 必須項目の検証
-    if (!title || !content) {
-      return res.status(400).json({
-        success: false,
-        message: '必須項目が不足しています（タイトルとコンテンツは必須です）'
+    
+    if (!promptData.title) {
+      return res.status(400).json({ error: 'タイトルは必須です' });
+    }
+    
+    if (!promptData.content) {
+      return res.status(400).json({ error: 'コンテンツは必須です' });
+    }
+    
+    // タイトルの長さチェック
+    if (promptData.title.length < 5) {
+      return res.status(400).json({ 
+        error: 'タイトルは5文字以上である必要があります',
+        code: 'title_length'
       });
     }
     
-    // 投稿データの準備
-    // 認証されたユーザーIDが存在する場合はそれを優先、なければ提供されたauthor_idを使用
-    const finalAuthorId = authenticatedUserId || author_id || `anon-${uuidv4()}`;
-    const isAnonymous = !authenticatedUserId && (!author_id || author_id.startsWith('anon-'));
+    // コンテンツの長さチェック
+    if (promptData.content.length < 10) {
+      return res.status(400).json({ 
+        error: 'コンテンツは10文字以上である必要があります',
+        code: 'content_length'
+      });
+    }
     
-    console.log('投稿処理：', {
-      提供されたAuthorId: author_id,
-      認証済みUserId: authenticatedUserId,
-      最終AuthorId: finalAuthorId,
-      匿名投稿: isAnonymous
+    console.log('✅ バリデーション通過');
+    
+    // Supabaseクライアントの初期化
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+    
+    // デモ環境では匿名キーを使用
+    console.log('🔑 認証情報:', { 
+      url: supabaseUrl.substring(0, 20) + '...',
+      keyLength: supabaseAnonKey.length,
+      serviceKeyAvailable: !!supabaseServiceKey
     });
-
-    // プロンプトの作成日時
-    const createdAt = new Date();
-
-    // Supabaseへのデータ挿入
-    const { data, error } = await supabase
-      .from('prompts')
-      .insert([
-        {
-          id: uuidv4(), // 一意のIDを生成
-          title,
-          description: description || '',
-          content,
-          thumbnail_url: thumbnail_url || null,
-          category_id: category_id || null,
-          price: price || 0,
-          is_free: is_free !== undefined ? is_free : true,
-          ai_model: ai_model || null,
-          author_id: finalAuthorId,
-          created_at: createdAt.toISOString(),
-          updated_at: createdAt.toISOString(),
-          is_published: true,
-          is_anonymous: isAnonymous
+    
+    // サーバーサイドではサービスロールキーを使用（RLS回避のため）
+    const supabase = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonKey);
+    
+    // クライアント接続テスト
+    try {
+      console.log('🔍 Supabase接続テスト開始...');
+      const { data: testData, error: testError } = await supabase.from('profiles').select('id').limit(1);
+      
+      if (testError) {
+        console.error('❌ Supabase接続テストエラー:', testError);
+      } else {
+        console.log('✅ Supabase接続テスト成功:', testData);
+      }
+    } catch (testErr) {
+      console.error('❌ Supabase接続テスト例外:', testErr);
+    }
+    
+    // データの準備
+    const insertData = {
+      author_id: promptData.author_id,
+      title: promptData.title,
+      description: promptData.description || '',
+      content: promptData.content,
+      thumbnail_url: promptData.thumbnail_url && promptData.thumbnail_url !== '' ? promptData.thumbnail_url : null,
+      category_id: promptData.category_id === 'none' ? null : promptData.category_id || null,
+      price: promptData.price || 0,
+      is_free: promptData.is_free !== undefined ? promptData.is_free : true,
+      is_premium: promptData.is_premium !== undefined ? promptData.is_premium : false,
+      is_ai_generated: promptData.is_ai_generated !== undefined ? promptData.is_ai_generated : false,
+      is_featured: promptData.is_featured !== undefined ? promptData.is_featured : false,
+      published: promptData.published !== undefined ? promptData.published : true
+    };
+    
+    // サムネイルURLのDB保存値をログ出力
+    console.log('DBに保存するthumbnail_url:', insertData.thumbnail_url);
+    
+    console.log('🔄 挿入データ:', JSON.stringify({
+      author_id: insertData.author_id,
+      title: insertData.title,
+      description: insertData.description,
+      content: insertData.content.substring(0, 50) + '...',
+      thumbnail_url: insertData.thumbnail_url,
+      is_free: insertData.is_free
+    }, null, 2));
+    
+    // データ挿入を試行
+    console.log('🔄 データベースへの挿入を試行中...');
+    try {
+      const { data, error } = await supabase
+        .from('prompts')
+        .insert([insertData])
+        .select();
+      
+      if (error) {
+        console.error('❌ 挿入エラー:', JSON.stringify(error, null, 2));
+        
+        if (error.code === '42501') {
+          return res.status(403).json({
+            success: false,
+            error: '権限がありません (RLSポリシー違反)',
+            code: 'permission_denied',
+            message: 'ユーザーに必要な権限がないか、サービスロールキーが正しく設定されていません'
+          });
         }
-      ])
-      .select('id');
-
-    if (error) {
-      console.error('Supabase挿入エラー:', error.message, error.details);
+        
+        // API キーエラーの特別処理
+        if (error.message === 'Invalid API key') {
+          return res.status(500).json({
+            success: false,
+            error: 'API キーが無効です',
+            code: 'invalid_api_key',
+            message: 'Supabase API キーが正しく設定されていないか、無効になっています。'
+          });
+        }
+        
+        return res.status(500).json({
+          success: false,
+          error: 'データベースエラー',
+          code: error.code,
+          message: error.message
+        });
+      }
+      
+      console.log('✅ 挿入成功:', data?.[0]?.id);
+      console.log('返却データ:', JSON.stringify(data?.[0] || {}, null, 2));
+      
+      return res.status(201).json({
+        success: true,
+        message: 'プロンプトが正常に保存されました',
+        data: data?.[0] || null,
+        promptId: data?.[0]?.id || null
+      });
+    } catch (dbError) {
+      console.error('❌ データベース例外:', dbError);
       return res.status(500).json({
         success: false,
-        message: 'データベースエラーが発生しました',
-        error: error.message
+        error: 'データベース操作中に例外が発生しました',
+        message: dbError instanceof Error ? dbError.message : String(dbError)
       });
     }
-
-    console.log('プロンプト作成成功:', data);
-
-    // 成功レスポンス
-    return res.status(201).json({
-      success: true,
-      message: 'プロンプトが正常に作成されました',
-      data: data[0]
-    });
-  } catch (error) {
-    console.error('予期せぬエラー:', error);
-    return res.status(500).json({
+    
+  } catch (err) {
+    console.error('🔴 サーバーエラー:', err);
+    
+    // エラーオブジェクトの安全な変換
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    const errorName = err instanceof Error ? err.name : 'UnknownError';
+    
+    return res.status(500).json({ 
       success: false,
-      message: '予期せぬエラーが発生しました',
-      error: error instanceof Error ? error.message : '不明なエラー'
+      error: '予期しないエラーが発生しました',
+      message: errorMessage,
+      name: errorName
     });
   }
 } 

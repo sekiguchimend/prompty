@@ -36,7 +36,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
   const [liked, setLiked] = useState(isLiked);
   const [currentLikeCount, setCurrentLikeCount] = useState(likeCount);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
-  const [showOptions, setShowOptions] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
   
   const { toast } = useToast();
   
@@ -69,19 +69,23 @@ const PromptCard: React.FC<PromptCardProps> = ({
     setReportDialogOpen(true);
   };
   
-  // オプションメニューの表示切替
-  const toggleOptions = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowOptions(!showOptions);
-  };
-  
   // カードクリック時の処理（詳細ページへ遷移）
   const handleCardClick = () => {
     router.push(`/prompts/${promptId}`);
   };
   
+  // クリックハンドラーをカード外に配置
+  React.useEffect(() => {
+    // ドロップダウンが開いている時のみクリックイベントを設定
+    if (showDropdown) {
+      const handleOutsideClick = () => setShowDropdown(false);
+      document.addEventListener('click', handleOutsideClick);
+      return () => document.removeEventListener('click', handleOutsideClick);
+    }
+  }, [showDropdown]);
+  
   return (
-    <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm">
+    <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm min-h-[340px]">
       <Link href={`/prompts/${promptId}`} className="block" onClick={handleCardClick}>
         <div className="relative pb-[56.25%]">
           <Image 
@@ -99,22 +103,43 @@ const PromptCard: React.FC<PromptCardProps> = ({
             {title}
           </Link>
           
-          {/* 三点メニュー */}
+          {/* シンプルな三点メニュー実装 */}
           <div className="relative">
             <button 
               className="text-gray-400 hover:text-gray-600 p-1 rounded-full"
-              onClick={toggleOptions}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                setShowDropdown(!showDropdown);
+              }}
             >
               <MoreVertical className="h-4 w-4" />
             </button>
             
-            {showOptions && (
-              <div className="absolute right-0 bottom-full mb-1 bg-white shadow-lg rounded-md border border-gray-200 py-1 z-10 w-32">
+            {showDropdown && (
+              <div 
+                className="absolute right-0 top-full mt-1 bg-white shadow-lg rounded-md border border-gray-200 py-1 z-50 w-32"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <button 
-                  className="w-full text-left px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                  onClick={handleHide}
+                  className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleHide();
+                    setShowDropdown(false);
+                  }}
                 >
                   非表示にする
+                </button>
+                <button
+                  className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-gray-100 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openReportDialog();
+                    setShowDropdown(false);
+                  }}
+                >
+                  報告する
                 </button>
               </div>
             )}

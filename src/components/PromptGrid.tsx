@@ -85,7 +85,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
   
   return (
     <Link href={`/prompts/${promptId}`} passHref legacyBehavior>
-      <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm cursor-pointer">
+      <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm cursor-pointer h-full">
         <div className="block">
           <div className="relative pb-[56.25%]">
             <Image 
@@ -97,9 +97,9 @@ const PromptCard: React.FC<PromptCardProps> = ({
             />
           </div>
         </div>
-        <div className="flex flex-col p-3">
+        <div className="flex flex-col p-3 flex-1">
           <div className="flex justify-between items-start mb-2">
-            <div className="line-clamp-2 font-medium hover:text-prompty-primary flex-1 mr-2">
+            <div className="line-clamp-2 font-medium hover:text-prompty-primary flex-1 mr-2 h-12 overflow-hidden">
               {title}
             </div>
             
@@ -119,6 +119,17 @@ const PromptCard: React.FC<PromptCardProps> = ({
                     onClick={handleHide}
                   >
                     非表示にする
+                  </button>
+                  <button
+                    className="w-full text-left px-3 py-1 text-sm text-red-600 hover:bg-gray-100 transition-colors"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      openReportDialog();
+                      setShowOptions(false);
+                    }}
+                  >
+                    報告する
                   </button>
                 </div>
               )}
@@ -188,8 +199,8 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   
   // カードのクラス
   const cardClass = horizontalScroll 
-    ? 'flex-shrink-0 w-[200px] snap-start md:w-[280px]'
-    : '';
+    ? 'flex-shrink-0 w-[200px] snap-start md:w-[280px] h-full'
+    : 'h-full';
   
   // 非表示処理の関数
   const handleHidePrompt = (id: string) => {

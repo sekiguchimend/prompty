@@ -59,7 +59,11 @@ const CreatePost = () => {
   // プロジェクト設定の保存
   const handleProjectSave = (data: ProjectFormValues) => {
     console.log("Project settings updated:", data);
-    setProjectSettings(data);
+    setProjectSettings(prev => ({
+      ...prev,
+      ...data,
+      thumbnail: data.thumbnail // Base64データを必ずセット
+    }));
     
     // サムネイル画像があれば保存
     if (data.thumbnail && data.thumbnail.startsWith('data:')) {
@@ -99,11 +103,11 @@ const CreatePost = () => {
   };
   
   // サムネイル画像のアップロード処理
-  const handleThumbnailUpload = async (thumbnailDataUrl: string) => {
+  const handleThumbnailUpload = async (thumbnailDataUrl: string): Promise<File | null> => {
     try {
       if (!thumbnailDataUrl || thumbnailDataUrl.length < 100) {
         console.warn('無効なサムネイルデータ:', thumbnailDataUrl);
-        return;
+        return null;
       }
       
       console.log('サムネイルデータ (最初の100文字):', thumbnailDataUrl.substring(0, 100));
@@ -125,6 +129,7 @@ const CreatePost = () => {
       
       setThumbnailFile(file);
       console.log('サムネイル画像の準備完了:', file.name);
+      return file;
     } catch (error) {
       console.error('サムネイル画像の準備エラー:', error);
       toast({
@@ -132,26 +137,22 @@ const CreatePost = () => {
         description: error instanceof Error ? error.message : "サムネイル画像の準備中にエラーが発生しました",
         variant: "destructive",
       });
+      return null;
     }
   };
   
   // ストレージにサムネイル画像をアップロード
-  const uploadThumbnailToStorage = async (): Promise<string | null> => {
-    if (!thumbnailFile) return null;
-    
+  const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
+    if (!file) return null;
     try {
       console.log('サムネイルアップロード開始...');
-      
       // バケット名
       const bucketName = 'prompt-thumbnails';
-      
       // ファイル情報設定
-      const fileExt = thumbnailFile.name.split('.').pop();
+      const fileExt = file.name.split('.').pop();
       const fileName = `thumbnail-${Date.now()}`;
       const filePath = `${fileName}.${fileExt}`;
-      
       console.log(`ファイル '${filePath}' をアップロード準備中...`);
-      
       // 必ずサーバー側でバケットを作成・設定
       try {
         const bucketResponse = await fetch('/api/create-bucket', {
@@ -163,56 +164,46 @@ const CreatePost = () => {
             bucketName: bucketName,
           }),
         });
-        
         if (!bucketResponse.ok) {
           console.error('バケット作成APIエラー');
           throw new Error('バケット作成に失敗しました');
         }
-        
         console.log('バケット作成リクエスト完了');
       } catch (bucketError) {
         console.error('バケット作成リクエストエラー:', bucketError);
         throw new Error('バケット設定中にエラーが発生しました');
       }
-      
       // ファイルアップロード
       console.log(`ファイル '${filePath}' をアップロード中...`);
-      
       // アップロード前のファイル情報ログ
       console.log('アップロードファイル情報:', {
-        name: thumbnailFile.name,
-        type: thumbnailFile.type,
-        size: thumbnailFile.size
+        name: file.name,
+        type: file.type,
+        size: file.size
       });
-      
       const { data, error } = await supabase.storage
         .from(bucketName)
-        .upload(filePath, thumbnailFile, {
+        .upload(filePath, file, {
           cacheControl: '3600',
           upsert: true,
-          contentType: thumbnailFile.type // ContentTypeを明示的に指定
+          contentType: file.type // ContentTypeを明示的に指定
         });
-      
       if (error) {
         console.error('アップロードエラー:', error);
         throw error;
       }
-      
       console.log('アップロード成功:', data);
-      
       // 公開URLを取得
       const { data: urlData } = supabase.storage
         .from(bucketName)
         .getPublicUrl(filePath);
-      
       // 処理が成功したことを確認
       if (!urlData || !urlData.publicUrl) {
         console.error('公開URL取得エラー:', urlData);
+        console.error('filePath:', filePath, 'bucketName:', bucketName);
         throw new Error('公開URLの取得に失敗しました');
       }
-      
       console.log('公開URL:', urlData.publicUrl);
-      
       // アップロードしたサムネイルへの正しいURLを返す
       return urlData.publicUrl;
     } catch (error) {
@@ -321,6 +312,7 @@ const CreatePost = () => {
 
   // プロジェクト全体を投稿
   const submitProject = async () => {
+    console.log('[DEBUG] submitProject時のprojectSettings.thumbnail:', projectSettings.thumbnail);
     if (prompts.length === 0) {
       toast({
         title: "エラー",
@@ -335,13 +327,26 @@ const CreatePost = () => {
     try {
       // サムネイル画像のアップロード
       let thumbnailUrl = null;
-      if (thumbnailFile) {
+      // もしthumbnailFileがnullかつprojectSettings.thumbnailがBase64データなら、その場でhandleThumbnailUploadを実行し、その返り値を使う
+      let fileToUpload = thumbnailFile;
+      console.log('[DEBUG] 投稿時のthumbnailFile:', thumbnailFile);
+      if (!fileToUpload && projectSettings.thumbnail && projectSettings.thumbnail.startsWith('data:')) {
+        console.log('[DEBUG] 投稿時にBase64サムネイルからFileを生成してセットします', projectSettings.thumbnail.substring(0, 100));
+        fileToUpload = await handleThumbnailUpload(projectSettings.thumbnail);
+        console.log('[DEBUG] handleThumbnailUploadの返り値:', fileToUpload);
+      }
+      if (fileToUpload) {
+        setThumbnailFile(fileToUpload); // 念のため状態も更新
         toast({
           title: "処理中",
           description: "サムネイル画像をアップロード中...",
           variant: "default",
         });
-        thumbnailUrl = await uploadThumbnailToStorage();
+        console.log('[DEBUG] uploadThumbnailToStorageに渡すfile:', fileToUpload);
+        thumbnailUrl = await uploadThumbnailToStorage(fileToUpload);
+        console.log('[DEBUG] アップロードした画像のURL:', thumbnailUrl);
+      } else {
+        console.log('[DEBUG] サムネイルファイルが用意できなかったためアップロードをスキップ');
       }
 
       // 投稿直前に認証状態を再取得
@@ -376,7 +381,7 @@ const CreatePost = () => {
 
       // プロンプトプロジェクトのメインデータを保存
       const requestBody = {
-        title: projectSettings.projectTitle || "無題のプロンプト",
+        title: prompts[0].title || projectSettings.projectTitle || "無題のプロンプト",
         description: projectSettings.projectDescription || "",
         content: prompts[0].content, // 最初のプロンプトの内容をメインコンテンツとして使用
         thumbnail_url: thumbnailUrl, // アップロードしたサムネイルのURL
@@ -389,7 +394,7 @@ const CreatePost = () => {
         author_id: finalAuthorId // 必ず最新のauthorIdを使う
       };
 
-      console.log('リクエストデータ:', JSON.stringify(requestBody, null, 2));
+      console.log('[DEBUG] API送信データ:', requestBody);
       
       const mainPromptResponse = await fetch('/api/prompts/create', {
         method: 'POST',
@@ -435,7 +440,7 @@ const CreatePost = () => {
         variant: "default",
       });
       
-      router.push("/");
+      // router.push("/"); // 投稿後にホームに遷移しないようにコメントアウト
     } catch (error) {
       console.error("プロジェクト投稿エラー:", error);
       toast({
