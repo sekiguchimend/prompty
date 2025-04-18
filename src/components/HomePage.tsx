@@ -5,9 +5,8 @@ import Header from './Header';
 import Sidebar from './Sidebar';
 import Footer from './Footer';
 import PromptSection from './PromptSection';
-import { featuredPrompts, aiGeneratedPrompts } from '../data/mockPrompts';
+import { getFeaturedPrompts, getAIGeneratedPrompts, getPopularPrompts } from '../lib/api';
 import { useResponsive } from '../hooks/use-responsive';
-import { getPopularPosts } from '../data/posts';
 import { PromptItem } from '../pages/prompts/[id]';
 
 const HomePage: React.FC = () => {
@@ -30,41 +29,16 @@ const HomePage: React.FC = () => {
   // 表示するプロンプト数
   const displayCount = getDisplayCount();
 
-  // プロンプトデータにいいね状態をランダムに追加
+  // Supabaseから取得したプロンプトデータ
   const [processingFeaturedPrompts, setProcessingFeaturedPrompts] = useState<PromptItem[]>([]);
   const [processingAIGeneratedPrompts, setProcessingAIGeneratedPrompts] = useState<PromptItem[]>([]);
   const [processingPopularPosts, setProcessingPopularPosts] = useState<PromptItem[]>([]);
 
   useEffect(() => {
-    // ランダムにいいね状態を追加する関数
-    const addRandomLikeState = (items: PromptItem[]): PromptItem[] => {
-      return items.map(item => ({
-        ...item,
-        isLiked: Math.random() > 0.5 // 50%の確率でいいね済みにする
-      }));
-    };
-
-    // 人気記事を取得
-    const popularPosts = getPopularPosts();
-    
-    // account_nameが存在しなければ追加
-    const postsWithAccountName = popularPosts.map(post => {
-      if (!post.user.account_name) {
-        return {
-          ...post,
-          user: {
-            ...post.user,
-            account_name: post.user.name
-          }
-        };
-      }
-      return post;
-    });
-
-    // いいね状態を各プロンプトリストに追加
-    setProcessingFeaturedPrompts(addRandomLikeState(featuredPrompts));
-    setProcessingAIGeneratedPrompts(addRandomLikeState(aiGeneratedPrompts));
-    setProcessingPopularPosts(addRandomLikeState(postsWithAccountName));
+    // Supabaseからデータ取得
+    getFeaturedPrompts().then(setProcessingFeaturedPrompts);
+    getAIGeneratedPrompts().then(setProcessingAIGeneratedPrompts);
+    getPopularPrompts().then(setProcessingPopularPosts);
   }, []);
 
   return (

@@ -19,12 +19,12 @@ import {
 import { useToast } from "../components/ui/use-toast";
 import { useAuth } from "../lib/auth-context";
 import { v4 as uuidv4 } from 'uuid';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabaseClient';
 
 const CreatePost = () => {
   const router = useRouter();
   const { toast } = useToast();
-  const { user, session } = useAuth(); // 認証情報の取得
+  const { user, session, isLoading } = useAuth(); // isLoadingを追加
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [promptNumber, setPromptNumber] = useState(1);
   const [prompts, setPrompts] = useState<Prompt[]>([]);
@@ -44,22 +44,17 @@ const CreatePost = () => {
   const [isAnonymousSubmission, setIsAnonymousSubmission] = useState(false);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   
-  // Supabase クライアントの初期化
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
-  
+  // 認証状態が確定するまでauthorIdをセットしない
   useEffect(() => {
-    // ユーザーIDをステートに設定
+    if (isLoading) return; // ローディング中は何もしない
     if (user) {
       setAuthorId(user.id);
       setIsAnonymousSubmission(false);
     } else {
-      // 匿名ユーザーの場合は一時的なIDを生成
       setAuthorId(`anon-${uuidv4()}`);
       setIsAnonymousSubmission(true);
     }
-  }, [user]);
+  }, [user, isLoading]);
 
   // プロジェクト設定の保存
   const handleProjectSave = (data: ProjectFormValues) => {
@@ -334,14 +329,9 @@ const CreatePost = () => {
       });
       return;
     }
-    
-    // author_idがnullの場合は一時的なIDを生成
-    if (!authorId) {
-      setAuthorId(`anon-${uuidv4()}`);
-    }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       // サムネイル画像のアップロード
       let thumbnailUrl = null;
@@ -353,26 +343,38 @@ const CreatePost = () => {
         });
         thumbnailUrl = await uploadThumbnailToStorage();
       }
-      
-      console.log('サムネイルURL:', thumbnailUrl);
-      
+
+      // 投稿直前に認証状態を再取得
+      let finalAuthorId = authorId;
+      let isAnonymous = isAnonymousSubmission;
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (user?.id) {
+          finalAuthorId = user.id;
+          isAnonymous = false;
+        } else if (sessionData.session?.user?.id) {
+          finalAuthorId = sessionData.session.user.id;
+          isAnonymous = false;
+        }
+      } catch (e) {
+        // 何もしない（authorIdは匿名IDのまま）
+      }
+
       // リクエストヘッダーの設定
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
       };
-      
-      // 認証情報が存在する場合は追加
       if (user && session) {
         headers['Authorization'] = `Bearer ${session.access_token}`;
       }
-    
+
       toast({
         title: "処理中",
         description: "プロンプトデータを送信中...",
         variant: "default",
       });
-      
-      // まず、プロンプトプロジェクトのメインデータを保存
+
+      // プロンプトプロジェクトのメインデータを保存
       const requestBody = {
         title: projectSettings.projectTitle || "無題のプロンプト",
         description: projectSettings.projectDescription || "",
@@ -384,9 +386,9 @@ const CreatePost = () => {
         ai_model: projectSettings.aiModel === "custom" 
           ? projectSettings.customAiModel 
           : projectSettings.aiModel,
-        author_id: authorId || `anon-${uuidv4()}` // 作者IDを追加
+        author_id: finalAuthorId // 必ず最新のauthorIdを使う
       };
-      
+
       console.log('リクエストデータ:', JSON.stringify(requestBody, null, 2));
       
       const mainPromptResponse = await fetch('/api/prompts/create', {

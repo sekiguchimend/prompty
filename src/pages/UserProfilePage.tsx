@@ -24,13 +24,10 @@ import { supabase } from '../lib/supabaseClient';
 // Profile data type definition
 interface ProfileData {
   id: string;
-  account_name: string;
   display_name: string;
+  username: string;
   bio: string;
   avatar_url: string;
-  website: string;
-  twitter: string;
-  github: string;
   location: string;
   followers_count: number;
   following_count: number;
@@ -102,11 +99,23 @@ const UserProfilePage: React.FC = () => {
         // Fetch profile data
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('*, followers:follows!following_id(count), following:follows!follower_id(count)')
+          .select('id, username, display_name, bio, avatar_url, location')
           .eq('id', user.id)
           .single();
           
         if (profileError) throw profileError;
+        
+        // フォロワー数を取得
+        const { count: followersCount, error: followersError } = await supabase
+          .from('follows')
+          .select('*', { count: 'exact', head: true })
+          .eq('following_id', user.id);
+        
+        // フォロー数を取得
+        const { count: followingCount, error: followingError } = await supabase
+          .from('follows')
+          .select('*', { count: 'exact', head: true })
+          .eq('follower_id', user.id);
         
         // Fetch user posts
         const { data: postsData, error: postsError } = await supabase
@@ -144,7 +153,7 @@ const UserProfilePage: React.FC = () => {
               price,
               likes:likes(count),
               comments:comments(count),
-              profiles:profiles(account_name, display_name, avatar_url)
+              profiles!prompts_author_id_fkey(display_name, avatar_url)
             )
           `)
           .eq('user_id', user.id)
@@ -167,16 +176,13 @@ const UserProfilePage: React.FC = () => {
         // Process the data
         setProfileData({
           id: profileData.id,
-          account_name: profileData.account_name,
-          display_name: profileData.display_name || profileData.account_name,
+          username: profileData.username || '',
+          display_name: profileData.display_name || profileData.username || '',
           bio: profileData.bio || '',
           avatar_url: profileData.avatar_url,
-          website: profileData.website || '',
-          twitter: profileData.twitter || '',
-          github: profileData.github || '',
           location: profileData.location || '',
-          followers_count: profileData.followers.count,
-          following_count: profileData.following.count
+          followers_count: followersCount || 0,
+          following_count: followingCount || 0
         });
         
         setPosts(postsData.map(post => ({
@@ -424,9 +430,9 @@ const UserProfilePage: React.FC = () => {
               <div className="flex-1 text-center md:text-left">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
-                    <h1 className="text-xl font-bold">{profileData.display_name || profileData.account_name}</h1>
+                    <h1 className="text-xl font-bold">{profileData.display_name}</h1>
                     <p className="text-gray-500 text-sm">
-                      @{profileData.account_name}
+                      @{profileData.username}
                     </p>
                   </div>
                   
@@ -467,21 +473,6 @@ const UserProfilePage: React.FC = () => {
                     <div className="flex items-center">
                       <span>{profileData.location}</span>
                     </div>
-                  )}
-                  {profileData.website && (
-                    <a href={profileData.website} target="_blank" rel="noopener noreferrer" className="flex items-center text-blue-500 hover:underline">
-                      {profileData.website.replace(/^https?:\/\/(www\.)?/, '')}
-                    </a>
-                  )}
-                  {profileData.twitter && (
-                    <a href={`https://twitter.com/${profileData.twitter}`} target="_blank" rel="noopener noreferrer" className="flex items-center text-blue-500 hover:underline">
-                      @{profileData.twitter}
-                    </a>
-                  )}
-                  {profileData.github && (
-                    <a href={`https://github.com/${profileData.github}`} target="_blank" rel="noopener noreferrer" className="flex items-center text-blue-500 hover:underline">
-                      github.com/{profileData.github}
-                    </a>
                   )}
                 </div>
                 

@@ -11,12 +11,14 @@ export async function getFeaturedPrompts(limit: number = 10): Promise<PromptItem
       thumbnail_url,
       created_at,
       author_id,
-      profiles(id, username, display_name, account_name, avatar_url)
+      profiles!prompts_author_id_fkey(id, username, display_name, avatar_url)
     `)
     .eq('is_featured', true)
     .eq('published', true)
     .order('created_at', { ascending: false })
     .limit(limit);
+
+  console.log('getFeaturedPrompts data:', data, 'error:', error);
 
   if (error) {
     console.error('フィーチャープロンプト取得エラー:', error);
@@ -38,12 +40,14 @@ export async function getAIGeneratedPrompts(limit: number = 10): Promise<PromptI
       thumbnail_url,
       created_at,
       author_id,
-      profiles(id, username, display_name, account_name, avatar_url)
+      profiles!prompts_author_id_fkey(id, username, display_name, avatar_url)
     `)
     .eq('is_ai_generated', true)
     .eq('published', true)
     .order('created_at', { ascending: false })
     .limit(limit);
+
+  console.log('getAIGeneratedPrompts data:', data, 'error:', error);
 
   if (error) {
     console.error('AI生成プロンプト取得エラー:', error);
@@ -68,11 +72,13 @@ export async function getPopularPrompts(limit: number = 10): Promise<PromptItem[
       created_at,
       author_id,
       view_count,
-      profiles(id, username, display_name, account_name, avatar_url)
+      profiles!prompts_author_id_fkey(id, username, display_name, avatar_url)
     `)
     .eq('published', true)
     .order('view_count', { ascending: false })
     .limit(limit);
+
+  console.log('getPopularPrompts data:', data, 'error:', error);
 
   if (error) {
     console.error('人気プロンプト取得エラー:', error);
@@ -149,10 +155,10 @@ function transformToPromptItem(item: any): PromptItem {
   return {
     id: item.id,
     title: item.title,
-    thumbnailUrl: item.thumbnail_url || 'https://via.placeholder.com/300x200', // デフォルト画像
+    thumbnailUrl: item.thumbnail_url || '/images/default-thumbnail.svg', // デフォルト画像
     user: {
-      name: item.profiles?.account_name || item.profiles?.display_name || item.profiles?.username || '不明なユーザー',
-      avatarUrl: item.profiles?.avatar_url || 'https://via.placeholder.com/50x50',
+      name: item.profiles?.display_name || item.profiles?.username || '不明なユーザー',
+      avatarUrl: item.profiles?.avatar_url || '/images/default-avatar.svg',
     },
     postedAt,
     likeCount: item.like_count || 0,

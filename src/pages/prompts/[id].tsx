@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { ChevronLeft } from 'lucide-react';
@@ -9,11 +9,12 @@ import PromptContent from '../../components/prompt/PromptContent';
 import PurchaseSection from '../../components/prompt/PurchaseSection';
 import { getDetailPost, getPopularPosts } from '../../data/posts';
 import Link from 'next/link';
-import { GetStaticProps, GetStaticPaths } from 'next';
-import { featuredPrompts, aiGeneratedPrompts } from '../../data/mockPrompts';
+import { GetServerSideProps } from 'next';
 import { PostItem } from '../../data/posts';
+import { supabase } from '../../lib/supabaseClient';
+import { useRouter } from 'next/router';
 
-// mockPromptsの型を定義
+// PromptItemの型定義 - エクスポートする
 export interface PromptItem {
   id: string;
   title: string;
@@ -28,66 +29,192 @@ export interface PromptItem {
   isLiked?: boolean;
 }
 
-// GetStaticPathsを追加して、ビルド時に生成するパスを定義
-export const getStaticPaths: GetStaticPaths = async () => {
-  // featuredPromptsとaiGeneratedPromptsからすべてのIDを取得
-  const allPrompts = [...featuredPrompts, ...aiGeneratedPrompts];
-  const paths = allPrompts.map(prompt => ({
-    params: { id: prompt.id }
-  }));
-
-  return {
-    paths,
-    fallback: 'blocking' // 存在しないパスへのアクセス時はサーバーサイドでレンダリング
-  };
-};
-
-// GetStaticPropsを追加して、指定されたIDのデータを取得
-export const getStaticProps: GetStaticProps = async ({ params }) => {
+// サーバーサイドレンダリングに変更
+export const getServerSideProps: GetServerSideProps = async ({ params, req }) => {
   const id = params?.id as string;
   
-  // IDを使って実際のデータを取得
-  // featuredPromptsとaiGeneratedPromptsを使って指定されたIDのプロンプトを探す
-  const allPrompts = [...featuredPrompts, ...aiGeneratedPrompts];
-  const promptData = allPrompts.find(prompt => prompt.id === id);
+  console.log("プロンプト詳細を取得しています。ID:", id);
+  console.log("リクエストパス:", req.url);
   
-  // 該当するデータが見つからない場合は404を返す
-  if (!promptData) {
+  if (!id) {
+    console.error("IDが指定されていません");
+    return {
+      notFound: true,
+    };
+  }
+
+  // UUIDの検証とフォーマット
+  let formattedId = id;
+  
+  // UUIDのフォーマットチェック (例: 123e4567-e89b-12d3-a456-426614174000)
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  
+  if (!uuidPattern.test(id)) {
+    // 短いIDをUUID形式に変換する試み
+    if (/^[0-9a-f]{8}$/i.test(id)) {
+      // 8桁のIDを標準UUIDに拡張
+      formattedId = `${id}-0000-0000-0000-000000000000`;
+      console.log("IDをUUID形式に変換:", formattedId);
+    } else {
+      console.error("無効なID形式:", id);
+      return {
+        notFound: true,
+      };
+    }
+  }
+  
+  // Supabaseからプロンプトデータを取得 - IDで検索
+  let { data: promptData, error } = await supabase
+    .from('prompts')
+    .select(`
+      id,
+      title,
+      thumbnail_url,
+      content,
+      created_at,
+      price,
+      author_id,
+      view_count,
+      profiles:profiles!prompts_author_id_fkey(id, username, display_name, avatar_url, bio)
+    `)
+    .eq('id', formattedId)
+    .single();
+    
+  // IDで見つからない場合は代替クエリを試行
+  if (error && error.code === '22P02') {
+    console.log("UUID形式エラー。代替クエリを試行します");
+    try {
+      // シーケンシャルIDや他の形式のIDを使用している場合
+      const numericId = parseInt(id, 10);
+      if (!isNaN(numericId)) {
+        // 数値IDで検索を試みる
+        const { data: altData, error: altError } = await supabase
+          .from('prompts')
+          .select(`
+            id,
+            title,
+            thumbnail_url,
+            content,
+            created_at,
+            price,
+            author_id,
+            view_count,
+            profiles:profiles!prompts_author_id_fkey(id, username, display_name, avatar_url, bio)
+          `)
+          .eq('numeric_id', numericId) // 数値ID用のカラムがある場合（例: numeric_id）
+          .single();
+          
+        if (!altError && altData) {
+          console.log("代替クエリで成功:", altData);
+          promptData = altData;
+          error = altError; // nullになるはず
+        }
+      }
+    } catch (e) {
+      console.error("代替検索中のエラー:", e);
+    }
+  }
+    
+  console.log("プロンプト詳細取得結果:", promptData, "エラー:", error);
+    
+  // プロンプトが見つからない、またはエラーが発生した場合は404を返す
+  if (error || !promptData) {
+    console.error("プロンプト取得エラー:", error);
     return {
       notFound: true,
     };
   }
   
-  // 人気記事データを取得
-  const popularPosts = getPopularPosts();
+  // ビューカウントを更新
+  const { data: updateData, error: updateError } = await supabase
+    .from('prompts')
+    .update({ view_count: (promptData.view_count || 0) + 1 })
+    .eq('id', formattedId);
+    
+  if (updateError) {
+    console.error("ビューカウント更新エラー:", updateError);
+  }
   
-  // postDataの代わりにpromptDataを使用
-  // ただし、getDetailPostから得られる追加データも必要なので、両方をマージする
+  // いいね数を取得
+  const { count: likeCount, error: likeError } = await supabase
+    .from('likes')
+    .select('*', { count: 'exact', head: true })
+    .eq('prompt_id', formattedId);
+    
+  if (likeError) {
+    console.error("いいね数取得エラー:", likeError);
+  }
+    
+  // 人気記事を取得
+  const popularPosts = await getPopularPosts();
+  
+  // 必要なフォーマットに変換
+  const profileData = promptData.profiles && promptData.profiles.length > 0 ? promptData.profiles[0] : null;
+  
+  console.log("プロフィールデータ:", profileData);
+
   const postData = {
-    ...getDetailPost(),
-    ...promptData,
+    id: promptData.id,
     title: promptData.title,
-    thumbnailUrl: promptData.thumbnailUrl,
-    likeCount: promptData.likeCount,
-    postedAt: promptData.postedAt,
+    thumbnailUrl: promptData.thumbnail_url || '/images/default-thumbnail.svg',
+    content: promptData.content || [],
+    price: promptData.price || 0,
+    likeCount: likeCount || 0,
+    postedAt: new Date(promptData.created_at).toLocaleDateString('ja-JP'),
     user: {
-      ...getDetailPost().user,
-      name: promptData.user.name,
-      avatarUrl: promptData.user.avatarUrl,
+      id: promptData.author_id || '',
+      userId: promptData.author_id || '',
+      name: profileData?.display_name || profileData?.username || '不明なユーザー',
+      avatarUrl: profileData?.avatar_url || '/images/default-avatar.svg',
+      bio: profileData?.bio || '著者情報なし',
+      publishedAt: new Date(promptData.created_at).toLocaleDateString('ja-JP')
     }
   };
+  
+  console.log("返却するデータ:", postData);
   
   return {
     props: {
       postData,
       popularPosts
-    },
-    revalidate: 60 // 60秒ごとに再生成（必要に応じて調整）
+    }
   };
 };
 
 // propsを受け取るようにコンポーネントを修正
-const PromptDetail = ({ postData, popularPosts }: { postData: PostItem; popularPosts: PostItem[] }) => {
+const PromptDetail = ({ postData, popularPosts }: { postData: PostItem; popularPosts: PromptItem[] }) => {
+  const router = useRouter();
+  
+  console.log("PromptDetail - 受け取ったデータ:", { postData, popularPosts });
+  
+  // 404処理
+  if (router.isFallback) {
+    console.log("ページが準備中 (fallback)");
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <main className="flex-1 bg-white mt-14 md:mt-10 flex items-center justify-center">
+          <p>読み込み中...</p>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+  
+  // データチェック
+  if (!postData) {
+    console.error("postDataが見つかりません");
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <main className="flex-1 bg-white mt-14 md:mt-10 flex items-center justify-center">
+          <p>プロンプト情報を読み込めませんでした</p>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+  
   // コンポーネントの型に合わせて整形
   const prompt = {
     ...postData,
@@ -114,13 +241,13 @@ const PromptDetail = ({ postData, popularPosts }: { postData: PostItem; popularP
   };
   
   // PopularArticlesコンポーネントの型に合わせてデータを変換
-  const popularArticles = popularPosts.map((post: PostItem) => ({
-    id: post.id,
-    title: post.title,
-    likes: post.likeCount,
-    thumbnailUrl: post.thumbnailUrl,
-    date: post.postedAt
-  }));
+  const popularArticles = popularPosts?.map((post: PromptItem) => ({
+    id: post.id || '',
+    title: post.title || 'タイトルなし',
+    likes: post.likeCount || 0,
+    thumbnailUrl: post.thumbnailUrl || '/images/default-thumbnail.svg',
+    date: post.postedAt || '不明'
+  })) || [];
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -178,7 +305,14 @@ const PromptDetail = ({ postData, popularPosts }: { postData: PostItem; popularP
         
         {/* Popular Articles Section */}
         <Separator className="my-12" />
-        <PopularArticles articles={popularArticles} />
+        {popularArticles.length > 0 ? (
+          <PopularArticles articles={popularArticles} />
+        ) : (
+          <div className="container px-4 md:px-6 py-6 max-w-7xl mx-auto">
+            <h2 className="text-xl font-bold mb-6">人気記事</h2>
+            <p className="text-gray-500 text-center py-6">現在、人気記事はありません</p>
+          </div>
+        )}
       </main>
       
       <Footer />

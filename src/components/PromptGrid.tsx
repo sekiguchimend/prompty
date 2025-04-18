@@ -44,8 +44,8 @@ const PromptCard: React.FC<PromptCardProps> = ({
   
   const { toast } = useToast();
   
-  // Extract the base ID without any prefix for the actual prompt ID
-  const promptId = id.includes('-') ? id.split('-')[1] : id;
+  // IDはそのまま使う
+  const promptId = id;
   
   // いいねをトグルする関数
   const toggleLike = (e: React.MouseEvent) => {
@@ -57,7 +57,10 @@ const PromptCard: React.FC<PromptCardProps> = ({
   };
   
   // 非表示にする関数
-  const handleHide = () => {
+  const handleHide = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (onHide) {
       onHide(id);
     } else {
@@ -75,96 +78,94 @@ const PromptCard: React.FC<PromptCardProps> = ({
   
   // オプションメニューの表示切替
   const toggleOptions = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     setShowOptions(!showOptions);
   };
   
-  // カードクリック時の処理（詳細ページへ遷移）
-  const handleCardClick = () => {
-    router.push(`/prompts/${promptId}`);
-  };
-  
   return (
-    <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm">
-      <Link href={`/prompts/${promptId}`} className="block" onClick={handleCardClick}>
-        <div className="relative pb-[56.25%]">
-          <Image 
-            width={100}
-            height={100}
-            src={thumbnailUrl || '/placeholder.jpg'}
-            alt={title} 
-            className="absolute inset-0 h-full w-full object-cover"
-          />
+    <Link href={`/prompts/${promptId}`} passHref legacyBehavior>
+      <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm cursor-pointer">
+        <div className="block">
+          <div className="relative pb-[56.25%]">
+            <Image 
+              width={100}
+              height={100}
+              src={thumbnailUrl || '/placeholder.jpg'}
+              alt={title} 
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          </div>
         </div>
-      </Link>
-      <div className="flex flex-col p-3">
-        <div className="flex justify-between items-start mb-2">
-          <Link href={`/prompts/${promptId}`} className="line-clamp-2 font-medium hover:text-prompty-primary flex-1 mr-2">
-            {title}
-          </Link>
-          
-          {/* 三点メニュー */}
-          <div className="relative">
-            <button 
-              className="text-gray-400 hover:text-gray-600 p-1 rounded-full"
-              onClick={toggleOptions}
-            >
-              <MoreVertical className="h-4 w-4" />
-            </button>
+        <div className="flex flex-col p-3">
+          <div className="flex justify-between items-start mb-2">
+            <div className="line-clamp-2 font-medium hover:text-prompty-primary flex-1 mr-2">
+              {title}
+            </div>
             
-            {showOptions && (
-              <div className="absolute right-0 bottom-full mb-1 bg-white shadow-lg rounded-md border border-gray-200 py-1 z-10 w-32">
+            {/* 三点メニュー */}
+            <div className="relative">
+              <button 
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-full"
+                onClick={toggleOptions}
+              >
+                <MoreVertical className="h-4 w-4" />
+              </button>
+              
+              {showOptions && (
+                <div className="absolute right-0 bottom-full mb-1 bg-white shadow-lg rounded-md border border-gray-200 py-1 z-10 w-32">
+                  <button 
+                    className="w-full text-left px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    onClick={handleHide}
+                  >
+                    非表示にする
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="mt-auto">
+            <div className="flex items-center gap-2">
+              <span className="block h-6 w-6 overflow-hidden rounded-full" onClick={(e) => e.stopPropagation()}>
+                <img 
+                  src={user.avatarUrl} 
+                  alt={user.account_name || user.name} 
+                  className="h-full w-full object-cover"
+                />
+              </span>
+              <span className="text-xs text-gray-600">
+                {user.account_name || user.name}
+              </span>
+              <span className="text-xs text-gray-500">{postedAt}</span>
+            </div>
+            <div className="flex items-center">
+              <div className="flex items-center text-gray-500 mt-4">
                 <button 
-                  className="w-full text-left px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                  onClick={handleHide}
+                  className={`like-button flex items-center ${liked ? 'text-red-500' : 'text-gray-500'}`}
+                  onClick={toggleLike}
                 >
-                  非表示にする
+                  <Heart className={`mr-1 h-4 w-4 ${liked ? 'fill-red-500' : ''}`} />
+                </button>
+                <span className="text-xs">{currentLikeCount}</span>
+              </div>
+              <div className="flex items-center text-gray-500 mt-4 ml-2">
+                <button className="like-button flex items-center">
+                  <Bookmark className="mr-1 h-4 w-4" />
                 </button>
               </div>
-            )}
+            </div>
           </div>
         </div>
         
-        <div className="mt-auto">
-          <div className="flex items-center gap-2">
-            <Link href={`/users/${user.name}`} className="block h-6 w-6 overflow-hidden rounded-full">
-              <img 
-                src={user.avatarUrl} 
-                alt={user.account_name || user.name} 
-                className="h-full w-full object-cover"
-              />
-            </Link>
-            <Link href={`/users/${user.name}`} className="text-xs text-gray-600 hover:underline">
-              {user.account_name || user.name}
-            </Link>
-            <span className="text-xs text-gray-500">{postedAt}</span>
-          </div>
-          <div className="flex items-center">
-            <div className="flex items-center text-gray-500 mt-4">
-              <button 
-                className={`like-button flex items-center ${liked ? 'text-red-500' : 'text-gray-500'}`}
-                onClick={toggleLike}
-              >
-                <Heart className={`mr-1 h-4 w-4 ${liked ? 'fill-red-500' : ''}`} />
-              </button>
-              <span className="text-xs">{currentLikeCount}</span>
-            </div>
-            <div className="flex items-center text-gray-500 mt-4 ml-2">
-              <button className="like-button flex items-center">
-                <Bookmark className="mr-1 h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        </div>
+        {/* 報告ダイアログ */}
+        <ReportDialog 
+          isOpen={reportDialogOpen}
+          onClose={() => setReportDialogOpen(false)}
+          postId={promptId}
+        />
       </div>
-      
-      {/* 報告ダイアログ */}
-      <ReportDialog 
-        isOpen={reportDialogOpen}
-        onClose={() => setReportDialogOpen(false)}
-        postId={promptId}
-      />
-    </div>
+    </Link>
   );
 };
 
@@ -201,7 +202,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
       {prompts.map((prompt) => (
         <div key={`${sectionPrefix}-${prompt.id}`} className={cardClass}>
           <PromptCard
-            id={`${sectionPrefix}-${prompt.id}`}
+            id={prompt.id}
             title={prompt.title}
             thumbnailUrl={prompt.thumbnailUrl}
             user={prompt.user}
