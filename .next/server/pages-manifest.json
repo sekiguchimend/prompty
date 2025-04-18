@@ -3,5 +3,8 @@
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
   "/prompts/[id]": "pages/prompts/[id].js",
-  "/ContestPage": "pages/ContestPage.js"
+  "/UserProfilePage": "pages/UserProfilePage.js",
+  "/api/profile/update": "pages/api/profile/update.js",
+  "/CreatePost": "pages/CreatePost.js",
+  "/api/prompts/create": "pages/api/prompts/create.js"
 }

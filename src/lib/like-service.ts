@@ -12,8 +12,7 @@ export const likePrompt = async (promptId: string, userId: string) => {
     const { data: existingLike, error: existingError } = await supabase
       .from('likes')
       .select('id')
-      .eq('prompt_id', promptId)
-      .eq('user_id', userId)
+      .match({ prompt_id: promptId, user_id: userId })
       .single();
 
     if (existingError && existingError.code !== 'PGRST116') { // 結果がない場合のエラーは無視
@@ -53,8 +52,7 @@ export const unlikePrompt = async (promptId: string, userId: string) => {
     const { error } = await supabase
       .from('likes')
       .delete()
-      .eq('prompt_id', promptId)
-      .eq('user_id', userId);
+      .match({ prompt_id: promptId, user_id: userId });
 
     if (error) {
       throw error;
@@ -80,8 +78,7 @@ export const checkIfLiked = async (promptId: string, userId: string) => {
     const { data, error } = await supabase
       .from('likes')
       .select('id')
-      .eq('prompt_id', promptId)
-      .eq('user_id', userId)
+      .match({ prompt_id: promptId, user_id: userId })
       .single();
 
     if (error && error.code !== 'PGRST116') { // 結果がない場合のエラーは無視
@@ -106,7 +103,7 @@ export const getLikeCount = async (promptId: string) => {
     const { count, error } = await supabase
       .from('likes')
       .select('id', { count: 'exact' })
-      .eq('prompt_id', promptId);
+      .match({ prompt_id: promptId });
 
     if (error) {
       console.error('いいね数取得エラー:', error);

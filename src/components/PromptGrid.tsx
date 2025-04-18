@@ -266,15 +266,9 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   sectionPrefix = '',
   horizontalScroll = false
 }) => {
-  // 横スクロール用のコンテナクラス
-  const containerClass = horizontalScroll 
-    ? 'flex overflow-x-auto pb-4 gap-4 snap-x snap-mandatory pr-4 -mr-4 scroll-smooth scrollbar-none' 
-    : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4';
-  
-  // カードのクラス
-  const cardClass = horizontalScroll 
-    ? 'flex-shrink-0 w-[200px] snap-start md:w-[280px] h-full'
-    : 'h-full';
+  // 横スクロール用のコンテナクラスとカードクラス（常に横スクロール）
+  const containerClass = 'flex flex-nowrap overflow-x-auto pb-4 gap-4 snap-x snap-mandatory pr-4 -mr-4 scroll-smooth scrollbar-none w-auto min-w-0';
+  const cardClass = 'flex-shrink-0 w-[200px] snap-start md:w-[220px] h-full pt-3';
   
   // 非表示処理の関数
   const handleHidePrompt = (id: string) => {

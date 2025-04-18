@@ -20,6 +20,7 @@ import {
 import { useToast } from '../components/ui/use-toast';
 import { useAuth } from '../lib/auth-context';
 import { supabase } from '../lib/supabaseClient';
+import ProfileEditModal from '../components/ProfileEditModal';
 
 // Profile data type definition
 interface ProfileData {
@@ -67,6 +68,7 @@ const UserProfilePage: React.FC = () => {
   const [posts, setPosts] = useState<PostData[]>([]);
   const [savedPosts, setSavedPosts] = useState<PostData[]>([]);
   const [magazines, setMagazines] = useState<MagazineData[]>([]);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   
   // Detect screen size
   useEffect(() => {
@@ -275,7 +277,54 @@ const UserProfilePage: React.FC = () => {
   
   // Go to edit profile page
   const handleEditProfile = () => {
-    router.push('/SettingsPage?tab=profile');
+    // プロフィール編集モーダルを開く
+    setIsEditModalOpen(true);
+  };
+  
+  // プロフィールが更新されたときに呼ばれる関数
+  const handleProfileUpdated = async () => {
+    try {
+      // プロフィールデータを再取得
+      const { data: updatedProfile, error } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, bio, avatar_url, location')
+        .eq('id', user?.id)
+        .single();
+        
+      if (error) throw error;
+      
+      // フォロワー数を取得
+      const { count: followersCount } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('following_id', user?.id);
+      
+      // フォロー数を取得
+      const { count: followingCount } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('follower_id', user?.id);
+      
+      // プロフィールデータを更新
+      setProfileData({
+        id: updatedProfile.id,
+        username: updatedProfile.username || '',
+        display_name: updatedProfile.display_name || updatedProfile.username || '',
+        bio: updatedProfile.bio || '',
+        avatar_url: updatedProfile.avatar_url,
+        location: updatedProfile.location || '',
+        followers_count: followersCount || 0,
+        following_count: followingCount || 0
+      });
+      
+      toast({
+        title: "プロフィールを更新しました",
+        description: "変更内容が反映されました",
+      });
+      
+    } catch (error) {
+      console.error('プロフィール再取得エラー:', error);
+    }
   };
   
   // Create new post
@@ -595,6 +644,16 @@ const UserProfilePage: React.FC = () => {
             </div>
           )}
         </div>
+        
+        {/* Profile edit modal */}
+        {profileData && (
+          <ProfileEditModal
+            isOpen={isEditModalOpen}
+            onClose={() => setIsEditModalOpen(false)}
+            userData={profileData}
+            onProfileUpdated={handleProfileUpdated}
+          />
+        )}
       </main>
       
       <Footer />

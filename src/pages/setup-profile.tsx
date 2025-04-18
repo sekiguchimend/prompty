@@ -233,7 +233,7 @@ export default function SetupProfile() {
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <Link href="/">
-            <img src="/prompty_logo.jpg" alt="Prompty" className="h-20 mx-auto" />
+            <img src="/prompty_logo.jpg" alt="Prompty" className="h-40 mx-auto" />
           </Link>
         </div>
         
