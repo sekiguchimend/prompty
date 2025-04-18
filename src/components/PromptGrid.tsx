@@ -188,7 +188,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   
   // カードのクラス
   const cardClass = horizontalScroll 
-    ? 'flex-shrink-0 w-[280px] snap-start' 
+    ? 'flex-shrink-0 w-[200px] snap-start md:w-[280px]'
     : '';
   
   // 非表示処理の関数
