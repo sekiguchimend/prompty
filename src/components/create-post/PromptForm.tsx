@@ -136,7 +136,7 @@ const PromptForm: React.FC<PromptFormProps> = ({
               <FormItem>
                 <FormControl>
                   <Textarea
-                    placeholder="AIに送信するプロンプト内容を入力してください..."
+                    placeholder="AIに送信したプロンプト内容を入力してください..."
                     className="min-h-[200px] border-gray-300 resize-none"
                     onChange={handleContentChange}
                     value={field.value}
@@ -165,11 +165,7 @@ const PromptForm: React.FC<PromptFormProps> = ({
             
         </div>
         
-        <div className="flex sm:justify-end">
-          <p className="text-sm text-gray-500 italic">
-            このプロンプトは {modelLabel} に送信されます
-          </p>
-        </div>
+        
       </form>
     </Form>
   );

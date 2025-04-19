@@ -12,6 +12,7 @@ import NotificationDropdown from './NotificationDropdown';
 import UserMenu from './UserMenu';
 import { PostItem, getFollowingPosts, getTodayForYouPosts } from '../data/posts';
 import { useAuth } from '../lib/auth-context'; // AuthContextからuseAuthをインポート
+import { supabase } from '../lib/supabaseClient';
 
 // カテゴリタブMen
 const categoryTabs = [
@@ -26,6 +27,13 @@ const categoryTabs = [
 // 管理者リストを定義
 const ADMIN_EMAILS = ['queue@queuetech.jp', 'admin@queuetech.jp', 'queue@queue-tech.jp']; 
 
+// プロフィール情報の型定義
+interface UserProfile {
+  username?: string;
+  display_name?: string;
+  avatar_url?: string;
+}
+
 const Header = () => {
   const router = useRouter();
   const pathname = usePathname();
@@ -38,7 +46,42 @@ const Header = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [userMenuOpen, setUserMenuOpen] = useState(false); // ユーザーメニュー表示状態
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const tabButtonsRef = useRef<(HTMLButtonElement | null)[]>([]);
+  
+  // ユーザープロフィールを取得
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user) return;
+      
+      try {
+        console.log('ヘッダー: ユーザープロフィールを取得中...', user.id);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('username, display_name, avatar_url')
+          .eq('id', user.id)
+          .single();
+          
+        if (error) {
+          console.error('ヘッダー: プロフィール取得エラー:', error);
+          return;
+        }
+        
+        if (data) {
+          console.log('ヘッダー: プロフィール取得成功:', data);
+          setUserProfile(data);
+        }
+      } catch (error) {
+        console.error('ヘッダー: プロフィール取得中のエラー:', error);
+      }
+    };
+    
+    fetchUserProfile();
+  }, [user]);
+  
+  // 表示用の名前とアバターURLを取得
+  const displayName = userProfile?.display_name || userProfile?.username || user?.email?.split('@')[0] || "ユーザー";
+  const profileAvatarUrl = userProfile?.avatar_url || user?.user_metadata?.avatar_url || "https://github.com/shadcn.png";
   
   // データを取得
   const followingPosts = getFollowingPosts();
@@ -369,9 +412,9 @@ const Header = () => {
                               onClick={() => setUserMenuOpen(!userMenuOpen)}  
                             >
                               <Avatar className="h-7 w-7 border border-gray-200">
-                                <AvatarImage src={user?.user_metadata?.avatar_url || "https://github.com/shadcn.png"} alt={user?.email || "User"} />
+                                <AvatarImage src={profileAvatarUrl} alt={displayName} />
                                 <AvatarFallback className="bg-gray-100 text-gray-700 text-xs">
-                                  {user?.email ? user.email.charAt(0).toUpperCase() : 'U'}
+                                  {displayName ? displayName.charAt(0).toUpperCase() : 'U'}
                                 </AvatarFallback>
                               </Avatar>
                             </Button>
@@ -461,10 +504,10 @@ const Header = () => {
     {/* ユーザーメニュー - ユーザーがログインしている場合のみ表示 */}
       {user && (
         <UserMenu 
-            isOpen={userMenuOpen} 
+          isOpen={userMenuOpen} 
           onClose={() => setUserMenuOpen(false)}
-          username={user?.user_metadata?.full_name || user?.email?.split('@')[0] || "ユーザー"}
-          avatarUrl={user?.user_metadata?.avatar_url || "https://github.com/shadcn.png"}
+          username={displayName}
+          avatarUrl={profileAvatarUrl}
           isDesktop={!isMobile}
           anchorPosition={{ top: 64, right: 16 }}
         />

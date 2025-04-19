@@ -1,9 +1,16 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, LayoutDashboard, FilePen, Heart, Image, Book, Settings, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
+import { supabase } from '../lib/supabaseClient';
+
+interface UserProfile {
+  username?: string;
+  display_name?: string;
+  avatar_url?: string;
+}
 
 interface UserMenuProps {
   isOpen: boolean;
@@ -17,13 +24,48 @@ interface UserMenuProps {
 const UserMenu: React.FC<UserMenuProps> = ({
   isOpen,
   onClose,
-  username = "しゅんや@準備中のアプリ運営",
-  avatarUrl = "https://github.com/shadcn.png",
+  username: defaultUsername = "匿名さん",
+  avatarUrl: defaultAvatarUrl = "https://github.com/shadcn.png",
   isDesktop = false,
   anchorPosition = { top: 64, right: 16 }
 }) => {
   const router = useRouter();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  
+  // ユーザープロフィールを取得
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user) return;
+      
+      try {
+        console.log('ユーザープロフィールを取得中...', user.id);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('username, display_name, avatar_url')
+          .eq('id', user.id)
+          .single();
+          
+        if (error) {
+          console.error('プロフィール取得エラー:', error);
+          return;
+        }
+        
+        if (data) {
+          console.log('プロフィール取得成功:', data);
+          setProfile(data);
+        }
+      } catch (error) {
+        console.error('プロフィール取得中のエラー:', error);
+      }
+    };
+    
+    fetchUserProfile();
+  }, [user]);
+  
+  // 表示用の名前とアバターURLを取得
+  const displayName = profile?.display_name || profile?.username || user?.email || defaultUsername;
+  const profileAvatarUrl = profile?.avatar_url || defaultAvatarUrl;
   
   if (!isOpen) return null;
   
@@ -74,11 +116,11 @@ const UserMenu: React.FC<UserMenuProps> = ({
           <div className="flex items-center p-4 border-b">
             <div className="flex items-center">
               <Avatar className="h-10 w-10 mr-3 flex-shrink-0">
-                <AvatarImage src={avatarUrl} alt={username} />
-                <AvatarFallback>ユ</AvatarFallback>
+                <AvatarImage src={profileAvatarUrl} alt={displayName} />
+                <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <h1 className="text-base font-medium truncate max-w-[170px]">{username}</h1>
+                <h1 className="text-base font-medium truncate max-w-[170px]">{displayName}</h1>
                 <Link href={`/UserProfilePage`} className="text-sm text-gray-500 hover:text-gray-700">クリエイターページ</Link>
               </div>
             </div>
@@ -178,11 +220,11 @@ const UserMenu: React.FC<UserMenuProps> = ({
       <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-white z-10">
         <div className="flex items-center">
           <Avatar className="h-10 w-10 mr-3 flex-shrink-0">
-            <AvatarImage src={avatarUrl} alt={username} />
-            <AvatarFallback>ユ</AvatarFallback>
+            <AvatarImage src={profileAvatarUrl} alt={displayName} />
+            <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-            <h1 className="text-base font-medium truncate max-w-[200px]">{username}</h1>
+            <h1 className="text-base font-medium truncate max-w-[200px]">{displayName}</h1>
             <Link href={`/UserProfilePage`} className="text-sm text-gray-500 hover:text-gray-700">クリエイターページ</Link>
           </div>
         </div>

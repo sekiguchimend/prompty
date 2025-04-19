@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import { Button } from '@/components/ui/button';
-import { Check, Lock, FileText, Info, Link } from 'lucide-react';
+import { Check, Lock, FileText, Info } from 'lucide-react';
 import { Badge } from '../../components/ui/badge';
 import { ExternalLink } from 'lucide-react';
 import PurchaseDialog from './PurchaseDialog'; // Import the PurchaseDialog component
@@ -120,13 +120,17 @@ const PromptContent: React.FC<PromptContentProps> = ({
             )}
           </div>
         )}
-        <button 
-          // onClick={onClick}
-          className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium py-1 px-2 rounded transition-colors"
-        >
-          <ExternalLink className="w-4 h-4" />
-          <span>システムを見る</span>
-        </button>
+        {systemUrl && (
+          <a 
+            href={systemUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium py-1 px-2 rounded transition-colors"
+          >
+            <ExternalLink className="w-4 h-4" />
+            <span>システムを見る</span>
+          </a>
+        )}
         {/* Content section */}
         <div className="relative prose max-w-none">
           {isPreview ? (
@@ -148,12 +152,12 @@ const PromptContent: React.FC<PromptContentProps> = ({
                   <div className="flex flex-col items-center justify-center py-2 relative w-full max-w-md">
                     {/* Updated purchase section to match the image */}
                     <div className="text-center mb-1 w-full">
-                      <h3 className="text-xl font-medium text-gray-800 mb-2">モデルとプロンプトが必要ですか?</h3>
-                      <p className="text-gray-600 mb-1">{characterCount}字</p>
-                      <p className="text-4xl font-bold mb-1">¥ {price.toLocaleString()}</p>
+                      <h3 className="text-xl font-medium text-gray-800 mb-4">モデルとプロンプトが必要ですか?</h3>
+                      <p className="text-gray-600 mb-3">{characterCount}字</p>
+                      <p className="text-4xl font-bold mb-4">¥ {price.toLocaleString()}</p>
                       
                       {/* Added information items with icons */}
-                      <div className="space-y-2 mb-1">
+                      <div className="space-y-4 mb-6">
                         <div className="flex items-center text-left text-sm text-gray-700">
                           <FileText className="h-5 w-5 mr-2 text-gray-500 flex-shrink-0" />
                           <span>使用されたモデルについての詳細な情報</span>
@@ -166,7 +170,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
                       
                       {/* Full-width purchase button */}
                       <Button
-                        className="w-full bg-gray-800 text-white hover:bg-gray-700 rounded-md py-2 text-lg font-medium"
+                        className="w-full bg-gray-800 text-white hover:bg-gray-700 rounded-md py-3 text-lg font-medium mt-2"
                         onClick={handlePurchase}
                       >
                         購入手続きへ

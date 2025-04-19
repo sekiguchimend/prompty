@@ -441,7 +441,8 @@ const CreatePost = () => {
         ai_model: projectSettings.aiModel === "custom" 
           ? projectSettings.customAiModel 
           : projectSettings.aiModel,
-        author_id: finalAuthorId // 必ず最新のauthorIdを使う
+        author_id: finalAuthorId, // 必ず最新のauthorIdを使う
+        site_url: projectSettings.projectUrl || null // プロジェクトURLを送信
       };
 
       console.log('[DEBUG] API送信データ:', requestBody);

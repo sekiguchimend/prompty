@@ -15,6 +15,7 @@ interface CreatePromptRequest {
   is_ai_generated?: boolean;
   is_featured?: boolean;
   published?: boolean;
+  site_url?: string;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -101,7 +102,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       is_premium: promptData.is_premium !== undefined ? promptData.is_premium : false,
       is_ai_generated: promptData.is_ai_generated !== undefined ? promptData.is_ai_generated : false,
       is_featured: promptData.is_featured !== undefined ? promptData.is_featured : false,
-      published: promptData.published !== undefined ? promptData.published : true
+      published: promptData.published !== undefined ? promptData.published : true,
+      site_url: promptData.site_url || null
     };
     
     console.log('🔄 挿入データ:', JSON.stringify({

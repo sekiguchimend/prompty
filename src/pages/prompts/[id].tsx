@@ -29,6 +29,11 @@ export interface PromptItem {
   isLiked?: boolean;
 }
 
+// 拡張された投稿アイテムの型定義
+interface ExtendedPostItem extends PostItem {
+  site_url?: string;
+}
+
 // サーバーサイドレンダリングに変更
 export const getServerSideProps: GetServerSideProps = async ({ params, req }) => {
   const id = params?.id as string;
@@ -75,7 +80,8 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req }) =>
       price,
       author_id,
       view_count,
-      profiles:profiles!prompts_author_id_fkey(id, username, display_name, avatar_url, bio)
+      profiles:profiles(id, username, display_name, avatar_url, bio),
+      site_url
     `)
     .eq('id', formattedId)
     .single();
@@ -99,7 +105,8 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req }) =>
             price,
             author_id,
             view_count,
-            profiles:profiles!prompts_author_id_fkey(id, username, display_name, avatar_url, bio)
+            profiles:profiles(id, username, display_name, avatar_url, bio),
+            site_url
           `)
           .eq('numeric_id', numericId) // 数値ID用のカラムがある場合（例: numeric_id）
           .single();
@@ -151,9 +158,27 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req }) =>
   // 必要なフォーマットに変換
   const profileData = promptData.profiles && promptData.profiles.length > 0 ? promptData.profiles[0] : null;
   
-  console.log("プロフィールデータ:", profileData);
+  console.log("プロフィールデータ詳細:", JSON.stringify(profileData, null, 2));
+  console.log("著者ID:", promptData.author_id);
+  
+  // プロフィールデータが取得できない場合、著者IDで直接取得を試みる
+  let authorProfile = profileData;
+  if (!profileData && promptData.author_id) {
+    const { data: directProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, username, display_name, avatar_url, bio')
+      .eq('id', promptData.author_id)
+      .single();
+      
+    if (!profileError && directProfile) {
+      console.log("直接クエリでプロフィール取得成功:", directProfile);
+      authorProfile = directProfile;
+    } else {
+      console.error("プロフィール直接取得エラー:", profileError);
+    }
+  }
 
-  const postData = {
+  const postData: ExtendedPostItem = {
     id: promptData.id,
     title: promptData.title,
     thumbnailUrl: promptData.thumbnail_url || '/images/default-thumbnail.svg',
@@ -162,13 +187,14 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req }) =>
     likeCount: likeCount || 0,
     postedAt: new Date(promptData.created_at).toLocaleDateString('ja-JP'),
     user: {
-      id: promptData.author_id || '',
       userId: promptData.author_id || '',
-      name: profileData?.display_name || profileData?.username || '不明なユーザー',
-      avatarUrl: profileData?.avatar_url || '/images/default-avatar.svg',
-      bio: profileData?.bio || '著者情報なし',
-      publishedAt: new Date(promptData.created_at).toLocaleDateString('ja-JP')
-    }
+      name: authorProfile?.display_name || authorProfile?.username || '不明なユーザー',
+      avatarUrl: authorProfile?.avatar_url || '/images/default-avatar.svg',
+      bio: authorProfile?.bio || '著者情報なし',
+      publishedAt: new Date(promptData.created_at).toLocaleDateString('ja-JP'),
+      website: promptData.site_url || 'https://example.com'
+    },
+    site_url: promptData.site_url || ''
   };
   
   console.log("返却するデータ:", postData);
@@ -182,7 +208,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req }) =>
 };
 
 // propsを受け取るようにコンポーネントを修正
-const PromptDetail = ({ postData, popularPosts }: { postData: PostItem; popularPosts: PromptItem[] }) => {
+const PromptDetail = ({ postData, popularPosts }: { postData: ExtendedPostItem; popularPosts: PromptItem[] }) => {
   const router = useRouter();
   
   console.log("PromptDetail - 受け取ったデータ:", { postData, popularPosts });
@@ -282,7 +308,7 @@ const PromptDetail = ({ postData, popularPosts }: { postData: PostItem; popularP
                 author={prompt.authorForContent}
                 price={prompt.price || 0}
                 systemImageUrl={prompt.systemImageUrl}
-                systemUrl={prompt.systemUrl}
+                systemUrl={postData.site_url || ''}
               />
               
               {/* Purchase section */}

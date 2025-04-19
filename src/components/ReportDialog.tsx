@@ -30,7 +30,13 @@ const ReportDialog: React.FC<ReportDialogProps> = ({ isOpen, onClose, postId }) 
   ];
 
   // チェックボックスの状態を変更
-  const handleReasonChange = (reasonId: string) => {
+  const handleReasonChange = (reasonId: string, e?: React.MouseEvent) => {
+    // イベントが存在する場合は伝播を停止
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     setSelectedReasons(prev => {
       if (prev.includes(reasonId)) {
         return prev.filter(id => id !== reasonId);
@@ -69,9 +75,18 @@ const ReportDialog: React.FC<ReportDialogProps> = ({ isOpen, onClose, postId }) 
     }
   };
 
+  // onOpenChangeハンドラーをラップして誤ってダイアログが閉じないように制御
+  const handleOpenChange = (open: boolean) => {
+    // チェックボックスクリック時などの誤操作でダイアログが閉じないようにする
+    if (!open) {
+      // ダイアログを閉じる場合のみonCloseを呼び出す
+      onClose();
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="text-center text-lg font-medium">投稿を報告</DialogTitle>
         </DialogHeader>
@@ -83,13 +98,30 @@ const ReportDialog: React.FC<ReportDialogProps> = ({ isOpen, onClose, postId }) 
 
           <div className="space-y-3">
             {reportReasons.map((reason) => (
-              <div key={reason.id} className="flex items-center space-x-2">
+              <div 
+                key={reason.id} 
+                className="flex items-center space-x-2"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <Checkbox 
                   id={reason.id}
                   checked={selectedReasons.includes(reason.id)}
                   onCheckedChange={() => handleReasonChange(reason.id)}
+                  onClick={(e) => {
+                    // クリックイベントで伝播を停止
+                    e.stopPropagation();
+                  }}
                 />
-                <Label htmlFor={reason.id} className="text-sm font-normal cursor-pointer">
+                <Label 
+                  htmlFor={reason.id} 
+                  className="text-sm font-normal cursor-pointer"
+                  onClick={(e) => {
+                    // ラベルクリック時にも伝播を停止し、チェックボックスの状態を変更
+                    e.stopPropagation();
+                    e.preventDefault();
+                    handleReasonChange(reason.id, e);
+                  }}
+                >
                   {reason.label}
                 </Label>
               </div>
@@ -106,6 +138,7 @@ const ReportDialog: React.FC<ReportDialogProps> = ({ isOpen, onClose, postId }) 
               value={details}
               onChange={(e) => setDetails(e.target.value)}
               className="w-full h-20 text-sm"
+              onClick={(e) => e.stopPropagation()}
             />
           </div>
         </div>
@@ -113,13 +146,19 @@ const ReportDialog: React.FC<ReportDialogProps> = ({ isOpen, onClose, postId }) 
         <DialogFooter>
           <Button
             variant="outline"
-            onClick={onClose}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
             className="mr-2"
           >
             キャンセル
           </Button>
           <Button
-            onClick={handleSubmit}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSubmit();
+            }}
             disabled={selectedReasons.length === 0 || isSubmitting}
             className="bg-red-600 hover:bg-red-700 text-white"
           >

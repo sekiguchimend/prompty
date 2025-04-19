@@ -20,6 +20,7 @@ import {
 import { useToast } from '../components/ui/use-toast';
 import { useAuth } from '../lib/auth-context';
 import { supabase } from '../lib/supabaseClient';
+import ProfileEditModal from '../components/ProfileEditModal';
 
 // Profile data type definition
 interface ProfileData {
@@ -67,6 +68,7 @@ const UserProfilePage: React.FC = () => {
   const [posts, setPosts] = useState<PostData[]>([]);
   const [savedPosts, setSavedPosts] = useState<PostData[]>([]);
   const [magazines, setMagazines] = useState<MagazineData[]>([]);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   
   // Detect screen size
   useEffect(() => {
@@ -84,43 +86,62 @@ const UserProfilePage: React.FC = () => {
   }, []);
   
   // Fetch user data
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchUserData = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      // Fetch profile data
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, bio, avatar_url, location')
+        .eq('id', user.id)
+        .single();
+        
+      if (profileError) throw profileError;
       
-      setLoading(true);
+      // フォロワー数を取得
+      const { count: followersCount, error: followersError } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('following_id', user.id);
       
-      try {
-        // ユーザーがnullの場合は処理をスキップ
-        if (!user) {
-          setLoading(false);
-          return;
-        }
+      // フォロー数を取得
+      const { count: followingCount, error: followingError } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('follower_id', user.id);
+      
+      // Fetch user posts
+      const { data: postsData, error: postsError } = await supabase
+        .from('prompts')
+        .select(`
+          id,
+          title,
+          description,
+          thumbnail_url,
+          created_at,
+          view_count,
+          is_premium,
+          price,
+          likes:likes(count),
+          comments:comments(count)
+        `)
+        .eq('author_id', user.id)
+        .order('created_at', { ascending: false });
         
-        // Fetch profile data
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('id, username, display_name, bio, avatar_url, location')
-          .eq('id', user.id)
-          .single();
-          
-        if (profileError) throw profileError;
-        
-        // フォロワー数を取得
-        const { count: followersCount, error: followersError } = await supabase
-          .from('follows')
-          .select('*', { count: 'exact', head: true })
-          .eq('following_id', user.id);
-        
-        // フォロー数を取得
-        const { count: followingCount, error: followingError } = await supabase
-          .from('follows')
-          .select('*', { count: 'exact', head: true })
-          .eq('follower_id', user.id);
-        
-        // Fetch user posts
-        const { data: postsData, error: postsError } = await supabase
-          .from('prompts')
-          .select(`
+      if (postsError) throw postsError;
+      
+      // Fetch saved/bookmarked posts
+      const { data: bookmarksData, error: bookmarksError } = await supabase
+        .from('bookmarks')
+        .select(`
+          prompt_id,
+          prompts:prompts(
             id,
             title,
             description,
@@ -130,62 +151,70 @@ const UserProfilePage: React.FC = () => {
             is_premium,
             price,
             likes:likes(count),
-            comments:comments(count)
-          `)
-          .eq('author_id', user.id)
-          .order('created_at', { ascending: false });
-          
-        if (postsError) throw postsError;
+            comments:comments(count),
+            profiles!prompts_author_id_fkey(display_name, avatar_url)
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
         
-        // Fetch saved/bookmarked posts
-        const { data: bookmarksData, error: bookmarksError } = await supabase
-          .from('bookmarks')
-          .select(`
-            prompt_id,
-            prompts:prompts(
-              id,
-              title,
-              description,
-              thumbnail_url,
-              created_at,
-              view_count,
-              is_premium,
-              price,
-              likes:likes(count),
-              comments:comments(count),
-              profiles!prompts_author_id_fkey(display_name, avatar_url)
-            )
-          `)
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-          
-        if (bookmarksError) throw bookmarksError;
+      if (bookmarksError) throw bookmarksError;
+      
+      // Fetch magazines (collections of prompts)
+      const { data: magazinesData, error: magazinesError } = await supabase
+        .from('magazines') // Assuming there's a magazines table
+        .select(`
+          id,
+          title,
+          cover_url,
+          articles_count
+        `)
+        .eq('author_id', user.id)
+        .order('created_at', { ascending: false });
         
-        // Fetch magazines (collections of prompts)
-        const { data: magazinesData, error: magazinesError } = await supabase
-          .from('magazines') // Assuming there's a magazines table
-          .select(`
-            id,
-            title,
-            cover_url,
-            articles_count
-          `)
-          .eq('author_id', user.id)
-          .order('created_at', { ascending: false });
-          
-        // Process the data
-        setProfileData({
-          id: profileData.id,
-          username: profileData.username || '',
-          display_name: profileData.display_name || profileData.username || '',
-          bio: profileData.bio || '',
-          avatar_url: profileData.avatar_url,
-          location: profileData.location || '',
-          followers_count: followersCount || 0,
-          following_count: followingCount || 0
-        });
+      // Process the data
+      setProfileData({
+        id: profileData.id,
+        username: profileData.username || '',
+        display_name: profileData.display_name || profileData.username || '',
+        bio: profileData.bio || '',
+        avatar_url: profileData.avatar_url,
+        location: profileData.location || '',
+        followers_count: followersCount || 0,
+        following_count: followingCount || 0
+      });
+      
+      setPosts(postsData.map(post => ({
+        id: post.id,
+        title: post.title,
+        description: post.description || '',
+        thumbnail_url: post.thumbnail_url,
+        created_at: formatDate(post.created_at),
+        view_count: post.view_count,
+        like_count: post.likes?.[0]?.count || 0,
+        comment_count: post.comments?.[0]?.count || 0,
+        is_premium: post.is_premium,
+        price: post.price
+      })));
+      
+      setSavedPosts(bookmarksData.map(bookmark => {
+        const post = bookmark.prompts?.[0]; // 配列の最初の要素にアクセス
+        if (!post) {
+          // nullの代わりに空のPostDataオブジェクトを返す
+          return {
+            id: '',
+            title: '',
+            description: '',
+            created_at: '',
+            view_count: 0,
+            like_count: 0,
+            comment_count: 0,
+            is_premium: false,
+            price: 0
+          };
+        }
         
-        setPosts(postsData.map(post => ({
+        return {
           id: post.id,
           title: post.title,
           description: post.description || '',
@@ -195,57 +224,29 @@ const UserProfilePage: React.FC = () => {
           like_count: post.likes?.[0]?.count || 0,
           comment_count: post.comments?.[0]?.count || 0,
           is_premium: post.is_premium,
-          price: post.price
-        })));
-        
-        setSavedPosts(bookmarksData.map(bookmark => {
-          const post = bookmark.prompts?.[0]; // 配列の最初の要素にアクセス
-          if (!post) {
-            // nullの代わりに空のPostDataオブジェクトを返す
-            return {
-              id: '',
-              title: '',
-              description: '',
-              created_at: '',
-              view_count: 0,
-              like_count: 0,
-              comment_count: 0,
-              is_premium: false,
-              price: 0
-            };
-          }
-          
-          return {
-            id: post.id,
-            title: post.title,
-            description: post.description || '',
-            thumbnail_url: post.thumbnail_url,
-            created_at: formatDate(post.created_at),
-            view_count: post.view_count,
-            like_count: post.likes?.[0]?.count || 0,
-            comment_count: post.comments?.[0]?.count || 0,
-            is_premium: post.is_premium,
-            price: post.price,
-            author: post.profiles
-          };
-        }).filter(post => post.id !== '')); // 空のIDを持つオブジェクトをフィルタリング
-        
-        if (!magazinesError && magazinesData) {
-          setMagazines(magazinesData);
-        }
-      } catch (error) {
-        console.error('Error fetching profile data:', error);
-        toast({
-          title: "データ取得エラー",
-          description: "プロフィール情報の取得に失敗しました。",
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
+          price: post.price,
+          author: post.profiles
+        };
+      }).filter(post => post.id !== '')); // 空のIDを持つオブジェクトをフィルタリング
+      
+      if (!magazinesError && magazinesData) {
+        setMagazines(magazinesData);
       }
-    };
-    
-    fetchData();
+    } catch (error) {
+      console.error('Error fetching profile data:', error);
+      toast({
+        title: "データ取得エラー",
+        description: "プロフィール情報の取得に失敗しました。",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // 初回ロード時にデータを取得
+  useEffect(() => {
+    fetchUserData();
   }, [user, router, toast]);
   
   // Format date function
@@ -273,9 +274,18 @@ const UserProfilePage: React.FC = () => {
   const isMobile = windowWidth < 640;
   const isTablet = windowWidth >= 640 && windowWidth < 1024;
   
-  // Go to edit profile page
+  // Go to edit profile page - モーダルを表示するように変更
   const handleEditProfile = () => {
-    router.push('/SettingsPage?tab=profile');
+    setIsEditModalOpen(true);
+  };
+
+  // プロフィールが更新されたときの処理
+  const handleProfileUpdated = () => {
+    fetchUserData(); // プロフィールデータを再取得
+    toast({
+      title: "プロフィールを更新しました",
+      description: "変更内容が反映されました",
+    });
   };
   
   // Create new post
@@ -598,6 +608,23 @@ const UserProfilePage: React.FC = () => {
       </main>
       
       <Footer />
+      
+      {/* プロフィール編集モーダル */}
+      {profileData && (
+        <ProfileEditModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          userData={{
+            id: profileData.id,
+            display_name: profileData.display_name,
+            username: profileData.username,
+            bio: profileData.bio,
+            avatar_url: profileData.avatar_url,
+            location: profileData.location
+          }}
+          onProfileUpdated={handleProfileUpdated}
+        />
+      )}
     </div>
   );
 };
