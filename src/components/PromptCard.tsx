@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { Heart, Bookmark, MoreVertical } from 'lucide-react';
 import Link from 'next/link';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { useToast } from './ui/use-toast';
-import ReportDialog from './ReportDialog';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
@@ -104,46 +102,8 @@ const PromptCard: React.FC<PromptCardProps> = ({
           </Link>
           
           {/* シンプルな三点メニュー実装 */}
-          <div className="relative">
-            <button 
-              className="text-gray-400 hover:text-gray-600 p-1 rounded-full"
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                setShowDropdown(!showDropdown);
-              }}
-            >
-              <MoreVertical className="h-4 w-4" />
-            </button>
-            
-            {showDropdown && (
-              <div 
-                className="absolute right-0 top-full mt-1 bg-white shadow-lg rounded-md border border-gray-200 py-1 z-50 w-32"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button 
-                  className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleHide();
-                    setShowDropdown(false);
-                  }}
-                >
-                  非表示にする
-                </button>
-                <button
-                  className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-gray-100 transition-colors"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openReportDialog();
-                    setShowDropdown(false);
-                  }}
-                >
-                  報告する
-                </button>
-              </div>
-            )}
-          </div>
+          
+           
         </div>
         
         <div className="mt-auto">
@@ -179,12 +139,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
         </div>
       </div>
       
-      {/* 報告ダイアログ */}
-      <ReportDialog 
-        isOpen={reportDialogOpen}
-        onClose={() => setReportDialogOpen(false)}
-        postId={promptId}
-      />
+    
     </div>
   );
 };

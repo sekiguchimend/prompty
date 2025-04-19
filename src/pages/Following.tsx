@@ -127,7 +127,7 @@ const Following: React.FC = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => openReportDialog(post.id)}>
-                            報告する
+                            報告
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => hidePost(post.id)}>
                             非表示にする
@@ -166,7 +166,7 @@ const Following: React.FC = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => openReportDialog(post.id)}>
-                            報告する
+                            報告
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => hidePost(post.id)}>
                             非表示にする
@@ -262,7 +262,7 @@ const Following: React.FC = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => openReportDialog(post.id)}>
-                            報告する
+                            報告
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => hidePost(post.id)}>
                             非表示にする

@@ -29,6 +29,20 @@ interface PromptCardProps {
   onHide?: (id: string) => void;
 }
 
+// メニュー開閉を管理するためのカスタムイベント名
+const DROPDOWN_TOGGLE_EVENT = 'promptcard:dropdown:toggle';
+
+// 非表示チェック用の関数
+function isPostHidden(id: string): boolean {
+  try {
+    const hiddenPosts = JSON.parse(localStorage.getItem('hiddenPosts') || '[]');
+    return Array.isArray(hiddenPosts) && hiddenPosts.includes(id);
+  } catch (error) {
+    console.error('非表示リストの読み込みに失敗しました', error);
+    return false;
+  }
+}
+
 const PromptCard: React.FC<PromptCardProps> = ({
   id,
   title,
@@ -45,12 +59,25 @@ const PromptCard: React.FC<PromptCardProps> = ({
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [isLikeProcessing, setIsLikeProcessing] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
   
   const { toast } = useToast();
   const { user: currentUser, isLoading } = useAuth();
   
   // IDはそのまま使う
   const promptId = id;
+  
+  // 初期表示時に非表示チェック
+  useEffect(() => {
+    try {
+      const hiddenPosts = JSON.parse(localStorage.getItem('hiddenPosts') || '[]');
+      if (Array.isArray(hiddenPosts) && hiddenPosts.includes(id)) {
+        setIsHidden(true);
+      }
+    } catch (error) {
+      console.error('非表示リストの読み込みに失敗しました', error);
+    }
+  }, [id]);
   
   // コンポーネントマウント時にサーバーからいいね状態を取得
   useEffect(() => {
@@ -73,6 +100,25 @@ const PromptCard: React.FC<PromptCardProps> = ({
     
     checkLikeStatus();
   }, [promptId, currentUser, isLoading]);
+  
+  // 他のカードのドロップダウンイベントをリッスン
+  useEffect(() => {
+    const handleOtherDropdownToggle = (e: CustomEvent) => {
+      // イベントの送信元が自分自身でない場合のみ処理
+      if (e.detail && e.detail.cardId !== id) {
+        // 他のカードがドロップダウンを開いたので、このカードのドロップダウンを閉じる
+        setShowOptions(false);
+      }
+    };
+    
+    // カスタムイベントをリッスン
+    window.addEventListener(DROPDOWN_TOGGLE_EVENT, handleOtherDropdownToggle as EventListener);
+    
+    // クリーンアップ関数
+    return () => {
+      window.removeEventListener(DROPDOWN_TOGGLE_EVENT, handleOtherDropdownToggle as EventListener);
+    };
+  }, [id]);
   
   // いいねをトグルする関数
   const toggleLike = async (e: React.MouseEvent) => {
@@ -135,6 +181,18 @@ const PromptCard: React.FC<PromptCardProps> = ({
     e.preventDefault();
     e.stopPropagation();
     
+    // ローカルストレージに保存
+    try {
+      const hiddenPosts = JSON.parse(localStorage.getItem('hiddenPosts') || '[]');
+      if (!hiddenPosts.includes(id)) {
+        hiddenPosts.push(id);
+        localStorage.setItem('hiddenPosts', JSON.stringify(hiddenPosts));
+      }
+      setIsHidden(true);
+    } catch (error) {
+      console.error('非表示設定の保存に失敗しました', error);
+    }
+    
     if (onHide) {
       onHide(id);
     } else {
@@ -154,12 +212,28 @@ const PromptCard: React.FC<PromptCardProps> = ({
   const toggleOptions = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setShowOptions(!showOptions);
+    
+    const newState = !showOptions;
+    
+    // 開く場合は他のカードのドロップダウンを閉じるイベントを発行
+    if (newState) {
+      // このカードのIDを含めて、他のカードがこのカードを識別できるようにする
+      window.dispatchEvent(new CustomEvent(DROPDOWN_TOGGLE_EVENT, { 
+        detail: { cardId: id } 
+      }));
+    }
+    
+    setShowOptions(newState);
   };
+  
+  // 非表示なら何も表示しない
+  if (isHidden) {
+    return null;
+  }
   
   return (
     <Link href={`/prompts/${promptId}`} passHref legacyBehavior>
-      <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm cursor-pointer h-full">
+      <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm cursor-pointer h-full" data-id={id}>
         <div className="block">
           <div className="relative pb-[56.25%]">
             <Image 
@@ -273,7 +347,26 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   // 非表示処理の関数
   const handleHidePrompt = (id: string) => {
     console.log(`Hiding prompt with ID: ${id}`);
-    // 実際の非表示処理をここに実装
+    
+    try {
+      // ローカルストレージから現在の非表示リストを取得
+      const hiddenPosts = JSON.parse(localStorage.getItem('hiddenPosts') || '[]');
+      
+      // IDをリストに追加（まだ含まれていない場合）
+      if (!hiddenPosts.includes(id)) {
+        hiddenPosts.push(id);
+        localStorage.setItem('hiddenPosts', JSON.stringify(hiddenPosts));
+        console.log('非表示リストを更新しました:', hiddenPosts);
+      }
+      
+      // DOMから要素を非表示にする
+      const cardElement = document.querySelector(`[data-id="${id}"]`);
+      if (cardElement && cardElement.parentElement) {
+        cardElement.parentElement.style.display = 'none';
+      }
+    } catch (error) {
+      console.error('非表示処理に失敗しました', error);
+    }
   };
   
   return (
