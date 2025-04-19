@@ -27,6 +27,7 @@ export interface PromptItem {
   postedAt: string;
   likeCount: number;
   isLiked?: boolean;
+  tags?: string[];  // タグの配列を追加
 }
 
 // 拡張された投稿アイテムの型定義
