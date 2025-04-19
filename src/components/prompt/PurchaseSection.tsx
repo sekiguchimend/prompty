@@ -117,6 +117,12 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
 
   // フォロー状態をチェック
   useEffect(() => {
+    // authorIdがない場合は処理を行わない
+    if (!authorId) {
+      console.log('著者IDが指定されていないため、フォロー状態をチェックしません');
+      return;
+    }
+    
     const checkFollowStatus = async () => {
       if (currentUser && authorId) {
         try {

@@ -20,8 +20,8 @@
   "..\\node_modules\\@supabase\\realtime-js\\dist\\module\\RealtimeClient.js -> ws": {
     "id": "..\\node_modules\\@supabase\\realtime-js\\dist\\module\\RealtimeClient.js -> ws",
     "files": [
-      "static/chunks/node_modules_ws_browser_js.js",
-      "static/chunks/_app-pages-browser_node_modules_ws_browser_js.js"
+      "static/chunks/_app-pages-browser_node_modules_ws_browser_js.js",
+      "static/chunks/node_modules_ws_browser_js.js"
     ]
   },
   "..\\node_modules\\@supabase\\storage-js\\dist\\module\\lib\\helpers.js -> @supabase/node-fetch": {
@@ -31,8 +31,8 @@
   "components\\HeaderAnnouncements.tsx -> framer-motion": {
     "id": "components\\HeaderAnnouncements.tsx -> framer-motion",
     "files": [
-      "static/chunks/node_modules_framer-motion_dist_es_index_mjs.js",
-      "static/chunks/_app-pages-browser_node_modules_framer-motion_dist_es_index_mjs.js"
+      "static/chunks/_app-pages-browser_node_modules_framer-motion_dist_es_index_mjs.js",
+      "static/chunks/node_modules_framer-motion_dist_es_index_mjs.js"
     ]
   }
 }

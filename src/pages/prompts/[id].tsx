@@ -198,6 +198,14 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req }) =>
     site_url: promptData.site_url || ''
   };
   
+  // 著者ID（author_id）の確認ログ
+  console.log("プロンプト詳細 - 著者IDデバッグ:", { 
+    author_id: promptData.author_id,
+    userId: postData.user.userId,
+    hasAuthorId: !!promptData.author_id
+  });
+  
+  // サーバーサイドで生成されたデータ
   console.log("返却するデータ:", postData);
   
   return {
@@ -211,6 +219,18 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req }) =>
 // propsを受け取るようにコンポーネントを修正
 const PromptDetail = ({ postData, popularPosts }: { postData: ExtendedPostItem; popularPosts: PromptItem[] }) => {
   const router = useRouter();
+  const [authorId, setAuthorId] = useState<string>("");
+  
+  useEffect(() => {
+    // 著者IDを初期化
+    const userIdFromData = postData?.user?.userId || '';
+    setAuthorId(userIdFromData || 'temp-author-id');
+    
+    console.log("PromptDetail - 著者ID初期化:", { 
+      userIdFromData, 
+      authorId: userIdFromData || 'temp-author-id'
+    });
+  }, [postData]);
   
   console.log("PromptDetail - 受け取ったデータ:", { postData, popularPosts });
   
@@ -266,7 +286,7 @@ const PromptDetail = ({ postData, popularPosts }: { postData: ExtendedPostItem; 
       website: postData.user.website || 'https://example.com' // 必須項目
     }
   };
-  
+
   // PopularArticlesコンポーネントの型に合わせてデータを変換
   const popularArticles = popularPosts?.map((post: PromptItem) => ({
     id: post.id || '',
@@ -296,7 +316,7 @@ const PromptDetail = ({ postData, popularPosts }: { postData: ExtendedPostItem; 
                   author={prompt.authorForSidebar}
                   tags={prompt.tags || []}
                   website={prompt.user.website || ''}
-                  authorId={postData.user.userId || ''}
+                  authorId={authorId}
                 />
               </div>
             </div>
@@ -322,7 +342,7 @@ const PromptDetail = ({ postData, popularPosts }: { postData: ExtendedPostItem; 
                 reviewCount={prompt.reviewCount || 0}
                 likes={prompt.likeCount}
                 author={prompt.authorForPurchase}
-                authorId={postData.user.userId || ''}
+                authorId={authorId}
                 socialLinks={prompt.socialLinks || []}
               />
             </div>

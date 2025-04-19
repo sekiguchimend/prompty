@@ -24,15 +24,32 @@ const AuthorSidebar: React.FC<AuthorSidebarProps> = ({ author, tags, website, au
 
   // 現在のログインユーザーを取得
   useEffect(() => {
+    // authorIdがない場合は早期に読み込み状態を解除
+    if (!authorId) {
+      console.log('著者IDが指定されていないため、フォロー状態をチェックせずに終了します');
+      setIsLoading(false);
+      return;
+    }
+
     const fetchCurrentUser = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         setCurrentUser(session?.user || null);
         
-        // ユーザーとフォロー状態が取得できたらフォロー状態を確認
+        // ユーザーが未ログイン状態の場合は早期に読み込み状態を解除
+        if (!session?.user) {
+          setIsLoading(false);
+          return;
+        }
+        
+        // ユーザーと著者IDの両方が存在する場合のみフォロー状態をチェック
         if (session?.user && authorId) {
-          const isFollowingAuthor = await checkIfFollowing(authorId, session.user.id);
-          setIsFollowing(isFollowingAuthor);
+          try {
+            const isFollowingAuthor = await checkIfFollowing(authorId, session.user.id);
+            setIsFollowing(isFollowingAuthor);
+          } catch (error) {
+            console.error('フォロー状態確認エラー:', error);
+          }
         }
         
         setIsLoading(false);
@@ -49,9 +66,13 @@ const AuthorSidebar: React.FC<AuthorSidebarProps> = ({ author, tags, website, au
       setCurrentUser(session?.user || null);
       
       // ログイン時にフォロー状態を確認
-      if (session?.user && authorId && event === 'SIGNED_IN') {
-        const isFollowingAuthor = await checkIfFollowing(authorId, session.user.id);
-        setIsFollowing(isFollowingAuthor);
+      if (session?.user && authorId && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+        try {
+          const isFollowingAuthor = await checkIfFollowing(authorId, session.user.id);
+          setIsFollowing(isFollowingAuthor);
+        } catch (error) {
+          console.error('認証変更時のフォロー状態確認エラー:', error);
+        }
       }
     });
     
@@ -82,10 +103,20 @@ const AuthorSidebar: React.FC<AuthorSidebarProps> = ({ author, tags, website, au
     
     setIsAnimating(true);
     
+    // デバッグログ - フォロー操作開始
+    console.log(`フォローボタンクリック - ${isFollowing ? '解除' : '追加'}操作開始:`, {
+      authorId,
+      userId: currentUser.id,
+      authorName: author.name,
+      operation: isFollowing ? 'unfollow' : 'follow'
+    });
+    
     try {
       if (isFollowing) {
         // フォロー解除
         const result = await unfollowUser(authorId, currentUser.id);
+        console.log('フォロー解除結果:', result);
+        
         if (result.success) {
           setIsFollowing(false);
           toast({
@@ -98,6 +129,8 @@ const AuthorSidebar: React.FC<AuthorSidebarProps> = ({ author, tags, website, au
       } else {
         // フォローする
         const result = await followUser(authorId, currentUser.id);
+        console.log('フォロー追加結果:', result);
+        
         if (result.success) {
           setIsFollowing(true);
           toast({
@@ -119,6 +152,15 @@ const AuthorSidebar: React.FC<AuthorSidebarProps> = ({ author, tags, website, au
       setIsAnimating(false);
     }
   };
+
+  // 読み込み中表示を単純化
+  const buttonText = isLoading 
+    ? '読み込み中...' 
+    : isFollowing 
+      ? 'フォロー中' 
+      : 'フォロー';
+  
+  const buttonIcon = isFollowing ? '✓' : '👤';
 
   return (
     <div className="sticky top-20">
@@ -165,8 +207,8 @@ const AuthorSidebar: React.FC<AuthorSidebarProps> = ({ author, tags, website, au
           onClick={handleFollowClick}
           disabled={isLoading}
         >
-          <span className="mr-1">{isFollowing ? '✓' : '👤'}</span> 
-          {isLoading ? '読み込み中...' : isFollowing ? 'フォロー中' : 'フォロー'}
+          <span className="mr-1">{buttonIcon}</span> 
+          {buttonText}
         </Button>
       </div>
     </div>
