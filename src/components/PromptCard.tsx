@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Heart, Bookmark, MoreVertical } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from './ui/use-toast';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
-import { useUser } from '../hooks/useUser';
 
 interface PromptCardProps {
   id: string;
@@ -19,7 +17,6 @@ interface PromptCardProps {
   postedAt: string;
   likeCount: number;
   isLiked?: boolean;
-  isBookmarked?: boolean;
   onHide?: (id: string) => void;
 }
 
@@ -31,47 +28,18 @@ const PromptCard: React.FC<PromptCardProps> = ({
   postedAt,
   likeCount,
   isLiked = false,
-  isBookmarked = false,
   onHide,
 }) => {
   const router = useRouter();
   const [liked, setLiked] = useState(isLiked);
-  const [bookmarked, setBookmarked] = useState(isBookmarked);
   const [currentLikeCount, setCurrentLikeCount] = useState(likeCount);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   
   const { toast } = useToast();
-  const { user: currentUser } = useUser();
   
   // Extract the base ID without any prefix for the actual prompt ID
   const promptId = id.includes('-') ? id.split('-')[1] : id;
-  
-  // Supabaseクライアントの初期化
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-  
-  // 初期状態でブックマーク状態を確認
-  useEffect(() => {
-    const checkBookmarkStatus = async () => {
-      if (!currentUser) return;
-      
-      const { data, error } = await supabase
-        .from('bookmarks')
-        .select()
-        .eq('user_id', currentUser.id)
-        .eq('prompt_id', promptId)
-        .single();
-      
-      if (data && !error) {
-        setBookmarked(true);
-      }
-    };
-    
-    checkBookmarkStatus();
-  }, [currentUser, promptId, supabase]);
   
   // いいねをトグルする関数
   const toggleLike = (e: React.MouseEvent) => {
@@ -80,63 +48,6 @@ const PromptCard: React.FC<PromptCardProps> = ({
     
     setLiked(!liked);
     setCurrentLikeCount(prevCount => liked ? prevCount - 1 : prevCount + 1);
-  };
-  
-  // ブックマークをトグルする関数
-  const toggleBookmark = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (!currentUser) {
-      toast({
-        title: "ログインが必要です",
-        description: "ブックマークするにはログインしてください",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    try {
-      if (bookmarked) {
-        // ブックマークを削除
-        const { error } = await supabase
-          .from('bookmarks')
-          .delete()
-          .eq('user_id', currentUser.id)
-          .eq('prompt_id', promptId);
-          
-        if (error) throw error;
-        
-        setBookmarked(false);
-        toast({
-          title: "ブックマークを削除しました",
-        });
-      } else {
-        // ブックマークを追加
-        const { error } = await supabase
-          .from('bookmarks')
-          .insert([
-            { 
-              user_id: currentUser.id, 
-              prompt_id: promptId 
-            }
-          ]);
-          
-        if (error) throw error;
-        
-        setBookmarked(true);
-        toast({
-          title: "ブックマークに追加しました",
-        });
-      }
-    } catch (error) {
-      console.error('ブックマークエラー:', error);
-      toast({
-        title: "エラーが発生しました",
-        description: "操作に失敗しました。後でもう一度お試しください。",
-        variant: "destructive"
-      });
-    }
   };
   
   // 非表示にする関数
@@ -220,11 +131,8 @@ const PromptCard: React.FC<PromptCardProps> = ({
               <span className="text-xs">{currentLikeCount}</span>
             </div>
             <div className="flex items-center text-gray-500 mt-4 ml-2">
-              <button 
-                className={`bookmark-button flex items-center ${bookmarked ? 'text-blue-500' : 'text-gray-500'}`}
-                onClick={toggleBookmark}
-              >
-                <Bookmark className={`mr-1 h-4 w-4 ${bookmarked ? 'fill-blue-500' : ''}`} />
+              <button className="like-button flex items-center">
+                <Bookmark className="mr-1 h-4 w-4" />
               </button>
             </div>
           </div>

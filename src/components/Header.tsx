@@ -163,11 +163,11 @@ const Header = () => {
     if (searchQuery.trim()) {
       setMobileSearchOpen(false);
       // URLを直接構築して遷移（検索キーワードを確実に反映）
-      const searchUrl = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
+      const searchUrl = `/Search?q=${encodeURIComponent(searchQuery.trim())}`;
       console.log('🔍 検索URL:', searchUrl);
       
       // 現在のURLと同じ検索クエリの場合、強制的にページをリロード
-      if (pathname === '/search' && searchParams?.get('q') === searchQuery.trim()) {
+      if (pathname === '/Search' && searchParams?.get('q') === searchQuery.trim()) {
         window.location.href = searchUrl; // 完全なページリロード
       } else {
         router.push(searchUrl);
