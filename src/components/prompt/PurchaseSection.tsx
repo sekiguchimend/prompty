@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar'
 import { formatDistanceToNow } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { supabase } from '../../lib/supabaseClient';
+import { followUser, unfollowUser, checkIfFollowing } from '../../lib/follow-service';
 
 interface PurchaseSectionProps {
   wordCount: number;
@@ -34,6 +35,7 @@ interface PurchaseSectionProps {
     bio: string;
     website: string;
   };
+  authorId?: string;
   socialLinks: {
     icon: string;
     url: string;
@@ -61,6 +63,7 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
   reviewCount,
   likes: initialLikes,
   author,
+  authorId,
   socialLinks
 }) => {
   const [isPurchaseDialogOpen, setIsPurchaseDialogOpen] = useState(false);
@@ -111,6 +114,24 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
       authListener?.subscription.unsubscribe();
     };
   }, []);
+
+  // フォロー状態をチェック
+  useEffect(() => {
+    const checkFollowStatus = async () => {
+      if (currentUser && authorId) {
+        try {
+          const isFollowingAuthor = await checkIfFollowing(authorId, currentUser.id);
+          setIsFollowing(isFollowingAuthor);
+        } catch (error) {
+          console.error('フォロー状態確認エラー:', error);
+        }
+      }
+    };
+    
+    if (currentUser) {
+      checkFollowStatus();
+    }
+  }, [currentUser, authorId]);
 
   const fetchComments = async (promptId: string) => {
     if (!promptId) {
@@ -177,24 +198,66 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
     }
   }, [promptId]);
 
-  const handleFollowClick = () => {
+  const handleFollowClick = async () => {
     setIsAnimating(true);
-    setTimeout(() => {
-      setIsFollowing(!isFollowing);
+    
+    if (!currentUser) {
+      toast({
+        title: "ログインが必要です",
+        description: "フォロー機能を使用するにはログインしてください",
+        variant: "destructive"
+      });
       setIsAnimating(false);
-      
-      if (!isFollowing) {
-        toast({
-          title: `${author.name}さんをフォローしました`,
-          description: "新しい投稿があればお知らせします",
-        });
+      return;
+    }
+    
+    if (!authorId) {
+      console.error('著者IDが指定されていません');
+      toast({
+        title: "エラーが発生しました",
+        description: "著者情報を取得できませんでした",
+        variant: "destructive"
+      });
+      setIsAnimating(false);
+      return;
+    }
+    
+    try {
+      if (isFollowing) {
+        // フォロー解除
+        const result = await unfollowUser(authorId, currentUser.id);
+        if (result.success) {
+          setIsFollowing(false);
+          toast({
+            title: `${author.name}さんのフォローを解除しました`,
+            variant: "destructive"
+          });
+        } else {
+          throw new Error('フォロー解除に失敗しました');
+        }
       } else {
-        toast({
-          title: `${author.name}さんのフォローを解除しました`,
-          variant: "destructive"
-        });
+        // フォローする
+        const result = await followUser(authorId, currentUser.id);
+        if (result.success) {
+          setIsFollowing(true);
+          toast({
+            title: `${author.name}さんをフォローしました`,
+            description: "新しい投稿があればお知らせします",
+          });
+        } else {
+          throw new Error('フォロー追加に失敗しました');
+        }
       }
-    }, 300);
+    } catch (error) {
+      console.error('フォロー処理中にエラーが発生しました:', error);
+      toast({
+        title: "エラーが発生しました",
+        description: "フォロー処理に失敗しました。後でもう一度お試しください。",
+        variant: "destructive"
+      });
+    } finally {
+      setIsAnimating(false);
+    }
   };
 
   const handleLikeClick = () => {

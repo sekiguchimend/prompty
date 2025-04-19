@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { Button } from '@/components/ui/button';
 import { Check, Lock, FileText, Info } from 'lucide-react';
@@ -6,6 +6,7 @@ import { Badge } from '../../components/ui/badge';
 import { ExternalLink } from 'lucide-react';
 import PurchaseDialog from './PurchaseDialog'; // Import the PurchaseDialog component
 import Image from 'next/image';
+
 interface PromptContentProps {
   imageUrl?: string;
   title: string;
@@ -34,8 +35,38 @@ const PromptContent: React.FC<PromptContentProps> = ({
   systemImageUrl,
   systemUrl
 }) => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false); // Changed to false as default
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const router = useRouter();
+
+  // URLリンクの処理用のエフェクト
+  useEffect(() => {
+    // Bing や Google の画像検索URLだけを非表示に
+    const hideImageUrls = () => {
+      // システムを見るリンクを確実に表示
+      const systemLink = document.getElementById('system-link');
+      if (systemLink) {
+        (systemLink as HTMLElement).style.display = 'flex';
+        const systemText = systemLink.querySelector('.system-link-text');
+        if (systemText) {
+          (systemText as HTMLElement).style.display = 'inline';
+          (systemText as HTMLElement).textContent = 'システムを見る';
+        }
+      }
+
+      // 画像検索URLを含むリンクを非表示
+      document.querySelectorAll('a:not(#system-link)').forEach(link => {
+        const href = link.getAttribute('href') || '';
+        // 画像検索URLであるかチェック
+        if (href.includes('bing.com/images') || href.includes('images.google.com')) {
+          // URLリンクを非表示
+          (link as HTMLElement).style.display = 'none';
+        }
+      });
+    };
+
+    // DOMが完全に読み込まれた後に実行
+    setTimeout(hideImageUrls, 100);
+  }, []);
 
   // コンテンツが配列の場合は結合して文字列にする
   const contentText = Array.isArray(content) ? content.join('\n') : content;
@@ -125,10 +156,11 @@ const PromptContent: React.FC<PromptContentProps> = ({
             href={systemUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium py-1 px-2 rounded transition-colors"
+            className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium py-1 px-2 rounded transition-colors mb-4"
+            id="system-link"
           >
             <ExternalLink className="w-4 h-4" />
-            <span>システムを見る</span>
+            <span className="system-link-text">システムを見る</span>
           </a>
         )}
         {/* Content section */}

@@ -267,7 +267,7 @@ const Search = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchInput.trim()) {
-      const searchUrl = `/Search?q=${encodeURIComponent(searchInput.trim())}`;
+      const searchUrl = `/search?q=${encodeURIComponent(searchInput.trim())}`;
       
       // 現在のURLと同じ検索クエリの場合、強制的にページをリロード
       if (searchParams?.get('q') === searchInput.trim()) {

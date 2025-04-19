@@ -296,6 +296,7 @@ const PromptDetail = ({ postData, popularPosts }: { postData: ExtendedPostItem; 
                   author={prompt.authorForSidebar}
                   tags={prompt.tags || []}
                   website={prompt.user.website || ''}
+                  authorId={postData.user.userId || ''}
                 />
               </div>
             </div>
@@ -321,6 +322,7 @@ const PromptDetail = ({ postData, popularPosts }: { postData: ExtendedPostItem; 
                 reviewCount={prompt.reviewCount || 0}
                 likes={prompt.likeCount}
                 author={prompt.authorForPurchase}
+                authorId={postData.user.userId || ''}
                 socialLinks={prompt.socialLinks || []}
               />
             </div>

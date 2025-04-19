@@ -152,3 +152,58 @@
 .scrollbar-none::-webkit-scrollbar {
   display: none;  /* Chrome, Safari, Opera */
 }
+
+/* URLの特定のフォーマットだけを非表示にする */
+a[href*="bing.com/images/search"],
+a[href*="images.google.com"] {
+  opacity: 0;
+  font-size: 0;
+  height: 0;
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  margin: 0;
+  padding: 0;
+  width: 0;
+}
+
+/* 特定のURLを含むリンクのテキストだけを非表示に */
+a[href*="bing.com/images/search"] span,
+a[href*="images.google.com"] span {
+  display: none;
+}
+
+/* 特定のURLを含む段落のみを非表示に */
+p:only-child > a[href*="bing.com/images"],
+p:only-child > a[href*="images.google.com"] {
+  display: none;
+}
+
+/* システムを見るボタンなど、特定のリンクは表示する */
+a.flex.items-center.gap-2.text-blue-600 {
+  display: flex !important;
+  opacity: 1 !important;
+  height: auto !important;
+  width: auto !important;
+  font-size: inherit !important;
+  overflow: visible !important;
+}
+
+/* システムを見るリンクのスタイル - 常に表示されるようにする */
+#system-link {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  height: auto !important;
+  width: auto !important;
+  overflow: visible !important;
+}
+
+#system-link .system-link-text {
+  display: inline !important;
+  font-size: 0.875rem !important;
+  color: #2563eb !important;
+  font-weight: 500 !important;
+  visibility: visible !important;
+  white-space: nowrap !important;
+}
