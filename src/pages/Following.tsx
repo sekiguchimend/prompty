@@ -3,7 +3,6 @@ import { ChevronRight, Heart, MessageSquare, MoreVertical, Bookmark } from 'luci
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { PostItem, getFollowingPosts, getTodayForYouPosts } from '../data/posts';
-import ReportDialog from '../components/ReportDialog';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -350,13 +349,6 @@ const Following: React.FC = () => {
       </main>
       
       <Footer />
-      
-      {/* 報告ダイアログ */}
-      <ReportDialog 
-        isOpen={reportDialogOpen}
-        onClose={() => setReportDialogOpen(false)}
-        postId={selectedPostId}
-      />
     </>
   );
 };

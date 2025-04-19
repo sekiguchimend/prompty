@@ -3,7 +3,6 @@ import { formatDistanceToNow } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { supabase } from '../../lib/supabaseClient';
 import { MoreVertical } from 'lucide-react';
-import ReportDialog from '../ReportDialog';
 
 type Comment = {
   id: string;
@@ -386,15 +385,6 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
           </p>
         )}
       </form>
-
-      {/* 通報ダイアログ */}
-      {selectedCommentId && (
-        <ReportDialog 
-          isOpen={isReportDialogOpen} 
-          onClose={closeReportDialog} 
-          postId={selectedCommentId}
-        />
-      )}
     </div>
   );
 };

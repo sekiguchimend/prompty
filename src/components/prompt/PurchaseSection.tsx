@@ -6,7 +6,7 @@ import AvatarGroup from '../../components/AvatarGroup';
 import { Heart, Share2, MessageSquare, MoreHorizontal, FileText, PenTool, Flag, X, Send } from 'lucide-react';
 import PurchaseDialog from './PurchaseDialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from '../../components/ui/dialog';
-import { toast } from '../../components/ui/use-toast';
+import { toast } from '../../hooks/use-toast';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -79,6 +79,21 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [isCommentsLoading, setIsCommentsLoading] = useState(false);
+  
+  // 簡易トースト用の状態
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState({ title: '', description: '', variant: 'default' });
+  
+  // 簡易トースト表示関数
+  const showCustomToast = (title: string, description: string, variant: 'default' | 'destructive' = 'default') => {
+    setToastMessage({ title, description, variant });
+    setShowToast(true);
+    
+    // 3秒後に非表示
+    setTimeout(() => {
+      setShowToast(false);
+    }, 3000);
+  };
 
   // Get the prompt ID from the URL
   useEffect(() => {
@@ -178,34 +193,54 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
   }, [promptId]);
 
   const handleFollowClick = () => {
+    // ログインしていない場合はトースト通知を表示して処理を終了
+    if (!currentUser) {
+      showCustomToast(
+        "ログインが必要です", 
+        "ユーザーをフォローするにはログインしてください", 
+        "destructive"
+      );
+      return;
+    }
+    
+    // ログインしている場合は通常のフォロー処理を実行
     setIsAnimating(true);
     setTimeout(() => {
       setIsFollowing(!isFollowing);
       setIsAnimating(false);
       
       if (!isFollowing) {
-        toast({
-          title: `${author.name}さんをフォローしました`,
-          description: "新しい投稿があればお知らせします",
-        });
+        showCustomToast(
+          `${author.name}さんをフォローしました`,
+          "新しい投稿があればお知らせします"
+        );
       } else {
-        toast({
-          title: `${author.name}さんのフォローを解除しました`,
-          variant: "destructive"
-        });
+        showCustomToast(
+          `${author.name}さんのフォローを解除しました`,
+          "",
+          "destructive"
+        );
       }
     }, 300);
   };
 
   const handleLikeClick = () => {
+    // ログインしていない場合はトースト通知を表示して処理を終了
+    if (!currentUser) {
+      showCustomToast(
+        "ログインが必要です",
+        "いいねするにはログインしてください",
+        "destructive"
+      );
+      return;
+    }
+
+    // ログインしている場合は通常のいいね処理を実行
     if (liked) {
       setLikes(likes - 1);
     } else {
       setLikes(likes + 1);
-      toast({
-        title: "いいねしました",
-        description: "このプロンプトにいいねしました",
-      });
+      showCustomToast("いいねしました", "このプロンプトにいいねしました");
     }
     setLiked(!liked);
   };
@@ -582,6 +617,19 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 簡易トースト通知 */}
+      {showToast && (
+        <div 
+          className={`fixed bottom-4 right-4 z-50 p-4 rounded-md shadow-lg transition-opacity duration-300 ${
+            toastMessage.variant === 'destructive' ? 'bg-red-600 text-white' : 'bg-gray-800 text-white'
+          }`}
+          style={{ opacity: showToast ? 1 : 0 }}
+        >
+          <div className="font-bold mb-1">{toastMessage.title}</div>
+          <div className="text-sm">{toastMessage.description}</div>
+        </div>
+      )}
     </div>
   );
 };

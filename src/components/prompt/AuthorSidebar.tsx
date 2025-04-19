@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/button';
 import Link from 'next/link';
-import { toast } from '../../components/ui/use-toast';
+import { toast } from '../../hooks/use-toast';
+import { useAuth } from '../../lib/auth-context';
+import { followUser, unfollowUser, checkIfFollowing } from '../../lib/follow-service';
 
 interface AuthorSidebarProps {
   author: {
     name: string;
     avatarUrl: string;
     bio: string;
+    userId?: string;  // 著者のユーザーID
   };
   tags: string[];
   website: string;
@@ -16,28 +19,102 @@ interface AuthorSidebarProps {
 const AuthorSidebar: React.FC<AuthorSidebarProps> = ({ author, tags, website }) => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
-
-  const handleFollowClick = () => {
-    setIsAnimating(true);
-    
-    // アニメーション用のタイムアウト
-    setTimeout(() => {
-      setIsAnimating(false);
-      setIsFollowing(!isFollowing);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // ログインユーザー情報を取得
+  const { user: currentUser } = useAuth();
+  
+  // フォロー状態を確認
+  useEffect(() => {
+    const checkFollowStatus = async () => {
+      // ログインしていない場合またはauthorIdがない場合はスキップ
+      if (!currentUser || !author.userId) return;
       
-      // トースト通知表示
-      if (!isFollowing) {
-        toast({
-          title: `${author.name}さんをフォローしました`,
-          description: "新しい投稿があればお知らせします",
-        });
+      try {
+        // フォロー状態を確認
+        const isFollowed = await checkIfFollowing(author.userId, currentUser.id);
+        setIsFollowing(isFollowed);
+      } catch (error) {
+        console.error('フォロー状態確認エラー:', error);
+      }
+    };
+    
+    checkFollowStatus();
+  }, [currentUser, author.userId]);
+
+  const handleFollowClick = async () => {
+    // ログインしていない場合はログインを促す
+    if (!currentUser) {
+      toast({
+        title: "ログインが必要です",
+        description: "ユーザーをフォローするにはログインしてください。",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // 著者IDがない場合は処理しない
+    if (!author.userId) {
+      console.error('著者IDが見つかりません');
+      toast({
+        title: "エラーが発生しました",
+        description: "この作者をフォローできません。",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsAnimating(true);
+    setIsLoading(true);
+    
+    try {
+      let result;
+      
+      if (isFollowing) {
+        // フォロー解除
+        result = await unfollowUser(author.userId, currentUser.id);
       } else {
+        // フォロー追加
+        result = await followUser(author.userId, currentUser.id);
+      }
+      
+      if (result.success) {
+        // フォロー状態を更新
+        setIsFollowing(!isFollowing);
+        
+        // トースト通知表示
+        if (!isFollowing) {
+          toast({
+            title: `${author.name}さんをフォローしました`,
+            description: "新しい投稿があればお知らせします",
+          });
+        } else {
+          toast({
+            title: `${author.name}さんのフォローを解除しました`,
+            variant: "destructive"
+          });
+        }
+      } else {
+        // エラーメッセージを表示
         toast({
-          title: `${author.name}さんのフォローを解除しました`,
-          variant: "destructive"
+          title: "エラーが発生しました",
+          description: "操作をやり直してください。",
+          variant: "destructive",
         });
       }
-    }, 300);
+    } catch (error) {
+      console.error('フォロー処理エラー:', error);
+      toast({
+        title: "エラーが発生しました",
+        description: "操作をやり直してください。",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+      setTimeout(() => {
+        setIsAnimating(false);
+      }, 300);
+    }
   };
 
   return (
@@ -83,6 +160,7 @@ const AuthorSidebar: React.FC<AuthorSidebarProps> = ({ author, tags, website }) 
             isAnimating ? 'scale-95' : ''
           }`}
           onClick={handleFollowClick}
+          disabled={isLoading}
         >
           <span className="mr-1">{isFollowing ? '✓' : '👤'}</span> 
           {isFollowing ? 'フォロー中' : 'フォロー'}

@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Heart, Bookmark, MoreVertical } from 'lucide-react';
 import Link from 'next/link';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { useToast } from './ui/use-toast';
-import ReportDialog from './ReportDialog';
+import { useToast } from '../hooks/use-toast';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { PromptItem } from '../pages/prompts/[id]';
@@ -61,8 +59,23 @@ const PromptCard: React.FC<PromptCardProps> = ({
   const [isLikeProcessing, setIsLikeProcessing] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
   
+  // 簡易トースト用の状態
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState({ title: '', description: '', variant: 'default' });
+  
   const { toast } = useToast();
   const { user: currentUser, isLoading } = useAuth();
+  
+  // 簡易トースト表示関数
+  const showCustomToast = (title: string, description: string, variant: 'default' | 'destructive' = 'default') => {
+    setToastMessage({ title, description, variant });
+    setShowToast(true);
+    
+    // 3秒後に非表示
+    setTimeout(() => {
+      setShowToast(false);
+    }, 3000);
+  };
   
   // IDはそのまま使う
   const promptId = id;
@@ -127,11 +140,12 @@ const PromptCard: React.FC<PromptCardProps> = ({
     
     // 未ログインの場合はログインを促す
     if (!currentUser) {
-      toast({
-        title: "ログインが必要です",
-        description: "イイねするにはログインしてください。",
-        variant: "destructive",
-      });
+      // 内部トースト表示
+      showCustomToast(
+        "ログインが必要です", 
+        "イイねするにはログインしてください。", 
+        "destructive"
+      );
       return;
     }
     
@@ -166,11 +180,12 @@ const PromptCard: React.FC<PromptCardProps> = ({
       setLiked(liked);
       setCurrentLikeCount(prevCount => liked ? prevCount + 1 : prevCount - 1);
       
-      toast({
-        title: "エラーが発生しました",
-        description: "操作をやり直してください。",
-        variant: "destructive",
-      });
+      // 内部トースト表示
+      showCustomToast(
+        "エラーが発生しました", 
+        "操作をやり直してください。", 
+        "destructive"
+      );
     } finally {
       setIsLikeProcessing(false);
     }
@@ -196,10 +211,11 @@ const PromptCard: React.FC<PromptCardProps> = ({
     if (onHide) {
       onHide(id);
     } else {
-      toast({
-        title: "投稿を非表示にしました",
-        description: "このコンテンツは今後表示されません",
-      });
+      // 内部トースト表示
+      showCustomToast(
+        "投稿を非表示にしました", 
+        "このコンテンツは今後表示されません"
+      );
     }
   };
   
@@ -317,12 +333,18 @@ const PromptCard: React.FC<PromptCardProps> = ({
           </div>
         </div>
         
-        {/* 報告ダイアログ */}
-        <ReportDialog 
-          isOpen={reportDialogOpen}
-          onClose={() => setReportDialogOpen(false)}
-          postId={promptId}
-        />
+        {/* 簡易トースト通知 */}
+        {showToast && (
+          <div 
+            className={`fixed bottom-4 right-4 z-50 p-4 rounded-md shadow-lg transition-opacity duration-300 ${
+              toastMessage.variant === 'destructive' ? 'bg-red-600 text-white' : 'bg-gray-800 text-white'
+            }`}
+            style={{ opacity: showToast ? 1 : 0 }}
+          >
+            <div className="font-bold mb-1">{toastMessage.title}</div>
+            <div className="text-sm">{toastMessage.description}</div>
+          </div>
+        )}
       </div>
     </Link>
   );
@@ -340,9 +362,32 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   sectionPrefix = '',
   horizontalScroll = false
 }) => {
-  // 横スクロール用のコンテナクラスとカードクラス（常に横スクロール）
-  const containerClass = 'flex flex-nowrap overflow-x-auto pb-4 gap-4 snap-x snap-mandatory pr-4 -mr-4 scroll-smooth scrollbar-none w-auto min-w-0';
-  const cardClass = 'flex-shrink-0 w-[200px] snap-start md:w-[220px] h-full pt-3';
+  // 非表示の投稿を管理するための状態
+  const [hiddenPromptIds, setHiddenPromptIds] = useState<string[]>([]);
+  
+  // 初期表示時に非表示リストを読み込む
+  useEffect(() => {
+    try {
+      const storedHiddenPosts = JSON.parse(localStorage.getItem('hiddenPosts') || '[]');
+      if (Array.isArray(storedHiddenPosts)) {
+        setHiddenPromptIds(storedHiddenPosts);
+      }
+    } catch (error) {
+      console.error('非表示リストの読み込みに失敗しました', error);
+    }
+  }, []);
+  
+  // コンテナクラスの設定
+  // 横スクロールの場合と通常のグリッド表示の場合で分岐
+  const containerClass = horizontalScroll 
+    ? 'flex flex-nowrap overflow-x-auto pb-4 gap-4 snap-x snap-mandatory pr-4 -mr-4 scroll-smooth scrollbar-none w-auto min-w-0'
+    : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-4';
+  
+  // カードクラスの設定
+  // 横スクロールの場合と通常のグリッド表示の場合で分岐
+  const cardClass = horizontalScroll
+    ? 'flex-shrink-0 w-[200px] snap-start md:w-[220px] h-full pt-3'
+    : 'h-full pt-3';
   
   // 非表示処理の関数
   const handleHidePrompt = (id: string) => {
@@ -350,28 +395,28 @@ const PromptGrid: React.FC<PromptGridProps> = ({
     
     try {
       // ローカルストレージから現在の非表示リストを取得
-      const hiddenPosts = JSON.parse(localStorage.getItem('hiddenPosts') || '[]');
+      const hiddenPosts = [...hiddenPromptIds];
       
       // IDをリストに追加（まだ含まれていない場合）
       if (!hiddenPosts.includes(id)) {
         hiddenPosts.push(id);
+        // ステートを更新して再レンダリングを発生させる
+        setHiddenPromptIds(hiddenPosts);
+        // ローカルストレージに保存
         localStorage.setItem('hiddenPosts', JSON.stringify(hiddenPosts));
         console.log('非表示リストを更新しました:', hiddenPosts);
-      }
-      
-      // DOMから要素を非表示にする
-      const cardElement = document.querySelector(`[data-id="${id}"]`);
-      if (cardElement && cardElement.parentElement) {
-        cardElement.parentElement.style.display = 'none';
       }
     } catch (error) {
       console.error('非表示処理に失敗しました', error);
     }
   };
   
+  // 非表示の投稿を除外したリストを作成
+  const visiblePrompts = prompts.filter(prompt => !hiddenPromptIds.includes(prompt.id));
+  
   return (
     <div className={containerClass}>
-      {prompts.map((prompt) => (
+      {visiblePrompts.map((prompt) => (
         <div key={`${sectionPrefix}-${prompt.id}`} className={cardClass}>
           <PromptCard
             id={prompt.id}
