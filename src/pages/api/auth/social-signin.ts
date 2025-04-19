@@ -20,8 +20,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
     
-    // リダイレクトURL
-    const redirectTo = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/callback?mode=login`;
+    // 本番環境か開発環境かを判定して適切なリダイレクトURLを設定
+    const redirectTo = 'https://prompty-zeta.vercel.app/auth/callback?mode=login';
+    
+    console.log(`Using redirect URL: ${redirectTo}`);
     
     let result;
     

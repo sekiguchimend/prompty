@@ -9,6 +9,18 @@ import { likePrompt, unlikePrompt } from '../lib/like-service';
 import { useAuth } from '../lib/auth-context';
 import { checkIfLiked } from '../lib/like-service';
 
+// グローバルトースト用のイベント名
+const GLOBAL_TOAST_EVENT = 'global:toast:show';
+
+// グローバルトースト表示関数
+export const showGlobalToast = (title: string, description: string, variant: 'default' | 'destructive' = 'default') => {
+  // カスタムイベントを発行
+  const event = new CustomEvent(GLOBAL_TOAST_EVENT, {
+    detail: { title, description, variant }
+  });
+  window.dispatchEvent(event);
+};
+
 // PromptGrid.tsx用のコンポーネント
 export type { PromptItem };
 
@@ -41,6 +53,55 @@ function isPostHidden(id: string): boolean {
   }
 }
 
+// 簡易トースト通知コンポーネント
+const GlobalToast: React.FC = () => {
+  const [show, setShow] = useState(false);
+  const [message, setMessage] = useState({ 
+    title: '', 
+    description: '', 
+    variant: 'default' as 'default' | 'destructive' 
+  });
+
+  useEffect(() => {
+    const handleGlobalToast = (e: CustomEvent) => {
+      const { title, description, variant } = e.detail;
+      setMessage({ title, description, variant });
+      setShow(true);
+      
+      // 3秒後に非表示
+      setTimeout(() => {
+        setShow(false);
+      }, 3000);
+    };
+    
+    // イベントリスナーを登録
+    window.addEventListener(GLOBAL_TOAST_EVENT, handleGlobalToast as EventListener);
+    
+    // クリーンアップ関数
+    return () => {
+      window.removeEventListener(GLOBAL_TOAST_EVENT, handleGlobalToast as EventListener);
+    };
+  }, []);
+
+  if (!show) return null;
+  
+  return (
+    <div 
+      className={`fixed bottom-4 right-4 p-4 rounded-md shadow-lg transition-opacity duration-300 ${
+        message.variant === 'destructive' ? 'bg-red-600 text-white' : 'bg-gray-800 text-white'
+      }`}
+      style={{
+        zIndex: 9999,
+        maxWidth: '300px',
+        opacity: show ? 1 : 0
+      }}
+    >
+      <div className="font-bold mb-1">{message.title}</div>
+      <div className="text-sm">{message.description}</div>
+    </div>
+  );
+};
+
 const PromptCard: React.FC<PromptCardProps> = ({
   id,
   title,
@@ -59,23 +120,8 @@ const PromptCard: React.FC<PromptCardProps> = ({
   const [isLikeProcessing, setIsLikeProcessing] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
   
-  // 簡易トースト用の状態
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState({ title: '', description: '', variant: 'default' });
-  
   const { toast } = useToast();
   const { user: currentUser, isLoading } = useAuth();
-  
-  // 簡易トースト表示関数
-  const showCustomToast = (title: string, description: string, variant: 'default' | 'destructive' = 'default') => {
-    setToastMessage({ title, description, variant });
-    setShowToast(true);
-    
-    // 3秒後に非表示
-    setTimeout(() => {
-      setShowToast(false);
-    }, 3000);
-  };
   
   // IDはそのまま使う
   const promptId = id;
@@ -140,8 +186,8 @@ const PromptCard: React.FC<PromptCardProps> = ({
     
     // 未ログインの場合はログインを促す
     if (!currentUser) {
-      // 内部トースト表示
-      showCustomToast(
+      // グローバルトースト表示
+      showGlobalToast(
         "ログインが必要です", 
         "イイねするにはログインしてください。", 
         "destructive"
@@ -180,8 +226,8 @@ const PromptCard: React.FC<PromptCardProps> = ({
       setLiked(liked);
       setCurrentLikeCount(prevCount => liked ? prevCount + 1 : prevCount - 1);
       
-      // 内部トースト表示
-      showCustomToast(
+      // グローバルトースト表示
+      showGlobalToast(
         "エラーが発生しました", 
         "操作をやり直してください。", 
         "destructive"
@@ -211,8 +257,8 @@ const PromptCard: React.FC<PromptCardProps> = ({
     if (onHide) {
       onHide(id);
     } else {
-      // 内部トースト表示
-      showCustomToast(
+      // グローバルトースト表示
+      showGlobalToast(
         "投稿を非表示にしました", 
         "このコンテンツは今後表示されません"
       );
@@ -332,19 +378,6 @@ const PromptCard: React.FC<PromptCardProps> = ({
             </div>
           </div>
         </div>
-        
-        {/* 簡易トースト通知 */}
-        {showToast && (
-          <div 
-            className={`fixed bottom-4 right-4 z-50 p-4 rounded-md shadow-lg transition-opacity duration-300 ${
-              toastMessage.variant === 'destructive' ? 'bg-red-600 text-white' : 'bg-gray-800 text-white'
-            }`}
-            style={{ opacity: showToast ? 1 : 0 }}
-          >
-            <div className="font-bold mb-1">{toastMessage.title}</div>
-            <div className="text-sm">{toastMessage.description}</div>
-          </div>
-        )}
       </div>
     </Link>
   );
@@ -415,22 +448,25 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   const visiblePrompts = prompts.filter(prompt => !hiddenPromptIds.includes(prompt.id));
   
   return (
-    <div className={containerClass}>
-      {visiblePrompts.map((prompt) => (
-        <div key={`${sectionPrefix}-${prompt.id}`} className={cardClass}>
-          <PromptCard
-            id={prompt.id}
-            title={prompt.title}
-            thumbnailUrl={prompt.thumbnailUrl}
-            user={prompt.user}
-            postedAt={prompt.postedAt}
-            likeCount={prompt.likeCount}
-            isLiked={prompt.isLiked}
-            onHide={handleHidePrompt}
-          />
-        </div>
-      ))}
-    </div>
+    <>
+      <div className={containerClass}>
+        {visiblePrompts.map((prompt) => (
+          <div key={`${sectionPrefix}-${prompt.id}`} className={cardClass}>
+            <PromptCard
+              id={prompt.id}
+              title={prompt.title}
+              thumbnailUrl={prompt.thumbnailUrl}
+              user={prompt.user}
+              postedAt={prompt.postedAt}
+              likeCount={prompt.likeCount}
+              isLiked={prompt.isLiked}
+              onHide={handleHidePrompt}
+            />
+          </div>
+        ))}
+      </div>
+      <GlobalToast />
+    </>
   );
 };
 

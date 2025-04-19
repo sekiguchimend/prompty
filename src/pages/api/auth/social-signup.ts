@@ -20,8 +20,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
     
-    // リダイレクトURL
-    const redirectTo = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://prompty-zeta.vercel.app'}/auth/callback?mode=signup`;
+    // リダイレクトURL - リクエストヘッダーから現在のホストを取得
+    const host = req.headers.host || '';
+    const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http:' : 'https:';
+    const baseUrl = `${protocol}//${host}`;
+    
+    // 本番環境か開発環境かを判定して適切なリダイレクトURLを設定
+    const redirectTo = 'https://prompty-zeta.vercel.app/auth/callback?mode=signup';
+    
+    console.log(`Using signup redirect URL: ${redirectTo}`);
     
     let result;
     

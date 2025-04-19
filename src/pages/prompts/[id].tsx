@@ -249,8 +249,7 @@ const PromptDetail = ({ postData, popularPosts }: { postData: ExtendedPostItem; 
     authorForSidebar: {
       name: postData.user.name,
       avatarUrl: postData.user.avatarUrl,
-      bio: postData.user.bio || '著者情報なし', // 必須項目
-      userId: postData.user.userId || '' // 著者のIDを追加
+      bio: postData.user.bio || '著者情報なし' // 必須項目
     },
     // PromptContentの型に合わせる
     authorForContent: {
