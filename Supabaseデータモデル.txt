@@ -1,0 +1,602 @@
+# Prompty プロジェクト - Supabaseデータモデル
+
+## データベース構造とスキーマ設計
+
+このドキュメントでは、Promptyプラットフォームのためのデータベース構造とテーブル仕様を定義します。
+
+## 主要テーブル
+
+### 1. profiles (ユーザープロフィール)
+```sql
+CREATE TABLE public.profiles (
+  id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
+  username VARCHAR(255) UNIQUE NOT NULL,
+  display_name VARCHAR(255),
+  email VARCHAR(255) UNIQUE NOT NULL,
+  bio TEXT,
+  avatar_url TEXT,
+  banner_url TEXT,
+  website VARCHAR(255),
+  twitter VARCHAR(255),
+  github VARCHAR(255),
+  location VARCHAR(255),
+  is_premium BOOLEAN DEFAULT false,
+  premium_until TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+
+  CONSTRAINT username_length CHECK (char_length(username) >= 3)
+);
+
+-- RLSポリシー
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "プロフィールは誰でも参照可能" 
+ON public.profiles FOR SELECT USING (true);
+
+CREATE POLICY "ユーザーは自分のプロフィールのみ更新可能" 
+ON public.profiles FOR UPDATE USING (auth.uid() = id);
+
+CREATE POLICY "ユーザーは自分のプロフィールのみ削除可能" 
+ON public.profiles FOR DELETE USING (auth.uid() = id);
+
+-- トリガー
+CREATE TRIGGER update_profiles_updated_at 
+BEFORE UPDATE ON public.profiles 
+FOR EACH ROW EXECUTE PROCEDURE handle_updated_at();
+```
+
+### 2. prompts (プロンプト)
+```sql
+CREATE TABLE public.prompts (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  author_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  content TEXT NOT NULL,
+  thumbnail_url TEXT,
+  category_id UUID REFERENCES public.categories(id),
+  price DECIMAL(10, 2) DEFAULT 0,
+  is_free BOOLEAN DEFAULT true,
+  is_featured BOOLEAN DEFAULT false,
+  is_premium BOOLEAN DEFAULT false,
+  is_ai_generated BOOLEAN DEFAULT false,
+  published BOOLEAN DEFAULT true,
+  view_count INTEGER DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+
+  CONSTRAINT title_length CHECK (char_length(title) >= 5),
+  CONSTRAINT content_length CHECK (char_length(content) >= 10)
+);
+
+-- インデックス
+CREATE INDEX prompts_author_id_idx ON public.prompts(author_id);
+CREATE INDEX prompts_category_id_idx ON public.prompts(category_id);
+CREATE INDEX prompts_created_at_idx ON public.prompts(created_at DESC);
+
+-- RLSポリシー
+ALTER TABLE public.prompts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "公開プロンプトは誰でも参照可能" 
+ON public.prompts FOR SELECT USING (published = true);
+
+CREATE POLICY "非公開プロンプトは作者のみ参照可能" 
+ON public.prompts FOR SELECT USING (auth.uid() = author_id);
+
+CREATE POLICY "プロンプトは作者のみ更新可能" 
+ON public.prompts FOR UPDATE USING (auth.uid() = author_id);
+
+CREATE POLICY "プロンプトは作者のみ削除可能" 
+ON public.prompts FOR DELETE USING (auth.uid() = author_id);
+
+CREATE POLICY "認証済みユーザーはプロンプト作成可能" 
+ON public.prompts FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+-- トリガー
+CREATE TRIGGER update_prompts_updated_at 
+BEFORE UPDATE ON public.prompts 
+FOR EACH ROW EXECUTE PROCEDURE handle_updated_at();
+```
+
+### 3. prompt_executions (プロンプト実行結果)
+```sql
+CREATE TABLE public.prompt_executions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  prompt_id UUID REFERENCES public.prompts(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  input TEXT,
+  output TEXT NOT NULL,
+  model VARCHAR(255),
+  execution_time INTEGER, -- ミリ秒
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+);
+
+-- インデックス
+CREATE INDEX prompt_executions_prompt_id_idx ON public.prompt_executions(prompt_id);
+CREATE INDEX prompt_executions_user_id_idx ON public.prompt_executions(user_id);
+
+-- RLSポリシー
+ALTER TABLE public.prompt_executions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "実行結果は誰でも参照可能" 
+ON public.prompt_executions FOR SELECT USING (true);
+
+CREATE POLICY "認証済みユーザーは実行結果作成可能" 
+ON public.prompt_executions FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "実行結果は作成者のみ削除可能" 
+ON public.prompt_executions FOR DELETE USING (auth.uid() = user_id);
+```
+
+### 4. categories (カテゴリ)
+```sql
+CREATE TABLE public.categories (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name VARCHAR(255) UNIQUE NOT NULL,
+  slug VARCHAR(255) UNIQUE NOT NULL,
+  description TEXT,
+  icon VARCHAR(255),
+  parent_id UUID REFERENCES public.categories(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+);
+
+-- インデックス
+CREATE INDEX categories_parent_id_idx ON public.categories(parent_id);
+
+-- RLSポリシー
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "カテゴリは誰でも参照可能" 
+ON public.categories FOR SELECT USING (true);
+
+CREATE POLICY "管理者のみカテゴリ作成可能" 
+ON public.categories FOR INSERT WITH CHECK (auth.role() = 'service_role');
+
+CREATE POLICY "管理者のみカテゴリ更新可能" 
+ON public.categories FOR UPDATE USING (auth.role() = 'service_role');
+
+CREATE POLICY "管理者のみカテゴリ削除可能" 
+ON public.categories FOR DELETE USING (auth.role() = 'service_role');
+```
+
+### 5. tags (タグ)
+```sql
+CREATE TABLE public.tags (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name VARCHAR(255) UNIQUE NOT NULL,
+  slug VARCHAR(255) UNIQUE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+);
+
+-- RLSポリシー
+ALTER TABLE public.tags ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "タグは誰でも参照可能" 
+ON public.tags FOR SELECT USING (true);
+
+CREATE POLICY "認証済みユーザーはタグ作成可能" 
+ON public.tags FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+```
+
+### 6. prompt_tags (プロンプトとタグの関連付け)
+```sql
+CREATE TABLE public.prompt_tags (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  prompt_id UUID REFERENCES public.prompts(id) ON DELETE CASCADE NOT NULL,
+  tag_id UUID REFERENCES public.tags(id) ON DELETE CASCADE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+
+  UNIQUE(prompt_id, tag_id)
+);
+
+-- インデックス
+CREATE INDEX prompt_tags_prompt_id_idx ON public.prompt_tags(prompt_id);
+CREATE INDEX prompt_tags_tag_id_idx ON public.prompt_tags(tag_id);
+
+-- RLSポリシー
+ALTER TABLE public.prompt_tags ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "プロンプトタグは誰でも参照可能" 
+ON public.prompt_tags FOR SELECT USING (true);
+
+CREATE POLICY "プロンプト作者のみタグ付け可能" 
+ON public.prompt_tags FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM public.prompts
+    WHERE id = prompt_tags.prompt_id AND author_id = auth.uid()
+  )
+);
+
+CREATE POLICY "プロンプト作者のみタグ削除可能" 
+ON public.prompt_tags FOR DELETE USING (
+  EXISTS (
+    SELECT 1 FROM public.prompts
+    WHERE id = prompt_tags.prompt_id AND author_id = auth.uid()
+  )
+);
+```
+
+### 7. likes (いいね)
+```sql
+CREATE TABLE public.likes (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  prompt_id UUID REFERENCES public.prompts(id) ON DELETE CASCADE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+
+  UNIQUE(user_id, prompt_id)
+);
+
+-- インデックス
+CREATE INDEX likes_user_id_idx ON public.likes(user_id);
+CREATE INDEX likes_prompt_id_idx ON public.likes(prompt_id);
+
+-- RLSポリシー
+ALTER TABLE public.likes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "いいねは誰でも参照可能" 
+ON public.likes FOR SELECT USING (true);
+
+CREATE POLICY "認証済みユーザーはいいね可能" 
+ON public.likes FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "ユーザーは自分のいいねのみ削除可能" 
+ON public.likes FOR DELETE USING (auth.uid() = user_id);
+```
+
+### 8. bookmarks (ブックマーク)
+```sql
+CREATE TABLE public.bookmarks (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  prompt_id UUID REFERENCES public.prompts(id) ON DELETE CASCADE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+
+  UNIQUE(user_id, prompt_id)
+);
+
+-- インデックス
+CREATE INDEX bookmarks_user_id_idx ON public.bookmarks(user_id);
+CREATE INDEX bookmarks_prompt_id_idx ON public.bookmarks(prompt_id);
+
+-- RLSポリシー
+ALTER TABLE public.bookmarks ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "ユーザーは自分のブックマークのみ参照可能" 
+ON public.bookmarks FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "認証済みユーザーはブックマーク可能" 
+ON public.bookmarks FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "ユーザーは自分のブックマークのみ削除可能" 
+ON public.bookmarks FOR DELETE USING (auth.uid() = user_id);
+```
+
+### 9. comments (コメント)
+```sql
+CREATE TABLE public.comments (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  prompt_id UUID REFERENCES public.prompts(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  parent_id UUID REFERENCES public.comments(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  is_edited BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+
+  CONSTRAINT content_length CHECK (char_length(content) >= 1)
+);
+
+-- インデックス
+CREATE INDEX comments_prompt_id_idx ON public.comments(prompt_id);
+CREATE INDEX comments_user_id_idx ON public.comments(user_id);
+CREATE INDEX comments_parent_id_idx ON public.comments(parent_id);
+
+-- RLSポリシー
+ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "コメントは誰でも参照可能" 
+ON public.comments FOR SELECT USING (true);
+
+CREATE POLICY "認証済みユーザーはコメント可能" 
+ON public.comments FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "ユーザーは自分のコメントのみ更新可能" 
+ON public.comments FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "ユーザーは自分のコメントのみ削除可能" 
+ON public.comments FOR DELETE USING (auth.uid() = user_id);
+
+-- トリガー
+CREATE TRIGGER update_comments_updated_at 
+BEFORE UPDATE ON public.comments 
+FOR EACH ROW EXECUTE PROCEDURE handle_updated_at();
+```
+
+### 10. follows (フォロー関係)
+```sql
+CREATE TABLE public.follows (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  follower_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  following_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+
+  UNIQUE(follower_id, following_id),
+  CONSTRAINT no_self_follow CHECK (follower_id != following_id)
+);
+
+-- インデックス
+CREATE INDEX follows_follower_id_idx ON public.follows(follower_id);
+CREATE INDEX follows_following_id_idx ON public.follows(following_id);
+
+-- RLSポリシー
+ALTER TABLE public.follows ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "フォロー関係は誰でも参照可能" 
+ON public.follows FOR SELECT USING (true);
+
+CREATE POLICY "認証済みユーザーはフォロー可能" 
+ON public.follows FOR INSERT WITH CHECK (auth.uid() = follower_id);
+
+CREATE POLICY "ユーザーは自分のフォローのみ削除可能" 
+ON public.follows FOR DELETE USING (auth.uid() = follower_id);
+```
+
+### 11. notifications (通知)
+```sql
+CREATE TABLE public.notifications (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  recipient_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  sender_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  type VARCHAR(50) NOT NULL, -- 'like', 'comment', 'follow', 'mention', 'system'
+  content TEXT,
+  resource_type VARCHAR(50), -- 'prompt', 'comment', 'profile'
+  resource_id UUID,
+  is_read BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+);
+
+-- インデックス
+CREATE INDEX notifications_recipient_id_idx ON public.notifications(recipient_id);
+CREATE INDEX notifications_created_at_idx ON public.notifications(created_at DESC);
+
+-- RLSポリシー
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "ユーザーは自分宛の通知のみ参照可能" 
+ON public.notifications FOR SELECT USING (auth.uid() = recipient_id);
+
+CREATE POLICY "システムは通知作成可能" 
+ON public.notifications FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "ユーザーは自分宛の通知のみ更新可能" 
+ON public.notifications FOR UPDATE USING (auth.uid() = recipient_id);
+
+CREATE POLICY "ユーザーは自分宛の通知のみ削除可能" 
+ON public.notifications FOR DELETE USING (auth.uid() = recipient_id);
+```
+
+### 12. purchases (購入履歴)
+```sql
+CREATE TABLE public.purchases (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  buyer_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  prompt_id UUID REFERENCES public.prompts(id) ON DELETE CASCADE NOT NULL,
+  amount DECIMAL(10, 2) NOT NULL,
+  status VARCHAR(50) DEFAULT 'completed', -- 'pending', 'completed', 'refunded', 'failed'
+  payment_id VARCHAR(255),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+
+  UNIQUE(buyer_id, prompt_id)
+);
+
+-- インデックス
+CREATE INDEX purchases_buyer_id_idx ON public.purchases(buyer_id);
+CREATE INDEX purchases_prompt_id_idx ON public.purchases(prompt_id);
+
+-- RLSポリシー
+ALTER TABLE public.purchases ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "ユーザーは自分の購入履歴のみ参照可能" 
+ON public.purchases FOR SELECT USING (auth.uid() = buyer_id);
+
+CREATE POLICY "プロンプト作者は自分の商品の購入履歴参照可能" 
+ON public.purchases FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM public.prompts
+    WHERE id = purchases.prompt_id AND author_id = auth.uid()
+  )
+);
+
+CREATE POLICY "システムは購入履歴作成可能" 
+ON public.purchases FOR INSERT WITH CHECK (true);
+```
+
+### 13. contests (コンテスト)
+```sql
+CREATE TABLE public.contests (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  rules TEXT,
+  start_date TIMESTAMP WITH TIME ZONE NOT NULL,
+  end_date TIMESTAMP WITH TIME ZONE NOT NULL,
+  prize TEXT,
+  banner_url TEXT,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+);
+
+-- RLSポリシー
+ALTER TABLE public.contests ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "コンテストは誰でも参照可能" 
+ON public.contests FOR SELECT USING (true);
+
+CREATE POLICY "管理者のみコンテスト作成可能" 
+ON public.contests FOR INSERT WITH CHECK (auth.role() = 'service_role');
+
+CREATE POLICY "管理者のみコンテスト更新可能" 
+ON public.contests FOR UPDATE USING (auth.role() = 'service_role');
+
+CREATE POLICY "管理者のみコンテスト削除可能" 
+ON public.contests FOR DELETE USING (auth.role() = 'service_role');
+
+-- トリガー
+CREATE TRIGGER update_contests_updated_at 
+BEFORE UPDATE ON public.contests 
+FOR EACH ROW EXECUTE PROCEDURE handle_updated_at();
+```
+
+### 14. contest_entries (コンテスト応募)
+```sql
+CREATE TABLE public.contest_entries (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  contest_id UUID REFERENCES public.contests(id) ON DELETE CASCADE NOT NULL,
+  prompt_id UUID REFERENCES public.prompts(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  score INTEGER,
+  rank INTEGER,
+  is_winner BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+
+  UNIQUE(contest_id, prompt_id)
+);
+
+-- インデックス
+CREATE INDEX contest_entries_contest_id_idx ON public.contest_entries(contest_id);
+CREATE INDEX contest_entries_prompt_id_idx ON public.contest_entries(prompt_id);
+CREATE INDEX contest_entries_user_id_idx ON public.contest_entries(user_id);
+
+-- RLSポリシー
+ALTER TABLE public.contest_entries ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "コンテスト応募は誰でも参照可能" 
+ON public.contest_entries FOR SELECT USING (true);
+
+CREATE POLICY "認証済みユーザーはコンテスト応募可能" 
+ON public.contest_entries FOR INSERT WITH CHECK (
+  auth.uid() = user_id AND
+  EXISTS (
+    SELECT 1 FROM public.prompts
+    WHERE id = contest_entries.prompt_id AND author_id = auth.uid()
+  )
+);
+
+CREATE POLICY "ユーザーは自分の応募のみ削除可能" 
+ON public.contest_entries FOR DELETE USING (auth.uid() = user_id);
+
+CREATE POLICY "管理者はコンテスト応募更新可能" 
+ON public.contest_entries FOR UPDATE USING (auth.role() = 'service_role');
+```
+
+### 15. reports (報告)
+```sql
+CREATE TABLE public.reports (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  reporter_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  resource_type VARCHAR(50) NOT NULL, -- 'prompt', 'comment', 'profile'
+  resource_id UUID NOT NULL,
+  reason VARCHAR(50) NOT NULL,
+  details TEXT,
+  status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'resolved', 'rejected'
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+);
+
+-- インデックス
+CREATE INDEX reports_reporter_id_idx ON public.reports(reporter_id);
+CREATE INDEX reports_resource_type_resource_id_idx ON public.reports(resource_type, resource_id);
+
+-- RLSポリシー
+ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "ユーザーは自分の報告のみ参照可能" 
+ON public.reports FOR SELECT USING (auth.uid() = reporter_id);
+
+CREATE POLICY "管理者は全ての報告参照可能" 
+ON public.reports FOR SELECT USING (auth.role() = 'service_role');
+
+CREATE POLICY "認証済みユーザーは報告可能" 
+ON public.reports FOR INSERT WITH CHECK (auth.uid() = reporter_id);
+
+CREATE POLICY "管理者のみ報告更新可能" 
+ON public.reports FOR UPDATE USING (auth.role() = 'service_role');
+```
+
+## ヘルパー関数とトリガー
+
+### updated_at 自動更新
+```sql
+CREATE OR REPLACE FUNCTION handle_updated_at() 
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+## ビュー
+
+### 1. prompt_stats (プロンプト統計)
+```sql
+CREATE VIEW public.prompt_stats AS
+SELECT 
+  p.id as prompt_id,
+  p.title,
+  p.author_id,
+  p.view_count,
+  (SELECT COUNT(*) FROM public.likes WHERE prompt_id = p.id) as like_count,
+  (SELECT COUNT(*) FROM public.bookmarks WHERE prompt_id = p.id) as bookmark_count,
+  (SELECT COUNT(*) FROM public.comments WHERE prompt_id = p.id) as comment_count,
+  (SELECT COUNT(*) FROM public.purchases WHERE prompt_id = p.id) as purchase_count
+FROM public.prompts p;
+```
+
+### 2. user_stats (ユーザー統計)
+```sql
+CREATE VIEW public.user_stats AS
+SELECT 
+  u.id as user_id,
+  u.username,
+  (SELECT COUNT(*) FROM public.prompts WHERE author_id = u.id) as prompt_count,
+  (SELECT COUNT(*) FROM public.follows WHERE following_id = u.id) as follower_count,
+  (SELECT COUNT(*) FROM public.follows WHERE follower_id = u.id) as following_count,
+  (SELECT COUNT(*) FROM public.likes l JOIN public.prompts p ON l.prompt_id = p.id WHERE p.author_id = u.id) as received_likes,
+  (SELECT COUNT(*) FROM public.purchases pur JOIN public.prompts pro ON pur.prompt_id = pro.id WHERE pro.author_id = u.id) as sale_count
+FROM public.profiles u;
+```
+
+## データ型と関連性
+
+このデータモデルは以下の関連性に基づいています：
+
+1. ユーザーは多数のプロンプトを作成できる (1:N)
+2. プロンプトは1つのカテゴリに属する (N:1)
+3. プロンプトは複数のタグを持つことができる (N:M)
+4. ユーザーはプロンプトにいいね/ブックマークできる (N:M)
+5. ユーザーはプロンプトにコメントできる (N:M)
+6. コメントは階層構造を持つことができる (自己参照)
+7. ユーザーは他のユーザーをフォローできる (N:M, 自己参照)
+8. ユーザーはプロンプトを購入できる (N:M)
+9. ユーザーはコンテストにプロンプトを応募できる (N:M)
+
+## セキュリティとRLS
+
+Supabaseの行レベルセキュリティ(RLS)を使用して、各テーブルにデータアクセスポリシーを適用しています：
+
+1. 公開データ（カテゴリ、タグ、公開プロンプト）は誰でも読み取り可能
+2. ユーザーは自分のデータのみ更新/削除可能
+3. 一部のデータ（カテゴリ、コンテスト）は管理者のみ作成/更新可能
+4. 非公開プロンプトは作者のみアクセス可能
+
+## インデックス
+
+パフォーマンスを最適化するために、よく使われるクエリに対してインデックスを設定しています：
+
+1. 外部キーフィールド（author_id, category_id など）
+2. 頻繁にフィルタリングに使用されるフィールド（created_at など）
+3. 複合条件でよく使われるフィールドの組み合わせ 
