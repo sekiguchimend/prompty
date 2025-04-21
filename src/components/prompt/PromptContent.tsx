@@ -37,6 +37,7 @@ interface PromptContentProps {
   price?: number;
   systemImageUrl?: string;
   systemUrl?: string;
+  description?: string;
 }
 
 const PromptContent: React.FC<PromptContentProps> = ({
@@ -48,7 +49,8 @@ const PromptContent: React.FC<PromptContentProps> = ({
   isPreview = true,
   price = 0,
   systemImageUrl,
-  systemUrl
+  systemUrl,
+  description = ''
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const router = useRouter();
@@ -216,6 +218,16 @@ const PromptContent: React.FC<PromptContentProps> = ({
             )}
           </div>
         )}
+
+        {/* 説明文があれば表示 */}
+        {description && (
+          <div className="text-gray-700 mb-6">
+            <p className="text-lg leading-relaxed font-noto font-normal">
+              {description}
+            </p>
+          </div>
+        )}
+
         {systemUrl && (
           <a 
             href={systemUrl}
@@ -232,10 +244,10 @@ const PromptContent: React.FC<PromptContentProps> = ({
         <div className="relative prose max-w-none">
           {isPreview ? (
             <div className="relative">
-              <div className="mb-2">
-                <div dangerouslySetInnerHTML={{ __html: contentText.slice(0, 500) + '...' }} />
-              </div>
-
+            <div className="mb-2">
+                <div dangerouslySetInnerHTML={{ __html: contentText.slice(0, 500) }} />
+              </div> 
+              {/* + '...'  */}
               <div className="space-y-4">
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white"></div>

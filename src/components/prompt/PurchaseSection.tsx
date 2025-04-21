@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/button';
 import Link from 'next/link';
 import { Badge } from '../../components/ui/badge';
-import AvatarGroup from '../../components/AvatarGroup';
-import { Heart, Share2, MessageSquare, MoreHorizontal, FileText, PenTool, Flag, X, Send } from 'lucide-react';
+import { Heart, Share2, MessageSquare, MoreHorizontal, Flag, Send } from 'lucide-react';
 import PurchaseDialog from './PurchaseDialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from '../../components/ui/dialog';
 import { toast } from '../../components/ui/use-toast';
@@ -14,12 +13,11 @@ import {
   DropdownMenuTrigger 
 } from '../../components/ui/dropdown-menu';
 import { Textarea } from '../../components/ui/textarea';
-import { ScrollArea } from '../../components/ui/scroll-area';
-import { Separator } from '../../components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { supabase } from '../../lib/supabaseClient';
+import { LoadingSpinner } from '../../components/ui/loading-spinner';
 
 interface PurchaseSectionProps {
   wordCount: number;
@@ -68,6 +66,16 @@ const formatWebsiteUrl = (url: string) => {
   }
 };
 
+// イニシャル取得関数
+const getInitials = (name: string): string => {
+  if (!name) return '';
+  return name
+    .split(' ')
+    .map(part => part.charAt(0))
+    .join('')
+    .toUpperCase();
+};
+
 const PurchaseSection: React.FC<PurchaseSectionProps> = ({ 
   wordCount, 
   price, 
@@ -114,6 +122,23 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setCurrentUser(session.user);
+        
+        // ユーザープロフィール情報も取得
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+          
+        if (profileData) {
+          // プロフィール情報をcurrentUserに追加
+          setCurrentUser({
+            ...session.user,
+            avatar_url: profileData.avatar_url || session.user.user_metadata?.avatar_url,
+            username: profileData.username || session.user.user_metadata?.username,
+            display_name: profileData.display_name || session.user.user_metadata?.full_name
+          });
+        }
       }
     };
     
@@ -121,7 +146,28 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
     
     // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      setCurrentUser(session?.user || null);
+      if (session?.user) {
+        // セッション変更時にもプロフィール情報を取得
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single()
+          .then(({ data: profileData }) => {
+            if (profileData) {
+              setCurrentUser({
+                ...session.user,
+                avatar_url: profileData.avatar_url || session.user.user_metadata?.avatar_url,
+                username: profileData.username || session.user.user_metadata?.username,
+                display_name: profileData.display_name || session.user.user_metadata?.full_name
+              });
+            } else {
+              setCurrentUser(session.user);
+            }
+          });
+      } else {
+        setCurrentUser(null);
+      }
     });
     
     return () => {
@@ -358,8 +404,26 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
           variant: "destructive",
         });
       } else {
-        setComments(data || []);
-        setCommentCount(data?.length || 0);
+        // 型キャストの処理を修正
+        const safeComments = Array.isArray(data) ? data.map(comment => {
+          // データの安全な取得のために、Optional Chainingとnullishチェックを使用
+          const userObj = comment.user as any || {};
+          
+          return {
+            id: String(comment.id || `temp-${Date.now()}`),
+            user_id: String(comment.user_id || ''),
+            content: String(comment.content || ''),
+            created_at: String(comment.created_at || new Date().toISOString()),
+            user: {
+              username: userObj.username ? String(userObj.username) : undefined,
+              display_name: userObj.display_name ? String(userObj.display_name) : undefined,
+              avatar_url: userObj.avatar_url ? String(userObj.avatar_url) : undefined
+            }
+          } as CommentType;
+        }) : [];
+        
+        setComments(safeComments);
+        setCommentCount(safeComments.length);
       }
     } catch (err) {
       console.error("コメント取得中の例外:", err);
@@ -373,6 +437,7 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
     if (promptId) {
       fetchComments(promptId);
 
+      // リアルタイム更新のためのチャンネル設定
       const channel = supabase
         .channel(`comments-${promptId}`)
         .on(
@@ -383,16 +448,68 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
             table: 'comments',
             filter: `prompt_id=eq.${promptId}`
           },
-          () => {
-            fetchComments(promptId);
+          (payload) => {
+            // ペイロードの種類に応じて異なる処理を行う
+            if (payload.eventType === 'INSERT') {
+              // 新しいコメントが追加された場合
+              const newComment = payload.new as CommentType;
+              
+              // ユーザー情報を取得
+              supabase
+                .from('profiles')
+                .select('id, username, display_name, avatar_url')
+                .eq('id', newComment.user_id)
+                .single()
+                .then(({ data: userData, error: userError }) => {
+                  if (!userError && userData) {
+                    // 既存のコメントに新しいコメントを追加
+                    setComments(prevComments => {
+                      // 既に同じIDのコメントがあれば追加しない
+                      if (prevComments.some(comment => comment.id === newComment.id)) {
+                        return prevComments;
+                      }
+                      
+                      // 新しいコメントにユーザー情報を追加
+                      const commentWithUser: CommentType = {
+                        ...newComment,
+                        user: userData
+                      } as CommentType;
+                      
+                      // 新しいコメントを先頭に追加
+                      return [commentWithUser, ...prevComments];
+                    });
+                    
+                    // コメント数も更新
+                    setCommentCount(prev => prev + 1);
+                  } else {
+                    // ユーザー情報が取得できない場合は全体を再取得
+                    fetchComments(promptId);
+                  }
+                });
+            } else if (payload.eventType === 'DELETE') {
+              // コメントが削除された場合
+              const deletedComment = payload.old as CommentType;
+              setComments(prevComments => 
+                prevComments.filter(comment => comment.id !== deletedComment.id)
+              );
+              setCommentCount(prev => Math.max(0, prev - 1));
+            } else if (payload.eventType === 'UPDATE') {
+              // コメントが更新された場合
+              fetchComments(promptId);
+            }
           }
         )
         .subscribe((status) => {
           if (status !== 'SUBSCRIBED') {
             console.warn('リアルタイム接続に問題が発生しました:', status);
+          } else {
+            console.log('コメントのリアルタイム更新を開始しました');
           }
         });
+
+      // クリーンアップ関数
       return () => {
+        console.log('コメントのリアルタイム更新を停止します');
         supabase.removeChannel(channel);
       };
     }
@@ -468,28 +585,60 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
     setIsSubmittingComment(true);
     
     try {
-      const { error } = await supabase
+      // 画面表示を即時更新するため、現在のユーザー情報を使用して一時的なコメントを作成
+      const tempComment: CommentType = {
+        id: `temp-${Date.now()}`,
+        user_id: currentUser.id,
+        content: newComment.trim(),
+        created_at: new Date().toISOString(),
+        user: {
+          username: currentUser?.user_metadata?.username,
+          display_name: currentUser?.user_metadata?.full_name || currentUser?.user_metadata?.name,
+          avatar_url: currentUser?.user_metadata?.avatar_url
+        }
+      };
+      
+      // 一時的なコメントを追加して即時表示
+      setComments(prev => [tempComment, ...prev]);
+      setCommentCount(prev => prev + 1);
+      
+      // フォームをクリア
+      setNewComment('');
+      
+      // 実際のコメントをデータベースに保存
+      const { error, data } = await supabase
         .from('comments')
         .insert({
           prompt_id: promptId,
           user_id: currentUser.id,
-          content: newComment.trim(),
-        });
+          content: tempComment.content,
+        })
+        .select();
       
       if (error) {
         console.error("コメント投稿エラー:", error);
+        
+        // エラーの場合、一時的なコメントを削除
+        setComments(prev => prev.filter(comment => comment.id !== tempComment.id));
+        setCommentCount(prev => prev - 1);
+        
+        // エラーメッセージを表示
         toast({
           title: "コメントの投稿に失敗しました",
           description: error.message,
           variant: "destructive",
         });
+        
+        // 入力内容を復元
+        setNewComment(tempComment.content);
       } else {
-        setNewComment('');
         toast({
           title: "コメントを投稿しました",
           variant: "default",
         });
-        // リアルタイム更新があるので再取得は不要
+        
+        // 一時的なコメントを実際のコメントに置き換える処理は、
+        // リアルタイム更新のリスナーが処理するのでここでは行わない
       }
     } catch (err) {
       console.error("コメント投稿中の例外:", err);
@@ -584,31 +733,58 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
         <div className="mb-8 border-t border-gray-200 pt-6">
           <h3 className="text-lg font-medium mb-4">コメント ({commentCount})</h3>
           
-          {/* コメント一覧 */}
-          <div className="space-y-6 mb-6">
-            {comments.length === 0 ? (
-              <p className="text-center text-gray-500 py-4">まだコメントはありません。最初のコメントを投稿しませんか？</p>
-            ) : (
+          {/* コメントリスト */}
+          <div className="space-y-4 mt-4">
+            {isCommentsLoading ? (
+              <div className="flex justify-center p-4">
+                <LoadingSpinner size="md" />
+              </div>
+            ) : comments.length > 0 ? (
               comments.map((comment) => (
-                <div key={comment.id} className="flex space-x-3 p-3 rounded-md hover:bg-gray-50">
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage src={comment.user?.avatar_url || ''} alt={comment.user?.display_name || comment.user?.username || '匿名ユーザー'} />
-                    <AvatarFallback>{(comment.user?.display_name || comment.user?.username || '匿名')?.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">{comment.user?.display_name || comment.user?.username || '匿名ユーザー'}</span>
-                      <span className="text-xs text-gray-500">
+                <div key={comment.id} className="flex space-x-3 p-3 rounded-lg bg-card hover:bg-gray-50 transition-colors">
+                  <div className="flex-shrink-0">
+                    {comment.user?.avatar_url ? (
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage 
+                          src={comment.user.avatar_url} 
+                          alt={comment.user?.display_name || comment.user?.username || "ユーザー"} 
+                        />
+                        <AvatarFallback>
+                          {(comment.user?.display_name || comment.user?.username || "U").charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                    ) : (
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback>
+                          {(comment.user?.display_name || comment.user?.username || "U").charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <div className="flex items-center space-x-2">
+                      <p className="font-medium text-foreground">
+                        {comment.user?.display_name || comment.user?.username || "不明なユーザー"}
+                      </p>
+                      <span className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(comment.created_at), { 
                           addSuffix: true,
                           locale: ja 
                         })}
                       </span>
                     </div>
-                    <p className="text-sm mt-1 text-gray-700 whitespace-pre-wrap break-words">{comment.content}</p>
+                    <p className="mt-1 text-foreground leading-relaxed font-noto break-words whitespace-pre-wrap">
+                      {comment.content}
+                    </p>
                   </div>
                 </div>
               ))
+            ) : (
+              <div className="text-center py-6 bg-gray-50 rounded-lg border border-gray-200">
+                <MessageSquare className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+                <p className="text-muted-foreground font-noto font-medium">まだコメントはありません</p>
+                <p className="text-sm text-muted-foreground font-noto mt-1">最初のコメントを投稿して会話を始めましょう！</p>
+              </div>
             )}
           </div>
           
@@ -616,9 +792,12 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
           <form onSubmit={handleCommentSubmit} className="mt-4 flex flex-col gap-3">
             {currentUser ? (
               <div className="flex gap-3">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src={currentUser?.user_metadata?.avatar_url || ''} alt="あなた" />
-                  <AvatarFallback>{currentUser?.email?.charAt(0) || 'あ'}</AvatarFallback>
+                <Avatar className="h-8 w-8 ml-2">
+                  <AvatarImage
+                    src={currentUser?.avatar_url || currentUser?.user_metadata?.avatar_url}
+                    alt={currentUser?.username || currentUser?.user_metadata?.username || 'User avatar'}
+                  />
+                  <AvatarFallback>{getInitials(currentUser?.display_name || currentUser?.user_metadata?.full_name || 'User')}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 relative">
                   <Textarea 

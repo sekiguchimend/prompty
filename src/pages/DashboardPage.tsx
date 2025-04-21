@@ -5,6 +5,54 @@ import Footer from '../components/Footer';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Announcements from '../components/Announcements';
+import { supabase } from '../lib/supabaseClient';
+import { useAuth } from '../lib/auth-context';
+import { useToast } from '../components/ui/use-toast';
+
+// 記事データの型定義
+interface ArticleData {
+  id: string;
+  title: string;
+  views: number;
+  comments: number;
+  likes: number;
+  status?: string;
+}
+
+// バッジデータの型定義
+interface BadgeData {
+  id: number;
+  name: string;
+  description: string;
+  acquired: boolean;
+  icon: React.ReactNode;
+}
+
+// 売上サマリーの型定義
+interface SalesSummary {
+  title: string;
+  amount: number;
+  icon: React.ReactNode;
+}
+
+// 振込履歴の型定義
+interface PaymentHistory {
+  id: number;
+  month: string;
+  amount: number;
+  status: string;
+  scheduledDate: string;
+}
+
+// 販売履歴の型定義
+interface SalesHistory {
+  id: number;
+  date: string;
+  itemName: string;
+  price: number;
+  buyer: string;
+  status: string;
+}
 
 const DashboardPage: React.FC = () => {
   const router = useRouter();
@@ -13,62 +61,117 @@ const DashboardPage: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileHelpOpen, setIsMobileHelpOpen] = useState(false);
   const [windowWidth, setWindowWidth] = useState(0);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  
+  // データ状態
+  const [isLoading, setIsLoading] = useState(true);
+  const [articles, setArticles] = useState<ArticleData[]>([]);
+  const [totalViews, setTotalViews] = useState(0);
+  const [totalComments, setTotalComments] = useState(0);
+  const [totalLikes, setTotalLikes] = useState(0);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
   
   // 画面サイズを検出
   useEffect(() => {
     // クライアントサイドでのみwindowオブジェクトを使用
-    setWindowWidth(window.innerWidth);
-    
-    const handleResize = () => {
+    if (typeof window !== 'undefined') {
       setWindowWidth(window.innerWidth);
       
-      // 画面サイズが大きくなったらモバイルメニューを閉じる
-      if (window.innerWidth >= 1024 && isMobileMenuOpen) {
-        setIsMobileMenuOpen(false);
-      }
-    };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+      const handleResize = () => {
+        setWindowWidth(window.innerWidth);
+        
+        // 画面サイズが大きくなったらモバイルメニューを閉じる
+        if (window.innerWidth >= 1024 && isMobileMenuOpen) {
+          setIsMobileMenuOpen(false);
+        }
+      };
+      
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }
   }, [isMobileMenuOpen]);
+  
+  // データを取得する
+  useEffect(() => {
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [user, timePeriod]);
+  
+  // ダッシュボードデータを取得する
+  const fetchDashboardData = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    
+    try {
+      // 投稿データを取得
+      const { data: promptsData, error: promptsError } = await supabase
+        .from('prompts')
+        .select(`
+          id,
+          title,
+          view_count,
+          created_at,
+          likes:likes(count),
+          comments:comments(count)
+        `)
+        .eq('author_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (promptsError) throw promptsError;
+      
+      // データを変換
+      const formattedArticles: ArticleData[] = promptsData.map(prompt => ({
+        id: prompt.id as string,
+        title: prompt.title as string,
+        views: prompt.view_count as number || 0,
+        comments: Array.isArray(prompt.comments) && prompt.comments.length > 0 
+          ? (prompt.comments[0].count as number) || 0 
+          : 0,
+        likes: Array.isArray(prompt.likes) && prompt.likes.length > 0 
+          ? (prompt.likes[0].count as number) || 0 
+          : 0,
+        status: '' // ステータスは必要に応じて設定
+      }));
+      
+      // 合計値を計算
+      const views = formattedArticles.reduce((sum, article) => sum + article.views, 0);
+      const comments = formattedArticles.reduce((sum, article) => sum + article.comments, 0);
+      const likes = formattedArticles.reduce((sum, article) => sum + article.likes, 0);
+      
+      // 状態を更新
+      setArticles(formattedArticles);
+      setTotalViews(views);
+      setTotalComments(comments);
+      setTotalLikes(likes);
+      setLastUpdated(new Date());
+      
+    } catch (error) {
+      console.error('データ取得エラー:', error);
+      toast({
+        title: "データ取得エラー",
+        description: "ダッシュボード情報の取得に失敗しました。",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   // 画面サイズに基づくブレイクポイント
   const isMobile = windowWidth < 640;
   const isTablet = windowWidth >= 640 && windowWidth < 1024;
   const isDesktop = windowWidth >= 1024;
   
-  // サンプルのコンテンツデータ
-  const articles = [
-  {
-    id: '1',
-      title: 'ビジネスの根幹は営業である（削除済み）',
-      views: 95,
-    comments: 0,
-      likes: 0
-  },
-  {
-    id: '2',
-      title: 'アプリを作るだけならプログラミングの知識いりません（削除済み）',
-      views: 58,
-      comments: 0,
-      likes: 1
-  },
-  {
-    id: '3',
-      title: '学生起業オススメの分野（削除済み）',
-      views: 49,
-    comments: 0,
-      likes: 0
-    }
-  ];
-  
   // サンプルのバッジデータ
   const badges = [
-    { id: 1, name: 'ファーストポスト', description: '初めての投稿を行いました', acquired: true, icon: <Award className="h-8 w-8 text-yellow-500" /> },
-    { id: 2, name: '10いいね達成', description: '投稿が合計10いいねを獲得しました', acquired: true, icon: <Heart className="h-8 w-8 text-pink-500" /> },
-    { id: 3, name: '100ビュー達成', description: '投稿が合計100ビューを達成しました', acquired: true, icon: <Eye className="h-8 w-8 text-emerald-500" /> },
-    { id: 4, name: '1000ビュー達成', description: '投稿が合計1000ビューを達成しました', acquired: false, icon: <Eye className="h-8 w-8 text-gray-300" /> },
-    { id: 5, name: 'コメントゲッター', description: '5件以上のコメントを獲得しました', acquired: false, icon: <MessageSquare className="h-8 w-8 text-gray-300" /> }
+    { id: 1, name: 'ファーストポスト', description: '初めての投稿を行いました', acquired: articles.length > 0, icon: <Award className="h-8 w-8 text-yellow-500" /> },
+    { id: 2, name: '10いいね達成', description: '投稿が合計10いいねを獲得しました', acquired: totalLikes >= 10, icon: <Heart className="h-8 w-8 text-pink-500" /> },
+    { id: 3, name: '100ビュー達成', description: '投稿が合計100ビューを達成しました', acquired: totalViews >= 100, icon: <Eye className="h-8 w-8 text-emerald-500" /> },
+    { id: 4, name: '1000ビュー達成', description: '投稿が合計1000ビューを達成しました', acquired: totalViews >= 1000, icon: <Eye className="h-8 w-8 text-gray-300" /> },
+    { id: 5, name: 'コメントゲッター', description: '5件以上のコメントを獲得しました', acquired: totalComments >= 5, icon: <MessageSquare className="h-8 w-8 text-gray-300" /> }
   ];
   
   // サンプルの売上データ
@@ -147,6 +250,17 @@ const DashboardPage: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   
+  // 日付をフォーマットする
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('ja-JP', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+  
   // タブコンテンツをレンダリングする関数
   const renderTabContent = () => {
     switch (activeTab) {
@@ -177,101 +291,131 @@ const DashboardPage: React.FC = () => {
                 ))}
               </div>
               
-              {/* 統計カード */}
-              <div className="p-4 sm:p-6 lg:p-8 bg-gray-50">
-                <div className="grid grid-cols-3 sm:grid-cols-3 gap-2 sm:gap-6">
-                  {/* 全体ビュー */}
-                  <div className="bg-white p-3 sm:p-6 rounded-md flex flex-col items-center justify-center shadow-sm">
-                    <Eye className="h-4 w-4 sm:h-6 sm:w-6 text-emerald-500 mb-1 sm:mb-3" />
-                    <div className="text-xl sm:text-3xl md:text-4xl font-bold text-emerald-500">349</div>
-                    <div className="text-[10px] sm:text-sm text-gray-500 mt-1 sm:mt-2">全体ビュー</div>
-                  </div>
-                  
-                  {/* コメント */}
-                  <div className="bg-white p-3 sm:p-6 rounded-md flex flex-col items-center justify-center shadow-sm">
-                    <MessageSquare className="h-4 w-4 sm:h-6 sm:w-6 text-gray-500 mb-1 sm:mb-3" />
-                    <div className="text-xl sm:text-3xl md:text-4xl font-bold text-gray-500">0</div>
-                    <div className="text-[10px] sm:text-sm text-gray-500 mt-1 sm:mt-2">コメント</div>
-                  </div>
-                  
-                  {/* スキ */}
-                  <div className="bg-white p-3 sm:p-6 rounded-md flex flex-col items-center justify-center relative shadow-sm">
-                    <Heart className="h-4 w-4 sm:h-6 sm:w-6 text-pink-500 mb-1 sm:mb-3" />
-                    <div className="text-xl sm:text-3xl md:text-4xl font-bold text-pink-500">11</div>
-                    <div className="text-[10px] sm:text-sm text-gray-500 mt-1 sm:mt-2">イイね</div>
-                    <div className="absolute top-1 right-1 sm:top-2 sm:right-2">
-                      <HelpCircle className="h-3 w-3 sm:h-5 sm:w-5 text-gray-300" />
-                    </div>
+              {isLoading ? (
+                <div className="p-8 flex justify-center">
+                  <div className="animate-pulse text-center">
+                    <p className="text-gray-500">データを読み込み中...</p>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  {/* 統計カード */}
+                  <div className="p-4 sm:p-6 lg:p-8 bg-gray-50">
+                    <div className="grid grid-cols-3 sm:grid-cols-3 gap-2 sm:gap-6">
+                      {/* 全体ビュー */}
+                      <div className="bg-white p-3 sm:p-6 rounded-md flex flex-col items-center justify-center shadow-sm">
+                        <Eye className="h-4 w-4 sm:h-6 sm:w-6 text-emerald-500 mb-1 sm:mb-3" />
+                        <div className="text-xl sm:text-3xl md:text-4xl font-bold text-emerald-500">{totalViews}</div>
+                        <div className="text-[10px] sm:text-sm text-gray-500 mt-1 sm:mt-2">全体ビュー</div>
+                      </div>
+                      
+                      {/* コメント */}
+                      <div className="bg-white p-3 sm:p-6 rounded-md flex flex-col items-center justify-center shadow-sm">
+                        <MessageSquare className="h-4 w-4 sm:h-6 sm:w-6 text-gray-500 mb-1 sm:mb-3" />
+                        <div className="text-xl sm:text-3xl md:text-4xl font-bold text-gray-500">{totalComments}</div>
+                        <div className="text-[10px] sm:text-sm text-gray-500 mt-1 sm:mt-2">コメント</div>
+                      </div>
+                      
+                      {/* スキ */}
+                      <div className="bg-white p-3 sm:p-6 rounded-md flex flex-col items-center justify-center relative shadow-sm">
+                        <Heart className="h-4 w-4 sm:h-6 sm:w-6 text-pink-500 mb-1 sm:mb-3" />
+                        <div className="text-xl sm:text-3xl md:text-4xl font-bold text-pink-500">{totalLikes}</div>
+                        <div className="text-[10px] sm:text-sm text-gray-500 mt-1 sm:mt-2">イイね</div>
+                        <div className="absolute top-1 right-1 sm:top-2 sm:right-2">
+                          <HelpCircle className="h-3 w-3 sm:h-5 sm:w-5 text-gray-300" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-              <div className="p-3 sm:p-4 text-right text-xs text-gray-500">
-                最新集計時刻 2025年4月14日 14:54
-              </div>
-              
-              {/* 記事一覧 - テーブル形式（デスクトップ） */}
-              <div className="hidden sm:block px-4 sm:px-6 pb-4 sm:pb-6">
-                <div className="flex bg-gray-50 py-3">
-                  <div className="px-3 text-sm text-gray-500 font-medium flex-1 text-left">コンテンツ</div>
-                  <div className="px-3 text-sm text-gray-500 font-medium flex items-center justify-end w-24">
-                    <span className="flex items-center">
-                      ビュー 
-                      <ChevronDown className="ml-1 h-4 w-4" />
-                    </span>
+                  <div className="p-3 sm:p-4 text-right text-xs text-gray-500">
+                    最新集計時刻 {formatDate(lastUpdated)}
                   </div>
-                  <div className="px-3 text-sm text-gray-500 font-medium w-24 text-center">コメント</div>
-                  <div className="px-3 text-sm text-gray-500 font-medium w-24 text-center">イイね</div>
-                </div>
-                
-                {articles.map((article, index) => (
-                  <div key={article.id} className={`flex py-4 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100`}>
-                    <div className="px-3 text-sm flex-1">{article.title}</div>
-                    <div className="px-3 text-sm text-emerald-500 w-24 text-right">{article.views}</div>
-                    <div className="px-3 text-sm w-24 text-center">{article.comments}</div>
-                    <div className="px-3 text-sm text-pink-500 w-24 text-center">{article.likes}</div>
-                  </div>
-                ))}
-              </div>
-              
-              {/* 記事一覧 - モバイル用カード表示 */}
-              <div className="sm:hidden px-4 pb-4 space-y-3">
-                <div className="flex items-center justify-between py-2 border-b border-gray-200">
-                  <h3 className="text-sm font-medium">コンテンツ</h3>
-                  <div className="flex items-center text-xs text-gray-500">
-                    <span>並び替え:</span>
-                    <button className="flex items-center ml-1 text-gray-700">
-                      ビュー
-                      <ChevronDown className="h-3 w-3 ml-0.5" />
-                    </button>
-                  </div>
-                </div>
-                
-                {articles.map((article) => (
-                  <div key={article.id} className="bg-white rounded-md shadow-sm p-3 border border-gray-100">
-                    <h3 className="text-sm font-medium mb-2">{article.title}</h3>
-                    <div className="flex justify-between items-center text-xs">
-                      <div className="flex space-x-3">
-                        <div className="flex items-center text-emerald-500">
-                          <Eye className="h-3.5 w-3.5 mr-1" />
-                          <span>{article.views}</span>
+                  
+                  {articles.length > 0 ? (
+                    <>
+                      {/* 記事一覧 - テーブル形式（デスクトップ） */}
+                      <div className="hidden sm:block px-4 sm:px-6 pb-4 sm:pb-6">
+                        <div className="flex bg-gray-50 py-3">
+                          <div className="px-3 text-sm text-gray-500 font-medium flex-1 text-left">コンテンツ</div>
+                          <div className="px-3 text-sm text-gray-500 font-medium flex items-center justify-end w-24">
+                            <span className="flex items-center">
+                              ビュー 
+                              <ChevronDown className="ml-1 h-4 w-4" />
+                            </span>
+                          </div>
+                          <div className="px-3 text-sm text-gray-500 font-medium w-24 text-center">コメント</div>
+                          <div className="px-3 text-sm text-gray-500 font-medium w-24 text-center">イイね</div>
                         </div>
-                        <div className="flex items-center text-gray-500">
-                          <MessageSquare className="h-3.5 w-3.5 mr-1" />
-                          <span>{article.comments}</span>
-                        </div>
-                        <div className="flex items-center text-pink-500">
-                          <Heart className="h-3.5 w-3.5 mr-1" />
-                          <span>{article.likes}</span>
-                        </div>
+                        
+                        {articles.map((article, index) => (
+                          <div key={article.id} className={`flex py-4 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100`}>
+                            <div className="px-3 text-sm flex-1">{article.title}</div>
+                            <div className="px-3 text-sm text-emerald-500 w-24 text-right">{article.views}</div>
+                            <div className="px-3 text-sm w-24 text-center">{article.comments}</div>
+                            <div className="px-3 text-sm text-pink-500 w-24 text-center">{article.likes}</div>
+                          </div>
+                        ))}
                       </div>
-                      <div>
-                        <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-full text-gray-500">削除済み</span>
+                      
+                      {/* 記事一覧 - モバイル用カード表示 */}
+                      <div className="sm:hidden px-4 pb-4 space-y-3">
+                        <div className="flex items-center justify-between py-2 border-b border-gray-200">
+                          <h3 className="text-sm font-medium">コンテンツ</h3>
+                          <div className="flex items-center text-xs text-gray-500">
+                            <span>並び替え:</span>
+                            <button className="flex items-center ml-1 text-gray-700">
+                              ビュー
+                              <ChevronDown className="h-3 w-3 ml-0.5" />
+                            </button>
+                          </div>
+                        </div>
+                        
+                        {articles.map((article) => (
+                          <div key={article.id} className="bg-white rounded-md shadow-sm p-3 border border-gray-100">
+                            <h3 className="text-sm font-medium mb-2">{article.title}</h3>
+                            <div className="flex justify-between items-center text-xs">
+                              <div className="flex space-x-3">
+                                <div className="flex items-center text-emerald-500">
+                                  <Eye className="h-3.5 w-3.5 mr-1" />
+                                  <span>{article.views}</span>
+                                </div>
+                                <div className="flex items-center text-gray-500">
+                                  <MessageSquare className="h-3.5 w-3.5 mr-1" />
+                                  <span>{article.comments}</span>
+                                </div>
+                                <div className="flex items-center text-pink-500">
+                                  <Heart className="h-3.5 w-3.5 mr-1" />
+                                  <span>{article.likes}</span>
+                                </div>
+                              </div>
+                              <div>
+                                {article.status && (
+                                  <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-full text-gray-500">
+                                    {article.status}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex justify-center items-center py-12">
+                      <div className="text-center">
+                        <Eye className="h-10 w-10 text-gray-300 mx-auto mb-4" />
+                        <p className="text-gray-500 mb-2">まだ投稿がありません</p>
+                        <button 
+                          onClick={() => router.push('/create-prompt')}
+                          className="mt-4 px-4 py-2 bg-black text-white rounded-md text-sm">
+                          新しい投稿を作成する
+                        </button>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         );
@@ -463,12 +607,12 @@ const DashboardPage: React.FC = () => {
                   <Clock className="h-8 w-8 sm:h-10 sm:w-10 text-gray-300 mx-auto mb-3" />
                   <p className="text-sm text-gray-500 mb-2">販売履歴はまだありません</p>
                   <p className="text-xs text-gray-400">有料コンテンツを公開すると、ここに販売履歴が表示されます</p>
-        </div>
-        </div>
-      </div>
-    </div>
-  );
-  
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+        
       default:
         return (
           <div className="bg-white p-4 sm:p-6 shadow-sm">

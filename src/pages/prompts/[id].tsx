@@ -34,12 +34,12 @@ export interface PromptItem {
 // 拡張された投稿アイテムの型定義
 interface ExtendedPostItem extends PostItem {
   site_url?: string;
+  description?: string;
 }
 
 // サーバーサイドレンダリングに変更
-export const getServerSideProps: GetServerSideProps = async ({ params, req }) => {
+export const getServerSideProps: GetServerSideProps = async ({ params, req, res }) => {
   const id = params?.id as string;
-  
   
   if (!id) {
     console.error("IDが指定されていません");
@@ -80,7 +80,8 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req }) =>
       author_id,
       view_count,
       profiles:profiles(id, username, display_name, avatar_url, bio),
-      site_url
+      site_url,
+      description
     `)
     .eq('id', formattedId)
     .single();
@@ -104,7 +105,8 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req }) =>
             author_id,
             view_count,
             profiles:profiles(id, username, display_name, avatar_url, bio),
-            site_url
+            site_url,
+            description
           `)
           .eq('numeric_id', numericId) // 数値ID用のカラムがある場合（例: numeric_id）
           .single();
@@ -129,14 +131,81 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req }) =>
     };
   }
   
-  // ビューカウントを更新
-  const { data: updateData, error: updateError } = await supabase
-    .from('prompts')
-    .update({ view_count: (promptData.view_count || 0) + 1 })
-    .eq('id', formattedId);
+  // ビューカウントを更新 - より安全で堅牢な実装
+  try {
+    // 訪問者IDを取得 (クッキーまたはIPアドレス)
+    const clientIP = ((req.headers['x-forwarded-for'] || '') as string).split(',')[0] || 
+                     req.socket.remoteAddress || 
+                     'unknown';
+    const visitorId = (req.cookies?.visitor_id as string) || clientIP;
     
-  if (updateError) {
-    console.error("ビューカウント更新エラー:", updateError);
+    // 現在の日付を取得 (YYYY-MM-DD形式)
+    const today = new Date().toISOString().split('T')[0];
+    
+    // ビュー数を更新する必要があるかどうかを判定
+    let shouldUpdateViewCount = false;
+    
+    try {
+      // analytics_viewsテーブルがあるか確認
+      const { data: viewData, error: viewError } = await supabase
+        .from('analytics_views')
+        .select('id')
+        .eq('prompt_id', formattedId)
+        .eq('visitor_id', visitorId)
+        .gte('viewed_at', today)
+        .limit(1);
+        
+      if (!viewError) {
+        // テーブルが存在し、今日の閲覧記録がない場合
+        if (!viewData || viewData.length === 0) {
+          shouldUpdateViewCount = true;
+          
+          // analytics_viewsテーブルに記録
+          await supabase
+            .from('analytics_views')
+            .insert([{
+              prompt_id: formattedId,
+              visitor_id: visitorId,
+              viewed_at: new Date().toISOString()
+            }])
+            .then(({ error }) => {
+              if (error) {
+                console.error("ビュー履歴記録エラー:", error);
+              }
+            });
+        }
+      } else {
+        // テーブルが存在しない場合など、エラーの場合は直接カウントアップ
+        if (viewError.code === '42P01') { // リレーションが存在しない
+          console.log("analytics_viewsテーブルが存在しません");
+          shouldUpdateViewCount = true;
+        } else {
+          console.error("ビュー履歴チェックエラー:", viewError);
+          shouldUpdateViewCount = true; // エラーの場合もカウントしておく
+        }
+      }
+    } catch (e) {
+      console.error("ビュー履歴処理エラー:", e);
+      shouldUpdateViewCount = true; // エラーの場合もカウントしておく
+    }
+    
+    // ビューカウントの更新が必要な場合
+    if (shouldUpdateViewCount) {
+      const currentViewCount = typeof promptData.view_count === 'number' ? promptData.view_count : 0;
+      
+      await supabase
+        .from('prompts')
+        .update({ view_count: currentViewCount + 1 })
+        .eq('id', formattedId)
+        .then(({ error }) => {
+          if (error) {
+            console.error("ビューカウント更新エラー:", error);
+          }
+        });
+    }
+  } catch (e) {
+    console.error("ビューカウントシステムエラー:", e);
+    // エラーでもメイン処理は続行
   }
   
   // いいね数を取得
@@ -152,13 +221,21 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req }) =>
   // 人気記事を取得
   const popularPosts = await getPopularPosts();
   
-  // 必要なフォーマットに変換
-  const profileData = promptData.profiles && promptData.profiles.length > 0 ? promptData.profiles[0] : null;
- 
+  // プロフィールデータの取得と処理
+  let authorProfile = null;
+  if (promptData.profiles) {
+    // profilesが配列の場合の対応
+    if (Array.isArray(promptData.profiles) && promptData.profiles.length > 0) {
+      authorProfile = promptData.profiles[0];
+    } 
+    // profilesがオブジェクトの場合の対応
+    else if (typeof promptData.profiles === 'object' && promptData.profiles !== null) {
+      authorProfile = promptData.profiles;
+    }
+  }
   
   // プロフィールデータが取得できない場合、著者IDで直接取得を試みる
-  let authorProfile = profileData;
-  if (!profileData && promptData.author_id) {
+  if (!authorProfile && promptData.author_id) {
     const { data: directProfile, error: profileError } = await supabase
       .from('profiles')
       .select('id, username, display_name, avatar_url, bio')
@@ -172,25 +249,43 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req }) =>
     }
   }
 
-  const postData: ExtendedPostItem = {
-    id: promptData.id,
-    title: promptData.title,
-    thumbnailUrl: promptData.thumbnail_url || '/images/default-thumbnail.svg',
-    content: promptData.content || [],
-    price: promptData.price || 0,
-    likeCount: likeCount || 0,
-    postedAt: new Date(promptData.created_at).toLocaleDateString('ja-JP'),
-    user: {
-      userId: promptData.author_id || '',
-      name: authorProfile?.display_name || '名無し',
-      avatarUrl: authorProfile?.avatar_url || '/images/default-avatar.svg',
-      bio: authorProfile?.bio || '著者情報なし',
-      publishedAt: new Date(promptData.created_at).toLocaleDateString('ja-JP'),
-      website: promptData.site_url || 'https://example.com'
-    },
-    site_url: promptData.site_url || ''
+  // 安全な方法でデータを抽出
+  const safeGetString = (value: any, defaultValue: string = ''): string => {
+    return typeof value === 'string' ? value : defaultValue;
   };
   
+  const safeGetNumber = (value: any, defaultValue: number = 0): number => {
+    return typeof value === 'number' ? value : defaultValue;
+  };
+
+  const postData: ExtendedPostItem = {
+    id: safeGetString(promptData.id),
+    title: safeGetString(promptData.title),
+    thumbnailUrl: safeGetString(promptData.thumbnail_url, '/images/default-thumbnail.svg'),
+    content: Array.isArray(promptData.content) ? promptData.content : [],
+    price: safeGetNumber(promptData.price),
+    likeCount: safeGetNumber(likeCount),
+    postedAt: new Date(safeGetString(promptData.created_at)).toLocaleDateString('ja-JP'),
+    description: safeGetString(promptData.description, ''),
+    user: {
+      userId: safeGetString(promptData.author_id),
+      name: safeGetString(authorProfile?.display_name, '名無し'),
+      avatarUrl: safeGetString(authorProfile?.avatar_url, '/images/default-avatar.svg'),
+      bio: safeGetString(authorProfile?.bio, '著者情報なし'),
+      publishedAt: new Date(safeGetString(promptData.created_at)).toLocaleDateString('ja-JP'),
+      website: safeGetString(promptData.site_url, 'https://example.com')
+    },
+    site_url: safeGetString(promptData.site_url)
+  };
+  
+  // 訪問者IDをクッキーに設定
+  if (!req.cookies?.visitor_id) {
+    // ランダムな訪問者IDを生成
+    const randomId = Math.random().toString(36).substring(2, 15) + 
+                  Math.random().toString(36).substring(2, 15);
+    // resオブジェクトを使用してクッキーを設定
+    res.setHeader('Set-Cookie', `visitor_id=${randomId}; Path=/; Max-Age=31536000; SameSite=Strict`);
+  }
   
   return {
     props: {
@@ -300,6 +395,7 @@ const PromptDetail = ({ postData, popularPosts }: { postData: ExtendedPostItem; 
                 price={prompt.price || 0}
                 systemImageUrl={prompt.systemImageUrl}
                 systemUrl={postData.site_url || ''}
+                description={postData.description}
               />
               
               {/* Purchase section */}
