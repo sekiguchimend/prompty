@@ -6,6 +6,7 @@ import { AuthProvider } from '../lib/auth-context';
 import { useRouter } from 'next/router';
 import { initializeSupabaseSession, validateSession } from '../lib/supabaseClient';
 import { Toaster } from '../components/ui/toaster';
+import Head from 'next/head';
 
 function MyApp({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -46,6 +47,10 @@ function MyApp({ Component, pageProps }: AppProps) {
 
   return (
     <>
+      <Head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="https://qrxrulntwojimhhhnwqk.supabase.co/storage/v1/object/public/prompt-thumbnails/prompty_logo.jpg" type="image/jpeg" />
+      </Head>
       <AuthProvider>
         <Component {...pageProps} />
         <Toaster />

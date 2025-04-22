@@ -50,14 +50,17 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Supabaseストレージのロゴパス
+  const logoUrl = "https://qrxrulntwojimhhhnwqk.supabase.co/storage/v1/object/public/prompt-thumbnails/prompty_logo.jpg";
+  
   return (
     <html lang="ja" suppressHydrationWarning>
       <head>
         {/* ファビコンとアイコン */}
-        <link rel="shortcut icon" href="/prompty_logo.jpg" type="image/jpeg" />
-        <link rel="icon" href="/prompty_logo.jpg" type="image/jpeg" sizes="any" />
-        <link rel="apple-touch-icon" href="/prompty_logo.jpg" />
-        <meta name="image" content="/prompty_logo.jpg" />
+        <link rel="shortcut icon" href={logoUrl} type="image/jpeg" />
+        <link rel="icon" href={logoUrl} type="image/jpeg" sizes="any" />
+        <link rel="apple-touch-icon" href={logoUrl} />
+        <meta name="image" content={logoUrl} />
         
         {/* 頻繁に使用されるページへのプリロード */}
         <link rel="preload" href="/Following" as="document" />
@@ -67,7 +70,7 @@ export default function RootLayout({
         <link rel="preload" href="/styles/globals.css" as="style" />
         
         {/* 重要な画像のプリロード */}
-        <link rel="preload" href="/prompty_logo.jpg" as="image" type="image/jpeg" />
+        <link rel="preload" href={logoUrl} as="image" type="image/jpeg" />
         <link rel="preload" href="/images/default-thumbnail.svg" as="image" />
         <link rel="preload" href="/images/default-avatar.svg" as="image" />
       </head>

@@ -300,17 +300,17 @@ const Header = () => {
               <div className="flex items-center z-20">
                 <Link href="/" className="flex items-center">
                   <Image 
-                    src="/prompty_logo.jpg" 
+                    src="https://qrxrulntwojimhhhnwqk.supabase.co/storage/v1/object/public/prompt-thumbnails/prompty_logo.jpg" 
                     alt="Prompty" 
                     className="object-contain" 
                     style={{
                       width: 'auto',
-                      height: '128px',
+                      height: '32px',
                       maxWidth: '100%',
                       display: 'block'
                     }} 
-                    width={320}
-                    height={128}
+                    width={32}
+                    height={32}
                     priority
                     unoptimized
                   />
