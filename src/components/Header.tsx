@@ -5,6 +5,7 @@ import { Search, PenSquare, Bell, ChevronRight, Heart, MessageSquare, X } from '
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from './ui/use-toast';
@@ -298,7 +299,7 @@ const Header = () => {
             <div className={`flex items-center ${mobileSearchOpen ? 'hidden' : ''}`}>
               <div className="flex items-center z-20">
                 <Link href="/" className="flex items-center">
-                  <img 
+                  <Image 
                     src="/prompty_logo.jpg" 
                     alt="Prompty" 
                     className="h-32 w-auto object-contain" 
@@ -306,6 +307,9 @@ const Header = () => {
                       maxWidth: '100%',
                       display: 'block'
                     }} 
+                    width={128}
+                    height={128}
+                    priority
                   />
                 </Link>
               </div>
