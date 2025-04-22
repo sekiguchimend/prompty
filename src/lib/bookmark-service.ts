@@ -82,21 +82,19 @@ export const checkIfBookmarked = async (promptId: string, userId: string) => {
   try {
     if (!userId) return false;
 
-    // MCPを使用してブックマーク状態を確認
-    const response = await fetch(`/api/bookmarks/check?promptId=${promptId}&userId=${userId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    // Supabaseから直接データを取得する（API経由ではなく）
+    const { data, error } = await supabase
+      .from('bookmarks')
+      .select('id')
+      .eq('prompt_id', promptId)
+      .eq('user_id', userId);
 
-    if (!response.ok) {
-      console.error('ブックマーク確認APIエラー:', response.statusText);
+    if (error) {
+      console.error('ブックマーク確認エラー:', error);
       return false;
     }
 
-    const data = await response.json();
-    return data.isBookmarked;
+    return data && data.length > 0;
 
   } catch (error) {
     console.error('ブックマーク確認中にエラーが発生:', error);

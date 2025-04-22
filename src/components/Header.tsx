@@ -302,14 +302,17 @@ const Header = () => {
                   <Image 
                     src="/prompty_logo.jpg" 
                     alt="Prompty" 
-                    className="h-32 w-auto object-contain" 
+                    className="object-contain" 
                     style={{
+                      width: 'auto',
+                      height: '128px',
                       maxWidth: '100%',
                       display: 'block'
                     }} 
-                    width={128}
+                    width={320}
                     height={128}
                     priority
+                    unoptimized
                   />
                 </Link>
               </div>

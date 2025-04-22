@@ -19,13 +19,13 @@ export const metadata = {
   description: 'LLMを活用したプロンプト共有・販売プラットフォーム',
   icons: {
     icon: [
-      { url: '/prompty_logo.jpg?v=2', sizes: '192x192', type: 'image/jpeg' }
+      { url: '/prompty_logo.jpg', sizes: '192x192', type: 'image/jpeg' }
     ],
     apple: [
-      { url: '/prompty_logo.jpg?v=2', sizes: '192x192', type: 'image/jpeg' }
+      { url: '/prompty_logo.jpg', sizes: '192x192', type: 'image/jpeg' }
     ]
   },
-  manifest: '/site.webmanifest?v=2',
+  manifest: '/site.webmanifest',
   themeColor: '#ffffff',
   appleWebApp: {
     capable: true,
@@ -53,14 +53,21 @@ export default function RootLayout({
   return (
     <html lang="ja" suppressHydrationWarning>
       <head>
+        {/* ファビコンとアイコン */}
+        <link rel="shortcut icon" href="/prompty_logo.jpg" type="image/jpeg" />
+        <link rel="icon" href="/prompty_logo.jpg" type="image/jpeg" sizes="any" />
+        <link rel="apple-touch-icon" href="/prompty_logo.jpg" />
+        <meta name="image" content="/prompty_logo.jpg" />
+        
         {/* 頻繁に使用されるページへのプリロード */}
         <link rel="preload" href="/Following" as="document" />
         <link rel="preload" href="/ContestPage" as="document" />
         
         {/* クリティカルなCSSプリロード */}
-        <link rel="preload" href="/globals.css" as="style" />
+        <link rel="preload" href="/styles/globals.css" as="style" />
         
-        {/* アプリケーションで多用される画像のプリロード */}
+        {/* 重要な画像のプリロード */}
+        <link rel="preload" href="/prompty_logo.jpg" as="image" type="image/jpeg" />
         <link rel="preload" href="/images/default-thumbnail.svg" as="image" />
         <link rel="preload" href="/images/default-avatar.svg" as="image" />
       </head>

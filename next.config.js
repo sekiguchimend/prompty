@@ -7,6 +7,12 @@ const nextConfig = {
   images: {
     domains: ['qrxrulntwojimhhhnwqk.supabase.co'],
     unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'prompty-zeta.vercel.app',
+      },
+    ],
   },
   experimental: {
     optimizeCss: true,
