@@ -65,14 +65,18 @@ const NotificationDropdown: React.FC = () => {
     // 既読情報をMapに変換して検索を効率化
     const readMap = new Map();
     reads?.forEach(read => {
-      readMap.set(read.announcement_id, new Date(read.created_at));
+      // anyを使用して型エラーを回避
+      const typedRead = read as any;
+      readMap.set(typedRead.announcement_id, new Date(String(typedRead.created_at)));
     });
     
     // 各お知らせが未読かチェック
     // 「未読」の定義: 1. 既読テーブルに記録がない、または 2. お知らせの作成日時が既読日時より新しい
     const unreadItems = activeAnnouncements.filter(announcement => {
-      const readDate = readMap.get(announcement.id);
-      const announcementDate = new Date(announcement.created_at);
+      // anyを使用して型エラーを回避
+      const typedAnnouncement = announcement as any;
+      const readDate = readMap.get(typedAnnouncement.id);
+      const announcementDate = new Date(String(typedAnnouncement.created_at));
       return !readDate || announcementDate > readDate;
     });
     

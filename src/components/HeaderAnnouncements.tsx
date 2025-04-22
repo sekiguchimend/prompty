@@ -86,24 +86,36 @@ const HeaderAnnouncements: React.FC<{ onClose?: () => void }> = ({ onClose }) =>
           console.log('取得した既読データ:', readData);
           // 既読情報をMapに変換して検索を効率化
           readData.forEach(item => {
-            readMap.set(item.announcement_id, new Date(item.created_at));
+            // anyを使って型エラーを回避
+            const typedItem = item as any;
+            readMap.set(typedItem.announcement_id, new Date(String(typedItem.created_at)));
           });
         }
       }
       
       // Mark announcements as read/unread
-      const processedAnnouncements = announcementData.map(announcement => {
+      const processedAnnouncements: Announcement[] = announcementData.map(announcement => {
+        // anyを使って型エラーを回避
+        const typedAnnouncement = announcement as any;
+        
         // お知らせの作成日時
-        const announcementDate = new Date(announcement.created_at);
+        const announcementDate = new Date(String(typedAnnouncement.created_at));
         // 既読日時
-        const readDate = readMap.get(announcement.id);
+        const readDate = readMap.get(typedAnnouncement.id);
         
         // 既読の定義: 既読テーブルに記録がある
-        // タイムスタンプの比較ロジックを一時的に無効化し、問題を特定
-        const isRead = readMap.has(announcement.id);
+        const isRead = readMap.has(typedAnnouncement.id);
         
         return {
-          ...announcement,
+          id: String(typedAnnouncement.id),
+          title: String(typedAnnouncement.title),
+          content: String(typedAnnouncement.content),
+          icon: typedAnnouncement.icon as string | null,
+          icon_color: typedAnnouncement.icon_color as string | null,
+          start_date: String(typedAnnouncement.start_date),
+          end_date: typedAnnouncement.end_date as string | null,
+          is_active: Boolean(typedAnnouncement.is_active),
+          created_at: String(typedAnnouncement.created_at),
           is_read: isRead
         };
       });

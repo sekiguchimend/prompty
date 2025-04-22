@@ -84,7 +84,7 @@ const Feedback = () => {
       // まず標準のinsertを試す
       const { error } = await supabase
         .from('feedback')
-        .insert([feedbackData]);
+        .insert([feedbackData as unknown as Record<string, unknown>]);
       
       if (error) {
         // 通常のinsertが失敗した場合はRPCを試す

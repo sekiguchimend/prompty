@@ -101,7 +101,10 @@ export const trackView = async (promptId: string): Promise<boolean> => {
           .single();
         
         if (!getError && currentPrompt) {
-          const currentCount = (currentPrompt.view_count || 0);
+          // view_countをanyにキャストして型エラーを回避
+          const currentPromptAny = currentPrompt as any;
+          // 数値に変換。値がnullまたはundefinedの場合は0をデフォルト値として使用
+          const currentCount = Number(currentPromptAny.view_count || 0);
           const newCount = currentCount + 1;
           
           const { error: directUpdateError } = await supabase
@@ -146,7 +149,13 @@ export const getViewCount = async (promptId: string): Promise<number> => {
     
     // view_countが取得できた場合
     if (!promptError && promptData) {
-      const promptViewCount = promptData.view_count || 0;
+      // デバッグ用
+      console.log('fetchしたpromptData:', promptData);
+      
+      // anyにキャストして型エラーを回避
+      const promptDataAny = promptData as any;
+      // 数値に変換して型安全性を確保
+      const promptViewCount = Number(promptDataAny.view_count || 0);
       console.log('promptsテーブルからのビュー数:', promptViewCount);
       
       // 2. analytics_views テーブルからカウントを取得
@@ -156,10 +165,11 @@ export const getViewCount = async (promptId: string): Promise<number> => {
         .eq('prompt_id', promptId);
       
       if (!analyticsError) {
-        console.log('analytics_viewsテーブルからのビュー数:', analyticsCount || 0);
+        const analyticsCountNumber = Number(analyticsCount || 0);
+        console.log('analytics_viewsテーブルからのビュー数:', analyticsCountNumber);
         
         // 3. 両方のカウントを比較して大きい方を採用
-        const finalCount = Math.max(promptViewCount, analyticsCount || 0);
+        const finalCount = Math.max(promptViewCount, analyticsCountNumber);
         console.log('採用するビュー数:', finalCount);
         return finalCount;
       }

@@ -56,10 +56,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     // 既にいいねしている場合は削除
     if (existingLike) {
+      // anyを使用して型エラーを回避
+      const typedExistingLike = existingLike as any;
       const { error: deleteError } = await supabase
         .from('likes')
         .delete()
-        .eq('id', existingLike.id);
+        .eq('id', typedExistingLike.id);
         
       if (deleteError) throw deleteError;
       action = 'unliked';
