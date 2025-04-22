@@ -33,7 +33,7 @@ const Announcements: React.FC = () => {
           .limit(5);
 
         if (error) throw error;
-        setAnnouncements(data as Announcement[]);
+        setAnnouncements(data as unknown as Announcement[]);
       } catch (error) {
         console.error('お知らせの取得に失敗しました:', error);
       } finally {

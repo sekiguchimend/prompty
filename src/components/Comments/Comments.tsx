@@ -76,7 +76,25 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
       }
       
       console.log('コメントを取得しました:', data?.length || 0, '件');
-      setComments(data || []);
+      
+      // データを正しい型に変換
+      const typedComments: Comment[] = (data || []).map(item => {
+        const commentItem = item as any; // anyを使用して型エラーを回避
+        return {
+          id: commentItem.id as string,
+          content: commentItem.content as string,
+          created_at: commentItem.created_at as string,
+          user_id: commentItem.user_id as string,
+          is_edited: commentItem.is_edited as boolean | undefined,
+          user: commentItem.user ? {
+            username: String(commentItem.user.username || ''),
+            display_name: String(commentItem.user.display_name || ''),
+            avatar_url: String(commentItem.user.avatar_url || '')
+          } : undefined
+        };
+      });
+      
+      setComments(typedComments);
       setCommentCount(count || 0);
     } catch (err) {
       console.error('コメント取得中に例外が発生しました:', err);
@@ -202,7 +220,11 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
           .single();
           
         if (!userError && userData) {
-          newCommentData.user = userData;
+          newCommentData.user = {
+            username: String(userData.username || ''),
+            display_name: String(userData.display_name || ''),
+            avatar_url: String(userData.avatar_url || '')
+          };
         }
         
         // コメントリストの先頭に新しいコメントを追加（降順表示のため）

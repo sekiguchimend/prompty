@@ -3,6 +3,13 @@ import { formatDistanceToNow } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { supabase } from '../../lib/supabaseClient';
 
+type UserProfile = {
+  id: string;
+  username: string;
+  display_name?: string;
+  avatar_url: string;
+};
+
 type Comment = {
   id: string;
   content: string;
@@ -26,6 +33,7 @@ const CommentList: React.FC<CommentListProps> = ({ promptId }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [commentCount, setCommentCount] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   // ユーザー情報の取得
   useEffect(() => {
@@ -48,45 +56,116 @@ const CommentList: React.FC<CommentListProps> = ({ promptId }) => {
     };
   }, []);
 
+  // プロフィールデータを取得する関数
+  const fetchUser = async (userId: string): Promise<UserProfile | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url')
+        .eq('id', userId)
+        .single();
+      
+      if (error) throw error;
+      
+      return data as UserProfile;
+    } catch (error) {
+      console.error('ユーザー情報取得エラー:', error);
+      return null;
+    }
+  };
+
   // コメントの取得
-  useEffect(() => {
-    const fetchComments = async () => {
+  const fetchComments = async () => {
+    setLoading(true);
+    try {
       const { data, error, count } = await supabase
         .from('comments')
-        .select(`
-          *,
-          user:profiles(username, display_name, avatar_url)
-        `, { count: 'exact' })
+        .select('*', { count: 'exact' })
         .eq('prompt_id', promptId)
         .order('created_at', { ascending: false });
-        
-      if (error) {
-        console.error('コメント取得エラー:', error);
-        return;
-      }
       
-      setComments(data || []);
+      if (error) throw error;
+      
+      const commentsWithUsers = await Promise.all(
+        (data as Comment[]).map(async (comment) => {
+          const userProfile = await fetchUser(comment.user_id);
+          if (userProfile) {
+            return { 
+              ...comment, 
+              user: {
+                username: userProfile.username,
+                display_name: userProfile.display_name || userProfile.username,
+                avatar_url: userProfile.avatar_url
+              } 
+            };
+          }
+          return comment;
+        })
+      );
+      
+      setComments(commentsWithUsers);
       setCommentCount(count || 0);
-    };
-    
-    fetchComments();
-    
-    // リアルタイム購読
-    const commentsSubscription = supabase
-      .channel('comments-channel')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'comments',
-        filter: `prompt_id=eq.${promptId}`
-      }, () => {
-        fetchComments();
-      })
-      .subscribe();
+    } catch (error) {
+      console.error('コメント取得エラー:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 新しいコメントのユーザー情報を取得して更新
+  const fetchUserForComment = async (comment: Comment) => {
+    try {
+      const userProfile = await fetchUser(comment.user_id);
+      if (!userProfile) return;
       
-    return () => {
-      supabase.removeChannel(commentsSubscription);
-    };
+      setComments((prev) => 
+        prev.map((c) => 
+          c.id === comment.id ? { 
+            ...c, 
+            user: {
+              username: userProfile.username,
+              display_name: userProfile.display_name || userProfile.username,
+              avatar_url: userProfile.avatar_url
+            } 
+          } : c
+        )
+      );
+    } catch (error) {
+      console.error('コメントのユーザー情報取得エラー:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchComments();
+  }, [promptId]);
+
+  // リアルタイムサブスクリプション
+  useEffect(() => {
+    if (promptId) {
+      const channel = supabase
+        .channel('comments-channel')
+        .on('postgres_changes', 
+          { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'comments',
+            filter: `prompt_id=eq.${promptId}` 
+          }, 
+          (payload) => {
+            const newComment = payload.new as Comment;
+            fetchUserForComment(newComment);
+            // 新しいコメントを追加
+            setComments((prev) => [newComment, ...prev]);
+            // コメント数を更新
+            setCommentCount((prev) => prev + 1);
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
   }, [promptId]);
 
   // コメント送信
