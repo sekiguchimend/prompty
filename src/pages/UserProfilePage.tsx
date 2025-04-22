@@ -648,7 +648,7 @@ const UserProfilePage: React.FC = () => {
     return (
       <div className="min-h-screen bg-white">
         <Header />
-        <main className="pt-32 flex items-center justify-center min-h-screen">
+        <main className="pt-16 flex items-center justify-center min-h-screen">
           <p>読み込み中...</p>
         </main>
       </div>
@@ -659,7 +659,7 @@ const UserProfilePage: React.FC = () => {
     return (
       <div className="min-h-screen bg-white">
         <Header />
-        <main className="pt-32 flex flex-col items-center justify-center min-h-screen">
+        <main className="pt-16 flex flex-col items-center justify-center min-h-screen">
           <p className="text-lg mb-4">プロフィール情報が見つかりません</p>
           <Button onClick={() => router.push('/settings?tab=profile')}>
             プロフィールを設定する
@@ -673,7 +673,7 @@ const UserProfilePage: React.FC = () => {
     <div className="min-h-screen bg-white">
       <Header />
       
-      <main className={`pt-32 ${isMobile ? 'pt-36' : ''}`}>
+      <main className={`pt-16 ${isMobile ? 'pt-20' : ''}`}>
         {/* Profile header */}
         <div className="border-b border-gray-200">
           <div className="container mx-auto px-4 max-w-4xl py-4 md:py-6">
@@ -759,7 +759,7 @@ const UserProfilePage: React.FC = () => {
         </div>
         
         {/* Tabs section */}
-        <div className="border-b border-gray-200 sticky top-32 bg-white z-10">
+        <div className="border-b border-gray-200 sticky top-16 bg-white z-10">
           <div className="container mx-auto px-4 max-w-4xl">
             <Tabs 
               defaultValue="posts" 

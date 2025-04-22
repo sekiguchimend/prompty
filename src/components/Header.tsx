@@ -13,6 +13,7 @@ import UserMenu from './UserMenu';
 import { PostItem, getFollowingPosts, getTodayForYouPosts } from '../data/posts';
 import { useAuth } from '../lib/auth-context'; // AuthContextからuseAuthをインポート
 import { supabase } from '../lib/supabaseClient';
+import Image from 'next/image';
 
 // カテゴリタブMen
 const categoryTabs = [
@@ -290,25 +291,37 @@ const Header = () => {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         {/* サイト名とナビゲーション */}
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-2">
           <div className="flex h-16 items-center justify-between">
-            {/* サイト名 */}
-            <div className="flex items-center z-20">
+            {/* サイト名 - 常に表示 */}
+            <div className="flex items-center z-20 mr-2">
               <Link href="/" className="flex items-center">
-                <img 
-                  src="/prompty_logo.jpg" 
-                  alt="Prompty" 
-                  className="h-28 w-auto object-contain py-1" 
-                  style={{
-                    minHeight: '8rem',
-                    minWidth: '16rem',
-                    maxWidth: '100%',
-                    display: 'block',
-                    transform: 'scale(1.2)'
-                  }} 
-                />
+                <div className="flex items-center justify-center">
+                  <Image 
+                    src="/prompty_logo.jpg" 
+                    alt="Prompty" 
+                    className="object-contain"
+                    width={156} 
+                    height={36}
+                    priority
+                    unoptimized
+                    onError={(e) => {
+                      console.error('ロゴ画像の読み込みに失敗しました');
+                      // 読み込み失敗時はデフォルトのスタイルを適用して「Prompty」と表示
+                      const container = e.currentTarget.parentElement;
+                      if (container) {
+                        // ここでスタイル付きのテキストロゴを表示
+                        container.innerHTML = `
+                          <div class="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 text-transparent bg-clip-text">
+                            Prompty
+                          </div>
+                        `;
+                      }
+                    }}
+                  />
+                </div>
               </Link>
             </div>
             
@@ -532,7 +545,7 @@ const Header = () => {
       </header>
 
       {/* メインのコンテンツエリア - ヘッダーの下にマージンを設ける */}
-      <div className="pt-20 md:pt-16">
+      <div className="pt-16 md:pt-16">
         {/* スマホ用タブコンテンツは削除 - フォロー中ページに移行 */}
       </div>
 
