@@ -5,10 +5,8 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   images: {
-    domains: ['qrxrulntwojimhhhnwqk.supabase.co'],
+    domains: ['qrxrulntwojimhhhnwqk.supabase.co', './prompty_logo.jpg'],
     unoptimized: false,
-    domains: ['./prompty_logo.jpg'],
-
   },
   experimental: {
     optimizeCss: true,
