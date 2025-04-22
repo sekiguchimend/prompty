@@ -299,18 +299,16 @@ const Header = () => {
             <div className="flex items-center z-20 mr-2">
               <Link href="/" className="flex items-center">
                 <div className="flex items-center justify-center">
-                  <Image 
+                  <img 
                     src="/prompty_logo.jpg" 
                     alt="Prompty" 
-                    className="object-contain"
-                    width={156} 
-                    height={36}
-                    priority
-                    unoptimized
+                    className="object-contain h-9 w-auto"
                     onError={(e) => {
                       console.error('ロゴ画像の読み込みに失敗しました');
                       // 読み込み失敗時はデフォルトのスタイルを適用して「Prompty」と表示
-                      const container = e.currentTarget.parentElement;
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      const container = target.parentElement;
                       if (container) {
                         // ここでスタイル付きのテキストロゴを表示
                         container.innerHTML = `
