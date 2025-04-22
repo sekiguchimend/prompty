@@ -295,9 +295,20 @@ const Header = () => {
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between">
             {/* サイト名 */}
-            <div className={`flex items-center ${mobileSearchOpen ? 'hidden' : ''}`}>
+            <div className="flex items-center z-20">
               <Link href="/" className="flex items-center">
-                <img src="/prompty_logo.jpg" alt="Prompty" className="h-32" />
+                <img 
+                  src="/prompty_logo.jpg" 
+                  alt="Prompty" 
+                  className="h-28 w-auto object-contain py-1" 
+                  style={{
+                    minHeight: '8rem',
+                    minWidth: '16rem',
+                    maxWidth: '100%',
+                    display: 'block',
+                    transform: 'scale(1.2)'
+                  }} 
+                />
               </Link>
             </div>
             
