@@ -13,7 +13,6 @@ import UserMenu from './UserMenu';
 import { PostItem, getFollowingPosts, getTodayForYouPosts } from '../data/posts';
 import { useAuth } from '../lib/auth-context'; // AuthContextからuseAuthをインポート
 import { supabase } from '../lib/supabaseClient';
-import Image from 'next/image';
 
 // カテゴリタブMen
 const categoryTabs = [
