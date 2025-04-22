@@ -19,9 +19,6 @@ const nextConfig = {
       '@radix-ui/react-dropdown-menu',
       '@radix-ui/react-dialog',
     ],
-    fontLoaders: [
-      { loader: 'next/font/google', options: { subsets: ['latin'] } },
-    ],
   },
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? {

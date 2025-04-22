@@ -101,7 +101,7 @@ export default function AdminPage() {
       if (contactError) throw contactError;
       
       if (contactData) {
-        setContacts(contactData);
+        setContacts(contactData as unknown as Contact[]);
       }
       
       // フィードバックの取得
@@ -110,7 +110,7 @@ export default function AdminPage() {
         const { data: rpcData, error: rpcError } = await supabase.rpc('get_all_feedback');
         
         if (!rpcError && rpcData) {
-          setFeedback(rpcData);
+          setFeedback(rpcData as unknown as Feedback[]);
         } else {
           // RPCが失敗した場合は直接テーブルから取得
           const { data: feedbackData, error: feedbackError } = await supabase
@@ -121,7 +121,7 @@ export default function AdminPage() {
           if (feedbackError) throw feedbackError;
           
           if (feedbackData) {
-            setFeedback(feedbackData);
+            setFeedback(feedbackData as unknown as Feedback[]);
           }
         }
       } catch (error) {

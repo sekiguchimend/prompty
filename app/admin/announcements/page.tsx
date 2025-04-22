@@ -103,7 +103,7 @@ export default function AnnouncementsAdminPage() {
       
       if (data) {
         console.log('AnnouncementsPage - データ取得成功:', data.length, '件');
-        setAnnouncements(data as Announcement[]);
+        setAnnouncements(data as unknown as Announcement[]);
       }
     } catch (error) {
       console.error('データ取得エラー:', error);
