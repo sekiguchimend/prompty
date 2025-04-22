@@ -290,36 +290,25 @@ const Header = () => {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
         {/* サイト名とナビゲーション */}
-        <div className="container mx-auto px-2">
+        <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between">
-            {/* サイト名 - 常に表示 */}
-            <div className="flex items-center z-20 mr-2">
-              <Link href="/" className="flex items-center">
-                <div className="flex items-center justify-center">
+            {/* サイト名 */}
+            <div className={`flex items-center ${mobileSearchOpen ? 'hidden' : ''}`}>
+              <div className="flex items-center z-20">
+                <Link href="/" className="flex items-center">
                   <img 
                     src="/prompty_logo.jpg" 
                     alt="Prompty" 
-                    className="object-contain h-9 w-auto"
-                    onError={(e) => {
-                      console.error('ロゴ画像の読み込みに失敗しました');
-                      // 読み込み失敗時はデフォルトのスタイルを適用して「Prompty」と表示
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      const container = target.parentElement;
-                      if (container) {
-                        // ここでスタイル付きのテキストロゴを表示
-                        container.innerHTML = `
-                          <div class="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 text-transparent bg-clip-text">
-                            Prompty
-                          </div>
-                        `;
-                      }
-                    }}
+                    className="h-32 w-auto object-contain" 
+                    style={{
+                      maxWidth: '100%',
+                      display: 'block'
+                    }} 
                   />
-                </div>
-              </Link>
+                </Link>
+              </div>
             </div>
             
             {/* モバイル検索バーが開いているときは通常のヘッダーコンテンツを隠す */}
@@ -542,11 +531,11 @@ const Header = () => {
       </header>
 
       {/* メインのコンテンツエリア - ヘッダーの下にマージンを設ける */}
-      <div className="pt-16 md:pt-16">
+      <div className="pt-20 md:pt-16">
         {/* スマホ用タブコンテンツは削除 - フォロー中ページに移行 */}
       </div>
 
-    {/* ユーザーメニュー - ユーザーがログインしている場合のみ表示 */}
+      {/* ユーザーメニュー - ユーザーがログインしている場合のみ表示 */}
       {user && (
         <UserMenu 
           isOpen={userMenuOpen} 
@@ -558,8 +547,6 @@ const Header = () => {
           followingUsersLink="/FollowingUsers"
         />
       )}
-
-      
     </>
   );
 };
