@@ -7,6 +7,8 @@ const nextConfig = {
   images: {
     domains: ['qrxrulntwojimhhhnwqk.supabase.co'],
     unoptimized: false,
+    domains: ['./prompty_logo.jpg'],
+
   },
   experimental: {
     optimizeCss: true,

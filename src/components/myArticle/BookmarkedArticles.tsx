@@ -5,6 +5,12 @@ import Link from 'next/link';
 import { useAuth } from '../../lib/auth-context';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { createClient } from '@supabase/supabase-js';
+
+// Supabaseクライアントの初期化
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // 記事の型定義
 interface BookmarkedArticle {
@@ -39,20 +45,86 @@ const BookmarkedArticles = () => {
 
       setLoading(true);
       try {
-        // MCPを使用してブックマークした記事を取得
-        const response = await fetch(`/api/bookmarks/list?userId=${user.id}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+        // ブックマークした記事のIDを取得
+        const { data: bookmarksData, error: bookmarksError } = await supabase
+          .from('bookmarks')
+          .select('prompt_id')
+          .eq('user_id', user.id);
 
-        if (!response.ok) {
-          throw new Error('ブックマークした記事の取得に失敗しました');
+        if (bookmarksError) throw bookmarksError;
+
+        if (bookmarksData && bookmarksData.length > 0) {
+          // ブックマークした記事のIDをリストにする
+          const promptIds = bookmarksData.map(bookmark => bookmark.prompt_id);
+
+          // ブックマークした記事の詳細情報を取得
+          const { data: promptsData, error: promptsError } = await supabase
+            .from('prompts')
+            .select(`
+              id,
+              title,
+              description,
+              thumbnail_url,
+              created_at,
+              profiles:author_id (
+                id,
+                display_name,
+                username,
+                avatar_url
+              )
+            `)
+            .in('id', promptIds)
+            .eq('published', true);
+
+          if (promptsError) throw promptsError;
+
+          // いいね数を取得
+          const bookmarkedArticlesWithCounts = await Promise.all(
+            promptsData.map(async (prompt: any) => {
+              const { count, error: countError } = await supabase
+                .from('likes')
+                .select('id', { count: 'exact' })
+                .eq('prompt_id', prompt.id);
+
+              if (countError) {
+                console.error('いいね数取得エラー:', countError);
+                return {
+                  id: prompt.id,
+                  title: prompt.title,
+                  description: prompt.description,
+                  thumbnailUrl: prompt.thumbnail_url,
+                  createdAt: prompt.created_at,
+                  author: {
+                    id: prompt.profiles.id,
+                    name: prompt.profiles.display_name,
+                    username: prompt.profiles.username,
+                    avatarUrl: prompt.profiles.avatar_url
+                  },
+                  likeCount: 0
+                };
+              }
+
+              return {
+                id: prompt.id,
+                title: prompt.title,
+                description: prompt.description,
+                thumbnailUrl: prompt.thumbnail_url,
+                createdAt: prompt.created_at,
+                author: {
+                  id: prompt.profiles.id,
+                  name: prompt.profiles.display_name,
+                  username: prompt.profiles.username,
+                  avatarUrl: prompt.profiles.avatar_url
+                },
+                likeCount: count || 0
+              };
+            })
+          );
+
+          setArticles(bookmarkedArticlesWithCounts);
+        } else {
+          setArticles([]);
         }
-
-        const data = await response.json();
-        setArticles(data.bookmarks || []);
       } catch (error) {
         console.error('ブックマーク記事取得エラー:', error);
         setError('記事の読み込みに失敗しました。後でもう一度お試しください。');

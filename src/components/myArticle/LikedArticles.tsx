@@ -1,36 +1,154 @@
 // components/LikedArticles.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, MoreVertical } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
+import { useAuth } from '../../lib/auth-context';
 
-// ダミーデータ
-const likedArticles = [
-  {
-    id: '101',
-    title: 'AIプロンプトエンジニアリングの基礎と応用',
-    author: 'テックマスター',
-    publishedAt: '2024年10月15日',
-    likeCount: 42,
-    imageSrc: 'https://source.unsplash.com/random/200x150?ai'
-  },
-  {
-    id: '102',
-    title: 'ミッドジャーニーで作る美しい風景画像の作り方：プロンプト集',
-    author: 'デザイナーA',
-    publishedAt: '2024年10月10日',
-    likeCount: 35,
-    imageSrc: 'https://source.unsplash.com/random/200x150?landscape'
-  },
-  {
-    id: '103',
-    title: 'ChatGPT-4で小説を書くためのプロンプト設計術',
-    author: '作家B',
-    publishedAt: '2024年10月5日',
-    likeCount: 28,
-    imageSrc: 'https://source.unsplash.com/random/200x150?novel'
-  }
-];
+// Supabaseクライアントの初期化
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// プロフィールの型定義
+interface Profile {
+  id: string;
+  display_name: string;
+  avatar_url: string;
+}
+
+// 記事データの型定義
+interface ArticleData {
+  id: string;
+  title: string;
+  thumbnail_url: string | null;
+  created_at: string;
+  profiles: Profile;
+}
+
+// 高評価記事の型定義
+interface LikedArticle {
+  id: string;
+  title: string;
+  author: {
+    id: string;
+    display_name: string;
+    avatar_url: string;
+  };
+  published_at: string;
+  like_count: number;
+  thumbnail_url: string | null;
+}
 
 const LikedArticles = () => {
+  const { user } = useAuth();
+  const [likedArticles, setLikedArticles] = useState<LikedArticle[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchLikedArticles = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        // いいねした記事のIDを取得
+        const { data: likesData, error: likesError } = await supabase
+          .from('likes')
+          .select('prompt_id')
+          .eq('user_id', user.id);
+
+        if (likesError) throw likesError;
+
+        if (likesData && likesData.length > 0) {
+          // いいねした記事のIDをリストにする
+          const promptIds = likesData.map(like => like.prompt_id);
+
+          // いいねした記事の詳細情報を取得
+          const { data: articlesData, error: articlesError } = await supabase
+            .from('prompts')
+            .select(`
+              id,
+              title,
+              thumbnail_url,
+              created_at,
+              profiles:author_id (
+                id,
+                display_name,
+                avatar_url
+              )
+            `)
+            .in('id', promptIds)
+            .eq('published', true);
+
+          if (articlesError) throw articlesError;
+
+          // いいね数を取得
+          const likedArticlesWithCounts = await Promise.all(
+            articlesData.map(async (article: any) => {
+              const { count, error: countError } = await supabase
+                .from('likes')
+                .select('id', { count: 'exact' })
+                .eq('prompt_id', article.id);
+
+              if (countError) {
+                console.error('いいね数取得エラー:', countError);
+                return {
+                  id: article.id,
+                  title: article.title,
+                  author: {
+                    id: article.profiles.id,
+                    display_name: article.profiles.display_name,
+                    avatar_url: article.profiles.avatar_url
+                  },
+                  published_at: article.created_at,
+                  like_count: 0,
+                  thumbnail_url: article.thumbnail_url
+                };
+              }
+
+              return {
+                id: article.id,
+                title: article.title,
+                author: {
+                  id: article.profiles.id,
+                  display_name: article.profiles.display_name,
+                  avatar_url: article.profiles.avatar_url
+                },
+                published_at: article.created_at,
+                like_count: count || 0,
+                thumbnail_url: article.thumbnail_url
+              };
+            })
+          );
+
+          setLikedArticles(likedArticlesWithCounts);
+        } else {
+          setLikedArticles([]);
+        }
+      } catch (error) {
+        console.error('高評価記事取得エラー:', error);
+        setError('記事の読み込みに失敗しました。後でもう一度お試しください。');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLikedArticles();
+  }, [user]);
+
+  // 日付のフォーマット関数
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ja-JP', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   return (
     <div className="liked-articles">
       <div className="articles-container">
@@ -44,25 +162,29 @@ const LikedArticles = () => {
         </div>
         
         <div className="articles-list">
-          {likedArticles.length > 0 ? (
+          {loading ? (
+            <p className="text-center py-6">読み込み中...</p>
+          ) : error ? (
+            <p className="text-center py-6 text-red-500">{error}</p>
+          ) : likedArticles.length > 0 ? (
             likedArticles.map((article) => (
               <div key={article.id} className="article-item">
                 <div className="article-content">
                   <h3>{article.title}</h3>
                   <div className="article-meta">
-                    <span>{article.author}</span>
-                    <span className="date">{article.publishedAt}</span>
+                    <span>{article.author.display_name}</span>
+                    <span className="date">{formatDate(article.published_at)}</span>
                   </div>
                   <div className="article-actions mt-2 flex items-center">
                     <button className="flex items-center text-rose-500 mr-3">
                       <Heart className="h-4 w-4 mr-1 fill-rose-500" />
-                      <span className="text-xs">{article.likeCount}</span>
+                      <span className="text-xs">{article.like_count}</span>
                     </button>
                   </div>
                 </div>
-                {article.imageSrc && (
+                {article.thumbnail_url && (
                   <div className="article-thumbnail">
-                    <img src={article.imageSrc} alt={article.title} />
+                    <img src={article.thumbnail_url} alt={article.title} />
                   </div>
                 )}
                 <button className="more-options">
