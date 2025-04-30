@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { supabaseAdmin } from '../../lib/supabaseAdminClient';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // POSTリクエスト以外は許可しない
@@ -16,22 +16,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     console.log('🔒 バケットポリシー設定リクエスト:', bucketName);
     
-    // Supabaseクライアントの初期化（サービスロールキーを使用）
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-    
-    if (!supabaseServiceKey) {
-      console.error('❌ サービスロールキーが設定されていません');
-      return res.status(500).json({ 
-        error: 'サーバー設定エラー',
-        message: 'サービスロールキーが設定されていません'
-      });
-    }
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
     // バケットの存在チェック
-    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+    const { data: buckets, error: listError } = await supabaseAdmin.storage.listBuckets();
     
     if (listError) {
       console.error('❌ バケット一覧取得エラー:', listError);
@@ -57,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // RPC関数を作成するか、rawクエリを使用するのが一般的です
     
     // 1. 誰でも読み取り可能にするポリシー
-    const { error: readPolicyError } = await supabase.rpc('create_storage_policy', { 
+    const { error: readPolicyError } = await supabaseAdmin.rpc('create_storage_policy', { 
       bucket_name: bucketName,
       policy_name: `${bucketName}_public_read`,
       definition: 'true',
@@ -70,7 +56,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       // 直接関数を呼び出す
       try {
-        await handleCreateStoragePolicy(supabase, {
+        await handleCreateStoragePolicy(supabaseAdmin, {
           bucket_name: bucketName,
           policy_name: `${bucketName}_public_read`,
           definition: 'true',
@@ -83,7 +69,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     
     // 2. 認証済みユーザーの書き込みを許可するポリシー
-    const { error: writePolicyError } = await supabase.rpc('create_storage_policy', { 
+    const { error: writePolicyError } = await supabaseAdmin.rpc('create_storage_policy', { 
       bucket_name: bucketName,
       policy_name: `${bucketName}_auth_insert`,
       definition: 'auth.role() = \'authenticated\'',
@@ -96,7 +82,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       // 直接関数を呼び出す
       try {
-        await handleCreateStoragePolicy(supabase, {
+        await handleCreateStoragePolicy(supabaseAdmin, {
           bucket_name: bucketName,
           policy_name: `${bucketName}_auth_insert`,
           definition: 'auth.role() = \'authenticated\'',
@@ -109,7 +95,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     
     // 3. 匿名アップロードを許可するポリシー（任意）
-    const { error: anonPolicyError } = await supabase.rpc('create_storage_policy', { 
+    const { error: anonPolicyError } = await supabaseAdmin.rpc('create_storage_policy', { 
       bucket_name: bucketName,
       policy_name: `${bucketName}_anon_insert`,
       definition: 'true',
@@ -122,7 +108,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       // 直接関数を呼び出す
       try {
-        await handleCreateStoragePolicy(supabase, {
+        await handleCreateStoragePolicy(supabaseAdmin, {
           bucket_name: bucketName,
           policy_name: `${bucketName}_anon_insert`,
           definition: 'true',

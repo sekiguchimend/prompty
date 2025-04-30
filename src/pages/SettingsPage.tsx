@@ -10,6 +10,7 @@ import PointsSettings from '../components/settings/PointsSettings';
 import CardSettings from '../components/settings/CardSettings';
 import PaymentSettings from '../components/settings/PaymentSettings';
 import PremiumSettings from '../components/settings/PremiumSettings';
+import CommentSettings from '../components/settings/CommentSettings';
 
 type SettingsTab = 
   | 'アカウント'
@@ -19,7 +20,8 @@ type SettingsTab =
   | 'ポイント管理'
   | 'カード情報'
   | 'お支払先'
-  | 'プレミアム';
+  | 'プレミアム'
+  | 'コメント';
 
 const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('アカウント');
@@ -54,6 +56,9 @@ const SettingsPage: React.FC = () => {
         case 'premium':
           setActiveTab('プレミアム');
           break;
+        case 'comment':
+          setActiveTab('コメント');
+          break;
         default:
           setActiveTab('アカウント');
       }
@@ -65,6 +70,7 @@ const SettingsPage: React.FC = () => {
     'アカウント',
     '通知',
     'リアクション',
+    'コメント',
     '購入・チップ履歴',
     'ポイント管理',
     'カード情報',
@@ -103,6 +109,9 @@ const SettingsPage: React.FC = () => {
       case 'プレミアム':
         tabParam = 'premium';
         break;
+      case 'コメント':
+        tabParam = 'comment';
+        break;
     }
     
     // Next.jsのルーターを使ってURLを更新
@@ -131,6 +140,8 @@ const SettingsPage: React.FC = () => {
         return <PaymentSettings />;
       case 'プレミアム':
         return <PremiumSettings />;
+      case 'コメント':
+        return <CommentSettings />;
       default:
         return <AccountSettings />;
     }

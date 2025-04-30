@@ -1,5 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
 import type { NextApiRequest, NextApiResponse } from 'next';
+// ... existing code ...
+
+// 共通のSupabaseクライアントを使用
+import { supabase } from '../../../../lib/supabase/client';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // POSTリクエスト以外は許可しない
@@ -13,12 +16,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!provider) {
       return res.status(400).json({ error: 'プロバイダーは必須です' });
     }
-    
-    // Supabaseクライアントの初期化
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
     
     // 本番環境か開発環境かを判定して適切なリダイレクトURLを設定
     const redirectTo = 'https://prompty-zeta.vercel.app/auth/callback?mode=login';

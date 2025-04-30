@@ -35,7 +35,7 @@ export const trackView = async (promptId: string): Promise<boolean> => {
       .from('analytics_views')
       .select('id')
       .eq('prompt_id', promptId)
-      .eq('visitor_id', visitorId)
+      .eq('user_id', visitorId)
       .maybeSingle();
     
     if (selectError) {
@@ -58,7 +58,7 @@ export const trackView = async (promptId: string): Promise<boolean> => {
         .from('analytics_views')
         .insert({
           prompt_id: promptId,
-          visitor_id: visitorId
+          user_id: visitorId
         });
       
       if (insertError) {

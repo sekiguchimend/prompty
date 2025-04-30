@@ -1,6 +1,7 @@
 // src/pages/api/auth/signup.ts
-import { createClient } from '@supabase/supabase-js';
 import type { NextApiRequest, NextApiResponse } from 'next';
+// 共通のSupabaseクライアントを使用
+import { supabase } from '../../../../lib/supabase/client';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // POSTリクエスト以外は許可しない
@@ -15,12 +16,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!email || !password) {
       return res.status(400).json({ error: 'メールアドレスとパスワードは必須です' });
     }
-    
-    // Supabaseクライアントの初期化
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
     
     // ユーザー登録処理
     const { data, error } = await supabase.auth.signUp({

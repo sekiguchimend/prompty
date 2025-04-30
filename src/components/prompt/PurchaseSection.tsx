@@ -18,6 +18,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { supabase } from '../../lib/supabaseClient';
 import { LoadingSpinner } from '../../components/ui/loading-spinner';
+import ReportDialog from '../../components/common/ReportDialog';
 
 interface PurchaseSectionProps {
   wordCount: number;
@@ -100,7 +101,6 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [promptId, setPromptId] = useState<string>("");
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
-  const [reportReason, setReportReason] = useState("");
   const [isCommentsLoading, setIsCommentsLoading] = useState(false);
   const [isLikeLoading, setIsLikeLoading] = useState(false); // いいね処理中のローディング状態
   const [isFollowLoading, setIsFollowLoading] = useState(false); // フォロー処理中のローディング状態
@@ -652,15 +652,17 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
     }
   };
 
-  const handleReport = () => {
-    setIsReportDialogOpen(false);
-    if (reportReason.trim()) {
+  // 報告処理を更新
+  const handleReportButtonClick = () => {
+    if (!currentUser) {
       toast({
-        title: "報告を受け付けました",
-        description: "ご報告ありがとうございます。内容を確認いたします。",
+        title: "ログインが必要です",
+        description: "報告機能を利用するにはログインしてください",
+        variant: "destructive"
       });
-      setReportReason("");
+      return;
     }
+    setIsReportDialogOpen(true);
   };
 
   const copyToClipboard = (text: string) => {
@@ -719,7 +721,7 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setIsReportDialogOpen(true)}>
+              <DropdownMenuItem onClick={handleReportButtonClick}>
                 <Flag className="h-4 w-4 mr-2" />
                 報告する
               </DropdownMenuItem>
@@ -963,33 +965,14 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
       </Dialog>
 
       {/* 報告ダイアログ */}
-      <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>コンテンツを報告</DialogTitle>
-            <DialogDescription>
-              このコンテンツを報告する理由を教えてください。すべての報告は匿名で処理されます。
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Textarea 
-              placeholder="報告の詳細を入力してください..." 
-              value={reportReason}
-              onChange={(e) => setReportReason(e.target.value)}
-              className="resize-none"
-              rows={4}
-            />
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="secondary" onClick={() => setIsReportDialogOpen(false)}>
-              キャンセル
-            </Button>
-            <Button type="button" onClick={handleReport} disabled={!reportReason.trim()}>
-              報告する
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ReportDialog
+        isOpen={isReportDialogOpen}
+        onClose={() => setIsReportDialogOpen(false)}
+        targetId={promptId}
+        promptId={promptId}
+        userId={currentUser?.id || null}
+        targetType="prompt"
+      />
     </div>
   );
 };

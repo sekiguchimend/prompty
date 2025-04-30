@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { supabaseAdmin } from '../../lib/supabaseAdminClient';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // POSTリクエスト以外は許可しない
@@ -14,14 +14,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // サービスロールキーを使用してクライアントを初期化
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
     // バケットが存在するか確認
-    const { data: existingBuckets, error: listError } = await supabase
+    const { data: existingBuckets, error: listError } = await supabaseAdmin
       .storage
       .listBuckets();
 
@@ -34,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (!bucketExists) {
       // バケットが存在しない場合は作成
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .storage
         .createBucket(bucketName, {
           public: true,
@@ -55,7 +49,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       // SQLクエリを使用してポリシーを作成
       // SELECTポリシー（閲覧用）- すべてのユーザーがアクセス可能に
-      const { data: selectPolicyData, error: selectPolicyError } = await supabase
+      const { data: selectPolicyData, error: selectPolicyError } = await supabaseAdmin
         .rpc('create_storage_policy', {
           policy_name: `${bucketName}:閲覧`,
           bucket_name: bucketName,
@@ -71,7 +65,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // INSERTポリシー（アップロード用）- 認証済みユーザーのみ
-      const { data: insertPolicyData, error: insertPolicyError } = await supabase
+      const { data: insertPolicyData, error: insertPolicyError } = await supabaseAdmin
         .rpc('create_storage_policy', {
           policy_name: `${bucketName}:アップロード`,
           bucket_name: bucketName,

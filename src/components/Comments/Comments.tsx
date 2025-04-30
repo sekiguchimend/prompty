@@ -3,6 +3,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { supabase } from '../../lib/supabaseClient';
 import { MoreVertical } from 'lucide-react';
+import ReportDialog from '../common/ReportDialog';
 
 type Comment = {
   id: string;
@@ -15,6 +16,11 @@ type Comment = {
     display_name: string;
     avatar_url: string;
   };
+};
+
+type UserSettings = {
+  auto_hide_reported: boolean;
+  hidden_comments: string[];
 };
 
 type CommentsProps = {
@@ -32,6 +38,10 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [userSettings, setUserSettings] = useState<UserSettings>({
+    auto_hide_reported: false,
+    hidden_comments: [],
+  });
 
   // ユーザー情報の取得
   useEffect(() => {
@@ -53,6 +63,70 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
       authListener?.subscription.unsubscribe();
     };
   }, []);
+
+  // ユーザー設定とローカルストレージから非表示コメントを読み込む
+  useEffect(() => {
+    const loadHiddenComments = async () => {
+      try {
+        // ローカルストレージからの読み込み
+        const storedHiddenComments = localStorage.getItem('hiddenComments');
+        let hiddenCommentsFromStorage: string[] = [];
+        
+        if (storedHiddenComments) {
+          try {
+            const parsed = JSON.parse(storedHiddenComments);
+            if (Array.isArray(parsed)) {
+              hiddenCommentsFromStorage = parsed;
+            }
+          } catch (error) {
+            console.error('非表示コメントの読み込みに失敗しました:', error);
+          }
+        }
+        
+        if (currentUser) {
+          // Supabaseからユーザー設定を取得
+          const { data, error } = await supabase
+            .from('user_settings')
+            .select('auto_hide_reported, hidden_comments')
+            .eq('user_id', currentUser.id)
+            .single();
+            
+          if (error && error.code !== 'PGRST116') { // 'PGRST116'は結果が見つからないエラー
+            console.error('設定取得エラー:', error);
+          } else if (data) {
+            // 設定を保存
+            setUserSettings({
+              auto_hide_reported: Boolean(data.auto_hide_reported),
+              hidden_comments: Array.isArray(data.hidden_comments) ? data.hidden_comments : [],
+            });
+            
+            // ローカルとDBの非表示コメントを統合
+            // Set型を使わず配列の重複を除去
+            const combinedHiddenComments = Array.from(new Set([
+              ...hiddenCommentsFromStorage,
+              ...(Array.isArray(data.hidden_comments) ? data.hidden_comments : [])
+            ]));
+            
+            setHiddenComments(combinedHiddenComments);
+            
+            // ローカルストレージを最新の状態に更新
+            localStorage.setItem('hiddenComments', JSON.stringify(combinedHiddenComments));
+            
+            return;
+          }
+        }
+        
+        // ユーザーがログインしていない場合や設定が見つからない場合は
+        // ローカルストレージの値だけを使用
+        setHiddenComments(hiddenCommentsFromStorage);
+        
+      } catch (error) {
+        console.error('非表示コメント設定の読み込みエラー:', error);
+      }
+    };
+    
+    loadHiddenComments();
+  }, [currentUser]);
 
   // コメントの取得関数をuseCallbackでメモ化
   const fetchComments = useCallback(async () => {
@@ -248,29 +322,75 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
   };
 
   // コメントの表示/非表示を切り替え
-  const toggleHideComment = (commentId: string) => {
-    setHiddenComments(prev => {
-      if (prev.includes(commentId)) {
-        return prev.filter(id => id !== commentId);
-      } else {
-        return [...prev, commentId];
+  const toggleHideComment = async (commentId: string) => {
+    // 現在の状態を確認
+    const isHidden = hiddenComments.includes(commentId);
+    
+    // 表示状態を更新
+    const updatedHiddenComments = isHidden
+      ? hiddenComments.filter(id => id !== commentId)
+      : [...hiddenComments, commentId];
+    
+    setHiddenComments(updatedHiddenComments);
+    
+    // ローカルストレージに保存
+    localStorage.setItem('hiddenComments', JSON.stringify(updatedHiddenComments));
+    
+    // ログインしているユーザーの場合、Supabaseにも設定を保存
+    if (currentUser) {
+      try {
+        // 現在の設定を取得
+        const { data, error } = await supabase
+          .from('user_settings')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .single();
+          
+        if (error && error.code !== 'PGRST116') { // 'PGRST116'は結果が見つからないエラー
+          console.error('設定取得エラー:', error);
+        }
+          
+        // 設定をアップデートする
+        const updatedSettings = {
+          user_id: currentUser.id,
+          hidden_comments: updatedHiddenComments,
+          auto_hide_reported: data?.auto_hide_reported || userSettings.auto_hide_reported,
+          updated_at: new Date().toISOString()
+        };
+        
+        const { error: updateError } = await supabase
+          .from('user_settings')
+          .upsert(updatedSettings);
+          
+        if (updateError) {
+          console.error('設定更新エラー:', updateError);
+        }
+      } catch (error) {
+        console.error('設定保存エラー:', error);
       }
-    });
+    }
+    
     // メニューを閉じる
     setOpenMenuId(null);
   };
 
-  // 通報ダイアログを開く
+  // 報告ダイアログを開く
   const openReportDialog = (commentId: string) => {
     setSelectedCommentId(commentId);
     setIsReportDialogOpen(true);
     // メニューを閉じる
     setOpenMenuId(null);
   };
-
-  // 通報ダイアログを閉じる
+  
+  // 報告ダイアログを閉じる
   const closeReportDialog = () => {
     setIsReportDialogOpen(false);
+    
+    // 自動非表示設定がオンなら、報告したコメントを非表示にする
+    if (userSettings.auto_hide_reported && selectedCommentId && !hiddenComments.includes(selectedCommentId)) {
+      toggleHideComment(selectedCommentId);
+    }
+    
     setSelectedCommentId(null);
   };
 
@@ -407,6 +527,16 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
           </p>
         )}
       </form>
+
+      {/* 報告ダイアログ */}
+      <ReportDialog
+        isOpen={isReportDialogOpen}
+        onClose={closeReportDialog}
+        targetId={selectedCommentId || ''}
+        promptId={promptId}
+        userId={currentUser?.id || null}
+        targetType="comment"
+      />
     </div>
   );
 };

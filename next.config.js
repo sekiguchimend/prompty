@@ -14,6 +14,7 @@ const nextConfig = {
       },
     ],
   },
+  assetPrefix: process.env.NODE_ENV === 'production' ? undefined : '',
   experimental: {
     optimizeCss: true,
     optimizePackageImports: [

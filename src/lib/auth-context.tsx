@@ -104,10 +104,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     
     try {
-      const { data, error } = await supabase.auth.refreshSession();
+      // セッションやトークンが存在しない場合は早期リターン
+      if (!currentSession || !currentSession.access_token || !currentSession.refresh_token) {
+        console.log('リフレッシュするセッションまたはトークンがありません');
+        return currentSession;
+      }
+
+      // セッションをリフレッシュ
+      const { data, error } = await supabase.auth.refreshSession({
+        refresh_token: currentSession.refresh_token
+      });
       
       if (error) {
         console.error('トークンリフレッシュエラー:', error);
+        // エラーの種類に基づいて処理
+        if (error.message.includes('AuthSessionMissingError')) {
+          console.log('セッションがありません。再認証が必要です。');
+          // セッションが見つからない場合は保存されたセッションを削除
+          persistSession(null);
+        }
         return currentSession;
       }
       

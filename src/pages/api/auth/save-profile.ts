@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { supabaseAdmin } from '../../../lib/supabaseAdminClient';
 
 interface ProfileUpdateData {
   email?: string;
@@ -23,14 +23,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'ユーザーIDは必須です' });
     }
     
-    // Supabaseクライアントの初期化（サーバーサイドのためサービスロールキーを使用）
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-    
     // プロフィールテーブルのスキーマを確認
-    const { data: profileColumns, error: schemaError } = await supabase
+    const { data: profileColumns, error: schemaError } = await supabaseAdmin
       .from('profiles')
       .select('*')
       .limit(1);
@@ -43,7 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     
     // まずプロフィールが既に存在するか確認
-    const { data: existingProfiles, error: fetchError } = await supabase
+    const { data: existingProfiles, error: fetchError } = await supabaseAdmin
       .from('profiles')
       .select('*')
       .eq('id', userId);
@@ -106,7 +100,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log('🔄 更新データ:', updateData);
       
       // データベースを直接更新する（RLSをバイパスするため）
-      const { error: rpcError } = await supabase.rpc('update_profile', {
+      const { error: rpcError } = await supabaseAdmin.rpc('update_profile', {
         profile_id: userId,
         profile_data: updateData
       });
@@ -115,7 +109,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.error('🔴 RPC更新エラー:', rpcError);
         
         // 従来の方法でフォールバック
-        const { error: updateError } = await supabase
+        const { error: updateError } = await supabaseAdmin
           .from('profiles')
           .update(updateData)
           .eq('id', userId);
@@ -124,7 +118,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       
       // 更新後のデータを取得
-      const { data: updatedProfile, error: getError } = await supabase
+      const { data: updatedProfile, error: getError } = await supabaseAdmin
         .from('profiles')
         .select('*')
         .eq('id', userId)
@@ -164,14 +158,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       console.log('🔄 作成データ:', newProfile);
       
-      const { error: insertError } = await supabase
+      const { error: insertError } = await supabaseAdmin
         .from('profiles')
         .insert([newProfile]);
         
       if (insertError) throw insertError;
       
       // 作成後のデータを取得
-      const { data: createdProfile, error: getError } = await supabase
+      const { data: createdProfile, error: getError } = await supabaseAdmin
         .from('profiles')
         .select('*')
         .eq('id', userId)

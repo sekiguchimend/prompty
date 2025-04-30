@@ -15,6 +15,7 @@ import { Textarea } from './ui/textarea';
 import { Button } from './ui/button';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Label } from './ui/label';
+import ReportDialog from './common/ReportDialog';
 
 // グローバルトースト用のイベント名
 const GLOBAL_TOAST_EVENT = 'global:toast:show';
@@ -27,16 +28,6 @@ export const showGlobalToast = (title: string, description: string, variant: 'de
   });
   window.dispatchEvent(event);
 };
-
-// 報告理由の選択肢
-const REPORT_REASONS = [
-  { id: 'inappropriate', label: '不適切なコンテンツ' },
-  { id: 'spam', label: 'スパム・宣伝' },
-  { id: 'copyright', label: '著作権侵害' },
-  { id: 'offensive', label: '攻撃的・差別的' },
-  { id: 'misinformation', label: '誤情報・フェイク情報' },
-  { id: 'other', label: 'その他' }
-];
 
 // PromptGrid.tsx用のコンポーネント
 export type { PromptItem };
@@ -136,8 +127,6 @@ const PromptCard: React.FC<PromptCardProps> = ({
   const [bookmarked, setBookmarked] = useState(isBookmarked);
   const [currentLikeCount, setCurrentLikeCount] = useState(likeCount);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
-  const [reportReason, setReportReason] = useState('');
-  const [selectedReportReasonId, setSelectedReportReasonId] = useState('');
   const [showOptions, setShowOptions] = useState(false);
   const [isLikeProcessing, setIsLikeProcessing] = useState(false);
   const [isBookmarkProcessing, setIsBookmarkProcessing] = useState(false);
@@ -370,50 +359,19 @@ const PromptCard: React.FC<PromptCardProps> = ({
     }
   };
   
-  // 報告ダイアログを開く
+  // 報告ダイアログを開く関数
   const openReportDialog = (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    setReportDialogOpen(true);
     setShowOptions(false);
-  };
-  
-  // 報告を処理する関数
-  const handleReport = () => {
-    if (!selectedReportReasonId) {
-      showGlobalToast(
-        "報告理由を選択してください", 
-        "報告を送信するには理由の選択が必要です。", 
-        "destructive"
-      );
-      return;
-    }
-    
-    const selectedReason = REPORT_REASONS.find(reason => reason.id === selectedReportReasonId);
-    const reasonText = selectedReason ? selectedReason.label : '不明な理由';
-    const detailText = reportReason.trim() ? ` (詳細: ${reportReason})` : '';
-    
-    // ここで実際にはAPIを呼び出して報告を送信します
-    console.log(`コンテンツ報告: ID=${promptId}, 理由=${reasonText}${detailText}`);
-    
-    setReportDialogOpen(false);
-    showGlobalToast(
-      "報告を受け付けました", 
-      "ご報告ありがとうございます。内容を確認いたします。"
-    );
-    
-    // 状態をリセット
-    setSelectedReportReasonId('');
-    setReportReason('');
+    setReportDialogOpen(true);
   };
   
   // ダイアログを閉じた時に状態をリセット
   const handleCloseReportDialog = () => {
     setReportDialogOpen(false);
-    setSelectedReportReasonId('');
-    setReportReason('');
   };
   
   // オプションメニューの表示切替
@@ -532,60 +490,14 @@ const PromptCard: React.FC<PromptCardProps> = ({
       </Link>
 
       {/* 報告ダイアログ */}
-      <Dialog open={reportDialogOpen} onOpenChange={handleCloseReportDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>コンテンツを報告</DialogTitle>
-            <DialogDescription>
-              このコンテンツを報告する理由を選択してください。すべての報告は匿名で処理されます。
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div>
-              <div className="mb-4">
-                <h4 className="text-sm font-medium mb-2">報告理由</h4>
-                <RadioGroup 
-                  value={selectedReportReasonId} 
-                  onValueChange={setSelectedReportReasonId}
-                  className="space-y-2"
-                >
-                  {REPORT_REASONS.map((reason) => (
-                    <div key={reason.id} className="flex items-center space-x-2">
-                      <RadioGroupItem value={reason.id} id={`reason-${reason.id}`} />
-                      <Label htmlFor={`reason-${reason.id}`} className="text-sm font-normal">
-                        {reason.label}
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </div>
-              
-              <div>
-                <h4 className="text-sm font-medium mb-2">詳細情報（任意）</h4>
-                <Textarea 
-                  placeholder="追加の詳細情報があれば入力してください..." 
-                  value={reportReason}
-                  onChange={(e) => setReportReason(e.target.value)}
-                  className="resize-none"
-                  rows={3}
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="secondary" onClick={handleCloseReportDialog}>
-              キャンセル
-            </Button>
-            <Button 
-              type="button" 
-              onClick={handleReport} 
-              disabled={!selectedReportReasonId}
-            >
-              報告する
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ReportDialog
+        isOpen={reportDialogOpen}
+        onClose={handleCloseReportDialog}
+        targetId={promptId}
+        promptId={promptId}
+        userId={currentUser?.id || null}
+        targetType="prompt"
+      />
     </>
   );
 };
