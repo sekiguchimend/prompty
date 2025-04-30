@@ -42,6 +42,38 @@ export const showGlobalToast = (title: string, description: string, variant: 'de
 };
 
 /**
+ * 認証トークンを取得する関数
+ * Supabaseのセッションからトークンを取得
+ */
+const getAuthToken = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  
+  try {
+    // ローカルストレージからSupabaseセッションを取得
+    const supabaseSession = localStorage.getItem('supabase.auth.token');
+    if (supabaseSession) {
+      const session = JSON.parse(supabaseSession);
+      const accessToken = session?.access_token || session?.data?.access_token;
+      return accessToken || null;
+    }
+    
+    // もし上記の方法で取得できない場合はクッキーから取得（代替手段）
+    const cookies = document.cookie.split(';');
+    for (const cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'supabase-auth-token') {
+        return value;
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('認証トークン取得エラー:', error);
+    return null;
+  }
+};
+
+/**
  * コンテンツまたはコメントを報告する関数
  * @param reportData 報告データ
  * @returns 報告の成功/失敗結果
@@ -53,12 +85,28 @@ export const submitReport = async (reportData: ReportData): Promise<{ success: b
       ? '/api/comments/report' 
       : '/api/prompts/report';
     
+    // 認証トークンの取得
+    const authToken = getAuthToken();
+    console.log('認証トークン状態:', { 
+      hasToken: !!authToken, 
+      tokenLength: authToken?.length || 0,
+      tokenPreview: authToken ? `${authToken.substring(0, 15)}...` : 'なし'
+    });
+    
+    // リクエストヘッダーの設定
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+    
+    // 認証トークンがあれば追加
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+    
     // APIへのリクエスト
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(reportData),
     });
 

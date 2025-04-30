@@ -4,7 +4,7 @@ import React, { useState, ChangeEvent, FormEvent } from 'react';
 import { supabase } from '../../src/lib/supabaseClient';
 import { NewContact } from '../../src/lib/schema';
 import Head from 'next/head';
-
+import Footer from '../../src/components/Footer';
 // お問い合わせフォームのデータ型
 type FormData = Omit<NewContact, 'is_read'>;
 
@@ -275,7 +275,7 @@ export default function ContactPage() {
                   </div>
                   <div className="ml-3">
                     <p className="font-medium">メール</p>
-                    <p className="text-gray-600">queue@queuetech.jp</p>
+                    <p className="text-gray-600">queue@queue-tech.jp</p>
                   </div>
                 </div>
                 <div className="flex items-start">
@@ -293,6 +293,7 @@ export default function ContactPage() {
             </div>
           </div>
         </div>
+        <Footer />
       </div>
     </>
   );
