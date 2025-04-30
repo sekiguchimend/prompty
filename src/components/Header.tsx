@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { Search, PenSquare, Bell, ChevronRight, Heart, MessageSquare, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -35,41 +35,19 @@ interface UserProfile {
   avatar_url?: string;
 }
 
-// メニュー項目 - 不要なので削除します
-// const menuItems = [
-//   { label: 'ホーム', href: '/' },
-//   { label: 'フォロー中', href: '/Following' },
-//   { label: 'フォロー中ユーザー', href: '/FollowingUsers' },
-//   { label: '人気', href: '/Popular' },
-//   { label: '注目', href: '/Featured' },
-//   { label: 'AI生成', href: '/AIGenerated' },
-// ];
-
-const Header = () => {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const { toast } = useToast();
-  // useAuthフックを使用してログイン状態を取得
-  const { user, isLoading, signOut } = useAuth();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false); // モバイル検索表示状態
-  const [isMobile, setIsMobile] = useState(false);
-  const [activeTab, setActiveTab] = useState('all');
-  const [userMenuOpen, setUserMenuOpen] = useState(false); // ユーザーメニュー表示状態
+// ユーザープロフィール情報取得カスタムフック
+const useUserProfile = (userId: string | undefined) => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const tabButtonsRef = useRef<(HTMLButtonElement | null)[]>([]);
   
-  // ユーザープロフィールを取得
   useEffect(() => {
+    if (!userId) return;
+    
     const fetchUserProfile = async () => {
-      if (!user) return;
-      
       try {
         const { data, error } = await supabase
           .from('profiles')
           .select('username, display_name, avatar_url')
-          .eq('id', user.id)
+          .eq('id', userId)
           .single();
           
         if (error) {
@@ -90,17 +68,15 @@ const Header = () => {
     };
     
     fetchUserProfile();
-  }, [user]);
+  }, [userId]);
   
-  // 表示用の名前とアバターURLを取得
-  const displayName = userProfile?.display_name || userProfile?.username || user?.email?.split('@')[0] || "ユーザー";
-  const profileAvatarUrl = userProfile?.avatar_url || user?.user_metadata?.avatar_url || "https://github.com/shadcn.png";
-  
-  // データを取得
-  const followingPosts = getFollowingPosts();
-  const todayForYouPosts = getTodayForYouPosts();
+  return userProfile;
+};
 
-  // 画面サイズを検出
+// 画面サイズ監視カスタムフック
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+  
   useEffect(() => {
     const checkIfMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -116,6 +92,37 @@ const Header = () => {
       window.removeEventListener('resize', checkIfMobile);
     };
   }, []);
+  
+  return isMobile;
+};
+
+// 管理者チェック関数
+const isAdminUser = (email: string | undefined) => {
+  if (!email) return false;
+  // 特定のメールアドレスリストに含まれるかチェック
+  if (ADMIN_EMAILS.includes(email)) return true;
+  // queuetech.jpドメインのメールアドレスかチェック
+  return email.endsWith('@queuetech.jp') || email.endsWith('@queue-tech.jp');
+};
+
+const Header = () => {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
+  // useAuthフックを使用してログイン状態を取得
+  const { user, isLoading, signOut } = useAuth();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false); // モバイル検索表示状態
+  const isMobile = useIsMobile();
+  const [activeTab, setActiveTab] = useState('all');
+  const [userMenuOpen, setUserMenuOpen] = useState(false); // ユーザーメニュー表示状態
+  const userProfile = useUserProfile(user?.id);
+  const tabButtonsRef = useRef<(HTMLButtonElement | null)[]>([]);
+  
+  // 表示用の名前とアバターURLを取得
+  const displayName = userProfile?.display_name || userProfile?.username || user?.email?.split('@')[0] || "ユーザー";
+  const profileAvatarUrl = userProfile?.avatar_url || user?.user_metadata?.avatar_url || "https://github.com/shadcn.png";
 
   // URLパスに基づいてアクティブタブを更新
   useEffect(() => {
@@ -133,37 +140,6 @@ const Header = () => {
       setActiveTab(matchingTab.id);
     }
   }, [pathname]);
-
-  // モバイル向けタッチフィードバックを向上
-  useEffect(() => {
-    if (!isMobile) return;
-    
-    tabButtonsRef.current.forEach((button, index) => {
-      if (!button) return;
-      
-      // タッチ開始時のエフェクト
-      const handleTouchStart = () => {
-        button.style.transform = 'scale(0.95)';
-        button.style.opacity = '0.9';
-      };
-      
-      // タッチ終了時のエフェクト
-      const handleTouchEnd = () => {
-        button.style.transform = 'scale(1)';
-        button.style.opacity = '1';
-      };
-      
-      button.addEventListener('touchstart', handleTouchStart, { passive: true });
-      button.addEventListener('touchend', handleTouchEnd, { passive: true });
-      button.addEventListener('touchcancel', handleTouchEnd, { passive: true });
-      
-      return () => {
-        button.removeEventListener('touchstart', handleTouchStart);
-        button.removeEventListener('touchend', handleTouchEnd);
-        button.removeEventListener('touchcancel', handleTouchEnd);
-      };
-    });
-  }, [isMobile, activeTab]);
 
   // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -224,24 +200,10 @@ const Header = () => {
     
     // 対応するパスに遷移
     router.push(selectedTab.path);
-    
-    // モバイル向けに、DOM操作で即座に選択状態を反映（React状態の更新を待たずに）
-    if (isMobile) {
-      tabButtonsRef.current.forEach((btn, idx) => {
-        if (!btn) return;
-        if (categoryTabs[idx].id === tabId) {
-          btn.classList.remove('bg-white', 'text-gray-800', 'border', 'border-gray-800');
-          btn.classList.add('bg-gray-800', 'text-white', 'shadow-sm');
-        } else {
-          btn.classList.remove('bg-gray-800', 'text-white', 'shadow-sm');
-          btn.classList.add('bg-white', 'text-gray-800', 'border', 'border-gray-800');
-        }
-      });
-    }
   };
 
-  // Open search on keyboard shortcut
-  React.useEffect(() => {
+  // キーボードショートカットリスナー
+  useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
@@ -255,15 +217,9 @@ const Header = () => {
     return () => document.removeEventListener("keydown", down);
   }, [isMobile]);
 
-  // ユーザーメニューを開く/閉じる
-  const toggleUserMenu = () => {
-    setUserMenuOpen(!userMenuOpen);
-  };
-
   // ログアウト処理を追加
   const handleLogout = async () => {
     try {
-      
       // AuthContextのsignOut関数を呼び出し
       await signOut();      
       // ログインページにリダイレクト
@@ -274,15 +230,6 @@ const Header = () => {
       console.error('🔴 Header: Logout error:', error);
       alert('ログアウト中にエラーが発生しました。ページをリロードしてください。');
     }
-  };
-
-  // 管理者かどうかをチェックする関数を追加
-  const isAdminUser = (email: string | undefined) => {
-    if (!email) return false;
-    // 特定のメールアドレスリストに含まれるかチェック
-    if (ADMIN_EMAILS.includes(email)) return true;
-    // queuetech.jpドメインのメールアドレスかチェック
-    return email.endsWith('@queuetech.jp') || email.endsWith('@queue-tech.jp');
   };
 
   const setTabButtonRef = useCallback((index: number) => (el: HTMLButtonElement | null) => {
@@ -558,4 +505,4 @@ const Header = () => {
   );
 };
 
-export default Header;
+export default memo(Header);

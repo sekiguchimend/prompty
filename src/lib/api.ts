@@ -283,7 +283,7 @@ function transformToPromptItem(item: any): PromptItem {
     title: item.title,
     thumbnailUrl: item.thumbnail_url || '/images/default-thumbnail.svg', // デフォルト画像
     user: {
-      name: item.profiles?.display_name || item.profiles?.username || '不明なユーザー',
+      name: item.profiles?.display_name && item.profiles?.display_name.trim() !== '' ? item.profiles.display_name : '匿名',
       avatarUrl: item.profiles?.avatar_url || '/images/default-avatar.svg',
     },
     postedAt,

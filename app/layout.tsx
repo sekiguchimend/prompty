@@ -1,9 +1,15 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import Header from '../src/components/Header';
 import { RouterProvider } from '../src/components/RouterProvider';
 import { AuthProvider } from '../src/lib/auth-context';
+import dynamic from 'next/dynamic';
+
+// コンポーネントの遅延ロード
+const Header = dynamic(() => import('../src/components/Header'), {
+  loading: () => <div className="h-16 border-b border-gray-200"></div>,
+  ssr: true
+});
 
 // フォントの設定（サブセットを最適化）
 const inter = Inter({ 
@@ -62,26 +68,19 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href={logoUrl} />
         <meta name="image" content={logoUrl} />
         
-        {/* 頻繁に使用されるページへのプリロード */}
-        <link rel="preload" href="/Following" as="document" />
-        <link rel="preload" href="/ContestPage" as="document" />
-        
-        {/* クリティカルなCSSプリロード */}
-        <link rel="preload" href="/styles/globals.css" as="style" />
-        
-        {/* 重要な画像のプリロード */}
+        {/* 重要な画像のプリロード - 必要最小限に */}
         <link rel="preload" href={logoUrl} as="image" type="image/jpeg" />
-        <link rel="preload" href="/images/default-thumbnail.svg" as="image" />
-        <link rel="preload" href="/images/default-avatar.svg" as="image" />
       </head>
       <body className={inter.className}>
-      <AuthProvider>
-        <RouterProvider>
-          <div className="relative flex min-h-screen flex-col">
-            <Header />
-            <main className="flex-1">{children}</main>
-          </div>
-        </RouterProvider>
+        <AuthProvider>
+          <RouterProvider>
+            <div className="relative flex min-h-screen flex-col">
+              <Suspense fallback={<div className="h-16 border-b border-gray-200"></div>}>
+                <Header />
+              </Suspense>
+              <main className="flex-1">{children}</main>
+            </div>
+          </RouterProvider>
         </AuthProvider>
       </body>
     </html>

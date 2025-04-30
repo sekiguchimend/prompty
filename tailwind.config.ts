@@ -28,6 +28,10 @@ const config = {
 					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))'
 				},
+				fontWeight: {
+					extrablack: '950', // font-extrablack クラスが使えるようになる
+					ultra: '1000'       // 任意でさらに太くしたいとき
+				  },
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
 					foreground: 'hsl(var(--secondary-foreground))'

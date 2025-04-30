@@ -69,7 +69,7 @@ const UserMenu: React.FC<UserMenuProps> = ({
   }, [user]);
   
   // 表示用の名前とアバターURLを取得
-  const displayName = profile?.display_name || profile?.username || user?.email || defaultUsername;
+  const displayName = profile?.display_name || "匿名";
   const profileAvatarUrl = profile?.avatar_url || defaultAvatarUrl;
   
   if (!isOpen) return null;

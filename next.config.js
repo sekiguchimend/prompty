@@ -6,7 +6,6 @@ const nextConfig = {
   swcMinify: true,
   images: {
     domains: ['qrxrulntwojimhhhnwqk.supabase.co'],
-    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
