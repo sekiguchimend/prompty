@@ -189,8 +189,8 @@ const Login = () => {
   return (
     <div className="flex min-h-screen bg-prompty-background">
       {/* Login form - centered */}
-      <div className="w-full flex flex-col items-center justify-start p-0 pt-0 md:justify-center md:p-8">
-        <Link href="/" className="mb-2 mt-2 md:mb-8">
+      <div className="w-full flex flex-col items-center justify-start p-0 pt-0 mt-[-60px] md:justify-center md:p-8 md:mt-[-80px]">
+        <Link href="/" className="mb-0 mt-2 md:mb-4">
           <div className="flex items-center">
             {/* <span className="text-3xl font-bold text-prompty-primary">p<span className="text-black">rompty</span></span>
             <span className="ml-1 text-pink-400">🌸</span> */}
@@ -199,7 +199,7 @@ const Login = () => {
         </Link>
 
         <Card className="w-full max-w-md shadow-md border-gray-100">
-          <CardContent className="pt-6">
+          <CardContent className="pt-3">
             <h1 className="text-2xl font-bold text-center mb-8">ログイン</h1>
             
             {/* エラーメッセージ表示 */}

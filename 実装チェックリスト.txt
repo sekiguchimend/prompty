@@ -12,6 +12,8 @@
 - [x] 認証セッションエラー (AuthSessionMissingError) を修正する
 - [x] analytics_viewsテーブルのRLSポリシー違反エラーを修正する
 - [x] Supabaseクライアントの共通化とインポート最適化
+- [x] Loginページのフォームを30pxほど上に移動する
+- [x] Loginページのフォームをスマホ画面でも上に移動して画面からはみ出さないように修正
 
 # 報告モーダルコンポーネント化タスク
 - [x] PromptGrid.tsxの報告ダイアログ部分をReportDialog.tsxで置き換える
