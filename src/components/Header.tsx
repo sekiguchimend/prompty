@@ -249,15 +249,14 @@ const Header = () => {
                   <Image 
                     src="https://qrxrulntwojimhhhnwqk.supabase.co/storage/v1/object/public/prompt-thumbnails/prompty_logo.jpg" 
                     alt="Prompty" 
-                    className="object-contain" 
+                    className="object-contain rounded-sm"
+                    width={120}
+                    height={40}
                     style={{
-                      width: 'auto',
-                      height: '32px',
-                      maxWidth: '100%',
-                      display: 'block'
-                    }} 
-                    width={32}
-                    height={32}
+                      objectFit: 'contain',
+                      maxHeight: '40px',
+                      width: 'auto'
+                    }}
                     priority
                   />
                 </Link>

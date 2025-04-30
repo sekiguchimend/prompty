@@ -25,10 +25,10 @@ export const metadata = {
   description: 'LLMを活用したプロンプト共有・販売プラットフォーム',
   icons: {
     icon: [
-      { url: '/prompty_logo.jpg', sizes: '192x192', type: 'image/jpeg' }
+      { url: '/favicon.ico', sizes: 'any' }
     ],
     apple: [
-      { url: '/prompty_logo.jpg', sizes: '192x192', type: 'image/jpeg' }
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }
     ]
   },
   manifest: '/site.webmanifest',
@@ -63,9 +63,9 @@ export default function RootLayout({
     <html lang="ja" suppressHydrationWarning>
       <head>
         {/* ファビコンとアイコン */}
-        <link rel="shortcut icon" href={logoUrl} type="image/jpeg" />
-        <link rel="icon" href={logoUrl} type="image/jpeg" sizes="any" />
-        <link rel="apple-touch-icon" href={logoUrl} />
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+        <link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="any" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <meta name="image" content={logoUrl} />
         
         {/* 重要な画像のプリロード - 必要最小限に */}
