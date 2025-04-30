@@ -258,6 +258,25 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
     return typeof value === 'number' ? value : defaultValue;
   };
 
+  // authorProfileからプロパティを安全に取得
+  const getProfileData = (profile: any): { display_name: string, avatar_url: string, bio: string } => {
+    if (!profile) {
+      return { display_name: '名無し', avatar_url: '/images/default-avatar.svg', bio: '著者情報なし' };
+    }
+    
+    // プロフィールが配列の場合は最初の要素を使用
+    const profileData = Array.isArray(profile) && profile.length > 0 ? profile[0] : profile;
+    
+    return {
+      display_name: safeGetString(profileData.display_name, '名無し'),
+      avatar_url: safeGetString(profileData.avatar_url, '/images/default-avatar.svg'),
+      bio: safeGetString(profileData.bio, '著者情報なし')
+    };
+  };
+
+  // プロフィールデータを安全に取得
+  const profileData = getProfileData(authorProfile);
+
   const postData: ExtendedPostItem = {
     id: safeGetString(promptData.id),
     title: safeGetString(promptData.title),
@@ -269,9 +288,9 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
     description: safeGetString(promptData.description, ''),
     user: {
       userId: safeGetString(promptData.author_id),
-      name: safeGetString(authorProfile?.display_name, '名無し'),
-      avatarUrl: safeGetString(authorProfile?.avatar_url, '/images/default-avatar.svg'),
-      bio: safeGetString(authorProfile?.bio, '著者情報なし'),
+      name: profileData.display_name,
+      avatarUrl: profileData.avatar_url,
+      bio: profileData.bio,
       publishedAt: new Date(safeGetString(promptData.created_at)).toLocaleDateString('ja-JP'),
       website: safeGetString(promptData.site_url, 'https://example.com')
     },

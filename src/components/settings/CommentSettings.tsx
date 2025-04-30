@@ -76,7 +76,7 @@ const CommentSettings: React.FC = () => {
             if (Array.isArray(parsedHiddenComments)) {
               setSettings(prev => ({
                 ...prev,
-                hidden_comments: [...new Set([...prev.hidden_comments, ...parsedHiddenComments])],
+                hidden_comments: Array.from(new Set([...prev.hidden_comments, ...parsedHiddenComments])),
               }));
             }
           } catch (error) {

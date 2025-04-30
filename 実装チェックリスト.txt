@@ -17,11 +17,13 @@
 - [x] 報告機能のデータベースエラーを修正（APIエンドポイントでのsupabaseAdmin初期化問題）
 - [x] 報告機能をreportsテーブルに接続し、ANON_KEYで動作するよう修正
 - [x] RLS認証エラーの修正とトークンの適切な送信処理の追加
+- [x] TypeScriptのSet展開エラーを修正（CommentSettings.tsx）
+- [x] プロンプト詳細ページでの型エラーを修正（authorProfileの安全なアクセス）
 
 # パフォーマンス改善タスク
 - [x] 画像最適化の有効化
   - [x] next.config.jsのimages設定でunoptimized: falseに変更する
-  - [ ] 適切なサイズ設定でImageコンポーネントを使用する
+  - [x] 適切なサイズ設定でImageコンポーネントを使用する
 - [x] 不要なプリロードの削除
   - [x] layout.tsxの過剰なpreloadリンクを削除または最適化する
   - [x] 必要なリソースのみをプリロードするよう修正
