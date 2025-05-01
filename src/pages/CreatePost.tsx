@@ -330,34 +330,75 @@ const CreatePost = () => {
   const handlePromptSubmit = (data: PromptFormValues) => {
     console.log("Prompt submitted:", data);
     
-    // 新しいプロンプトを追加
-    const newPrompt: Prompt = {
-      id: data.promptNumber,
-      prompt_title: data.prompt_title,
-      prompt_content: data.prompt_content,
-      createdAt: new Date()
-    };
+    // 常に一意のIDを生成（既存のIDとの重複を避ける）
+    const uniqueId = data.promptNumber;
     
-    setPrompts([...prompts, newPrompt]);
-    
-    // 次のプロンプト番号を設定
-    setPromptNumber(data.promptNumber + 1);
-    
-    // 成功メッセージ
-    toast({
-      title: "プロンプト追加",
-      description: `プロンプト #${data.promptNumber} が追加されました`,
-      variant: "default",
-    });
+    // IDが既に存在するかチェック
+    if (prompts.some(p => p.id === uniqueId)) {
+      // 既存IDがある場合は最大ID+1を使用
+      const nextId = Math.max(...prompts.map(p => p.id), 0) + 1;
+      console.log(`ID ${uniqueId} は既に存在します。代わりに ${nextId} を使用します。`);
+      
+      // 新しいプロンプトを追加
+      const newPrompt: Prompt = {
+        id: nextId,
+        prompt_title: data.prompt_title || `プロンプト #${nextId}`, // 自動生成タイトル
+        prompt_content: data.prompt_content,
+        createdAt: new Date()
+      };
+      
+      setPrompts([...prompts, newPrompt]);
+      
+      // 次のプロンプト番号を設定
+      setPromptNumber(nextId + 1);
+      
+      // 成功メッセージ
+      toast({
+        title: "プロンプト追加",
+        description: `プロンプト #${nextId} が追加されました`,
+        variant: "default",
+      });
+    } else {
+      // 新しいプロンプトを追加
+      const newPrompt: Prompt = {
+        id: uniqueId,
+        prompt_title: data.prompt_title || `プロンプト #${uniqueId}`, // 自動生成タイトル
+        prompt_content: data.prompt_content,
+        createdAt: new Date()
+      };
+      
+      setPrompts([...prompts, newPrompt]);
+      
+      // 次のプロンプト番号を設定
+      setPromptNumber(uniqueId + 1);
+      
+      // 成功メッセージ
+      toast({
+        title: "プロンプト追加",
+        description: `プロンプト #${uniqueId} が追加されました`,
+        variant: "default",
+      });
+    }
   };
 
   // 既存プロンプトの編集
   const handleEditPrompt = (prompt: Prompt) => {
-    // 編集は新しいプロンプトとして追加する形で実装
-    setPromptNumber(prompt.id);
+    // 編集モードに設定（既存のプロンプトIDを新しいプロンプトとして追加しない）
+    // 代わりに新しいプロンプト番号を使用
+    const nextNumber = Math.max(...prompts.map(p => p.id), 0) + 1;
+    setPromptNumber(nextNumber);
+    
+    // フォームに既存の内容を設定するためにイベントを発行
+    window.dispatchEvent(new CustomEvent('edit-prompt', { 
+      detail: { 
+        id: nextNumber, 
+        content: prompt.prompt_content 
+      } 
+    }));
+    
     toast({
       title: "編集モード",
-      description: `プロンプト #${prompt.id} を編集モードにしました`,
+      description: `プロンプト #${prompt.id} の内容を編集モードにしました`,
       variant: "default",
     });
   };
@@ -560,7 +601,33 @@ const CreatePost = () => {
         prompt_content: prompts[0].prompt_content // 最初のプロンプトの内容
       };
 
-      console.log('[DEBUG] API送信データ:', requestBody);
+      // データベース制約のチェック
+      if (!requestBody.prompt_title || requestBody.prompt_title.length < 5) {
+        toast({
+          title: "エラー",
+          description: "プロンプトタイトルは5文字以上である必要があります",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!requestBody.prompt_content || requestBody.prompt_content.length < 10) {
+        toast({
+          title: "エラー",
+          description: "プロンプト内容は10文字以上である必要があります",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      console.log('[DEBUG] API送信データ:', {
+        ...requestBody,
+        prompt_title_length: requestBody.prompt_title.length,
+        prompt_content_length: requestBody.prompt_content.length,
+        prompt_content_preview: requestBody.prompt_content.substring(0, 50) + '...',
+      });
       
       const mainPromptResponse = await fetch('/api/prompts/create', {
         method: 'POST',
@@ -632,7 +699,7 @@ const CreatePost = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
       
       <main className="flex-1 container max-w-4xl mx-auto px-4 py-8 mt-10">
@@ -661,7 +728,7 @@ const CreatePost = () => {
         
         {/* 認証状態表示 */}
         {isAnonymousSubmission && (
-          <div className="w-full max-w-3xl mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+          <div className="w-full max-w-3xl mb-6 p-4 bg-red-50 border border-red-200 rounded-md shadow-sm">
             <p className="text-red-800">
               現在ログインしていません。プロンプトの投稿にはログインが必要です。
               <a href="/Login" className="underline text-blue-600 font-bold ml-1">ログイン</a>して投稿してください。
@@ -671,35 +738,41 @@ const CreatePost = () => {
         
         {/* プロジェクト設定フォーム */}
         {!isAnonymousSubmission && (
-          <ProjectSettingsForm
-            onSave={handleProjectSave}
-            defaultValues={projectSettings}
-          />
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-8 overflow-hidden">
+            <ProjectSettingsForm
+              onSave={handleProjectSave}
+              defaultValues={projectSettings}
+            />
+          </div>
         )}
         
         {/* プロンプト履歴 */}
         {!isAnonymousSubmission && showHistory && prompts.length > 0 && (
-          <PromptHistory
-            prompts={prompts}
-            onEditPrompt={handleEditPrompt}
-          />
+          <div className="mb-8">
+            <PromptHistory
+              prompts={prompts}
+              onEditPrompt={handleEditPrompt}
+            />
+          </div>
         )}
         
         {/* プロンプト入力フォーム */}
         {!isAnonymousSubmission && (
-          <PromptForm
-            onSubmit={handlePromptSubmit}
-            initialPromptNumber={promptNumber}
-            aiModel={projectSettings.aiModel}
-            modelLabel={getModelLabel(projectSettings.aiModel)}
-          />
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-8 overflow-hidden">
+            <PromptForm
+              onSubmit={handlePromptSubmit}
+              initialPromptNumber={promptNumber}
+              aiModel={projectSettings.aiModel}
+              modelLabel={getModelLabel(projectSettings.aiModel)}
+            />
+          </div>
         )}
         
         {/* プロジェクト投稿ボタン */}
-        <div className="mt-6 flex justify-end">
+        <div className="mt-8 flex justify-end">
           <Button 
             onClick={submitProject}
-            className="bg-black hover:bg-gray-800 text-white"
+            className="bg-black hover:bg-gray-800 text-white px-6 py-2"
             disabled={isAnonymousSubmission || prompts.length === 0 || isSubmitting}
           >
             {isSubmitting ? (

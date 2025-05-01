@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Form, FormControl, FormField, FormItem } from "../../components/ui/form";
-import { Input } from "../../components/ui/input";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "../../components/ui/form";
 import { Textarea } from "../../components/ui/textarea";
 import { Button } from "../../components/ui/button";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ChevronDown, ChevronUp, Hash } from "lucide-react";
+import { ChevronDown, ChevronUp, Hash, AlertCircle } from "lucide-react";
 
 // プロンプトフォームスキーマ
 const promptFormSchema = z.object({
-  prompt_title: z.string().min(1, "タイトルを入力してください"),
-  prompt_content: z.string().min(1, "プロンプト内容を入力してください"),
+  prompt_content: z.string().min(10, "プロンプト内容は最低10文字以上入力してください"),
   promptNumber: z.number().min(1, "プロンプト番号は1以上である必要があります"),
 });
 
-export type PromptFormValues = z.infer<typeof promptFormSchema>;
+export type PromptFormValues = z.infer<typeof promptFormSchema> & {
+  prompt_title?: string;
+};
 
 interface PromptFormProps {
   onSubmit: (data: PromptFormValues) => void;
@@ -32,12 +32,12 @@ const PromptForm: React.FC<PromptFormProps> = ({
 }) => {
   const [promptNumber, setPromptNumber] = useState(initialPromptNumber);
   const [wordCount, setWordCount] = useState(0);
+  const [contentError, setContentError] = useState<string | null>(null);
   
   // プロンプト入力フォーム
   const promptForm = useForm<PromptFormValues>({
     resolver: zodResolver(promptFormSchema),
     defaultValues: {
-      prompt_title: "",
       prompt_content: "",
       promptNumber: promptNumber,
     },
@@ -48,17 +48,56 @@ const PromptForm: React.FC<PromptFormProps> = ({
     promptForm.setValue("promptNumber", promptNumber);
   }, [promptNumber, promptForm]);
 
+  // 編集イベントをリッスン
+  useEffect(() => {
+    const handleEditPrompt = (event: CustomEvent) => {
+      const { id, content } = event.detail;
+      if (id && content) {
+        setPromptNumber(id);
+        promptForm.setValue("prompt_content", content);
+        setWordCount(content.length);
+        setContentError(null);
+      }
+    };
+
+    // カスタムイベントリスナーを追加
+    window.addEventListener('edit-prompt', handleEditPrompt as EventListener);
+    
+    // クリーンアップ
+    return () => {
+      window.removeEventListener('edit-prompt', handleEditPrompt as EventListener);
+    };
+  }, [promptForm]);
+
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const content = e.target.value;
     promptForm.setValue("prompt_content", content);
     setWordCount(content.length);
+    
+    // 文字数チェック
+    if (content.length < 10) {
+      setContentError("プロンプト内容は最低10文字以上入力してください");
+    } else {
+      setContentError(null);
+    }
   };
 
   const handleSubmitForm = (data: PromptFormValues) => {
-    onSubmit(data);
+    // 文字数チェック
+    if (data.prompt_content.length < 10) {
+      setContentError("プロンプト内容は最低10文字以上入力してください");
+      return;
+    }
+    
+    // タイトルを追加
+    const dataWithTitle = {
+      ...data,
+      prompt_title: `プロンプト #${promptNumber}`
+    };
+    
+    onSubmit(dataWithTitle);
     // フォーム送信後にフォームをリセット
     promptForm.reset({
-      prompt_title: "",
       prompt_content: "",
       promptNumber: promptNumber
     });
@@ -67,9 +106,9 @@ const PromptForm: React.FC<PromptFormProps> = ({
   };
 
   return (
-    <Form {...promptForm}>
-      <form onSubmit={promptForm.handleSubmit(handleSubmitForm)} className="space-y-8">
-        <div className="bg-white rounded-lg p-4 sm:p-6 shadow-sm border border-gray-200">
+    <div className="bg-white rounded-lg">
+      <Form {...promptForm}>
+        <form onSubmit={promptForm.handleSubmit(handleSubmitForm)} className="space-y-6 p-6">
           {/* ヘッダー: プロンプト番号と使用AIモデル表示 */}
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div className="flex items-center">
@@ -84,23 +123,9 @@ const PromptForm: React.FC<PromptFormProps> = ({
             </div>
           </div>
           
-          {/* タイトルと番号調整 */}
+          {/* プロンプト番号調整 */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
-            <FormField
-              control={promptForm.control}
-              name="prompt_title"
-              render={({ field }) => (
-                <FormItem className="flex-1 w-full">
-                  <FormControl>
-                    <Input
-                      placeholder="プロンプトのタイトル"
-                      className="text-lg font-medium border-gray-300"
-                      {...field}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+            <div className="flex-1"></div>
             
             <div className="flex items-center border border-gray-300 rounded-md">
               <button 
@@ -144,12 +169,18 @@ const PromptForm: React.FC<PromptFormProps> = ({
               <FormItem>
                 <FormControl>
                   <Textarea
-                    placeholder="AIに送信したプロンプト内容を入力してください..."
+                    placeholder="AIに送信したプロンプト内容を入力してください...（最低10文字以上）"
                     className="min-h-[200px] border-gray-300 resize-none"
                     onChange={handleContentChange}
                     value={field.value}
                   />
                 </FormControl>
+                {(contentError || promptForm.formState.errors.prompt_content) && (
+                  <div className="text-red-500 text-sm flex items-center mt-1">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {contentError || promptForm.formState.errors.prompt_content?.message}
+                  </div>
+                )}
               </FormItem>
             )}
           />
@@ -162,20 +193,19 @@ const PromptForm: React.FC<PromptFormProps> = ({
             </div>
             <Button 
               type="submit"
-              className="bg-black hover:bg-gray-800 text-white "
+              className="bg-black hover:bg-gray-800 text-white"
+              disabled={wordCount < 10}
             >
               プロンプトを追加
             </Button>
-            <div>
-              {wordCount} 文字
+            <div className={wordCount < 10 ? "text-red-500" : ""}>
+              {wordCount} 文字 {wordCount < 10 && "(最低10文字必要)"}
             </div>
           </div>
             
-        </div>
-        
-        
-      </form>
-    </Form>
+        </form>
+      </Form>
+    </div>
   );
 };
 

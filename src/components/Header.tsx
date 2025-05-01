@@ -150,17 +150,16 @@ const Header = () => {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      console.log('🔍 ヘッダーから検索実行:', searchQuery.trim());
       setMobileSearchOpen(false);
       // URLを直接構築して遷移（検索キーワードを確実に反映）
       const searchUrl = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
       
       // 現在のURLと同じ検索クエリの場合、強制的にページをリロード
       if (pathname === '/search' && searchParams?.get('q') === searchQuery.trim()) {
-        console.log('🔄 同じクエリでリロード:', searchUrl);
-        window.location.href = searchUrl; // 完全なページリロード
+        // 同じクエリで検索ページを再読み込み
+        window.location.href = searchUrl;
       } else {
-        console.log('🔀 新しいクエリで遷移:', searchUrl);
+        // 通常の遷移
         router.push(searchUrl);
       }
       setSearchQuery('');

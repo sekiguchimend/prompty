@@ -196,17 +196,15 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
   }, [projectForm.watch]);
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 mb-6">
+    <div className="bg-white rounded-lg">
       <Form {...projectForm}>
         <form onSubmit={projectForm.handleSubmit(onSubmit)}>
           <div className="p-6">
-            <h2 className="text-lg font-semibold mb-4">プロジェクト設定</h2>
-            
             <div className="md:flex gap-8">
               {/* サムネイル画像アップロードエリア */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 mb-6 md:mb-0">
                 <div 
-                  className="w-32 h-32 border border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden cursor-pointer"
+                  className="w-32 h-32 border border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden cursor-pointer hover:bg-gray-100 transition-colors"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   {thumbnailPreview ? (

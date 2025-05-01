@@ -30,7 +30,7 @@ const PromptHistory: React.FC<PromptHistoryProps> = ({ prompts, onEditPrompt }) 
       <h3 className="text-lg font-medium mb-4 text-black">プロンプト履歴</h3>
       <div className="space-y-4">
         {prompts.map((prompt, index) => (
-          <div key={prompt.id} className="relative">
+          <div key={`prompt-${prompt.id}-${index}`} className="relative">
             {/* 左側のタイムライン */}
             <div className="absolute left-2 sm:left-4 top-0 bottom-0 flex flex-col items-center">
               <div className="flex items-center justify-center h-8 w-8 rounded-full bg-black text-white font-medium shadow-sm z-10">

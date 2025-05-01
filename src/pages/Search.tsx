@@ -30,187 +30,162 @@ const Search = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [results, setResults] = useState<PromptItem[]>([]);
   const [filteredResults, setFilteredResults] = useState<PromptItem[]>([]);
+  const [searchError, setSearchError] = useState<string | null>(null);
   
   // 並び替えとフィルタリングのステート
   const [sortOption, setSortOption] = useState<SortOption>('relevance');
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
 
-  useEffect(() => {
-    // searchParamsからクエリを取得していることを明示的にログ出力
-    const searchQuery = searchParams?.get('q') || '';
-    console.log('📥 Search.tsx: 検索ページでクエリパラメータ取得:', searchQuery);
-    setSearchInput(searchQuery);
-    
-    // Simulate API call with a delay
+  // 検索実行関数
+  const executeSearch = async (searchQuery: string) => {
     setIsLoading(true);
-    console.log('🔍 検索クエリ:', searchQuery);
+    setSearchError(null);
     
-    const fetchSearchResults = async () => {
-      try {
-        // 実際のSupabaseからデータを取得
-        if (!searchQuery.trim()) {
-          // 検索クエリがない場合は最新の投稿を表示
-          console.log('🔍 検索クエリがないため、最新の投稿を表示します');
-          const { data: promptsData, error } = await supabase
-            .from('prompts')
+    try {
+      // 実際のSupabaseからデータを取得
+      if (!searchQuery.trim()) {
+        // 検索クエリがない場合は最新の投稿を表示
+        const { data: promptsData, error } = await supabase
+          .from('prompts')
+          .select(`
+            id,
+            title,
+            thumbnail_url,
+            content,
+            created_at,
+            price,
+            author_id,
+            view_count,
+            profiles:profiles(id, username, display_name, avatar_url, bio)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(20);
+          
+        if (error) {
+          console.error('Supabase検索エラー:', error);
+          setSearchError('データの取得中にエラーが発生しました');
+          throw error;
+        }
+        
+        // データ変換処理
+        const formattedResults = transformPromptsData(promptsData || []);
+        setResults(formattedResults);
+        setFilteredResults(formattedResults);
+      } else {
+        // Supabaseから検索
+        const { data: promptsData, error } = await supabase
+          .from('prompts')
+          .select(`
+            id,
+            title,
+            thumbnail_url,
+            content,
+            created_at,
+            price,
+            author_id,
+            view_count,
+            profiles:profiles(id, username, display_name, avatar_url, bio)
+          `)
+          .or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`)
+          .order('created_at', { ascending: false });
+          
+        if (error) {
+          console.error('Supabase検索エラー:', error);
+          setSearchError('検索処理中にエラーが発生しました');
+          throw error;
+        }
+        
+        if (!promptsData || promptsData.length === 0) {
+          // プロフィール名での検索を試みる
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
             .select(`
-              id,
-              title,
-              thumbnail_url,
-              content,
-              created_at,
-              price,
-              author_id,
-              view_count,
-              profiles:profiles(id, username, display_name, avatar_url, bio)
+              id, 
+              username,
+              display_name,
+              avatar_url
             `)
-            .order('created_at', { ascending: false })
-            .limit(20);
+            .or(`username.ilike.%${searchQuery}%,display_name.ilike.%${searchQuery}%`);
             
-          if (error) {
-            console.error('Supabase検索エラー:', error);
-            throw error;
-          }
-          
-          // データ変換処理
-          const formattedResults = transformPromptsData(promptsData || []);
-          console.log('🔍 最新の投稿:', formattedResults.length, '件');
-          setResults(formattedResults);
-          setFilteredResults(formattedResults);
-        } else {
-          // Supabaseから検索
-          console.log('🔍 Supabaseで検索実行:', searchQuery);
-          const { data: promptsData, error } = await supabase
-            .from('prompts')
-            .select(`
-              id,
-              title,
-              thumbnail_url,
-              content,
-              created_at,
-              price,
-              author_id,
-              view_count,
-              profiles:profiles(id, username, display_name, avatar_url, bio)
-            `)
-            .or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`)
-            .order('created_at', { ascending: false });
-            
-          if (error) {
-            console.error('Supabase検索エラー:', error);
-            throw error;
-          }
-          
-          console.log('取得したデータ:', promptsData);
-          
-          if (!promptsData || promptsData.length === 0) {
-            // プロフィール名での検索を試みる
-            const { data: profilesData, error: profilesError } = await supabase
-              .from('profiles')
+          if (profilesError) {
+            console.error('プロフィール検索エラー:', profilesError);
+          } else if (profilesData && profilesData.length > 0) {
+            // 見つかったプロフィールのユーザーIDで投稿を検索
+            const userIds = profilesData.map(profile => profile.id);
+            const { data: userPromptsData, error: userPromptsError } = await supabase
+              .from('prompts')
               .select(`
-                id, 
-                username,
-                display_name,
-                avatar_url
+                id,
+                title,
+                thumbnail_url,
+                content,
+                created_at,
+                price,
+                author_id,
+                view_count,
+                profiles:profiles(id, username, display_name, avatar_url, bio)
               `)
-              .or(`username.ilike.%${searchQuery}%,display_name.ilike.%${searchQuery}%`);
+              .in('author_id', userIds)
+              .order('created_at', { ascending: false });
               
-            if (profilesError) {
-              console.error('プロフィール検索エラー:', profilesError);
-            } else if (profilesData && profilesData.length > 0) {
-              // 見つかったプロフィールのユーザーIDで投稿を検索
-              const userIds = profilesData.map(profile => profile.id);
-              const { data: userPromptsData, error: userPromptsError } = await supabase
-                .from('prompts')
-                .select(`
-                  id,
-                  title,
-                  thumbnail_url,
-                  content,
-                  created_at,
-                  price,
-                  author_id,
-                  view_count,
-                  profiles:profiles(id, username, display_name, avatar_url, bio)
-                `)
-                .in('author_id', userIds)
-                .order('created_at', { ascending: false });
-                
-              if (userPromptsError) {
-                console.error('ユーザー投稿検索エラー:', userPromptsError);
-              } else {
-                // データ変換処理
-                const formattedResults = transformPromptsData(userPromptsData || []);
-                console.log('🔍 ユーザー名検索結果:', formattedResults.length, '件');
-                setResults(formattedResults);
-                setFilteredResults(formattedResults);
-                return;
-              }
+            if (userPromptsError) {
+              console.error('ユーザー投稿検索エラー:', userPromptsError);
+            } else {
+              // データ変換処理
+              const formattedResults = transformPromptsData(userPromptsData || []);
+              setResults(formattedResults);
+              setFilteredResults(formattedResults);
+              setIsLoading(false);
+              return;
             }
           }
-          
-          // データ変換処理
-          const formattedResults = transformPromptsData(promptsData || []);
-          console.log('🔍 検索結果:', formattedResults.length, '件');
-          
-          if (formattedResults.length === 0) {
-            // バックアップとしてモックデータから検索
-            console.log('Supabaseで結果が見つからなかったため、モックデータから検索します');
-            const combinedPrompts = [...featuredPrompts, ...aiGeneratedPrompts];
-            const mockResults = combinedPrompts.filter(prompt => 
-              prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              prompt.user.name.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-            setResults(mockResults);
-            setFilteredResults(mockResults);
-          } else {
-            setResults(formattedResults);
-            setFilteredResults(formattedResults);
-          }
         }
-      } catch (error) {
-        console.error('検索中にエラーが発生しました:', error);
-        // エラー時はモックデータにフォールバック
-        const combinedPrompts = [...featuredPrompts, ...aiGeneratedPrompts];
-        const mockResults = combinedPrompts.filter(prompt => 
-          prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          prompt.user.name.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-        setResults(mockResults);
-        setFilteredResults(mockResults);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    // データ変換用ヘルパー関数
-    const transformPromptsData = (promptsData: any[]): PromptItem[] => {
-      return promptsData.map(prompt => {
-        const profileData = prompt.profiles && prompt.profiles.length > 0 
-          ? prompt.profiles[0] 
-          : { display_name: '不明なユーザー', avatar_url: '/images/default-avatar.svg' };
         
-        return {
-          id: prompt.id,
-          title: prompt.title || '無題',
-          thumbnailUrl: prompt.thumbnail_url || '/images/default-thumbnail.svg',
-          content: prompt.content || [],
-          postedAt: new Date(prompt.created_at).toLocaleDateString('ja-JP'),
-          likeCount: prompt.like_count || 0,
-          user: {
-            userId: prompt.author_id || '',
-            name: profileData.display_name || profileData.username || '不明なユーザー',
-            avatarUrl: profileData.avatar_url || '/images/default-avatar.svg',
-          }
-        };
-      });
-    };
+        // データ変換処理
+        const formattedResults = transformPromptsData(promptsData || []);
+        
+        if (formattedResults.length === 0) {
+          // バックアップとしてモックデータから検索
+          const combinedPrompts = [...featuredPrompts, ...aiGeneratedPrompts];
+          const mockResults = combinedPrompts.filter(prompt => 
+            prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            prompt.user.name.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+          setResults(mockResults);
+          setFilteredResults(mockResults);
+        } else {
+          setResults(formattedResults);
+          setFilteredResults(formattedResults);
+        }
+      }
+    } catch (error) {
+      console.error('検索中にエラーが発生しました:', error);
+      if (!searchError) {
+        setSearchError('検索中にエラーが発生しました。しばらく経ってからお試しください。');
+      }
+      // エラー時はモックデータにフォールバック
+      const combinedPrompts = [...featuredPrompts, ...aiGeneratedPrompts];
+      const mockResults = combinedPrompts.filter(prompt => 
+        prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        prompt.user.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setResults(mockResults);
+      setFilteredResults(mockResults);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // searchParamsからクエリを取得
+    const searchQuery = searchParams?.get('q') || '';
+    setSearchInput(searchQuery);
     
     // 少し遅延させて検索実行
     const timer = setTimeout(() => {
-      fetchSearchResults();
-    }, 500);
+      executeSearch(searchQuery);
+    }, 300);
     
     return () => clearTimeout(timer);
   }, [searchParams]); // queryではなくsearchParamsの変更を監視
@@ -267,18 +242,39 @@ const Search = () => {
     setFilteredResults(sorted);
   }, [results, sortOption, filterType, query, searchParams]); // searchParamsの変更も監視
 
+  // データ変換用ヘルパー関数
+  const transformPromptsData = (promptsData: any[]): PromptItem[] => {
+    return promptsData.map(prompt => {
+      const profileData = prompt.profiles && prompt.profiles.length > 0 
+        ? prompt.profiles[0] 
+        : { display_name: '不明なユーザー', avatar_url: '/images/default-avatar.svg' };
+      
+      return {
+        id: prompt.id,
+        title: prompt.title || '無題',
+        thumbnailUrl: prompt.thumbnail_url || '/images/default-thumbnail.svg',
+        content: prompt.content || [],
+        postedAt: new Date(prompt.created_at).toLocaleDateString('ja-JP'),
+        likeCount: prompt.like_count || 0,
+        user: {
+          userId: prompt.author_id || '',
+          name: profileData.display_name || profileData.username || '不明なユーザー',
+          avatarUrl: profileData.avatar_url || '/images/default-avatar.svg',
+        }
+      };
+    });
+  };
+
+  // 検索フォーム送信時の処理
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchInput.trim()) {
-      console.log('🔍 Search.tsx内部の検索実行:', searchInput.trim());
       const searchUrl = `/search?q=${encodeURIComponent(searchInput.trim())}`;
       
-      // 現在のURLと同じ検索クエリの場合、強制的にページをリロード
+      // 現在のURLと同じ検索クエリの場合、executeSearchを直接呼び出し
       if (searchParams?.get('q') === searchInput.trim()) {
-        console.log('🔄 同じクエリでリロード:', searchUrl);
-        window.location.href = searchUrl; // 完全なページリロード
+        executeSearch(searchInput.trim());
       } else {
-        console.log('🔀 新しいクエリで遷移:', searchUrl);
         router.push(searchUrl);
       }
     }
@@ -313,138 +309,156 @@ const Search = () => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="min-h-screen bg-prompty-background">
       <Header />
       
-      <main className="flex-1 pb-12 mt-12">
-        <div className="container px-4 py-6 sm:px-6 md:px-8">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold mb-2">
-              {query ? `"${query}" の検索結果` : "すべての検索結果"}
-            </h1>
-            <p className="text-gray-500">
-              {isLoading ? '検索中...' : `${filteredResults.length}件の結果が見つかりました`}
-            </p>
-          </div>
+      <main className="container max-w-7xl mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-4">検索</h1>
+        
+       
+        {/* 検索フィルターと並べ替えオプション */}
+        <div className="flex flex-wrap gap-3 mb-6">
+          {/* 検索フィルタードロップダウン */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-1">
+                <Filter className="h-4 w-4" />
+                {filterType === 'all' ? 'すべて' : 
+                 filterType === 'title' ? 'タイトル' : 
+                 filterType === 'author' ? '作者' : 'タグ'}
+                <ChevronDown className="h-4 w-4 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>検索対象</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleFilterTypeChange('all')} className={filterType === 'all' ? 'bg-prompty-lightGray' : ''}>
+                すべて
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleFilterTypeChange('title')} className={filterType === 'title' ? 'bg-prompty-lightGray' : ''}>
+                <FileText className="h-4 w-4 mr-2" />
+                タイトル
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleFilterTypeChange('author')} className={filterType === 'author' ? 'bg-prompty-lightGray' : ''}>
+                <User className="h-4 w-4 mr-2" />
+                作者
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleFilterTypeChange('tag')} className={filterType === 'tag' ? 'bg-prompty-lightGray' : ''}>
+                <Tag className="h-4 w-4 mr-2" />
+                タグ
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           
-          {/* 並び替えとフィルタリングオプション */}
-          <div className="flex flex-wrap items-center gap-3 mb-6">
-            {/* 並び替えドロップダウン */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="flex items-center">
-                  <SortAsc className="mr-2 h-4 w-4" />
-                  {sortOption === 'relevance' && '関連度順'}
-                  {sortOption === 'title_asc' && 'タイトル (A→Z)'}
-                  {sortOption === 'title_desc' && 'タイトル (Z→A)'}
-                  {sortOption === 'latest' && '新着順'}
-                  {sortOption === 'oldest' && '古い順'}
-                  {sortOption === 'popular' && '人気順'}
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[200px]">
-                <DropdownMenuLabel>並び替え</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setSortOption('relevance')}>
-                  <SortAsc className="mr-2 h-4 w-4" />
-                  関連度順
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortOption('title_asc')}>
-                  <SortAsc className="mr-2 h-4 w-4" />
-                  タイトル (A→Z)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortOption('title_desc')}>
-                  <SortDesc className="mr-2 h-4 w-4" />
-                  タイトル (Z→A)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortOption('latest')}>
-                  <SortDesc className="mr-2 h-4 w-4" />
-                  新着順
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortOption('oldest')}>
-                  <SortAsc className="mr-2 h-4 w-4" />
-                  古い順
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortOption('popular')}>
-                  <SortDesc className="mr-2 h-4 w-4" />
-                  人気順
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* フィルタードロップダウン */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="flex items-center">
-                  <Filter className="mr-2 h-4 w-4" />
-                  フィルター
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[200px]">
-                <DropdownMenuLabel>フィルター</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => handleFilterTypeChange('all')}>
-                  <SearchIcon className="mr-2 h-4 w-4" />
-                  すべて
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleFilterTypeChange('title')}>
-                  <FileText className="mr-2 h-4 w-4" />
-                  タイトル
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleFilterTypeChange('author')}>
-                  <User className="mr-2 h-4 w-4" />
-                  投稿者
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleFilterTypeChange('tag')}>
-                  <Tag className="mr-2 h-4 w-4" />
-                  タグ
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            {/* アクティブなフィルターバッジ */}
-            {activeFilters.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
-                {activeFilters.map(filter => (
-                  <Badge 
-                    key={filter} 
-                    variant="secondary"
-                    className="flex items-center gap-1 px-2 py-1"
-                  >
-                    {getFilterDisplayName(filter)}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-4 w-4 ml-1 p-0 hover:bg-transparent"
-                      onClick={() => removeFilter(filter)}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* 並び替えドロップダウン */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-1">
+                {sortOption === 'relevance' ? <SearchIcon className="h-4 w-4" /> :
+                 sortOption === 'title_asc' || sortOption === 'latest' ? <SortAsc className="h-4 w-4" /> :
+                 <SortDesc className="h-4 w-4" />}
+                {sortOption === 'relevance' ? '関連度順' : 
+                 sortOption === 'title_asc' ? 'タイトル昇順' : 
+                 sortOption === 'title_desc' ? 'タイトル降順' : 
+                 sortOption === 'latest' ? '新しい順' : 
+                 sortOption === 'oldest' ? '古い順' : '人気順'}
+                <ChevronDown className="h-4 w-4 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>並び替え</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setSortOption('relevance')} className={sortOption === 'relevance' ? 'bg-prompty-lightGray' : ''}>
+                <SearchIcon className="h-4 w-4 mr-2" />
+                関連度順
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortOption('title_asc')} className={sortOption === 'title_asc' ? 'bg-prompty-lightGray' : ''}>
+                <SortAsc className="h-4 w-4 mr-2" />
+                タイトル昇順
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortOption('title_desc')} className={sortOption === 'title_desc' ? 'bg-prompty-lightGray' : ''}>
+                <SortDesc className="h-4 w-4 mr-2" />
+                タイトル降順
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortOption('latest')} className={sortOption === 'latest' ? 'bg-prompty-lightGray' : ''}>
+                <SortAsc className="h-4 w-4 mr-2" />
+                新しい順
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortOption('oldest')} className={sortOption === 'oldest' ? 'bg-prompty-lightGray' : ''}>
+                <SortDesc className="h-4 w-4 mr-2" />
+                古い順
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortOption('popular')} className={sortOption === 'popular' ? 'bg-prompty-lightGray' : ''}>
+                <SortDesc className="h-4 w-4 mr-2" />
+                人気順
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          {/* アクティブなフィルターの表示 */}
+          {activeFilters.length > 0 && (
+            <div className="flex flex-wrap gap-2 items-center">
+              {activeFilters.map(filter => (
+                <Badge key={filter} className="bg-prompty-lightGray text-gray-800 flex items-center gap-1" variant="outline">
+                  {getFilterDisplayName(filter)}
+                  <button onClick={() => removeFilter(filter)} className="ml-1">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setActiveFilters([])} 
+                className="text-xs text-gray-500 hover:text-gray-700"
+              >
+                すべて解除
+              </Button>
+            </div>
+          )}
+        </div>
+        
+        {/* 検索結果 */}
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold mb-4">
+            {query ? `「${query}」の検索結果: ${filteredResults.length}件` : '最新のプロンプト'}
+          </h2>
+          
+          {/* エラーメッセージ表示 */}
+          {searchError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+              <p className="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                {searchError}
+              </p>
+            </div>
+          )}
           
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-prompty-primary"></div>
-              <p className="mt-4 text-gray-500">検索中...</p>
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-prompty-primary"></div>
+              <span className="ml-2 text-prompty-primary">検索中...</span>
             </div>
           ) : filteredResults.length > 0 ? (
             <PromptGrid prompts={filteredResults} />
           ) : (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="bg-gray-100 p-4 rounded-full mb-4">
-                <SearchIcon className="h-8 w-8 text-gray-400" />
+            <div className="text-center py-12 bg-gray-50 rounded-lg">
+              <div className="mb-4">
+                <SearchIcon className="h-12 w-12 mx-auto text-gray-400" />
               </div>
-              <h2 className="text-xl font-medium mb-2">検索結果が見つかりませんでした</h2>
-              <p className="text-gray-500 mb-6 text-center max-w-md">
-                別のキーワードで検索するか、キーワードの綴りを確認してみてください。
-              </p>
-              <Button onClick={() => window.history.back()}>前のページに戻る</Button>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">検索結果が見つかりませんでした</h3>
+              <p className="text-gray-500 mb-4">別のキーワードで検索してみてください</p>
+              <Button 
+                onClick={() => {
+                  setSearchInput('');
+                  router.push('/search');
+                }}
+                variant="outline"
+              >
+                すべてのプロンプトを表示
+              </Button>
             </div>
           )}
         </div>

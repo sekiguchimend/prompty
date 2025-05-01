@@ -28,7 +28,7 @@ const nextConfig = {
   },
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? {
-      exclude: ['error', 'warn'],
+      exclude: ['error', 'warn', 'debug'],
     } : false,
   },
   transpilePackages: [],
