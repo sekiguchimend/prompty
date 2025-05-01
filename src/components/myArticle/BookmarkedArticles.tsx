@@ -1,41 +1,51 @@
-// components/BookmarkedArticles.jsx
+// components/BookmarkedArticles.tsx
 import React, { useState, useEffect } from 'react';
-import { Heart, Bookmark, MoreVertical } from 'lucide-react';
-import Link from 'next/link';
-import { useAuth } from '../../lib/auth-context';
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import { Bookmark, MoreVertical } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+import { useAuth } from '../../lib/auth-context';
+import Image from 'next/image';
 
 // Supabaseクライアントの初期化
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// 記事の型定義
+// プロフィールの型定義
+interface Profile {
+  id: string;
+  display_name: string;
+  avatar_url: string;
+}
+
+// 記事データの型定義
+interface ArticleData {
+  id: string;
+  title: string;
+  thumbnail_url: string | null;
+  created_at: string;
+  profiles: Profile;
+}
+
+// ブックマーク記事の型定義
 interface BookmarkedArticle {
   id: string;
   title: string;
-  description?: string;
-  thumbnailUrl?: string;
-  createdAt: string;
   author: {
     id: string;
-    name: string;
-    username: string;
-    avatarUrl: string;
+    display_name: string;
+    avatar_url: string;
   };
-  likeCount: number;
+  published_at: string;
+  bookmark_count: number;
+  thumbnail_url: string | null;
 }
 
 const BookmarkedArticles = () => {
   const { user } = useAuth();
-  const router = useRouter();
-  const [articles, setArticles] = useState<BookmarkedArticle[]>([]);
+  const [bookmarkedArticles, setBookmarkedArticles] = useState<BookmarkedArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ブックマークした記事を取得する関数
   useEffect(() => {
     const fetchBookmarkedArticles = async () => {
       if (!user) {
@@ -58,72 +68,66 @@ const BookmarkedArticles = () => {
           const promptIds = bookmarksData.map(bookmark => bookmark.prompt_id);
 
           // ブックマークした記事の詳細情報を取得
-          const { data: promptsData, error: promptsError } = await supabase
+          const { data: articlesData, error: articlesError } = await supabase
             .from('prompts')
             .select(`
               id,
               title,
-              description,
               thumbnail_url,
               created_at,
               profiles:author_id (
                 id,
                 display_name,
-                username,
                 avatar_url
               )
             `)
             .in('id', promptIds)
             .eq('published', true);
 
-          if (promptsError) throw promptsError;
+          if (articlesError) throw articlesError;
 
-          // いいね数を取得
+          // ブックマーク数を取得
           const bookmarkedArticlesWithCounts = await Promise.all(
-            promptsData.map(async (prompt: any) => {
+            articlesData.map(async (article: any) => {
               const { count, error: countError } = await supabase
-                .from('likes')
+                .from('bookmarks')
                 .select('id', { count: 'exact' })
-                .eq('prompt_id', prompt.id);
+                .eq('prompt_id', article.id);
 
               if (countError) {
-                console.error('いいね数取得エラー:', countError);
+                console.error('ブックマーク数取得エラー:', countError);
                 return {
-                  id: prompt.id,
-                  title: prompt.title,
-                  description: prompt.description,
-                  thumbnailUrl: prompt.thumbnail_url,
-                  createdAt: prompt.created_at,
+                  id: article.id,
+                  title: article.title,
                   author: {
-                    id: prompt.profiles.id,
-                    name: prompt.profiles.display_name,
-                    username: prompt.profiles.username,
-                    avatarUrl: prompt.profiles.avatar_url
+                    id: article.profiles.id,
+                    display_name: article.profiles.display_name,
+                    avatar_url: article.profiles.avatar_url
                   },
-                  likeCount: 0
+                  published_at: article.created_at,
+                  bookmark_count: 0,
+                  thumbnail_url: article.thumbnail_url
                 };
               }
 
               return {
-                id: prompt.id,
-                title: prompt.title,
-                description: prompt.description,
-                thumbnailUrl: prompt.thumbnail_url,
-                createdAt: prompt.created_at,
+                id: article.id,
+                title: article.title,
                 author: {
-                  id: prompt.profiles.id,
-                  name: prompt.profiles.display_name,
-                  username: prompt.profiles.username,
-                  avatarUrl: prompt.profiles.avatar_url
+                  id: article.profiles.id,
+                  display_name: article.profiles.display_name,
+                  avatar_url: article.profiles.avatar_url
                 },
-                likeCount: count || 0
+                published_at: article.created_at,
+                bookmark_count: count || 0,
+                thumbnail_url: article.thumbnail_url
               };
             })
           );
 
-          setArticles(bookmarkedArticlesWithCounts);
+          setBookmarkedArticles(bookmarkedArticlesWithCounts);
         } else {
-          setArticles([]);
+          setBookmarkedArticles([]);
         }
       } catch (error) {
         console.error('ブックマーク記事取得エラー:', error);
@@ -136,154 +140,72 @@ const BookmarkedArticles = () => {
     fetchBookmarkedArticles();
   }, [user]);
 
-  // 日付をフォーマットする関数
+  // 日付のフォーマット関数
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) {
-      const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-      if (diffHours === 0) {
-        const diffMinutes = Math.floor(diffTime / (1000 * 60));
-        return `${diffMinutes}分前`;
-      }
-      return `${diffHours}時間前`;
-    } else if (diffDays < 7) {
-      return `${diffDays}日前`;
-    } else {
-      return date.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
-    }
+    return date.toLocaleDateString('ja-JP', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
   };
-
-  if (loading) {
-    return (
-      <div className="bookmarked-articles">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">ブックマークした記事</h2>
-        </div>
-        <div className="articles-list">
-          <p className="text-center py-6">読み込み中...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bookmarked-articles">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">ブックマークした記事</h2>
-        </div>
-        <div className="articles-list">
-          <p className="text-center py-6 text-red-500">{error}</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="bookmarked-articles">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">ブックマークした記事</h2>
-      </div>
-      <div className="articles-list">
-        {articles.length > 0 ? (
-          <div className="grid gap-4">
-            {articles.map((article) => (
-              <div key={article.id} className="article-item border-b pb-4">
-                <Link href={`/prompts/${article.id}`} className="flex gap-4">
-                  {article.thumbnailUrl ? (
-                    <div className="article-thumbnail relative h-16 w-16">
-                      {/* 画像URLが有効な場合はImage、無効な場合はデフォルト表示 */}
-                      {article.thumbnailUrl.startsWith('http') ? (
-                        <Image 
-                          src={article.thumbnailUrl}
-                          alt={article.title}
-                          width={64}
-                          height={64}
-                          style={{ objectFit: 'cover' }}
-                          className="rounded-md h-full w-full"
-                          onError={(e) => {
-                            // エラー時はデフォルト画像を表示
-                            const target = e.target as HTMLImageElement;
-                            target.onerror = null; // 無限ループ防止
-                            target.src = '/images/default-thumbnail.png'; // デフォルト画像
-                          }}
-                        />
-                      ) : (
-                        // URLが無効な場合のフォールバック表示
-                        <div className="h-full w-full bg-gray-200 rounded-md flex items-center justify-center">
-                          <Bookmark className="h-6 w-6 text-gray-400" />
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    // サムネイルがない場合のフォールバック表示
-                    <div className="article-thumbnail relative h-16 w-16 bg-gray-100 rounded-md flex items-center justify-center">
-                      <Bookmark className="h-6 w-6 text-gray-300" />
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <h3 className="font-medium text-lg hover:text-blue-600">{article.title}</h3>
-                    {article.description && (
-                      <p className="text-sm text-gray-600 line-clamp-2 mt-1">{article.description}</p>
-                    )}
-                    <div className="flex items-center text-xs text-gray-500 mt-2">
-                      <div className="flex items-center mr-3">
-                        {article.author.avatarUrl && article.author.avatarUrl.startsWith('http') ? (
-                          <Image 
-                            src={article.author.avatarUrl} 
-                            alt={article.author.name || '匿名'}
-                            width={20}
-                            height={20}
-                            className="w-5 h-5 rounded-full mr-1"
-                            onError={(e) => {
-                              // エラー時はデフォルトアバターを表示
-                              const target = e.target as HTMLImageElement;
-                              target.onerror = null; // 無限ループ防止
-                              target.style.display = 'none'; // 画像を非表示
-                            }}
-                          />
-                        ) : (
-                          // アバター画像がない場合のフォールバック
-                          <div className="w-5 h-5 bg-blue-100 text-blue-500 rounded-full mr-1 flex items-center justify-center text-xs">
-                            {(article.author.name || '?').charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <span>{article.author.name || '不明なユーザー'}</span>
-                      </div>
-                      <span>{formatDate(article.createdAt)}</span>
-                    </div>
-                    <div className="flex items-center text-xs text-gray-500 mt-1">
-                      <div className="flex items-center mr-3">
-                        <Heart className="w-3.5 h-3.5 mr-1" />
-                        <span>{article.likeCount}</span>
-                      </div>
-                      <div className="flex items-center text-blue-500">
-                        <Bookmark className="w-3.5 h-3.5 mr-1 fill-blue-500" />
-                        <span>保存済み</span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="empty-state p-6 text-center">
-            <p className="text-gray-500">ブックマークした記事はありません</p>
-            <div className="mt-2">
-              <button 
-                onClick={() => router.push('/')}
-                className="text-blue-500 hover:underline"
-              >
-                記事を探す
-              </button>
+      <div className="articles-container">
+        <div className="articles-header">
+          <h2>{bookmarkedArticles.length} 記事</h2>
+          <div className="filter-controls">
+            <div className="period-dropdown">
+              <button>期間 <span>▼</span></button>
             </div>
           </div>
-        )}
+        </div>
+        
+        <div className="articles-list">
+          {loading ? (
+            <p className="text-center py-6">読み込み中...</p>
+          ) : error ? (
+            <p className="text-center py-6 text-red-500">{error}</p>
+          ) : bookmarkedArticles.length > 0 ? (
+            bookmarkedArticles.map((article) => (
+              <div key={article.id} className="article-item">
+                <div className="article-content">
+                  <h3>{article.title}</h3>
+                  <div className="article-meta">
+                    <span>{article.author.display_name}</span>
+                    <span className="date">{formatDate(article.published_at)}</span>
+                  </div>
+                  <div className="article-actions mt-2 flex items-center">
+                    <button className="flex items-center text-blue-500 mr-3">
+                      <Bookmark className="h-4 w-4 mr-1 fill-blue-500" />
+                      <span className="text-xs">{article.bookmark_count}</span>
+                    </button>
+                  </div>
+                </div>
+                {article.thumbnail_url && (
+                  <div className="article-thumbnail relative h-16 w-16">
+                    <Image 
+                      src={article.thumbnail_url}
+                      alt={article.title}
+                      fill
+                      sizes="64px"
+                      style={{ objectFit: 'cover' }}
+                      className="rounded-md"
+                    />
+                  </div>
+                )}
+                <button className="more-options">
+                  <MoreVertical className="h-4 w-4" />
+                </button>
+              </div>
+            ))
+          ) : (
+            <div className="empty-state p-6 text-center">
+              <p className="text-gray-500">表示するブックマーク記事はありません</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
-// components/BookmarkedArticles.jsx
+// components/LikedArticles.tsx
 import React, { useState, useEffect } from 'react';
-import { Bookmark, MoreVertical } from 'lucide-react';
+import { Heart, MoreVertical } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { useAuth } from '../../lib/auth-context';
 import Image from 'next/image';
@@ -26,8 +26,8 @@ interface ArticleData {
   profiles: Profile;
 }
 
-// ブックマーク記事の型定義
-interface BookmarkedArticle {
+// いいね記事の型定義
+interface LikedArticle {
   id: string;
   title: string;
   author: {
@@ -36,18 +36,18 @@ interface BookmarkedArticle {
     avatar_url: string;
   };
   published_at: string;
-  bookmark_count: number;
+  like_count: number;
   thumbnail_url: string | null;
 }
 
-const BookmarkedArticles = () => {
+const LikedArticles = () => {
   const { user } = useAuth();
-  const [bookmarkedArticles, setBookmarkedArticles] = useState<BookmarkedArticle[]>([]);
+  const [likedArticles, setLikedArticles] = useState<LikedArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchBookmarkedArticles = async () => {
+    const fetchLikedArticles = async () => {
       if (!user) {
         setLoading(false);
         return;
@@ -55,19 +55,19 @@ const BookmarkedArticles = () => {
 
       setLoading(true);
       try {
-        // ブックマークした記事のIDを取得
-        const { data: bookmarksData, error: bookmarksError } = await supabase
-          .from('bookmarks')
+        // いいねした記事のIDを取得
+        const { data: likesData, error: likesError } = await supabase
+          .from('likes')
           .select('prompt_id')
           .eq('user_id', user.id);
 
-        if (bookmarksError) throw bookmarksError;
+        if (likesError) throw likesError;
 
-        if (bookmarksData && bookmarksData.length > 0) {
-          // ブックマークした記事のIDをリストにする
-          const promptIds = bookmarksData.map(bookmark => bookmark.prompt_id);
+        if (likesData && likesData.length > 0) {
+          // いいねした記事のIDをリストにする
+          const promptIds = likesData.map(like => like.prompt_id);
 
-          // ブックマークした記事の詳細情報を取得
+          // いいねした記事の詳細情報を取得
           const { data: articlesData, error: articlesError } = await supabase
             .from('prompts')
             .select(`
@@ -86,16 +86,16 @@ const BookmarkedArticles = () => {
 
           if (articlesError) throw articlesError;
 
-          // ブックマーク数を取得
-          const bookmarkedArticlesWithCounts = await Promise.all(
+          // いいね数を取得
+          const likedArticlesWithCounts = await Promise.all(
             articlesData.map(async (article: any) => {
               const { count, error: countError } = await supabase
-                .from('bookmarks')
+                .from('likes')
                 .select('id', { count: 'exact' })
                 .eq('prompt_id', article.id);
 
               if (countError) {
-                console.error('ブックマーク数取得エラー:', countError);
+                console.error('いいね数取得エラー:', countError);
                 return {
                   id: article.id,
                   title: article.title,
@@ -105,7 +105,7 @@ const BookmarkedArticles = () => {
                     avatar_url: article.profiles.avatar_url
                   },
                   published_at: article.created_at,
-                  bookmark_count: 0,
+                  like_count: 0,
                   thumbnail_url: article.thumbnail_url
                 };
               }
@@ -119,25 +119,25 @@ const BookmarkedArticles = () => {
                   avatar_url: article.profiles.avatar_url
                 },
                 published_at: article.created_at,
-                bookmark_count: count || 0,
+                like_count: count || 0,
                 thumbnail_url: article.thumbnail_url
               };
             })
           );
 
-          setBookmarkedArticles(bookmarkedArticlesWithCounts);
+          setLikedArticles(likedArticlesWithCounts);
         } else {
-          setBookmarkedArticles([]);
+          setLikedArticles([]);
         }
       } catch (error) {
-        console.error('ブックマーク記事取得エラー:', error);
+        console.error('いいね記事取得エラー:', error);
         setError('記事の読み込みに失敗しました。後でもう一度お試しください。');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchBookmarkedArticles();
+    fetchLikedArticles();
   }, [user]);
 
   // 日付のフォーマット関数
@@ -151,10 +151,10 @@ const BookmarkedArticles = () => {
   };
 
   return (
-    <div className="bookmarked-articles">
+    <div className="liked-articles">
       <div className="articles-container">
         <div className="articles-header">
-          <h2>{bookmarkedArticles.length} 記事</h2>
+          <h2>{likedArticles.length} 記事</h2>
           <div className="filter-controls">
             <div className="period-dropdown">
               <button>期間 <span>▼</span></button>
@@ -167,8 +167,8 @@ const BookmarkedArticles = () => {
             <p className="text-center py-6">読み込み中...</p>
           ) : error ? (
             <p className="text-center py-6 text-red-500">{error}</p>
-          ) : bookmarkedArticles.length > 0 ? (
-            bookmarkedArticles.map((article) => (
+          ) : likedArticles.length > 0 ? (
+            likedArticles.map((article) => (
               <div key={article.id} className="article-item">
                 <div className="article-content">
                   <h3>{article.title}</h3>
@@ -177,9 +177,9 @@ const BookmarkedArticles = () => {
                     <span className="date">{formatDate(article.published_at)}</span>
                   </div>
                   <div className="article-actions mt-2 flex items-center">
-                    <button className="flex items-center text-blue-500 mr-3">
-                      <Bookmark className="h-4 w-4 mr-1 fill-blue-500" />
-                      <span className="text-xs">{article.bookmark_count}</span>
+                    <button className="flex items-center text-red-500 mr-3">
+                      <Heart className="h-4 w-4 mr-1 fill-red-500" />
+                      <span className="text-xs">{article.like_count}</span>
                     </button>
                   </div>
                 </div>
@@ -202,7 +202,7 @@ const BookmarkedArticles = () => {
             ))
           ) : (
             <div className="empty-state p-6 text-center">
-              <p className="text-gray-500">表示するブックマーク記事はありません</p>
+              <p className="text-gray-500">表示するいいね記事はありません</p>
             </div>
           )}
         </div>
@@ -211,7 +211,7 @@ const BookmarkedArticles = () => {
   );
 };
 
-export default BookmarkedArticles;
+export default LikedArticles;
 
 
 

@@ -1,33 +1,48 @@
-// components/RecentlyViewedArticles.jsx
+// components/RecentlyViewedArticles.tsx
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../lib/auth-context';
+import { Clock, MoreVertical } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+import { useAuth } from '../../lib/auth-context';
 import Image from 'next/image';
-import Link from 'next/link';
-import { Clock, Heart } from 'lucide-react';
 
 // Supabaseクライアントの初期化
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// プロフィールの型定義
+interface Profile {
+  id: string;
+  display_name: string;
+  avatar_url: string;
+}
+
+// 記事データの型定義
+interface ArticleData {
+  id: string;
+  title: string;
+  thumbnail_url: string | null;
+  created_at: string;
+  profiles: Profile;
+}
+
 // 最近見た記事の型定義
 interface ViewedArticle {
   id: string;
   title: string;
-  thumbnailUrl: string | null;
-  viewedAt: string;
   author: {
     id: string;
-    name: string;
-    avatarUrl: string | null;
+    display_name: string;
+    avatar_url: string;
   };
-  likeCount: number;
+  published_at: string;
+  viewed_at: string;
+  thumbnail_url: string | null;
 }
 
 const RecentlyViewedArticles = () => {
   const { user } = useAuth();
-  const [articles, setArticles] = useState<ViewedArticle[]>([]);
+  const [viewedArticles, setViewedArticles] = useState<ViewedArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,7 +55,7 @@ const RecentlyViewedArticles = () => {
 
       setLoading(true);
       try {
-        // 最近見た記事の履歴を取得（仮想テーブル）
+        // 最近見た記事の履歴を取得
         const { data: viewsData, error: viewsError } = await supabase
           .from('prompt_views')
           .select('prompt_id, created_at')
@@ -55,12 +70,13 @@ const RecentlyViewedArticles = () => {
           const promptIds = viewsData.map(view => view.prompt_id);
 
           // 最近見た記事の詳細情報を取得
-          const { data: promptsData, error: promptsError } = await supabase
+          const { data: articlesData, error: articlesError } = await supabase
             .from('prompts')
             .select(`
               id,
               title,
               thumbnail_url,
+              created_at,
               profiles:author_id (
                 id,
                 display_name,
@@ -70,60 +86,36 @@ const RecentlyViewedArticles = () => {
             .in('id', promptIds)
             .eq('published', true);
 
-          if (promptsError) throw promptsError;
+          if (articlesError) throw articlesError;
 
-          // いいね数を取得し、閲覧日時と合わせた記事データを作成
-          const viewedArticlesWithDetails = await Promise.all(
-            promptsData.map(async (prompt: any) => {
-              // 閲覧日時を取得
-              const view = viewsData.find(v => v.prompt_id === prompt.id);
-              const viewedAt = view ? view.created_at : '';
+          // 閲覧日時と合わせた記事データを作成
+          const viewedArticlesWithDetails = articlesData.map((article: any) => {
+            // 閲覧日時を取得
+            const view = viewsData.find(v => v.prompt_id === article.id);
+            const viewedAt = view ? view.created_at : '';
 
-              // いいね数を取得
-              const { count, error: countError } = await supabase
-                .from('likes')
-                .select('id', { count: 'exact' })
-                .eq('prompt_id', prompt.id);
-
-              if (countError) {
-                console.error('いいね数取得エラー:', countError);
-                return {
-                  id: prompt.id,
-                  title: prompt.title,
-                  thumbnailUrl: prompt.thumbnail_url,
-                  viewedAt: viewedAt,
-                  author: {
-                    id: prompt.profiles.id,
-                    name: prompt.profiles.display_name,
-                    avatarUrl: prompt.profiles.avatar_url
-                  },
-                  likeCount: 0
-                };
-              }
-
-              return {
-                id: prompt.id,
-                title: prompt.title,
-                thumbnailUrl: prompt.thumbnail_url,
-                viewedAt: viewedAt,
-                author: {
-                  id: prompt.profiles.id,
-                  name: prompt.profiles.display_name,
-                  avatarUrl: prompt.profiles.avatar_url
-                },
-                likeCount: count || 0
-              };
-            })
-          );
+            return {
+              id: article.id,
+              title: article.title,
+              author: {
+                id: article.profiles.id,
+                display_name: article.profiles.display_name,
+                avatar_url: article.profiles.avatar_url
+              },
+              published_at: article.created_at,
+              viewed_at: viewedAt,
+              thumbnail_url: article.thumbnail_url
+            };
+          });
 
           // 閲覧日時の新しい順にソート
           const sortedArticles = viewedArticlesWithDetails.sort((a, b) => 
-            new Date(b.viewedAt).getTime() - new Date(a.viewedAt).getTime()
+            new Date(b.viewed_at).getTime() - new Date(a.viewed_at).getTime()
           );
 
-          setArticles(sortedArticles);
+          setViewedArticles(sortedArticles);
         } else {
-          setArticles([]);
+          setViewedArticles([]);
         }
       } catch (error) {
         console.error('最近見た記事取得エラー:', error);
@@ -136,8 +128,18 @@ const RecentlyViewedArticles = () => {
     fetchRecentlyViewedArticles();
   }, [user]);
 
-  // 日付をフォーマットする関数
+  // 日付のフォーマット関数
   const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ja-JP', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  // 閲覧日時のフォーマット関数
+  const formatViewedDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - date.getTime());
@@ -153,84 +155,66 @@ const RecentlyViewedArticles = () => {
     } else if (diffDays < 7) {
       return `${diffDays}日前`;
     } else {
-      return date.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
+      return formatDate(dateString);
     }
   };
 
   return (
     <div className="recently-viewed-articles">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">最近見た記事</h2>
-      </div>
-      <div className="articles-list">
-        {loading ? (
-          <p className="text-center py-6">読み込み中...</p>
-        ) : error ? (
-          <p className="text-center py-6 text-red-500">{error}</p>
-        ) : articles.length > 0 ? (
-          <div className="grid gap-4">
-            {articles.map((article) => (
-              <div key={article.id} className="article-item border-b pb-4">
-                <Link href={`/prompts/${article.id}`} className="flex gap-4">
-                  {article.thumbnailUrl ? (
-                    <div className="flex-shrink-0 w-20 h-20 overflow-hidden rounded">
-                      <Image 
-                        src={article.thumbnailUrl} 
-                        alt={article.title}
-                        width={80}
-                        height={80}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex-shrink-0 w-20 h-20 bg-gray-200 flex items-center justify-center rounded">
-                      <Clock className="h-8 w-8 text-gray-400" />
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <h3 className="font-medium text-lg hover:text-blue-600">{article.title}</h3>
-                    <div className="flex items-center text-xs text-gray-500 mt-2">
-                      <div className="flex items-center mr-3">
-                        {article.author.avatarUrl ? (
-                          <Image 
-                            src={article.author.avatarUrl} 
-                            alt={article.author.name}
-                            width={20}
-                            height={20}
-                            className="w-5 h-5 rounded-full mr-1"
-                          />
-                        ) : (
-                          <div className="w-5 h-5 bg-gray-300 rounded-full mr-1"></div>
-                        )}
-                        <span>{article.author.name}</span>
-                      </div>
-                      <span>{formatDate(article.viewedAt)}</span>
-                    </div>
-                    <div className="flex items-center text-xs text-gray-500 mt-1">
-                      <div className="flex items-center mr-3">
-                        <Heart className="w-3.5 h-3.5 mr-1" />
-                        <span>{article.likeCount}</span>
-                      </div>
-                      <div className="flex items-center text-gray-500">
-                        <Clock className="w-3.5 h-3.5 mr-1" />
-                        <span>閲覧済み</span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="empty-state p-6 text-center">
-            <p className="text-gray-500">表示する最近見た記事はありません</p>
-            <div className="mt-2">
-              <Link href="/" className="text-blue-500 hover:underline">
-                記事を探す
-              </Link>
+      <div className="articles-container">
+        <div className="articles-header">
+          <h2>{viewedArticles.length} 記事</h2>
+          <div className="filter-controls">
+            <div className="period-dropdown">
+              <button>期間 <span>▼</span></button>
             </div>
           </div>
-        )}
+        </div>
+        
+        <div className="articles-list">
+          {loading ? (
+            <p className="text-center py-6">読み込み中...</p>
+          ) : error ? (
+            <p className="text-center py-6 text-red-500">{error}</p>
+          ) : viewedArticles.length > 0 ? (
+            viewedArticles.map((article) => (
+              <div key={article.id} className="article-item">
+                <div className="article-content">
+                  <h3>{article.title}</h3>
+                  <div className="article-meta">
+                    <span>{article.author.display_name}</span>
+                    <span className="date">{formatDate(article.published_at)}</span>
+                  </div>
+                  <div className="article-actions mt-2 flex items-center">
+                    <button className="flex items-center text-gray-500 mr-3">
+                      <Clock className="h-4 w-4 mr-1" />
+                      <span className="text-xs">{formatViewedDate(article.viewed_at)}</span>
+                    </button>
+                  </div>
+                </div>
+                {article.thumbnail_url && (
+                  <div className="article-thumbnail relative h-16 w-16">
+                    <Image 
+                      src={article.thumbnail_url}
+                      alt={article.title}
+                      fill
+                      sizes="64px"
+                      style={{ objectFit: 'cover' }}
+                      className="rounded-md"
+                    />
+                  </div>
+                )}
+                <button className="more-options">
+                  <MoreVertical className="h-4 w-4" />
+                </button>
+              </div>
+            ))
+          ) : (
+            <div className="empty-state p-6 text-center">
+              <p className="text-gray-500">表示する最近見た記事はありません</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

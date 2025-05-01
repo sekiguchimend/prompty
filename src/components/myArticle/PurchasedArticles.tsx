@@ -1,35 +1,50 @@
-// components/PurchasedArticles.jsx
+// components/PurchasedArticles.tsx
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../lib/auth-context';
+import { ShoppingBag, MoreVertical } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+import { useAuth } from '../../lib/auth-context';
 import Image from 'next/image';
-import Link from 'next/link';
-import { ShoppingBag, Heart } from 'lucide-react';
 
 // Supabaseクライアントの初期化
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// プロフィールの型定義
+interface Profile {
+  id: string;
+  display_name: string;
+  avatar_url: string;
+}
+
+// 記事データの型定義
+interface ArticleData {
+  id: string;
+  title: string;
+  thumbnail_url: string | null;
+  created_at: string;
+  price: number;
+  profiles: Profile;
+}
+
 // 購入記事の型定義
 interface PurchasedArticle {
   id: string;
   title: string;
-  description: string | null;
-  thumbnailUrl: string | null;
-  price: number;
-  purchasedAt: string;
   author: {
     id: string;
-    name: string;
-    avatarUrl: string | null;
+    display_name: string;
+    avatar_url: string;
   };
-  likeCount: number;
+  published_at: string;
+  purchased_at: string;
+  price: number;
+  thumbnail_url: string | null;
 }
 
 const PurchasedArticles = () => {
   const { user } = useAuth();
-  const [articles, setArticles] = useState<PurchasedArticle[]>([]);
+  const [purchasedArticles, setPurchasedArticles] = useState<PurchasedArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,13 +71,13 @@ const PurchasedArticles = () => {
           const promptIds = purchasesData.map(purchase => purchase.prompt_id);
 
           // 購入した記事の詳細情報を取得
-          const { data: promptsData, error: promptsError } = await supabase
+          const { data: articlesData, error: articlesError } = await supabase
             .from('prompts')
             .select(`
               id,
               title,
-              description,
               thumbnail_url,
+              created_at,
               price,
               profiles:author_id (
                 id,
@@ -72,64 +87,37 @@ const PurchasedArticles = () => {
             `)
             .in('id', promptIds);
 
-          if (promptsError) throw promptsError;
+          if (articlesError) throw articlesError;
 
-          // いいね数を取得して、購入日時と合わせた記事データを作成
-          const purchasedArticlesWithDetails = await Promise.all(
-            promptsData.map(async (prompt: any) => {
-              // 購入日時を取得
-              const purchase = purchasesData.find(p => p.prompt_id === prompt.id);
-              const purchasedAt = purchase ? purchase.created_at : '';
+          // 購入日時と合わせた記事データを作成
+          const purchasedArticlesWithDetails = articlesData.map((article: any) => {
+            // 購入日時を取得
+            const purchase = purchasesData.find(p => p.prompt_id === article.id);
+            const purchasedAt = purchase ? purchase.created_at : '';
 
-              // いいね数を取得
-              const { count, error: countError } = await supabase
-                .from('likes')
-                .select('id', { count: 'exact' })
-                .eq('prompt_id', prompt.id);
-
-              if (countError) {
-                console.error('いいね数取得エラー:', countError);
-                return {
-                  id: prompt.id,
-                  title: prompt.title,
-                  description: prompt.description,
-                  thumbnailUrl: prompt.thumbnail_url,
-                  price: prompt.price,
-                  purchasedAt: purchasedAt,
-                  author: {
-                    id: prompt.profiles.id,
-                    name: prompt.profiles.display_name,
-                    avatarUrl: prompt.profiles.avatar_url
-                  },
-                  likeCount: 0
-                };
-              }
-
-              return {
-                id: prompt.id,
-                title: prompt.title,
-                description: prompt.description,
-                thumbnailUrl: prompt.thumbnail_url,
-                price: prompt.price,
-                purchasedAt: purchasedAt,
-                author: {
-                  id: prompt.profiles.id,
-                  name: prompt.profiles.display_name,
-                  avatarUrl: prompt.profiles.avatar_url
-                },
-                likeCount: count || 0
-              };
-            })
-          );
+            return {
+              id: article.id,
+              title: article.title,
+              author: {
+                id: article.profiles.id,
+                display_name: article.profiles.display_name,
+                avatar_url: article.profiles.avatar_url
+              },
+              published_at: article.created_at,
+              purchased_at: purchasedAt,
+              price: article.price,
+              thumbnail_url: article.thumbnail_url
+            };
+          });
 
           // 購入日時の新しい順にソート
           const sortedArticles = purchasedArticlesWithDetails.sort((a, b) => 
-            new Date(b.purchasedAt).getTime() - new Date(a.purchasedAt).getTime()
+            new Date(b.purchased_at).getTime() - new Date(a.purchased_at).getTime()
           );
 
-          setArticles(sortedArticles);
+          setPurchasedArticles(sortedArticles);
         } else {
-          setArticles([]);
+          setPurchasedArticles([]);
         }
       } catch (error) {
         console.error('購入記事取得エラー:', error);
@@ -142,13 +130,13 @@ const PurchasedArticles = () => {
     fetchPurchasedArticles();
   }, [user]);
 
-  // 日付をフォーマットする関数
+  // 日付のフォーマット関数
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('ja-JP', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return date.toLocaleDateString('ja-JP', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
   };
 
@@ -162,85 +150,61 @@ const PurchasedArticles = () => {
 
   return (
     <div className="purchased-articles">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">購入した記事</h2>
-      </div>
-      <div className="articles-list">
-        {loading ? (
-          <p className="text-center py-6">読み込み中...</p>
-        ) : error ? (
-          <p className="text-center py-6 text-red-500">{error}</p>
-        ) : articles.length > 0 ? (
-          <div className="grid gap-4">
-            {articles.map((article) => (
-              <div key={article.id} className="article-item border-b pb-4">
-                <Link href={`/prompts/${article.id}`} className="flex gap-4">
-                  {article.thumbnailUrl ? (
-                    <div className="flex-shrink-0 w-20 h-20 overflow-hidden rounded">
-                      <Image 
-                        src={article.thumbnailUrl} 
-                        alt={article.title}
-                        width={80}
-                        height={80}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex-shrink-0 w-20 h-20 bg-gray-200 flex items-center justify-center rounded">
-                      <ShoppingBag className="h-8 w-8 text-gray-400" />
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <h3 className="font-medium text-lg hover:text-blue-600">{article.title}</h3>
-                    {article.description && (
-                      <p className="text-sm text-gray-600 line-clamp-2 mt-1">{article.description}</p>
-                    )}
-                    <div className="flex items-center text-xs text-gray-500 mt-2">
-                      <div className="flex items-center mr-3">
-                        {article.author.avatarUrl ? (
-                          <Image 
-                            src={article.author.avatarUrl} 
-                            alt={article.author.name}
-                            width={20}
-                            height={20}
-                            className="w-5 h-5 rounded-full mr-1"
-                          />
-                        ) : (
-                          <div className="w-5 h-5 bg-gray-300 rounded-full mr-1"></div>
-                        )}
-                        <span>{article.author.name}</span>
-                      </div>
-                      <span className="mr-3">{formatDate(article.purchasedAt)}</span>
-                      <span className="font-medium text-green-600">{formatPrice(article.price)}</span>
-                    </div>
-                    <div className="flex items-center text-xs text-gray-500 mt-1">
-                      <div className="flex items-center mr-3">
-                        <Heart className="w-3.5 h-3.5 mr-1" />
-                        <span>{article.likeCount}</span>
-                      </div>
-                      <div className="flex items-center text-indigo-500">
-                        <ShoppingBag className="w-3.5 h-3.5 mr-1" />
-                        <span>購入済み</span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="empty-state p-6 text-center">
-            <p className="text-gray-500">表示する購入記事はありません</p>
-            <div className="mt-2">
-              <button 
-                onClick={() => window.location.href = '/market'}
-                className="text-blue-500 hover:underline"
-              >
-                マーケットプレイスを探す
-              </button>
+      <div className="articles-container">
+        <div className="articles-header">
+          <h2>{purchasedArticles.length} 記事</h2>
+          <div className="filter-controls">
+            <div className="period-dropdown">
+              <button>期間 <span>▼</span></button>
             </div>
           </div>
-        )}
+        </div>
+        
+        <div className="articles-list">
+          {loading ? (
+            <p className="text-center py-6">読み込み中...</p>
+          ) : error ? (
+            <p className="text-center py-6 text-red-500">{error}</p>
+          ) : purchasedArticles.length > 0 ? (
+            purchasedArticles.map((article) => (
+              <div key={article.id} className="article-item">
+                <div className="article-content">
+                  <h3>{article.title}</h3>
+                  <div className="article-meta">
+                    <span>{article.author.display_name}</span>
+                    <span className="date">{formatDate(article.published_at)}</span>
+                  </div>
+                  <div className="article-actions mt-2 flex items-center">
+                    <button className="flex items-center text-amber-500 mr-3">
+                      <ShoppingBag className="h-4 w-4 mr-1" />
+                      <span className="text-xs">{formatPrice(article.price)}</span>
+                    </button>
+                    <span className="text-xs text-gray-500">購入日: {formatDate(article.purchased_at)}</span>
+                  </div>
+                </div>
+                {article.thumbnail_url && (
+                  <div className="article-thumbnail relative h-16 w-16">
+                    <Image 
+                      src={article.thumbnail_url}
+                      alt={article.title}
+                      fill
+                      sizes="64px"
+                      style={{ objectFit: 'cover' }}
+                      className="rounded-md"
+                    />
+                  </div>
+                )}
+                <button className="more-options">
+                  <MoreVertical className="h-4 w-4" />
+                </button>
+              </div>
+            ))
+          ) : (
+            <div className="empty-state p-6 text-center">
+              <p className="text-gray-500">表示する購入記事はありません</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

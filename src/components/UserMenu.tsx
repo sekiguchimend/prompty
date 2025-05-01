@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, LayoutDashboard, FilePen, Heart, Image, Book, Settings, LogOut, Users } from 'lucide-react';
+import { X, LayoutDashboard, FilePen, Heart, Image, Book, Settings, LogOut, Users, Bookmark } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -167,6 +167,11 @@ const UserMenu: React.FC<UserMenuProps> = ({
             
             <Link href="/MyArticles?tab=likedArticles" className="flex items-center text-sm px-4 py-2 hover:bg-gray-50">
               <Heart className="h-4 w-4 mr-3 text-gray-500" />
+              イイねしたコンテンツ
+            </Link>
+            
+            <Link href="/MyArticles?tab=bookmarkedArticles" className="flex items-center text-sm px-4 py-2 hover:bg-gray-50">
+              <Bookmark className="h-4 w-4 mr-3 text-gray-500" />
               ブックマークしたコンテンツ
             </Link>
             
@@ -285,7 +290,12 @@ const UserMenu: React.FC<UserMenuProps> = ({
         
         <Link href="/MyArticles?tab=likedArticles" className="flex items-center text-base py-2 border-b border-gray-100 pb-4">
           <Heart className="h-5 w-5 mr-3 text-gray-500" />
-          イイねした記事
+          イイねしたコンテンツ
+        </Link>
+        
+        <Link href="/MyArticles?tab=bookmarkedArticles" className="flex items-center text-base py-2 border-b border-gray-100 pb-4">
+          <Bookmark className="h-5 w-5 mr-3 text-gray-500" />
+          ブックマークしたコンテンツ
         </Link>
         
         {followingUsersLink && (
