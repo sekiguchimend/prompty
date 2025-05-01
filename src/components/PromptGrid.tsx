@@ -11,6 +11,7 @@ import { useAuth } from '../lib/auth-context';
 import { checkIfLiked } from '../lib/like-service';
 import { checkIfBookmarked } from '../lib/bookmark-service';
 import ReportDialog from './common/ReportDialog';
+import { notoSansJP } from '@/lib/fonts'; // PromptCardと同じインポートパスを使用
 
 // グローバルトースト用のイベント名
 const GLOBAL_TOAST_EVENT = 'global:toast:show';
@@ -408,9 +409,9 @@ const PromptCard: React.FC<PromptCardProps> = ({
               />
             </div>
           </div>
-          <div className="flex flex-col p-3 flex-1">
+          <div className="flex flex-col p-2 flex-1">
             <div className="flex justify-between items-start mb-2">
-              <div className="line-clamp-2 font-medium hover:text-prompty-primary flex-1 mr-2 h-12 overflow-hidden">
+              <div className={`line-clamp-2 text-gray-700 hover:text-prompty-primary flex-1 mr-2 h-12 overflow-hidden ${notoSansJP.className}`} style={{ fontWeight: 700 }}>
                 {title}
               </div>
               
@@ -448,7 +449,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
             
             <div className="mt-auto">
               <div className="flex items-center gap-2">
-                <span className="block h-6 w-6 overflow-hidden rounded-full" onClick={(e) => e.stopPropagation()}>
+                <span className="block h-5 w-5 overflow-hidden rounded-full" onClick={(e) => e.stopPropagation()}>
                   <img 
                     src={user.avatarUrl} 
                     alt={user.account_name || user.name} 
@@ -461,21 +462,21 @@ const PromptCard: React.FC<PromptCardProps> = ({
                 <span className="text-xs text-gray-500">{postedAt}</span>
               </div>
               <div className="flex items-center">
-                <div className="flex items-center text-gray-500 mt-4">
+                <div className="flex items-center text-gray-500 mt-3">
                   <button 
                     className={`like-button flex items-center ${liked ? 'text-pink-500' : 'text-gray-400'}`}
                     onClick={toggleLike}
                   >
-                    <Heart className={`mr-1 h-5 w-5 ${liked ? 'fill-pink-500' : ''}`} />
+                    <Heart className={`mr-1 h-4 w-4 ${liked ? 'fill-pink-500' : ''}`} />
                   </button>
                   <span className="text-xs">{currentLikeCount}</span>
                 </div>
-                <div className="flex items-center text-gray-500 mt-4 ml-2">
+                <div className="flex items-center text-gray-500 mt-3 ml-2">
                   <button 
                     className={`bookmark-button flex items-center ${bookmarked ? 'text-blue-300' : 'text-gray-500'}`}
                     onClick={toggleBookmark}
                   >
-                    <BookmarkPlus className={`mr-1 h-5 w-5 ${bookmarked ? 'fill-blue-500 text-blue-500' : 'text-gray-400 hover:text-gray-600'}`} />
+                    <BookmarkPlus className={`mr-1 h-4 w-4 ${bookmarked ? 'fill-blue-500 text-blue-500' : 'text-gray-400 hover:text-gray-600'}`} />
                   </button>
                 </div>
               </div>
@@ -527,14 +528,14 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   // コンテナクラスの設定
   // 横スクロールの場合と通常のグリッド表示の場合で分岐
   const containerClass = horizontalScroll 
-    ? 'flex flex-nowrap overflow-x-auto pb-4 gap-4 snap-x snap-mandatory pr-4 -mr-4 scroll-smooth scrollbar-none w-auto min-w-0'
-    : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-4';
+    ? 'flex flex-nowrap overflow-x-auto pb-4 gap-3 snap-x snap-mandatory pr-4 -mr-4 scroll-smooth scrollbar-none w-auto min-w-0'
+    : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 pb-4';
   
   // カードクラスの設定
   // 横スクロールの場合と通常のグリッド表示の場合で分岐
   const cardClass = horizontalScroll
-    ? 'flex-shrink-0 w-[200px] snap-start md:w-[220px] h-full pt-3'
-    : 'h-full pt-3';
+    ? 'flex-shrink-0 w-[180px] snap-start md:w-[200px] h-full pt-2'
+    : 'h-full pt-2';
   
   // 非表示処理の関数
   const handleHidePrompt = (id: string) => {
