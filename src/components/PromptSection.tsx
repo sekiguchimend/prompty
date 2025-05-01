@@ -27,8 +27,6 @@ const PromptSection: React.FC<PromptSectionProps> = ({
   categoryUrl,
   moreLinkUrl
 }) => {
-  const visiblePrompts = maxVisible ? prompts.slice(0, maxVisible) : prompts;
-  
   return (
     <section className={`mt-6 md:mt-8 first:mt-0 ${className}`}>
       <SectionHeader 
@@ -40,9 +38,10 @@ const PromptSection: React.FC<PromptSectionProps> = ({
         moreLinkUrl={moreLinkUrl || categoryUrl}
       />
       <PromptGrid 
-        prompts={visiblePrompts} 
+        prompts={prompts} 
         sectionPrefix={sectionPrefix} 
-        horizontalScroll={horizontalScroll} 
+        horizontalScroll={horizontalScroll}
+        categoryPath={categoryUrl} 
       />
     </section>
   );

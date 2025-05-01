@@ -503,12 +503,14 @@ interface PromptGridProps {
   prompts: PromptItem[];
   sectionPrefix?: string;
   horizontalScroll?: boolean;
+  categoryPath?: string;  // カテゴリパスを追加（すべてを見るカードのリンク先）
 }
 
 const PromptGrid: React.FC<PromptGridProps> = ({ 
   prompts, 
   sectionPrefix = '',
-  horizontalScroll = false
+  horizontalScroll = false,
+  categoryPath = '' 
 }) => {
   // 非表示の投稿を管理するための状態
   const [hiddenPromptIds, setHiddenPromptIds] = useState<string[]>([]);
@@ -525,17 +527,14 @@ const PromptGrid: React.FC<PromptGridProps> = ({
     }
   }, []);
   
-  // コンテナクラスの設定
-  // 横スクロールの場合と通常のグリッド表示の場合で分岐
-  const containerClass = horizontalScroll 
-    ? 'flex flex-nowrap overflow-x-auto pb-4 gap-3 snap-x snap-mandatory pr-4 -mr-4 scroll-smooth scrollbar-none w-auto min-w-0'
-    : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 pb-4';
+  // 常に横スクロールのクラスを使用
+  const containerClass = 'flex flex-nowrap overflow-x-auto pb-4 gap-3 snap-x snap-mandatory pr-4 -mr-4 scroll-smooth scrollbar-none w-auto min-w-0';
   
-  // カードクラスの設定
-  // 横スクロールの場合と通常のグリッド表示の場合で分岐
-  const cardClass = horizontalScroll
-    ? 'flex-shrink-0 w-[180px] snap-start md:w-[200px] h-full pt-2'
-    : 'h-full pt-2';
+  // カードクラスの設定も常に横スクロールのものを使用
+  const cardClass = 'flex-shrink-0 w-[180px] snap-start md:w-[200px] h-full pt-2';
+  
+  // 「すべてを見る」カードのクラス
+  const viewAllCardClass = 'flex-shrink-0 w-[180px] snap-start md:w-[200px] h-100px pt-2';
   
   // 非表示処理の関数
   const handleHidePrompt = (id: string) => {
@@ -562,10 +561,26 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   // 非表示の投稿を除外したリストを作成
   const visiblePrompts = prompts.filter(prompt => !hiddenPromptIds.includes(prompt.id));
   
+  // 表示する最大カード数
+  const maxVisibleCards = prompts.length <= 6 ? prompts.length : 9; // 6件以下なら全件、7件以上なら9件に制限
+  const limitedPrompts = visiblePrompts.slice(0, maxVisibleCards);
+  
+  // カテゴリパスがない場合のデフォルトパス
+  const viewAllPath = categoryPath || '/prompts';
+  
+  // デバッグ情報をコンソールに出力
+  console.log(`PromptGrid デバッグ情報:
+    - 渡されたプロンプト総数: ${prompts.length}
+    - 非表示を除いた数: ${visiblePrompts.length}
+    - 表示制限後の数: ${limitedPrompts.length}
+    - カテゴリパス: ${categoryPath || 'なし'}
+    - すべて見るカード表示: ${visiblePrompts.length > 6 ? 'はい' : 'いいえ'}
+  `);
+  
   return (
     <>
       <div className={containerClass}>
-        {visiblePrompts.map((prompt) => (
+        {limitedPrompts.map((prompt) => (
           <div key={`${sectionPrefix}-${prompt.id}`} className={cardClass}>
             <PromptCard
               id={prompt.id}
@@ -580,6 +595,26 @@ const PromptGrid: React.FC<PromptGridProps> = ({
             />
           </div>
         ))}
+        
+        {/* すべてを見るカード（6件より多い場合のみ表示） */}
+        {visiblePrompts.length > 6 && (
+          <div className={viewAllCardClass}>
+            <Link href={viewAllPath} passHref legacyBehavior>
+              <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm cursor-pointer h-full" data-id="view-all">
+                <div className="flex items-center justify-center h-full w-full p-2 bg-gray-100">
+                  <div className="flex flex-col items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                    <div className={`text-gray-700 text-center ${notoSansJP.className}`} style={{ fontWeight: 700 }}>
+                      すべてを見る
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          </div>
+        )}
       </div>
       <GlobalToast />
     </>
