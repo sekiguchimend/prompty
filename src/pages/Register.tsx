@@ -157,8 +157,8 @@ const Register = () => {
 
       {/* Right side - Registration form */}
       <div className="w-full md:w-1/2 flex flex-col items-center justify-start p-0 pt-0 md:justify-center md:p-8">
-        <Link href="/" className="mb-2 mt-2 md:mb-8">
-          <div className="flex items-center">
+        <Link href="/" className="mb-2 mt-20 md:mb-8">
+          <div className="flex items-center mb-10">
             {/* <span className="text-3xl font-bold text-prompty-primary">p<span className="text-black">rompty</span></span>
             <span className="ml-1 text-pink-400">🌸</span> */}
  <Image 
@@ -177,7 +177,7 @@ const Register = () => {
           </div>
         </Link>
 
-        <Card className="w-full max-w-md shadow-md border-gray-100">
+        <Card className="w-full max-w-md">
           <CardContent className="pt-6">
             <h2 className="text-2xl font-bold text-center mb-8">promptyに会員登録</h2>
             
