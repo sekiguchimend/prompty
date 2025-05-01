@@ -28,10 +28,13 @@ export const metadata = {
   description: 'LLMを活用したプロンプト共有・販売プラットフォーム',
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: 'any' }
+      { url: 'https://prompty-zeta.vercel.app/favicon.ico', type: 'image/x-icon' }
+    ],
+    shortcut: [
+      { url: 'https://prompty-zeta.vercel.app/favicon.ico', type: 'image/x-icon' }
     ],
     apple: [
-      { url: '/favicon.ico', sizes: '180x180', type: 'image/x-icon' }
+      { url: 'https://prompty-zeta.vercel.app/favicon.ico', type: 'image/x-icon' }
     ]
   },
   manifest: '/site.webmanifest',
@@ -46,6 +49,7 @@ export const metadata = {
     type: 'website',
     title: 'Prompty - プロンプト共有・販売プラットフォーム',
     description: 'LLMを活用したプロンプト共有・販売プラットフォーム',
+    images: [{ url: 'https://prompty-zeta.vercel.app/favicon.ico' }]
   },
 };
 
@@ -59,20 +63,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // ファビコンのパス（必ず絶対パスを使用）
-  const faviconUrl = "/favicon.ico";
-  
   return (
     <html lang="ja" suppressHydrationWarning className={notoSansJP.className}>
       <head>
-          {/* ファビコンとアイコン - 絶対パスを使用 */}
-          <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
-          <link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="any" />
-          <link rel="apple-touch-icon" href="/favicon.ico" />
-          <meta name="image" content={faviconUrl} />
-        
-        {/* 重要な画像のプリロード - 必要最小限に */}
-        <link rel="preload" href={faviconUrl} as="image" type="image/x-icon" />
+        <link rel="icon" href="https://prompty-zeta.vercel.app/favicon.ico" type="image/x-icon" />
+        <link rel="shortcut icon" href="https://prompty-zeta.vercel.app/favicon.ico" type="image/x-icon" />
+        <link rel="apple-touch-icon" href="https://prompty-zeta.vercel.app/favicon.ico" type="image/x-icon" />
+        <meta property="og:image" content="https://prompty-zeta.vercel.app/favicon.ico" />
       </head>
       <body className={inter.className}>
         <AuthProvider>

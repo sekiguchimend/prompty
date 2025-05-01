@@ -703,9 +703,9 @@ const Following: React.FC = () => {
       <Head>
         <title>フォロー中 | Prompty</title>
         <meta name="description" content="フォローしているユーザーの投稿を表示します" />
-        <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
-        <link rel="apple-touch-icon" href="/favicon.ico" />
+        <link rel="icon" href="https://prompty-zeta.vercel.app/favicon.ico" type="image/x-icon" />
+        <link rel="shortcut icon" href="https://prompty-zeta.vercel.app/favicon.ico" type="image/x-icon" />
+        <link rel="apple-touch-icon" href="https://prompty-zeta.vercel.app/favicon.ico" />
       </Head>
       
       <Header />

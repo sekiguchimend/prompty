@@ -4,12 +4,7 @@ export default function Document() {
   return (
     <Html lang="ja">
       <Head>
-        {/* ファビコン設定（全ページに適用） */}
-        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
-        <link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="any" />
-        <link rel="apple-touch-icon" href="/favicon.ico" />
-
-        {/* インラインスタイルを追加してスタイルシートマージの最適化が適用されるようにします */}
+      
         <style dangerouslySetInnerHTML={{ __html: `
           /* プロジェクト全体で共有される基本的なスタイル */
           :root {

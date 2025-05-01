@@ -51,6 +51,18 @@
 - [x] プロンプト詳細ページでの型エラーを修正（authorProfileの安全なアクセス）
 - [x] ヘッダーロゴのアスペクト比バグを修正（縦長に表示される問題）
 - [x] ヘッダーロゴのサイズを適切に修正（小さすぎる問題を解決）
+- [x] 特定のページでファビコンが変わる問題を修正（App RouterとPages Routerの競合）
+
+# ファビコン問題解決タスク
+- [x] 問題の特定
+  - [x] 検索ページ、ログインページ、会員登録ページのみファビコンが異なる
+  - [x] 原因：Next.jsのApp RouterとPages Routerの混在
+  - [x] app/layout.tsxとsrc/pages/_app.tsxの両方でファビコン設定が異なる
+- [x] 解決策の実装
+  - [x] src/pages/_app.tsxのファビコン設定をapp/layout.tsxと統一
+  - [x] アイコンURLを相対パスから絶対パス（https://prompty-zeta.vercel.app/favicon.ico）に変更
+  - [x] OGP画像も同様に絶対パスに変更
+  - [x] 将来的な解決策：全ページをApp Routerに統一する計画を立てる
 
 # パフォーマンス改善タスク
 - [x] 画像最適化の有効化

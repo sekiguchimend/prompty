@@ -52,16 +52,17 @@ function MyApp({ Component, pageProps }: AppProps) {
         <meta name="description" content="LLMを活用したプロンプト共有・販売プラットフォーム" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
         
-        {/* ファビコン設定 - 絶対パスを使用 */}
-        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
-        <link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="any" />
-        <link rel="apple-touch-icon" href="/favicon.ico" />
+        {/* ファビコン設定 - app/layout.tsxと一致させる */}
+        <link rel="icon" href="https://prompty-zeta.vercel.app/favicon.ico" type="image/x-icon" />
+        <link rel="shortcut icon" href="https://prompty-zeta.vercel.app/favicon.ico" type="image/x-icon" />
+        <link rel="apple-touch-icon" href="https://prompty-zeta.vercel.app/favicon.ico" type="image/x-icon" />
+        <link rel="manifest" href="/site.webmanifest" />
         
         {/* OGP設定 */}
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Prompty - プロンプト共有・販売プラットフォーム" />
         <meta property="og:description" content="LLMを活用したプロンプト共有・販売プラットフォーム" />
-        <meta property="og:image" content="/favicon.ico" />
+        <meta property="og:image" content="https://prompty-zeta.vercel.app/favicon.ico" />
       </Head>
       <AuthProvider>
         <Component {...pageProps} />
