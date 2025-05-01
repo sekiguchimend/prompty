@@ -185,21 +185,26 @@ const PromptForm: React.FC<PromptFormProps> = ({
             )}
           />
           
-          <div className="flex justify-between items-center text-sm text-gray-500 mt-4 pt-3 border-t border-gray-100">
+          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center md:justify-between text-sm text-gray-500 mt-4 pt-3 border-t border-gray-100">
             <div className="flex items-center gap-2">
               <span className="bg-gray-200 text-gray-800 text-xs font-medium px-2.5 py-1 rounded-full">
                 プロンプト #{promptNumber}
               </span>
             </div>
-            <Button 
-              type="submit"
-              className="bg-black hover:bg-gray-800 text-white"
-              disabled={wordCount < 10}
-            >
-              プロンプトを追加
-            </Button>
-            <div className={wordCount < 10 ? "text-red-500" : ""}>
-              {wordCount} 文字 {wordCount < 10 && "(最低10文字必要)"}
+            
+            <div className="flex items-center justify-end gap-4 w-full md:w-auto">
+              <div className={`text-right min-w-[140px] ${wordCount < 10 ? "text-red-500" : ""}`}>
+                <span>{wordCount} 文字</span>
+                {wordCount < 10 && <span className="block md:inline md:ml-1">(最低10文字必要)</span>}
+              </div>
+              
+              <Button 
+                type="submit"
+                className="bg-black hover:bg-gray-800 text-white whitespace-nowrap"
+                disabled={wordCount < 10}
+              >
+                プロンプトを追加
+              </Button>
             </div>
           </div>
             

@@ -167,7 +167,7 @@ const UserMenu: React.FC<UserMenuProps> = ({
             
             <Link href="/MyArticles?tab=likedArticles" className="flex items-center text-sm px-4 py-2 hover:bg-gray-50">
               <Heart className="h-4 w-4 mr-3 text-gray-500" />
-              イイねしたコンテンツ
+              ブックマークしたコンテンツ
             </Link>
             
             {followingUsersLink && (
@@ -216,7 +216,8 @@ const UserMenu: React.FC<UserMenuProps> = ({
             <div className="flex justify-center mt-3 text-xs text-gray-500">
               <Link href="/Terms" className="mx-2">prompty活用術</Link>
               <span className="mx-1">/</span>
-              <Link href="/help" className="mx-2">ヘルプセンター</Link>
+             
+              <Link href="/HelpCenter" className="mx-2">ヘルプセンター</Link>
             </div>
           </div>
         </div>

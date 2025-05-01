@@ -518,3 +518,13 @@
 5. [x] `src/components/create-post/ThumbnailUploader.tsx`: サムネイル画像アップロード時のバリデーション強化
 6. [x] 重複・未使用ファイル(`src/components/create-post/project-settings-form.tsx`)を削除
 7. [ ] サムネイルアップロード機能の動作確認
+
+# PromptCardコンポーネント修正タスク
+- [✓] カードデザインの改善
+  - [✓] カードサイズの縮小（min-heightを340pxから300pxに変更）
+  - [✓] 枠線の削除（borderクラスの削除）
+  - [✓] 影の削除（shadow-smクラスの削除）
+  - [✓] 視認性を保ちつつシンプルなデザインに変更
+
+# 優先実装タスク
+// ... existing code ...

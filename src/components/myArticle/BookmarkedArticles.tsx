@@ -194,15 +194,35 @@ const BookmarkedArticles = () => {
             {articles.map((article) => (
               <div key={article.id} className="article-item border-b pb-4">
                 <Link href={`/prompts/${article.id}`} className="flex gap-4">
-                  {article.thumbnailUrl && (
-                    <div className="flex-shrink-0 w-20 h-20 overflow-hidden rounded">
-                      <Image 
-                        src={article.thumbnailUrl} 
-                        alt={article.title}
-                        width={80}
-                        height={80}
-                        className="w-full h-full object-cover"
-                      />
+                  {article.thumbnailUrl ? (
+                    <div className="article-thumbnail relative h-16 w-16">
+                      {/* 画像URLが有効な場合はImage、無効な場合はデフォルト表示 */}
+                      {article.thumbnailUrl.startsWith('http') ? (
+                        <Image 
+                          src={article.thumbnailUrl}
+                          alt={article.title}
+                          width={64}
+                          height={64}
+                          style={{ objectFit: 'cover' }}
+                          className="rounded-md h-full w-full"
+                          onError={(e) => {
+                            // エラー時はデフォルト画像を表示
+                            const target = e.target as HTMLImageElement;
+                            target.onerror = null; // 無限ループ防止
+                            target.src = '/images/default-thumbnail.png'; // デフォルト画像
+                          }}
+                        />
+                      ) : (
+                        // URLが無効な場合のフォールバック表示
+                        <div className="h-full w-full bg-gray-200 rounded-md flex items-center justify-center">
+                          <Bookmark className="h-6 w-6 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    // サムネイルがない場合のフォールバック表示
+                    <div className="article-thumbnail relative h-16 w-16 bg-gray-100 rounded-md flex items-center justify-center">
+                      <Bookmark className="h-6 w-6 text-gray-300" />
                     </div>
                   )}
                   <div className="flex-1">
@@ -212,14 +232,27 @@ const BookmarkedArticles = () => {
                     )}
                     <div className="flex items-center text-xs text-gray-500 mt-2">
                       <div className="flex items-center mr-3">
-                        <Image 
-                          src={article.author.avatarUrl} 
-                          alt={article.author.name}
-                          width={20}
-                          height={20}
-                          className="w-5 h-5 rounded-full mr-1"
-                        />
-                        <span>{article.author.name}</span>
+                        {article.author.avatarUrl && article.author.avatarUrl.startsWith('http') ? (
+                          <Image 
+                            src={article.author.avatarUrl} 
+                            alt={article.author.name || '匿名'}
+                            width={20}
+                            height={20}
+                            className="w-5 h-5 rounded-full mr-1"
+                            onError={(e) => {
+                              // エラー時はデフォルトアバターを表示
+                              const target = e.target as HTMLImageElement;
+                              target.onerror = null; // 無限ループ防止
+                              target.style.display = 'none'; // 画像を非表示
+                            }}
+                          />
+                        ) : (
+                          // アバター画像がない場合のフォールバック
+                          <div className="w-5 h-5 bg-blue-100 text-blue-500 rounded-full mr-1 flex items-center justify-center text-xs">
+                            {(article.author.name || '?').charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <span>{article.author.name || '不明なユーザー'}</span>
                       </div>
                       <span>{formatDate(article.createdAt)}</span>
                     </div>

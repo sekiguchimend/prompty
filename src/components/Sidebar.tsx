@@ -180,13 +180,12 @@ const Sidebar = () => {
           </div>
           
           <div className="text-xs text-gray-500 space-y-1 px-1">
-            <a href="/how-to-use" className="block hover:underline">promptyの使い方</a>
-            <a href="/company" className="block hover:underline">運営会社</a>
-            <a href="/terms" className="block hover:underline">
-              <span className="mr-2">採用情報</span>
+            <Link href="/HelpCenter" className="block hover:underline">promptyの使い方</Link>
+            <Link href="/company" className="block hover:underline">運営会社</Link>
+            <Link href="/Terms" className="block hover:underline">
               <span className="mr-2">利用規約</span>
               <span>プライバシー</span>
-            </a>
+            </Link>
           </div>
         </div>
       </nav>

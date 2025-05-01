@@ -76,7 +76,7 @@ const Business = () => {
         <Link href="/" className="mb-8">
           <div className="flex items-center">
           <Image 
-                    src="https://qrxrulntwojimhhhnwqk.supabase.co/storage/v1/object/public/prompt-thumbnails/prompty_logo.jpg" 
+                    src="https://qrxrulntwojimhhhnwqk.supabase.co/storage/v1/object/public/prompt-thumbnails/prompty_logo(1).png" 
                     alt="Prompty" 
                     className="object-contain rounded-sm"
                     width={120}

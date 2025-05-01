@@ -1,42 +1,32 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Mail, Apple, X, AlertCircle, Github } from 'lucide-react';
+import { Eye, EyeOff, Mail, Github } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-// モーダルとフォーム用のコンポーネント
+
+// モーダルコンポーネント - noteスタイル
 const Modal = ({ isOpen, onClose, children }: { isOpen: boolean, onClose: () => void, children: React.ReactNode }) => {
   if (!isOpen) return null;
   
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-transparent rounded-lg w-full max-w-md relative">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded w-full max-w-md relative">
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+          aria-label="Close"
         >
-          <X size={20} />
+          <span className="text-xl">×</span>
         </button>
         {children}
       </div>
     </div>
   );
 };
-
-const Input = ({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) => (
-  <input className={`border rounded px-3 py-2 w-full ${className}`} {...props} />
-);
-
-const FormItem = ({ children }: { children: React.ReactNode }) => (
-  <div className="mb-4">{children}</div>
-);
-
-const FormLabel = ({ children, className }: { children: React.ReactNode, className?: string }) => (
-  <label className={`block mb-1 ${className}`}>{children}</label>
-);
 
 const Register = () => {
   const router = useRouter();
@@ -46,6 +36,7 @@ const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   // メールでの登録処理
   const handleEmailSignup = async (e: React.FormEvent) => {
@@ -98,6 +89,11 @@ const Register = () => {
     setEmail('');
     setPassword('');
     setError(null);
+  };
+
+  // パスワードの表示/非表示を切り替える
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   // ソーシャルメディアでの登録処理
@@ -159,21 +155,19 @@ const Register = () => {
       <div className="w-full md:w-1/2 flex flex-col items-center justify-start p-0 pt-0 md:justify-center md:p-8">
         <Link href="/" className="mb-2 mt-20 md:mb-8">
           <div className="flex items-center mb-10">
-            {/* <span className="text-3xl font-bold text-prompty-primary">p<span className="text-black">rompty</span></span>
-            <span className="ml-1 text-pink-400">🌸</span> */}
- <Image 
-                    src="https://qrxrulntwojimhhhnwqk.supabase.co/storage/v1/object/public/prompt-thumbnails/prompty_logo(1).png" 
-                    alt="Prompty" 
-                    className="object-contain"
-                    width={120}
-                    height={40}
-                    style={{
-                      objectFit: 'contain',
-                      maxHeight: '40px',
-                      width: 'auto'
-                    }}
-                    priority
-                  />
+            <Image 
+              src="https://qrxrulntwojimhhhnwqk.supabase.co/storage/v1/object/public/prompt-thumbnails/prompty_logo(1).png" 
+              alt="Prompty" 
+              className="object-contain"
+              width={120}
+              height={40}
+              style={{
+                objectFit: 'contain',
+                maxHeight: '40px',
+                width: 'auto'
+              }}
+              priority
+            />
           </div>
         </Link>
 
@@ -235,63 +229,77 @@ const Register = () => {
         </Card>
       </div>
 
-      {/* メール登録用モーダル */}
+      {/* メール登録用モーダル - noteスタイル */}
       <Modal isOpen={isModalOpen} onClose={closeModal}>
-        <div className="p-6 bg-transparent">
-          <h3 className="text-xl font-bold mb-4">メールアドレスで登録</h3>
+        <div className="p-6">
+          <h3 className="text-xl font-bold mb-6">promptyアカウントを作成</h3>
           
           {error && (
-            <div className="bg-red-50 text-red-600 p-3 mb-4 rounded-md text-sm flex items-start">
-              <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
-              <span>{error}</span>
+            <div className="mb-4 text-sm text-red-600">
+              {error}
             </div>
           )}
           
           <form onSubmit={handleEmailSignup}>
-            <FormItem>
-              <FormLabel className="text-gray-700">メールアドレス</FormLabel>
-              <Input 
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-800 mb-2">
+                メールアドレス
+              </label>
+              <input 
                 type="email"
-                placeholder="your@email.com"
+                placeholder="mail@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-transparent border-gray-300"
+                className="w-full px-3 py-2 border border-gray-300 rounded text-gray-700 focus:outline-none"
               />
-            </FormItem>
-            
-            <FormItem>
-              <FormLabel className="text-gray-700">パスワード</FormLabel>
-              <Input 
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="bg-transparent border-gray-300"
-              />
-              <p className="text-xs text-gray-500 mt-1">8文字以上の英数字を入力してください</p>
-            </FormItem>
-            
-            <div className="mt-6 flex justify-end space-x-3">
-              <Button 
-                type="button" 
-                variant="outline"
-                onClick={closeModal}
-                disabled={isLoading}
-                className="bg-transparent"
-              >
-                キャンセル
-              </Button>
-              <Button 
-                type="submit"
-                className="bg-gray-900 hover:bg-gray-800 text-white"
-                disabled={isLoading}
-              >
-                {isLoading ? '処理中...' : '登録する'}
-              </Button>
             </div>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-800 mb-2">
+                パスワード
+              </label>
+              <div className="relative">
+                <input 
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-gray-700 focus:outline-none pr-10"
+                />
+                <button 
+                  type="button"
+                  onClick={togglePasswordVisibility}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+            </div>
+            
+            <button 
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-2 px-4 bg-gray-200 hover:bg-gray-300 rounded text-gray-800 font-medium transition-colors"
+            >
+              {isLoading ? '処理中...' : '同意して登録'}
+            </button>
           </form>
+          
+          <div className="mt-4 text-sm text-center text-gray-500">
+            会員登録には、<Link href="/terms" className="text-gray-800 hover:underline">利用規約</Link>と
+            <Link href="/privacy" className="text-gray-800 hover:underline">プライバシーポリシー</Link>への同意が必要です。
+          </div>
+          
+          <div className="mt-6 pt-4 border-t border-gray-200 text-center">
+            <Link href="/login" className="text-gray-800 hover:underline text-sm mr-2">
+              ログイン
+            </Link>
+            <span className="text-gray-400 mx-2">|</span>
+            <Link href="/signup-help" className="text-gray-800 hover:underline text-sm ml-2">
+              登録でお困りの方
+            </Link>
+          </div>
         </div>
       </Modal>
     </div>

@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { useUser } from '../hooks/useUser';
 import { bookmarkPrompt, unbookmarkPrompt, checkIfBookmarked } from '../lib/bookmark-service';
+import { notoSansJP } from '@/lib/fonts';
 
 interface PromptCardProps {
   id: string;
@@ -184,9 +185,14 @@ const PromptCard: React.FC<PromptCardProps> = ({
       </Link>
       <div className="flex flex-col p-3">
         <div className="flex justify-between items-start mb-2">
-          <Link href={`/prompts/${promptId}`} className="line-clamp-2 font-medium hover:text-prompty-primary flex-1 mr-2">
-            {title}
-          </Link>
+        <Link href={`/prompts/${promptId}`} className={`line-clamp-2 font-extrabold hover:text-prompty-primary flex-1 mr-2 ${notoSansJP.className}`}
+        style={{ 
+          fontWeight: 900, 
+          textShadow: '0.03em 0 0 currentColor', // テキストに微妙なシャドウを追加して太く見せる
+        }}
+      >
+  {title}
+</Link>
           
           {/* シンプルな三点メニュー実装 */}
           
