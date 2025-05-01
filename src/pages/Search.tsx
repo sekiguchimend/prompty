@@ -329,29 +329,11 @@ const Search = () => {
     <div className="min-h-screen bg-prompty-background">
       <Header />
       
-      <main className="container max-w-7xl mx-auto px-4 py-8">
+      <main className="container max-w-7xl mx-auto px-4 py-8 pt-20">
         <h1 className="text-3xl font-bold mb-4">検索</h1>
         
         {/* 検索フォーム */}
-        <form onSubmit={handleSearch} className="mb-6">
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                placeholder="プロンプトを検索..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prompty-primary focus:border-transparent"
-              />
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <SearchIcon className="h-5 w-5 text-gray-400" />
-              </div>
-            </div>
-            <Button type="submit" className="bg-prompty-primary hover:bg-prompty-primary-dark">
-              検索
-            </Button>
-          </div>
-        </form>
+      
        
         {/* 検索フィルターと並べ替えオプション */}
         <div className="flex flex-wrap gap-3 mb-6">
