@@ -13,7 +13,7 @@ const Modal = ({ isOpen, onClose, children }: { isOpen: boolean, onClose: () => 
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-md relative">
+      <div className="bg-transparent rounded-lg w-full max-w-md relative">
         <button 
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
@@ -162,9 +162,9 @@ const Register = () => {
             {/* <span className="text-3xl font-bold text-prompty-primary">p<span className="text-black">rompty</span></span>
             <span className="ml-1 text-pink-400">🌸</span> */}
  <Image 
-                    src="https://qrxrulntwojimhhhnwqk.supabase.co/storage/v1/object/public/prompt-thumbnails/prompty_logo.jpg" 
+                    src="https://qrxrulntwojimhhhnwqk.supabase.co/storage/v1/object/public/prompt-thumbnails/prompty_logo(1).png" 
                     alt="Prompty" 
-                    className="object-contain rounded-sm"
+                    className="object-contain"
                     width={120}
                     height={40}
                     style={{
@@ -177,8 +177,8 @@ const Register = () => {
           </div>
         </Link>
 
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
+        <Card className="w-full max-w-md bg-transparent">
+          <CardContent className="pt-6 bg-transparent">
             <h2 className="text-2xl font-bold text-center mb-8">promptyに会員登録</h2>
             
             <div className="flex justify-end mb-2">
@@ -191,7 +191,7 @@ const Register = () => {
             <div className="space-y-4">
               <Button 
                 variant="outline" 
-                className="w-full flex items-center justify-center py-6 border-gray-300"
+                className="w-full flex items-center justify-center py-6 border-gray-300 bg-transparent"
                 onClick={openModal}
                 disabled={isLoading || !!socialLoading}
               >
@@ -201,7 +201,7 @@ const Register = () => {
               
               <Button 
                 variant="outline" 
-                className="w-full flex items-center justify-center py-6 border-gray-300"
+                className="w-full flex items-center justify-center py-6 border-gray-300 bg-transparent"
                 onClick={() => handleSocialSignup('google')}
                 disabled={!!socialLoading}
               >
@@ -216,7 +216,7 @@ const Register = () => {
 
               <Button 
                 variant="outline" 
-                className="w-full flex items-center justify-center py-6 border-gray-300"
+                className="w-full flex items-center justify-center py-6 border-gray-300 bg-transparent"
                 onClick={() => handleSocialSignup('github')}
                 disabled={!!socialLoading}
                 title={process.env.NODE_ENV === 'development' ? '開発環境: Supabase管理画面でGitHubプロバイダーを有効にしてください' : ''}
@@ -237,7 +237,7 @@ const Register = () => {
 
       {/* メール登録用モーダル */}
       <Modal isOpen={isModalOpen} onClose={closeModal}>
-        <div className="p-6">
+        <div className="p-6 bg-transparent">
           <h3 className="text-xl font-bold mb-4">メールアドレスで登録</h3>
           
           {error && (
@@ -256,7 +256,7 @@ const Register = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-gray-50"
+                className="bg-transparent border-gray-300"
               />
             </FormItem>
             
@@ -268,7 +268,7 @@ const Register = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="bg-gray-50"
+                className="bg-transparent border-gray-300"
               />
               <p className="text-xs text-gray-500 mt-1">8文字以上の英数字を入力してください</p>
             </FormItem>
@@ -279,6 +279,7 @@ const Register = () => {
                 variant="outline"
                 onClick={closeModal}
                 disabled={isLoading}
+                className="bg-transparent"
               >
                 キャンセル
               </Button>

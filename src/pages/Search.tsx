@@ -469,15 +469,7 @@ const Search = () => {
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">検索結果が見つかりませんでした</h3>
               <p className="text-gray-500 mb-4">別のキーワードで検索してみてください</p>
-              <Button 
-                onClick={() => {
-                  setSearchInput('');
-                  router.push('/search');
-                }}
-                variant="outline"
-              >
-                すべてのプロンプトを表示
-              </Button>
+              
             </div>
           )}
         </div>

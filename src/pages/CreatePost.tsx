@@ -325,52 +325,61 @@ const CreatePost = () => {
     }
     
     try {
-      // MIMEタイプとファイル拡張子の処理
-      let contentType = file.type;
+      console.log('サムネイルアップロード処理開始:', file.name);
       
-      // 対応する画像形式の定義
-      const supportedImageTypes = {
-        'image/jpeg': 'jpg',
-        'image/png': 'png',
-        'image/gif': 'gif',
-        'image/webp': 'webp',
-        'image/svg+xml': 'svg',
-        'image/bmp': 'bmp',
-        'image/tiff': 'tiff'
-      };
+      // 認証トークンを取得（認証済みユーザーの場合）
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token;
       
-      // MIMEタイプが画像形式でない、または未知の形式の場合はデフォルト設定
-      let fileExt = 'png';
-      if (contentType && contentType.startsWith('image/')) {
-        fileExt = supportedImageTypes[contentType as keyof typeof supportedImageTypes] || 
-          contentType.split('/')[1] || 'png';
-      } else {
-        console.warn('未知の画像形式検出:', contentType, 'image/pngとして処理します');
-        contentType = 'image/png';
+      // FormDataを作成
+      const formData = new FormData();
+      formData.append('thumbnailImage', file);
+      
+      // API経由でアップロード（アバターと同じサーバーサイド処理を使用）
+      console.log('サーバーサイドAPIを使用してアップロード開始');
+      const response = await fetch('/api/thumbnail/upload', {
+        method: 'POST',
+        headers: {
+          ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+        },
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('サムネイルアップロードAPI応答エラー:', response.status, errorText);
+        throw new Error(`アップロードに失敗しました: ${response.status} ${errorText}`);
       }
       
-      console.log('画像形式検出:', {
-        originalType: file.type,
-        contentType: contentType,
-        fileExt: fileExt
-      });
-
-      console.log('Supabaseストレージに問題があるため、直接データURLを返します');
+      const result = await response.json();
       
-      // データURLとして画像を読み込む
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const dataUrl = reader.result as string;
-          console.log('データURL形式で返却 (長さ):', dataUrl?.length || 0);
-          resolve(dataUrl);
-        };
-        reader.onerror = () => {
-          console.error('FileReader エラー');
-          resolve(null);
-        };
-        reader.readAsDataURL(file);
-      });
+      if (!result.publicUrl) {
+        console.error('公開URL取得エラー:', result);
+        throw new Error('公開URLの取得に失敗しました');
+      }
+      
+      console.log('サムネイルアップロード成功:', result.publicUrl);
+      
+      // URLが実際に有効かチェック
+      try {
+        const imageTest = new Image();
+        imageTest.src = result.publicUrl;
+        
+        // 画像のロードを待つ
+        await new Promise((resolve, reject) => {
+          imageTest.onload = resolve;
+          imageTest.onerror = reject;
+          // 5秒のタイムアウト
+          setTimeout(() => reject(new Error('画像URLの検証がタイムアウトしました')), 5000);
+        });
+        
+        console.log('画像URL検証成功');
+      } catch (imageError) {
+        console.warn('画像URL検証に失敗しましたが、処理を続行します:', imageError);
+        // 検証に失敗しても続行する
+      }
+      
+      return result.publicUrl;
     } catch (error) {
       console.error('サムネイルアップロードエラー:', error);
       toast({
@@ -612,30 +621,29 @@ const CreatePost = () => {
                   );
                   
                   if (retryUpload) {
-                    // 再試行（古いファイルを削除して再アップロード）
+                    // 再試行（新しいAPIエンドポイントを使って再アップロード）
                     if (imageFile) {
-                      // 異なるファイル名を使用して再アップロード
-                      const timestamp = Date.now() + 1; // 確実に異なるタイムスタンプにする
-                      const fileNameParts = imageFile.name.split('.');
-                      const fileExt = fileNameParts.length > 1 ? fileNameParts.pop() : 'jpg';
+                      console.log('再アップロード試行中...');
                       
-                      // 新しいFileオブジェクトを作成（明示的に画像MIMEタイプを指定）
-                      const imageType = imageFile.type.startsWith('image/') 
-                        ? imageFile.type 
-                        : 'image/jpeg';
+                      // FormDataを使用して再アップロード
+                      const formData = new FormData();
+                      formData.append('thumbnailImage', imageFile);
                       
-                      const imageBuffer = await imageFile.arrayBuffer();
-                      const newImageFile = new File(
-                        [imageBuffer], 
-                        `thumbnail-retry-${timestamp}.${fileExt}`, 
-                        { type: imageType }
-                      );
+                      // 認証トークンを取得
+                      const { data: { session } } = await supabase.auth.getSession();
+                      const authToken = session?.access_token;
                       
-                      console.log('再アップロード試行中:', newImageFile.name);
-                      thumbnailUrl = await uploadThumbnailToStorage(newImageFile);
+                      // API経由でアップロード
+                      const retryResponse = await fetch('/api/thumbnail/upload', {
+                        method: 'POST',
+                        headers: {
+                          ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+                        },
+                        body: formData,
+                      });
                       
-                      if (!thumbnailUrl) {
-                        console.error('再アップロードも失敗しました');
+                      if (!retryResponse.ok) {
+                        console.error('再アップロードAPI応答エラー:', await retryResponse.text());
                         const skipThumbnail = window.confirm(
                           '再アップロードも失敗しました。サムネイルなしで投稿を続けますか？'
                         );
@@ -643,6 +651,16 @@ const CreatePost = () => {
                         if (!skipThumbnail) {
                           setIsSubmitting(false);
                           return;
+                        }
+                        thumbnailUrl = null;
+                      } else {
+                        const retryResult = await retryResponse.json();
+                        if (retryResult.publicUrl) {
+                          thumbnailUrl = retryResult.publicUrl;
+                          console.log('再アップロード成功:', thumbnailUrl);
+                        } else {
+                          console.error('再アップロード応答に公開URLがありません');
+                          thumbnailUrl = null;
                         }
                       }
                     }
@@ -709,8 +727,7 @@ const CreatePost = () => {
         title: projectSettings.projectTitle || "無題のプロジェクト",
         description: projectSettings.projectDescription || "",
         content: projectSettings.projectDescription || "", // プロジェクト説明をcontentに
-        thumbnail_url: thumbnailUrl, // アップロードしたサムネイルのURL
-        thumbnail_data: thumbnailUrl && thumbnailUrl.startsWith('data:') ? thumbnailUrl : null, // データURL形式の場合
+        thumbnail_url: thumbnailUrl, // Supabase Storageの公開URL
         category_id: projectSettings.categoryId, // カテゴリーIDを追加
         price: projectSettings.pricingType === "paid" ? projectSettings.price : 0,
         is_free: projectSettings.pricingType === "free",

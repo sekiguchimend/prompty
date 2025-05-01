@@ -2,16 +2,32 @@
 // 互換性のためのリダイレクトファイル
 // このファイルは非推奨です。今後は 'lib/supabase/admin' から直接インポートしてください。
 
-import {
-  supabaseAdmin,
-  getSupabaseAdmin
-} from '../../lib/supabase/admin';
+import { createClient } from '@supabase/supabase-js';
 
-// 既存コードの互換性のために再エクスポート
-export {
-  supabaseAdmin,
-  getSupabaseAdmin
-};
+// 環境変数からSupabase接続情報を取得
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-// デフォルトエクスポート（一部のインポート方式との互換性のため）
+// 環境変数チェック
+if (!supabaseUrl) {
+  console.error('NEXT_PUBLIC_SUPABASE_URLが設定されていません');
+}
+
+if (!supabaseServiceKey) {
+  console.error('SUPABASE_SERVICE_ROLE_KEYが設定されていません');
+}
+
+// 管理者クライアントを作成
+export const supabaseAdmin = createClient(
+  supabaseUrl,
+  supabaseServiceKey,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+);
+
+// デフォルトエクスポート
 export default supabaseAdmin; 
