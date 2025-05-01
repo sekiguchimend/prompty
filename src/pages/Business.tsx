@@ -7,7 +7,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '../components/ui/form';
 import { useForm } from 'react-hook-form';
 import { Checkbox } from '../components/ui/checkbox';
-
+import Image from 'next/image';
 interface BusinessFormValues {
   email: string;
   password: string;
@@ -75,8 +75,19 @@ const Business = () => {
       <div className="w-full md:w-1/2 flex flex-col items-center justify-center p-8">
         <Link href="/" className="mb-8">
           <div className="flex items-center">
-            <img src="/prompty_logo.jpg" alt="prompty" className="w-32 object-contain" />
-
+          <Image 
+                    src="https://qrxrulntwojimhhhnwqk.supabase.co/storage/v1/object/public/prompt-thumbnails/prompty_logo.jpg" 
+                    alt="Prompty" 
+                    className="object-contain rounded-sm"
+                    width={120}
+                    height={40}
+                    style={{
+                      objectFit: 'contain',
+                      maxHeight: '40px',
+                      width: 'auto'
+                    }}
+                    priority
+                  />
           </div>
         </Link>
 

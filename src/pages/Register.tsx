@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-
+import Image from 'next/image';
 // モーダルとフォーム用のコンポーネント
 const Modal = ({ isOpen, onClose, children }: { isOpen: boolean, onClose: () => void, children: React.ReactNode }) => {
   if (!isOpen) return null;
@@ -161,7 +161,19 @@ const Register = () => {
           <div className="flex items-center">
             {/* <span className="text-3xl font-bold text-prompty-primary">p<span className="text-black">rompty</span></span>
             <span className="ml-1 text-pink-400">🌸</span> */}
-            <img src="/prompty_logo.jpg" alt="Prompty" className="h-40" />
+ <Image 
+                    src="https://qrxrulntwojimhhhnwqk.supabase.co/storage/v1/object/public/prompt-thumbnails/prompty_logo.jpg" 
+                    alt="Prompty" 
+                    className="object-contain rounded-sm"
+                    width={120}
+                    height={40}
+                    style={{
+                      objectFit: 'contain',
+                      maxHeight: '40px',
+                      width: 'auto'
+                    }}
+                    priority
+                  />
           </div>
         </Link>
 
