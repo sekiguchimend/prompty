@@ -25,10 +25,10 @@ export const metadata = {
   description: 'LLMを活用したプロンプト共有・販売プラットフォーム',
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: 'any' }
+      { url: './logo.png', sizes: 'any' }
     ],
     apple: [
-      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }
+      { url: './logo.png', sizes: '180x180', type: 'image/png' }
     ]
   },
   manifest: '/site.webmanifest',
@@ -57,15 +57,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   // Supabaseストレージのロゴパス
-  const logoUrl = "https://qrxrulntwojimhhhnwqk.supabase.co/storage/v1/object/public/prompt-thumbnails/prompty_logo.jpg";
+  const logoUrl = "./logo.png";
   
   return (
     <html lang="ja" suppressHydrationWarning>
       <head>
-        {/* ファビコンとアイコン */}
-        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
-        <link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="any" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+          {/* ファビコンとアイコン */}
+          <link rel="shortcut icon" href="/logo.png" type="image/x-icon" />
+        <link rel="icon" href="/logo.png" type="image/x-icon" sizes="any" />
+        <link rel="apple-touch-icon" href="/logo.png" />
         <meta name="image" content={logoUrl} />
         
         {/* 重要な画像のプリロード - 必要最小限に */}
