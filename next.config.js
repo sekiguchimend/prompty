@@ -14,6 +14,7 @@ const nextConfig = {
     ],
   },
   assetPrefix: '',
+  basePath: '',
   experimental: {
     optimizeCss: true,
     optimizePackageImports: [

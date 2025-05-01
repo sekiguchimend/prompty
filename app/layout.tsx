@@ -59,13 +59,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // ファビコンのパス
+  // ファビコンのパス（必ず絶対パスを使用）
   const faviconUrl = "/favicon.ico";
   
   return (
     <html lang="ja" suppressHydrationWarning className={notoSansJP.className}>
       <head>
-          {/* ファビコンとアイコン */}
+          {/* ファビコンとアイコン - 絶対パスを使用 */}
           <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
           <link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="any" />
           <link rel="apple-touch-icon" href="/favicon.ico" />

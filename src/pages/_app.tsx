@@ -52,7 +52,7 @@ function MyApp({ Component, pageProps }: AppProps) {
         <meta name="description" content="LLMを活用したプロンプト共有・販売プラットフォーム" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
         
-        {/* ファビコン設定 */}
+        {/* ファビコン設定 - 絶対パスを使用 */}
         <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
         <link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="any" />
         <link rel="apple-touch-icon" href="/favicon.ico" />
