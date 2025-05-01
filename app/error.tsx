@@ -3,10 +3,11 @@
 import React from 'react';
 import { Button } from '../src/components/ui/button';
 
-interface ErrorProps {
+// インターフェースをタイプ別名に変更
+type ErrorProps = {
   error: Error;
   reset: () => void;
-}
+};
 
 export default function Error({ error, reset }: ErrorProps) {
   return (

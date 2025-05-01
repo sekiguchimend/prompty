@@ -26,6 +26,9 @@ const nextConfig = {
       '@radix-ui/react-dialog',
     ],
   },
+  cssOptions: {
+    modules: true
+  },
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? {
       exclude: ['error', 'warn', 'debug', 'info', 'log'],
@@ -41,8 +44,24 @@ const nextConfig = {
           name: 'vendors',
           chunks: 'all',
         },
+        styles: {
+          name: 'styles',
+          test: /\.(css|scss)$/,
+          chunks: 'all',
+          enforce: true
+        }
       },
     };
+    
+    if (!isServer) {
+      config.optimization.splitChunks.cacheGroups.styles = {
+        name: 'styles',
+        test: /\.(css|scss)$/,
+        chunks: 'all',
+        enforce: true,
+      };
+    }
+    
     return config;
   },
 };

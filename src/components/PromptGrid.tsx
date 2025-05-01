@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, Bookmark, MoreVertical } from 'lucide-react';
+import { Heart, Bookmark, BookmarkPlus, MoreVertical } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '../hooks/use-toast';
 import Image from 'next/image';
@@ -10,11 +10,6 @@ import { bookmarkPrompt, unbookmarkPrompt } from '../lib/bookmark-service';
 import { useAuth } from '../lib/auth-context';
 import { checkIfLiked } from '../lib/like-service';
 import { checkIfBookmarked } from '../lib/bookmark-service';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
-import { Textarea } from './ui/textarea';
-import { Button } from './ui/button';
-import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import { Label } from './ui/label';
 import ReportDialog from './common/ReportDialog';
 
 // グローバルトースト用のイベント名
@@ -468,19 +463,19 @@ const PromptCard: React.FC<PromptCardProps> = ({
               <div className="flex items-center">
                 <div className="flex items-center text-gray-500 mt-4">
                   <button 
-                    className={`like-button flex items-center ${liked ? 'text-red-500' : 'text-gray-500'}`}
+                    className={`like-button flex items-center ${liked ? 'text-pink-500' : 'text-gray-400'}`}
                     onClick={toggleLike}
                   >
-                    <Heart className={`mr-1 h-4 w-4 ${liked ? 'fill-red-500' : ''}`} />
+                    <Heart className={`mr-1 h-5 w-5 ${liked ? 'fill-pink-500' : ''}`} />
                   </button>
                   <span className="text-xs">{currentLikeCount}</span>
                 </div>
                 <div className="flex items-center text-gray-500 mt-4 ml-2">
                   <button 
-                    className={`bookmark-button flex items-center ${bookmarked ? 'text-blue-500' : 'text-gray-500'}`}
+                    className={`bookmark-button flex items-center ${bookmarked ? 'text-blue-300' : 'text-gray-500'}`}
                     onClick={toggleBookmark}
                   >
-                    <Bookmark className={`mr-1 h-4 w-4 ${bookmarked ? 'fill-blue-500' : ''}`} />
+                    <BookmarkPlus className={`mr-1 h-5 w-5 ${bookmarked ? 'fill-blue-500 text-blue-500' : 'text-gray-400 hover:text-gray-600'}`} />
                   </button>
                 </div>
               </div>

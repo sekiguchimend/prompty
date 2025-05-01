@@ -4,6 +4,9 @@ import './globals.css';
 import { RouterProvider } from '../src/components/RouterProvider';
 import { AuthProvider } from '../src/lib/auth-context';
 import dynamic from 'next/dynamic';
+import { Noto_Sans_JP } from 'next/font/google';
+import { notoSansJP } from '../lib/fonts'; // パスは調整
+
 
 // コンポーネントの遅延ロード
 const Header = dynamic(() => import('../src/components/Header'), {
@@ -60,9 +63,10 @@ export default function RootLayout({
   const logoUrl = "./logo.png";
   
   return (
-    <html lang="ja" suppressHydrationWarning>
+    <html lang="ja" suppressHydrationWarning className={notoSansJP.className}>
       <head>
           {/* ファビコンとアイコン */}
+
           <link rel="shortcut icon" href="/logo.png" type="image/x-icon" />
         <link rel="icon" href="/logo.png" type="image/x-icon" sizes="any" />
         <link rel="apple-touch-icon" href="/logo.png" />

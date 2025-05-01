@@ -48,8 +48,20 @@ function MyApp({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="https://qrxrulntwojimhhhnwqk.supabase.co/storage/v1/object/public/prompt-thumbnails/prompty_logo.jpg" type="image/jpeg" />
+        <title>Prompty - プロンプト共有・販売プラットフォーム</title>
+        <meta name="description" content="LLMを活用したプロンプト共有・販売プラットフォーム" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+        
+        {/* ファビコン設定 */}
+        <link rel="shortcut icon" href="/logo.png" type="image/png" />
+        <link rel="icon" href="/logo.png" type="image/png" sizes="any" />
+        <link rel="apple-touch-icon" href="/logo.png" />
+        
+        {/* OGP設定 */}
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Prompty - プロンプト共有・販売プラットフォーム" />
+        <meta property="og:description" content="LLMを活用したプロンプト共有・販売プラットフォーム" />
+        <meta property="og:image" content="/logo.png" />
       </Head>
       <AuthProvider>
         <Component {...pageProps} />

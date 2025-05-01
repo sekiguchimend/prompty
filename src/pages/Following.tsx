@@ -25,6 +25,7 @@ import {
 import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
+import Head from 'next/head';
 
 // 報告理由の選択肢
 const REPORT_REASONS = [
@@ -691,8 +692,22 @@ const Following: React.FC = () => {
     </div>
   ), [hasMore, isLoadingMore, followingPosts.length, loadMorePosts, loadMoreRef]);
   
+  // ページコンテンツが読み込まれた時の処理 
+  useEffect(() => {
+    // ここでページのタイトルをDocumentに設定
+    document.title = "フォロー中 | Prompty";
+  }, []);
+  
   return (
-    <>
+    <div className="min-h-screen bg-prompty-background">
+      <Head>
+        <title>フォロー中 | Prompty</title>
+        <meta name="description" content="フォローしているユーザーの投稿を表示します" />
+        <link rel="icon" href="/logo.png" type="image/png" />
+        <link rel="shortcut icon" href="/logo.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/logo.png" />
+      </Head>
+      
       <Header />
       
       <main className="flex-1 pb-12 mt-20 md:mt-16">
@@ -776,7 +791,7 @@ const Following: React.FC = () => {
       </Dialog>
       
       <Footer />
-    </>
+    </div>
   );
 };
 
