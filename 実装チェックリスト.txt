@@ -254,3 +254,8 @@
     - [x] public/site.webmanifestを更新
     - [x] src/pages/Following.tsxを更新
   - [x] 適切なMIMEタイプ（image/x-icon）の設定
+
+# セキュリティ関連タスク
+- [x] 機密情報保護
+  - [x] .gitignoreにCursor関連のファイル/フォルダを追加
+  - [x] プロジェクトIDなどの機密情報が公開されないよう保護
