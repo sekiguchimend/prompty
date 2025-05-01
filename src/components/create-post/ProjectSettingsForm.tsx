@@ -1,26 +1,16 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Form, FormControl, FormField, FormItem, FormLabel } from "../../components/ui/form";
 import { Input } from "../../components/ui/input";
 import { Textarea } from "../../components/ui/textarea";
-import { Button } from "../../components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
+import { Link as LinkIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Image, Upload, XCircle, CheckCircle, Link as LinkIcon } from "lucide-react";
-import { RadioGroup, RadioGroupItem } from "../../components/ui/radio-group";
-import { Label } from "../../components/ui/label";
-
-// 利用可能なAIモデルのリスト
-export const AI_MODELS = [
-  { value: "claude-3-5-sonnet", label: "Claude 3.5 Sonnet" },
-  { value: "claude-3-opus", label: "Claude 3 Opus" },
-  { value: "claude-3-haiku", label: "Claude 3 Haiku" },
-  { value: "gpt-4o", label: "GPT-4o" },
-  { value: "gpt-4", label: "GPT-4" },
-  { value: "gpt-3.5", label: "GPT-3.5" },
-  { value: "custom", label: "カスタム（直接入力）" },
-];
+import ThumbnailUploader from './ThumbnailUploader';
+import CategorySelector from './CategorySelector';
+import ModelSelector, { AI_MODELS } from './ModelSelector';
+import PricingSelector from './PricingSelector';
+import { useToast } from "../../components/ui/use-toast";
 
 // フォームのスキーマ定義
 const projectSchema = z.object({
@@ -32,15 +22,22 @@ const projectSchema = z.object({
   projectDescription: z.string().optional(),
   projectUrl: z.string().url("有効なURLを入力してください").optional().or(z.literal("")),
   thumbnail: z.string().optional(),
+  categoryId: z.string().nullable().optional(),
 });
 
 // フォームの値の型
 export type ProjectFormValues = z.infer<typeof projectSchema>;
 
+// カテゴリの型定義（CategorySelectorから再エクスポート）
+export { AI_MODELS };
+
 // コンポーネントのprops
 interface ProjectSettingsFormProps {
   onSave: (data: ProjectFormValues) => void;
   defaultValues?: Partial<ProjectFormValues>;
+  categories?: { id: string; name: string; slug: string; description: string | null; icon: string | null; parent_id: string | null; }[];
+  isLoadingCategories?: boolean;
+  onRefreshCategories?: () => void;
 }
 
 const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({ 
@@ -54,10 +51,14 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
     projectDescription: "",
     projectUrl: "",
     thumbnail: "",
-  }
+    categoryId: null,
+  },
+  categories = [],
+  isLoadingCategories = false,
+  onRefreshCategories
 }) => {
+  const { toast } = useToast();
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(defaultValues.thumbnail || null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isCustomModel, setIsCustomModel] = useState(defaultValues.aiModel === "custom");
   
   const projectForm = useForm<ProjectFormValues>({
@@ -66,45 +67,36 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
   });
 
   // サムネイル画像の処理
-  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
+  const handleThumbnailChange = (file: File) => {
+    const reader = new FileReader();
+    
+    console.log('サムネイル画像を読み込み中...', {
+      name: file.name,
+      type: file.type,
+      size: `${(file.size / 1024).toFixed(2)} KB`
+    });
+    
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      console.log('サムネイル読み込み完了:', result.substring(0, 50) + '...');
+      console.log('サムネイルデータ長さ:', result.length);
+      setThumbnailPreview(result);
+      projectForm.setValue("thumbnail", result);
       
-      // ファイルサイズチェック
-      const maxSizeMB = 5;
-      if (file.size > maxSizeMB * 1024 * 1024) {
-        alert(`サムネイル画像は${maxSizeMB}MB以下にしてください`);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
-        }
-        return;
-      }
-      
-      console.log('サムネイル画像を読み込み中...', {
-        name: file.name,
-        type: file.type,
-        size: `${(file.size / 1024).toFixed(2)} KB`
+      // 設定が変更されたら自動的に親コンポーネントに通知
+      autoSaveChanges({...projectForm.getValues(), thumbnail: result});
+    };
+    
+    reader.onerror = (error) => {
+      console.error('ファイル読み込みエラー:', error);
+      toast({
+        title: "エラー",
+        description: "画像の読み込み中にエラーが発生しました",
+        variant: "destructive",
       });
-      
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        console.log('サムネイル読み込み完了:', result.substring(0, 50) + '...');
-        console.log('サムネイルデータ長さ:', result.length);
-        setThumbnailPreview(result);
-        projectForm.setValue("thumbnail", result);
-        
-        // 設定が変更されたら自動的に親コンポーネントに通知
-        autoSaveChanges({...projectForm.getValues(), thumbnail: result});
-      };
-      
-      reader.onerror = (error) => {
-        console.error('ファイル読み込みエラー:', error);
-        alert('画像の読み込み中にエラーが発生しました');
-      };
-      
-      reader.readAsDataURL(file);
-    }
+    };
+    
+    reader.readAsDataURL(file);
   };
 
   // サムネイル画像をクリア
@@ -112,9 +104,6 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
     console.log('サムネイル画像をクリアします');
     setThumbnailPreview(null);
     projectForm.setValue("thumbnail", "");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
     
     // クリア時も親コンポーネントに通知
     autoSaveChanges({...projectForm.getValues(), thumbnail: ""});
@@ -136,29 +125,7 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
     onSave(data);
   };
 
-  // フォーム送信
-  const onSubmit = (data: ProjectFormValues) => {
-    console.log('プロジェクト設定送信前データ:', {
-      title: data.projectTitle,
-      aiModel: data.aiModel,
-      thumbnailExists: !!data.thumbnail,
-      thumbnailLength: data.thumbnail?.length || 0,
-      thumbnailPreview: thumbnailPreview ? '設定済み' : 'なし'
-    });
-    
-    // カスタムAIモデルの処理
-    if (data.aiModel === "custom" && data.customAiModel) {
-      data.aiModel = data.customAiModel;
-    }
-    
-    // 無料の場合は価格を0に設定
-    if (data.pricingType === "free") {
-      data.price = 0;
-    }
-    
-    onSave(data);
-  };
-
+  // AIモデル変更時のハンドラー
   const handleAiModelChange = (value: string) => {
     projectForm.setValue("aiModel", value);
     setIsCustomModel(value === "custom");
@@ -169,6 +136,7 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
     }, 100);
   };
 
+  // 料金タイプ変更時のハンドラー
   const handlePricingTypeChange = (value: string) => {
     projectForm.setValue("pricingType", value as "free" | "paid");
     
@@ -176,6 +144,21 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
     setTimeout(() => {
       autoSaveChanges(projectForm.getValues());
     }, 100);
+  };
+
+  // カテゴリ一覧を再取得する関数
+  const refreshCategories = () => {
+    // 親コンポーネントのonRefreshCategoriesを呼び出す
+    if (onRefreshCategories) {
+      onRefreshCategories();
+    } else {
+      // フォールバックとしてトースト表示
+      toast({
+        title: "カテゴリ一覧更新",
+        description: "カテゴリ一覧を更新します",
+        variant: "default",
+      });
+    }
   };
   
   // フォームの値が変更されたら自動保存する
@@ -198,59 +181,14 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
   return (
     <div className="bg-white rounded-lg">
       <Form {...projectForm}>
-        <form onSubmit={projectForm.handleSubmit(onSubmit)}>
+        <form>
           <div className="p-6">
             <div className="md:flex gap-8">
               {/* サムネイル画像アップロードエリア */}
-              <div className="flex items-center gap-4 mb-6 md:mb-0">
-                <div 
-                  className="w-32 h-32 border border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  {thumbnailPreview ? (
-                    <img 
-                      src={thumbnailPreview} 
-                      alt="サムネイルプレビュー" 
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <Image className="h-12 w-12 text-gray-400" />
-                  )}
-                </div>
-                
-                <div className="flex flex-col gap-2 lg:hidden">
-                  <Button 
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="border-gray-300 text-gray-700 text-xs py-1 h-7"
-                  >
-                    <Upload className="h-3 w-3 mr-1" />
-                    画像選択
-                  </Button>
-                  
-                  {thumbnailPreview && (
-                    <Button 
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={clearThumbnail}
-                      className="border-gray-300 text-gray-700 px-2 py-1 h-7"
-                    >
-                      <XCircle className="h-3 w-3 mr-1" />
-                      削除
-                    </Button>
-                  )}
-                </div>
-              </div>
-              
-              <input
-                type="file"
-                accept="image/*"
-                ref={fileInputRef}
-                onChange={handleThumbnailChange}
-                className="hidden"
+              <ThumbnailUploader
+                thumbnailPreview={thumbnailPreview}
+                onThumbnailChange={handleThumbnailChange}
+                onThumbnailClear={clearThumbnail}
               />
               
               {/* プロジェクト情報入力フォーム */}
@@ -273,101 +211,29 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
                     )}
                   />
                   
-                  <FormField
-                    control={projectForm.control}
-                    name="aiModel"
-                    render={({ field }) => (
-                      <FormItem className="w-full md:w-48">
-                        <FormLabel className="text-gray-700">使用AIモデル</FormLabel>
-                        <Select
-                          onValueChange={handleAiModelChange}
-                          defaultValue={field.value}
-                        >
-                          <SelectTrigger className="border-gray-300 bg-white">
-                            <SelectValue placeholder="AIモデル選択" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {AI_MODELS.map((model) => (
-                              <SelectItem key={model.value} value={model.value}>
-                                {model.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                    )}
-                  />
+                  <div className="w-full md:w-48">
+                    <ModelSelector
+                      control={projectForm.control}
+                      isCustomModel={isCustomModel}
+                      onModelChange={handleAiModelChange}
+                    />
+                  </div>
                 </div>
                 
-                {/* カスタムAIモデル入力フィールド */}
-                {isCustomModel && (
-                  <FormField
-                    control={projectForm.control}
-                    name="customAiModel"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-gray-700">カスタムAIモデル名</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="例: GPT-4-1106-preview, gemini-1.5-pro"
-                            className="border-gray-300"
-                            {...field}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                )}
-
-                {/* 有料/無料の選択 */}
-                <FormField
+                {/* カテゴリ選択フィールド */}
+                <CategorySelector
                   control={projectForm.control}
-                  name="pricingType"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel className="text-gray-700">公開タイプ</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          defaultValue={field.value}
-                          onValueChange={handlePricingTypeChange}
-                          className="flex flex-col space-y-2"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="free" id="free" />
-                            <Label htmlFor="free" className="font-normal cursor-pointer">無料</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="paid" id="paid" />
-                            <Label htmlFor="paid" className="font-normal cursor-pointer">有料</Label>
-                          </div>
-                        </RadioGroup>
-                      </FormControl>
-                    </FormItem>
-                  )}
+                  categories={categories}
+                  isLoading={isLoadingCategories}
+                  onRefresh={refreshCategories}
                 />
-
-                {/* 価格設定（有料の場合のみ表示） */}
-                {projectForm.watch("pricingType") === "paid" && (
-                  <FormField
-                    control={projectForm.control}
-                    name="price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-gray-700">価格（円）</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="1"
-                            placeholder="例: 300"
-                            className="border-gray-300"
-                            {...field}
-                            onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                )}
+                
+                {/* 価格設定フィールド */}
+                <PricingSelector
+                  control={projectForm.control}
+                  pricingType={projectForm.watch("pricingType")}
+                  onPricingTypeChange={handlePricingTypeChange}
+                />
                 
                 {/* URLフィールド */}
                 <FormField
@@ -416,8 +282,6 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
               </div>
             </div>
           </div>
-          
-          {/* 保存ボタンは非表示（自動保存するため） */}
         </form>
       </Form>
     </div>

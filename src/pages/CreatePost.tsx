@@ -21,6 +21,81 @@ import { useAuth } from "../lib/auth-context";
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '../lib/supabaseClient';
 
+// カテゴリの型定義
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  icon: string | null;
+  parent_id: string | null;
+}
+
+// Supabase接続情報をチェックする関数（開発中のみ使用）
+const checkSupabaseConfiguration = () => {
+  // 本番環境ではこの機能を無効化
+  if (process.env.NODE_ENV === 'production') {
+    return;
+  }
+
+  console.log('Supabase設定チェック開始...');
+  
+  // 環境変数をチェック
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  
+  // 設定情報を表示（キーは部分的に隠す）
+  console.log('Supabase設定:', {
+    url: supabaseUrl || '未設定',
+    anonKeySet: supabaseAnonKey ? '設定済み' : '未設定',
+    anonKeyLength: supabaseAnonKey?.length || 0
+  });
+  
+  // supabaseインスタンスの状態確認
+  if (!supabase) {
+    console.error('Supabaseクライアントが初期化されていません');
+    return;
+  }
+  
+  // ストレージ機能のテスト（匿名アクセス）
+  const testBucket = async () => {
+    try {
+      // バケット一覧取得を試みる（匿名ユーザーでも取得可能かテスト）
+      const { data, error } = await supabase.storage.listBuckets();
+      
+      if (error) {
+        console.error('ストレージアクセスエラー:', error);
+      } else {
+        console.log('利用可能なバケット一覧:', data?.map(b => b.name) || []);
+        
+        // prompt-thumbnailsバケットが存在するか確認
+        const thumbnailBucket = data?.find(b => b.name === 'prompt-thumbnails');
+        if (thumbnailBucket) {
+          console.log('サムネイル用バケットが存在します:', thumbnailBucket);
+          
+          // バケットのアクセス権をテスト
+          try {
+            const { data: files } = await supabase.storage
+              .from('prompt-thumbnails')
+              .list();
+            
+            console.log('バケット内のファイル一覧取得成功:', files?.length || 0);
+          } catch (e) {
+            console.error('バケットアクセスエラー:', e);
+          }
+        } else {
+          console.warn('サムネイル用バケットが存在しません - 自動作成が必要です');
+        }
+      }
+    } catch (e) {
+      console.error('ストレージテストエラー:', e);
+    }
+  };
+  
+  // テスト実行
+  testBucket();
+};
+
 const CreatePost = () => {
   const router = useRouter();
   const { toast } = useToast();
@@ -38,12 +113,53 @@ const CreatePost = () => {
     projectDescription: "",
     thumbnail: "",
     projectUrl: "",
+    categoryId: null, // カテゴリIDを追加
   });
   const [isPublishing, setIsPublishing] = useState(false);
   const [authorId, setAuthorId] = useState<string | null>(null);
   const [isAnonymousSubmission, setIsAnonymousSubmission] = useState(false);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   
+  // カテゴリ一覧を取得
+  const fetchCategories = async () => {
+    setIsLoadingCategories(true);
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('name');
+      
+      if (error) {
+        console.error('カテゴリ取得エラー:', error);
+        toast({
+          title: "エラー",
+          description: "カテゴリの取得に失敗しました",
+          variant: "destructive",
+        });
+      } else if (data) {
+        console.log('カテゴリ取得成功:', data.length);
+        setCategories(data);
+      }
+    } catch (error) {
+      console.error('カテゴリ取得例外:', error);
+    } finally {
+      setIsLoadingCategories(false);
+    }
+  };
+  
+  // 初期化時にSupabase設定をチェックしカテゴリ一覧を取得
+  useEffect(() => {
+    // 開発環境のみで実行
+    if (process.env.NODE_ENV !== 'production') {
+      checkSupabaseConfiguration();
+    }
+    
+    // カテゴリ一覧を取得
+    fetchCategories();
+  }, []);
+
   // 認証状態が確定するまでauthorIdをセットしない
   useEffect(() => {
     if (isLoading) return; // ローディング中は何もしない
@@ -61,7 +177,8 @@ const CreatePost = () => {
     // プロジェクト設定を更新
     setProjectSettings({
       ...data,
-      thumbnail: data.thumbnail || "" 
+      thumbnail: data.thumbnail || "",
+      categoryId: data.categoryId || null 
     });
     
     // サムネイル画像があれば処理 - thumbnailFileが既に設定されている場合は処理しない
@@ -208,9 +325,6 @@ const CreatePost = () => {
     }
     
     try {
-      // バケット名
-      const bucketName = 'prompt-thumbnails';
-      
       // MIMEタイプとファイル拡張子の処理
       let contentType = file.type;
       
@@ -240,81 +354,23 @@ const CreatePost = () => {
         contentType: contentType,
         fileExt: fileExt
       });
+
+      console.log('Supabaseストレージに問題があるため、直接データURLを返します');
       
-      // ファイル名を取得（拡張子付き）
-      let fileName = file.name;
-      
-      // 拡張子なしの場合、または拡張子が異なる場合は適切な拡張子を追加
-      if (!fileName.includes('.') || !fileName.endsWith(`.${fileExt}`)) {
-        // 拡張子を含む場合は取り除く
-        const nameWithoutExt = fileName.includes('.') 
-          ? fileName.substring(0, fileName.lastIndexOf('.')) 
-          : fileName;
-        
-        // 新しいファイル名（タイムスタンプと正しい拡張子）
-        fileName = `${nameWithoutExt}-${Date.now()}.${fileExt}`;
-      }
-      
-      console.log('画像アップロード準備:', {
-        fileName: fileName,
-        contentType: contentType,
-        fileSize: file.size
+      // データURLとして画像を読み込む
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = reader.result as string;
+          console.log('データURL形式で返却 (長さ):', dataUrl?.length || 0);
+          resolve(dataUrl);
+        };
+        reader.onerror = () => {
+          console.error('FileReader エラー');
+          resolve(null);
+        };
+        reader.readAsDataURL(file);
       });
-      
-      // バケット作成を確認
-      try {
-        const bucketResponse = await fetch('/api/create-bucket', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ bucketName })
-        });
-        
-        if (!bucketResponse.ok) {
-          console.error('バケット作成エラー:', await bucketResponse.text());
-        }
-      } catch (bucketError) {
-        console.error('バケット作成リクエストエラー:', bucketError);
-      }
-      
-      // 画像ファイルをバイナリとして読み込み
-      const imageBuffer = await file.arrayBuffer();
-      
-      // バイナリデータを正しい形式でアップロード
-      const imageBlob = new Blob([imageBuffer], { type: contentType });
-      
-      console.log('アップロード開始...', {
-        fileName,
-        contentType,
-        blobSize: imageBlob.size
-      });
-      
-      // 直接blobをアップロード
-      const { data, error } = await supabase.storage
-        .from(bucketName)
-        .upload(fileName, imageBlob, {
-          contentType: contentType, // 元の画像形式を維持
-          cacheControl: '3600',
-          upsert: true
-        });
-      
-      if (error) {
-        console.error('アップロードエラー詳細:', error);
-        throw error;
-      }
-      
-      console.log('アップロード成功:', data);
-      
-      // 公開URLを取得
-      const { data: urlData } = supabase.storage
-        .from(bucketName)
-        .getPublicUrl(fileName);
-      
-      if (!urlData || !urlData.publicUrl) {
-        throw new Error('公開URLの取得に失敗しました');
-      }
-      
-      console.log('公開URL:', urlData.publicUrl);
-      return urlData.publicUrl;
     } catch (error) {
       console.error('サムネイルアップロードエラー:', error);
       toast({
@@ -535,6 +591,71 @@ const CreatePost = () => {
           // アップロード結果を確認
           if (thumbnailUrl) {
             console.log('画像アップロード成功:', thumbnailUrl);
+            
+            // サムネイルURLの有効性を再確認
+            try {
+              const urlCheckResponse = await fetch(thumbnailUrl, { method: 'HEAD' });
+              if (!urlCheckResponse.ok) {
+                console.warn('最終的なサムネイルURL確認エラー:', 
+                  urlCheckResponse.status, urlCheckResponse.statusText);
+                
+                // Content-Typeを確認
+                const contentTypeHeader = urlCheckResponse.headers.get('content-type');
+                console.log('応答のContent-Type:', contentTypeHeader);
+                
+                if (contentTypeHeader?.includes('application/json')) {
+                  console.error('画像が正しく保存されていません。JSONが返されています。');
+                  
+                  // ユーザーに確認
+                  const retryUpload = window.confirm(
+                    'サムネイル画像に問題があります。再度アップロードを試みますか？'
+                  );
+                  
+                  if (retryUpload) {
+                    // 再試行（古いファイルを削除して再アップロード）
+                    if (imageFile) {
+                      // 異なるファイル名を使用して再アップロード
+                      const timestamp = Date.now() + 1; // 確実に異なるタイムスタンプにする
+                      const fileNameParts = imageFile.name.split('.');
+                      const fileExt = fileNameParts.length > 1 ? fileNameParts.pop() : 'jpg';
+                      
+                      // 新しいFileオブジェクトを作成（明示的に画像MIMEタイプを指定）
+                      const imageType = imageFile.type.startsWith('image/') 
+                        ? imageFile.type 
+                        : 'image/jpeg';
+                      
+                      const imageBuffer = await imageFile.arrayBuffer();
+                      const newImageFile = new File(
+                        [imageBuffer], 
+                        `thumbnail-retry-${timestamp}.${fileExt}`, 
+                        { type: imageType }
+                      );
+                      
+                      console.log('再アップロード試行中:', newImageFile.name);
+                      thumbnailUrl = await uploadThumbnailToStorage(newImageFile);
+                      
+                      if (!thumbnailUrl) {
+                        console.error('再アップロードも失敗しました');
+                        const skipThumbnail = window.confirm(
+                          '再アップロードも失敗しました。サムネイルなしで投稿を続けますか？'
+                        );
+                        
+                        if (!skipThumbnail) {
+                          setIsSubmitting(false);
+                          return;
+                        }
+                      }
+                    }
+                  } else {
+                    // ユーザーがキャンセルした場合はサムネイルなしで続行
+                    thumbnailUrl = null;
+                  }
+                }
+              }
+            } catch (urlCheckError) {
+              console.warn('サムネイルURL接続エラー:', urlCheckError);
+              // エラーがあっても処理を続行
+            }
           } else {
             console.error('画像アップロード失敗');
             const continueWithoutThumbnail = window.confirm(
@@ -589,7 +710,8 @@ const CreatePost = () => {
         description: projectSettings.projectDescription || "",
         content: projectSettings.projectDescription || "", // プロジェクト説明をcontentに
         thumbnail_url: thumbnailUrl, // アップロードしたサムネイルのURL
-        category_id: null, // カテゴリIDがあれば指定
+        thumbnail_data: thumbnailUrl && thumbnailUrl.startsWith('data:') ? thumbnailUrl : null, // データURL形式の場合
+        category_id: projectSettings.categoryId, // カテゴリーIDを追加
         price: projectSettings.pricingType === "paid" ? projectSettings.price : 0,
         is_free: projectSettings.pricingType === "free",
         ai_model: projectSettings.aiModel === "custom" 
@@ -742,6 +864,9 @@ const CreatePost = () => {
             <ProjectSettingsForm
               onSave={handleProjectSave}
               defaultValues={projectSettings}
+              categories={categories}
+              isLoadingCategories={isLoadingCategories}
+              onRefreshCategories={fetchCategories}
             />
           </div>
         )}

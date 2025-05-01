@@ -4,6 +4,10 @@ export { default as PromptGuide } from './PromptGuide';
 export { default as PromptGuideDialog } from './PromptGuideDialog';
 export { default as PromptForm } from './PromptForm';
 export { default as PromptHistory } from './PromptHistory';
+export { default as ThumbnailUploader } from './ThumbnailUploader';
+export { default as CategorySelector } from './CategorySelector';
+export { default as ModelSelector } from './ModelSelector';
+export { default as PricingSelector } from './PricingSelector';
 
 // 型定義もエクスポート
 export type { ProjectFormValues } from './ProjectSettingsForm';
