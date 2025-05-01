@@ -60,20 +60,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   // Supabaseストレージのロゴパス
-  const logoUrl = "./logo.png";
+  const logoUrl = "/logo.png";
   
   return (
     <html lang="ja" suppressHydrationWarning className={notoSansJP.className}>
       <head>
           {/* ファビコンとアイコン */}
-
-          <link rel="shortcut icon" href="/logo.png" type="image/x-icon" />
-        <link rel="icon" href="/logo.png" type="image/x-icon" sizes="any" />
-        <link rel="apple-touch-icon" href="/logo.png" />
-        <meta name="image" content={logoUrl} />
+          <link rel="shortcut icon" href="/logo.png" type="image/png" />
+          <link rel="icon" href="/logo.png" type="image/png" sizes="any" />
+          <link rel="apple-touch-icon" href="/logo.png" />
+          <meta name="image" content={logoUrl} />
         
         {/* 重要な画像のプリロード - 必要最小限に */}
-        <link rel="preload" href={logoUrl} as="image" type="image/jpeg" />
+        <link rel="preload" href={logoUrl} as="image" type="image/png" />
       </head>
       <body className={inter.className}>
         <AuthProvider>
