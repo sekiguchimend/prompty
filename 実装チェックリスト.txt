@@ -254,6 +254,11 @@
     - [x] public/site.webmanifestを更新
     - [x] src/pages/Following.tsxを更新
   - [x] 適切なMIMEタイプ（image/x-icon）の設定
+- [x] 環境間のファビコン一貫性問題を解決
+  - [x] _document.tsxにファビコン設定を追加（Pages Router全体に適用）
+  - [x] next.config.jsのassetPrefixを空文字列に統一
+  - [x] setup-profile.tsxのprompty_logo.jpg参照を修正
+  - [x] site.webmanifestのサイズ設定を実際のfavicon.icoに合わせて修正
 
 # セキュリティ関連タスク
 - [x] 機密情報保護

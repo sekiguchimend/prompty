@@ -13,7 +13,7 @@ const nextConfig = {
       },
     ],
   },
-  assetPrefix: process.env.NODE_ENV === 'production' ? undefined : '',
+  assetPrefix: '',
   experimental: {
     optimizeCss: true,
     optimizePackageImports: [
