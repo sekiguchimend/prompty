@@ -246,8 +246,11 @@
 - [x] app/layout.tsxのファビコン設定のパスエラーを修正
   - [x] 誤った外部URLパス（/https://...）を正しいローカルパス（/prompty_logo.jpg）に修正
   - [x] image/x-icon形式からimage/jpeg形式に修正
-- [ ] 最適なファビコン形式への変更（オプション）
-  - [ ] prompty_logo.jpgを正方形にトリミング
-  - [ ] favicon.icoファイル（複数サイズを含む）を作成
-  - [ ] PNG形式のファビコンファイルを追加（16x16、32x32サイズ）
-  - [ ] app/layout.tsxでのファビコン参照を更新
+- [x] 最適なファビコン形式への変更（オプション）
+  - [x] favicon.icoファイルへの参照に変更
+  - [x] すべてのファイルでファビコン参照を更新
+    - [x] app/layout.tsxを更新
+    - [x] src/pages/_app.tsxを更新
+    - [x] public/site.webmanifestを更新
+    - [x] src/pages/Following.tsxを更新
+  - [x] 適切なMIMEタイプ（image/x-icon）の設定

@@ -6,7 +6,19 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+
+# Cursor関連のファイル/フォルダ（機密情報保護のため）
 .cursor
+.cursor-*
+cursor-*
+.vscode-cursor
+.vscode/.cursor
+.cursorsettings
+.cursordatastore
+cursorsettings.json
+cursor_history
+.cursor-server
+
 node_modules
 dist
 dist-ssr

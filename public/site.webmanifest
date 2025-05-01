@@ -3,15 +3,15 @@
   "short_name": "Prompty",
   "icons": [
     {
-      "src": "https://qrxrulntwojimhhhnwqk.supabase.co/storage/v1/object/public/prompt-thumbnails/prompty_logo.jpg",
+      "src": "/favicon.ico",
       "sizes": "192x192",
-      "type": "image/jpeg",
+      "type": "image/x-icon",
       "purpose": "any maskable"
     },
     {
-      "src": "https://qrxrulntwojimhhhnwqk.supabase.co/storage/v1/object/public/prompt-thumbnails/prompty_logo.jpg",
+      "src": "/favicon.ico",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/x-icon",
       "purpose": "any maskable"
     }
   ],

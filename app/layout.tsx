@@ -28,10 +28,10 @@ export const metadata = {
   description: 'LLMを活用したプロンプト共有・販売プラットフォーム',
   icons: {
     icon: [
-      { url: './logo.png', sizes: 'any' }
+      { url: '/favicon.ico', sizes: 'any' }
     ],
     apple: [
-      { url: './logo.png', sizes: '180x180', type: 'image/png' }
+      { url: '/favicon.ico', sizes: '180x180', type: 'image/x-icon' }
     ]
   },
   manifest: '/site.webmanifest',
@@ -59,20 +59,20 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Supabaseストレージのロゴパス
-  const logoUrl = "/logo.png";
+  // ファビコンのパス
+  const faviconUrl = "/favicon.ico";
   
   return (
     <html lang="ja" suppressHydrationWarning className={notoSansJP.className}>
       <head>
           {/* ファビコンとアイコン */}
-          <link rel="shortcut icon" href="/logo.png" type="image/png" />
-          <link rel="icon" href="/logo.png" type="image/png" sizes="any" />
-          <link rel="apple-touch-icon" href="/logo.png" />
-          <meta name="image" content={logoUrl} />
+          <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+          <link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="any" />
+          <link rel="apple-touch-icon" href="/favicon.ico" />
+          <meta name="image" content={faviconUrl} />
         
         {/* 重要な画像のプリロード - 必要最小限に */}
-        <link rel="preload" href={logoUrl} as="image" type="image/png" />
+        <link rel="preload" href={faviconUrl} as="image" type="image/x-icon" />
       </head>
       <body className={inter.className}>
         <AuthProvider>

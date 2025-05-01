@@ -53,15 +53,15 @@ function MyApp({ Component, pageProps }: AppProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
         
         {/* ファビコン設定 */}
-        <link rel="shortcut icon" href="/logo.png" type="image/png" />
-        <link rel="icon" href="/logo.png" type="image/png" sizes="any" />
-        <link rel="apple-touch-icon" href="/logo.png" />
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+        <link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="any" />
+        <link rel="apple-touch-icon" href="/favicon.ico" />
         
         {/* OGP設定 */}
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Prompty - プロンプト共有・販売プラットフォーム" />
         <meta property="og:description" content="LLMを活用したプロンプト共有・販売プラットフォーム" />
-        <meta property="og:image" content="/logo.png" />
+        <meta property="og:image" content="/favicon.ico" />
       </Head>
       <AuthProvider>
         <Component {...pageProps} />
