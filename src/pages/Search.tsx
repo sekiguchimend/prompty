@@ -63,8 +63,8 @@ const Search = () => {
           .limit(20);
           
         if (error) {
-          console.error('Supabase検索エラー:', error);
           setSearchError('データの取得中にエラーが発生しました');
+          // エラー時はフォールバック処理を行う（後続のcatchブロックで処理）
           throw error;
         }
         
@@ -91,10 +91,11 @@ const Search = () => {
           .order('created_at', { ascending: false });
           
         if (error) {
-          console.error('Supabase検索エラー:', error);
           setSearchError('検索処理中にエラーが発生しました');
           throw error;
         }
+        
+        let formattedResults: PromptItem[] = [];
         
         if (!promptsData || promptsData.length === 0) {
           // プロフィール名での検索を試みる
@@ -108,9 +109,7 @@ const Search = () => {
             `)
             .or(`username.ilike.%${searchQuery}%,display_name.ilike.%${searchQuery}%`);
             
-          if (profilesError) {
-            console.error('プロフィール検索エラー:', profilesError);
-          } else if (profilesData && profilesData.length > 0) {
+          if (!profilesError && profilesData && profilesData.length > 0) {
             // 見つかったプロフィールのユーザーIDで投稿を検索
             const userIds = profilesData.map(profile => profile.id);
             const { data: userPromptsData, error: userPromptsError } = await supabase
@@ -129,21 +128,19 @@ const Search = () => {
               .in('author_id', userIds)
               .order('created_at', { ascending: false });
               
-            if (userPromptsError) {
-              console.error('ユーザー投稿検索エラー:', userPromptsError);
-            } else {
+            if (!userPromptsError && userPromptsData) {
               // データ変換処理
-              const formattedResults = transformPromptsData(userPromptsData || []);
+              formattedResults = transformPromptsData(userPromptsData);
               setResults(formattedResults);
               setFilteredResults(formattedResults);
               setIsLoading(false);
               return;
             }
           }
+        } else {
+          // データ変換処理
+          formattedResults = transformPromptsData(promptsData);
         }
-        
-        // データ変換処理
-        const formattedResults = transformPromptsData(promptsData || []);
         
         if (formattedResults.length === 0) {
           // バックアップとしてモックデータから検索
@@ -160,10 +157,11 @@ const Search = () => {
         }
       }
     } catch (error) {
-      console.error('検索中にエラーが発生しました:', error);
+      // エラー時の処理（コンソールログへの依存を排除）
       if (!searchError) {
         setSearchError('検索中にエラーが発生しました。しばらく経ってからお試しください。');
       }
+      
       // エラー時はモックデータにフォールバック
       const combinedPrompts = [...featuredPrompts, ...aiGeneratedPrompts];
       const mockResults = combinedPrompts.filter(prompt => 
@@ -244,25 +242,44 @@ const Search = () => {
 
   // データ変換用ヘルパー関数
   const transformPromptsData = (promptsData: any[]): PromptItem[] => {
+    if (!Array.isArray(promptsData)) return [];
+    
     return promptsData.map(prompt => {
-      const profileData = prompt.profiles && prompt.profiles.length > 0 
-        ? prompt.profiles[0] 
-        : { display_name: '不明なユーザー', avatar_url: '/images/default-avatar.svg' };
-      
-      return {
-        id: prompt.id,
-        title: prompt.title || '無題',
-        thumbnailUrl: prompt.thumbnail_url || '/images/default-thumbnail.svg',
-        content: prompt.content || [],
-        postedAt: new Date(prompt.created_at).toLocaleDateString('ja-JP'),
-        likeCount: prompt.like_count || 0,
-        user: {
-          userId: prompt.author_id || '',
-          name: profileData.display_name || profileData.username || '不明なユーザー',
-          avatarUrl: profileData.avatar_url || '/images/default-avatar.svg',
-        }
-      };
-    });
+      try {
+        const profileData = prompt.profiles && prompt.profiles.length > 0 
+          ? prompt.profiles[0] 
+          : { display_name: '不明なユーザー', avatar_url: '/images/default-avatar.svg' };
+        
+        return {
+          id: prompt.id,
+          title: prompt.title || '無題',
+          thumbnailUrl: prompt.thumbnail_url || '/images/default-thumbnail.svg',
+          content: prompt.content || [],
+          postedAt: new Date(prompt.created_at).toLocaleDateString('ja-JP'),
+          likeCount: prompt.like_count || 0,
+          user: {
+            userId: prompt.author_id || '',
+            name: profileData.display_name || profileData.username || '不明なユーザー',
+            avatarUrl: profileData.avatar_url || '/images/default-avatar.svg',
+          }
+        };
+      } catch (err) {
+        // データ変換エラー時のフォールバック
+        return {
+          id: prompt.id || 'unknown',
+          title: prompt.title || '無題',
+          thumbnailUrl: '/images/default-thumbnail.svg',
+          content: [],
+          postedAt: new Date().toLocaleDateString('ja-JP'),
+          likeCount: 0,
+          user: {
+            userId: '',
+            name: '不明なユーザー',
+            avatarUrl: '/images/default-avatar.svg',
+          }
+        };
+      }
+    }).filter(Boolean); // nullやundefinedをフィルタリング
   };
 
   // 検索フォーム送信時の処理
@@ -315,6 +332,26 @@ const Search = () => {
       <main className="container max-w-7xl mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-4">検索</h1>
         
+        {/* 検索フォーム */}
+        <form onSubmit={handleSearch} className="mb-6">
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                placeholder="プロンプトを検索..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prompty-primary focus:border-transparent"
+              />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <SearchIcon className="h-5 w-5 text-gray-400" />
+              </div>
+            </div>
+            <Button type="submit" className="bg-prompty-primary hover:bg-prompty-primary-dark">
+              検索
+            </Button>
+          </div>
+        </form>
        
         {/* 検索フィルターと並べ替えオプション */}
         <div className="flex flex-wrap gap-3 mb-6">
@@ -468,5 +505,12 @@ const Search = () => {
     </div>
   );
 };
+
+// 静的生成を強制してルーティングを確実にする
+export async function getStaticProps() {
+  return {
+    props: {}
+  };
+}
 
 export default Search;
