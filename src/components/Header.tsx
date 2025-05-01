@@ -246,7 +246,7 @@ const Header = () => {
               <div className="flex items-center z-20">
                 <Link href="/" className="flex items-center">
                   <Image 
-                    src="https://qrxrulntwojimhhhnwqk.supabase.co/storage/v1/object/public/prompt-thumbnails/prompty_logo.jpg" 
+                    src="https://qrxrulntwojimhhhnwqk.supabase.co/storage/v1/object/public/prompt-thumbnails/prompty_logo(1).jpg" 
                     alt="Prompty" 
                     className="object-contain rounded-sm"
                     width={120}

@@ -506,7 +506,8 @@
 - [x] バケット作成処理のロジックを修正
 - [x] バケット存在確認のロジックを改善
 - [x] エラーハンドリングを強化
-- [ ] 環境変数の設定を確認
+- [x] サムネイルアップロード時のバリデーション処理を強化
+- [x] 環境変数の設定を確認
 - [ ] 動作確認テスト
 
 ## 実施した修正
@@ -514,4 +515,6 @@
 2. [x] `src/lib/supabase/admin.ts`: 適切なadminクライアント実装を作成
 3. [x] `src/pages/api/create-thumbnail-bucket.ts`: バケット作成処理のエラーハンドリングを強化
 4. [x] `src/pages/api/thumbnail/upload.ts`: バケット作成・確認ロジックをより堅牢に改善
-5. [ ] サムネイルアップロード機能の動作確認
+5. [x] `src/components/create-post/ThumbnailUploader.tsx`: サムネイル画像アップロード時のバリデーション強化
+6. [x] 重複・未使用ファイル(`src/components/create-post/project-settings-form.tsx`)を削除
+7. [ ] サムネイルアップロード機能の動作確認
