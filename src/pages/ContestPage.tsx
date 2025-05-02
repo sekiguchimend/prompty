@@ -113,15 +113,18 @@ const ContestPage: React.FC = () => {
   const handleHashtagClick = (tag: string) => {
     // ハッシュタグから#を取り除く
     const tagName = tag.startsWith('#') ? tag.substring(1) : tag;
-    // エンコードしてURLパラメータとして渡す
-    router.push(`/hashtag/${encodeURIComponent(tagName)}`);
+    // 現在のページにとどまる（URLは変更しない）
+    console.log(`タグをクリック: ${tagName}`);
+    // router.push(`/hashtag/${encodeURIComponent(tagName)}`);
   };
 
   // コンテストをクリックした時の処理
   const handleContestClick = (contest: { hashtag: string }) => {
-    // タグ名を抽出して遷移（#を取り除く）
+    // タグ名を抽出（#を取り除く）
     const tagName = contest.hashtag.startsWith('#') ? contest.hashtag.substring(1) : contest.hashtag;
-    router.push(`/hashtag/${encodeURIComponent(tagName)}`);
+    // 現在のページにとどまる
+    console.log(`コンテストをクリック: ${tagName}`);
+    // router.push(`/hashtag/${encodeURIComponent(tagName)}`);
   };
 
   // タブ切り替え処理
@@ -379,4 +382,4 @@ const ContestPage: React.FC = () => {
   );
 };
 
-export default ContestPage; 
+export default ContestPage;

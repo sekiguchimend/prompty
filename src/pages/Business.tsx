@@ -8,6 +8,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel } from '../components
 import { useForm } from 'react-hook-form';
 import { Checkbox } from '../components/ui/checkbox';
 import Image from 'next/image';
+import { supabase } from '../lib/supabaseClient';
+import { useRouter } from 'next/router';
+import { toast } from '../components/ui/use-toast';
+
 interface BusinessFormValues {
   email: string;
   password: string;
@@ -19,6 +23,8 @@ interface BusinessFormValues {
 const Business = () => {
   const [showPassword, setShowPassword] = React.useState(false);
   const [isFormValid, setIsFormValid] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
   
   const form = useForm<BusinessFormValues>({
     defaultValues: {
@@ -47,9 +53,79 @@ const Business = () => {
     return () => subscription.unsubscribe();
   }, [form.watch]);
 
-  const onSubmit = (data: BusinessFormValues) => {
-    console.log('Business registration data:', data);
-    // Handle business registration
+  const onSubmit = async (data: BusinessFormValues) => {
+    if (!isFormValid || isSubmitting) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      // 1. Supabaseで認証ユーザーを作成
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            username: data.promptyId,
+            full_name: data.displayName || data.promptyId,
+          }
+        }
+      });
+      
+      if (authError) throw authError;
+      
+      if (authData.user) {
+        // 2. profilesテーブルのis_businessフラグを設定
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: authData.user.id,
+            username: data.promptyId,
+            display_name: data.displayName || null,
+            is_business: true, // 法人アカウントフラグを設定
+            updated_at: new Date().toISOString()
+          });
+        
+        if (profileError) {
+          console.error('プロフィール更新エラー:', profileError);
+          toast({
+            title: 'ユーザープロフィールの設定に問題が発生しました',
+            description: 'ログイン後に設定を確認してください',
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: '会員登録が完了しました',
+            description: 'メールを確認して認証を完了してください',
+          });
+        }
+        
+        // 登録後の遷移先
+        setTimeout(() => {
+          router.push('/Login?registered=true');
+        }, 2000);
+      }
+    } catch (error: any) {
+      console.error('登録エラー:', error.message);
+      
+      let errorMessage = '登録に失敗しました。';
+      
+      // よくあるエラーメッセージの日本語化
+      if (error.message.includes('already exists')) {
+        errorMessage = 'このメールアドレスは既に登録されています。';
+      } else if (error.message.includes('password')) {
+        errorMessage = 'パスワードは8文字以上必要です。';
+      } else if (error.message.includes('email')) {
+        errorMessage = '有効なメールアドレスを入力してください。';
+      }
+      
+      toast({
+        title: '登録エラー',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -96,7 +172,7 @@ const Business = () => {
             <h2 className="text-2xl font-bold text-center mb-6">法人として会員登録</h2>
             
             <div className="flex justify-end mb-2">
-              <Link href="/register" className="text-sm text-gray-700 hover:underline">
+              <Link href="/Register" className="text-sm text-gray-700 hover:underline">
                 個人の方
               </Link>
             </div>
@@ -107,7 +183,7 @@ const Business = () => {
 
             <div className="bg-blue-50 p-4 rounded-md mb-6">
               <p className="text-sm text-gray-700">
-                クリエイターから受け取れる <span className="font-semibold">チップ機能がオフの状態</span>でアカウント<Link href="/register" className="text-prompty-primary hover:underline">登録</Link>されます。登録後、<Link href="/login" className="text-prompty-primary hover:underline">オン</Link>にすることも可能です。
+                クリエイターから受け取れる <span className="font-semibold">チップ機能がオフの状態</span>でアカウント<Link href="/Register" className="text-prompty-primary hover:underline">登録</Link>されます。登録後、<Link href="/Login" className="text-prompty-primary hover:underline">オン</Link>にすることも可能です。
               </p>
             </div>
             
@@ -222,19 +298,19 @@ const Business = () => {
                       ? 'bg-gray-900 hover:bg-gray-800 text-white' 
                       : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
                   }`}
-                  mt-6
+                  disabled={!isFormValid || isSubmitting}
                 >
-                  同意して登録する
+                  {isSubmitting ? '登録中...' : '同意して登録する'}
                 </Button>
               </form>
             </Form>
             
             <div className="mt-8 text-center">
-              <Link href="/login" className="text-prompty-primary hover:underline text-sm">
+              <Link href="/Login" className="text-prompty-primary hover:underline text-sm">
                 ログインはこちら
               </Link>
               <div className="mt-4">
-                <Link href="/register" className="text-prompty-primary hover:underline text-sm">
+                <Link href="/Register" className="text-prompty-primary hover:underline text-sm">
                   登録でお困りの方
                 </Link>
               </div>

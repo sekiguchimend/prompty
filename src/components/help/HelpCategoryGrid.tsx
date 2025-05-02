@@ -10,63 +10,63 @@ const helpCategories = [
     title: 'promptyを安心して使いこなすために',
     description: '',
     icon: <Book className="h-6 w-6 text-prompty-primary" />,
-    url: '/help-center/getting-started'
+    url: '/'
   },
   {
     id: 'about',
     title: 'promptyについて',
     description: '初めての方はこちらから',
     icon: <HelpCircle className="h-6 w-6 text-prompty-primary" />,
-    url: '/help-center/about'
+    url: '/'
   },
   {
     id: 'account',
     title: 'アカウント',
     description: 'アカウント情報の確認や変更、プロフィール等について',
     icon: <User className="h-6 w-6 text-prompty-primary" />,
-    url: '/help-center/account'
+    url: '/'
   },
   {
     id: 'articles',
     title: '記事',
     description: '記事の作り方、管理方法、サポート等について',
     icon: <Newspaper className="h-6 w-6 text-prompty-primary" />,
-    url: '/help-center/articles'
+    url: '/'
   },
   {
     id: 'magazine',
     title: 'マガジン',
     description: 'マガジンの使い方、設定方法等について',
     icon: <Book className="h-6 w-6 text-prompty-primary" />,
-    url: '/help-center/magazine'
+    url: '/'
   },
   {
     id: 'membership',
     title: 'メンバーシップ',
     description: 'メンバーシップの使い方、設定方法等について',
     icon: <Users className="h-6 w-6 text-prompty-primary" />,
-    url: '/help-center/membership'
+    url: '/'
   },
   {
     id: 'faq',
     title: 'よくある質問',
     description: 'よくお問い合わせいただく質問と回答をまとめました',
     icon: <HelpCircle className="h-6 w-6 text-prompty-primary" />,
-    url: '/help-center/faq'
+    url: '/'
   },
   {
     id: 'other-help',
     title: 'その他のヘルプ',
     description: 'その他の各種機能についてのヘルプはこちらにまとまっています',
     icon: <MoreHorizontal className="h-6 w-6 text-prompty-primary" />,
-    url: '/help-center/other'
+    url: '/'
   },
   {
     id: 'business',
     title: 'prompty pro/その他法人向け',
     description: '',
     icon: <Briefcase className="h-6 w-6 text-prompty-primary" />,
-    url: '/help-center/business'
+    url: '/'
   }
 ];
 
