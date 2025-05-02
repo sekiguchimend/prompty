@@ -85,14 +85,14 @@ const CategoryIndexPage: React.FC = () => {
 
   // ブレッドクラムコンポーネント
   const Breadcrumb = () => (
-    <div className="bg-gray-50 py-3 px-4 sm:px-6 md:px-8 border-b">
-      <div className="container mx-auto flex items-center text-sm text-gray-600">
-        <Link href="/" className="flex items-center hover:text-gray-900">
+    <div className="bg-gray-50 py-3 px-4 sm:px-6 md:px-8 border-b sticky top-0 z-10 md:static md:z-auto mt-14 md:mt-0">
+      <div className="container mx-auto flex items-center text-sm text-gray-600 overflow-x-auto whitespace-nowrap">
+        <Link href="/" className="flex items-center hover:text-gray-900 flex-shrink-0">
           <Home size={14} className="mr-1" />
           ホーム
         </Link>
-        <ChevronRight size={14} className="mx-2" />
-        <span className="font-medium text-gray-900">カテゴリー一覧</span>
+        <ChevronRight size={14} className="mx-2 flex-shrink-0" />
+        <span className="font-medium text-gray-900 flex-shrink-0">カテゴリー一覧</span>
       </div>
     </div>
   );
@@ -104,7 +104,7 @@ const CategoryIndexPage: React.FC = () => {
         <Sidebar />
         <div className="flex-1 md:ml-[240px]">
           <Breadcrumb />
-          <main className="pb-12 pt-2 md:mt-0 mt-6">
+          <main className="pb-12 pt-2">
             <div className="container px-4 sm:px-6 md:px-8">
               <div className="animate-pulse">
                 <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
@@ -133,7 +133,7 @@ const CategoryIndexPage: React.FC = () => {
       
       <div className="flex-1 md:ml-[240px]">
         <Breadcrumb />
-        <main className="pb-12 pt-2 md:mt-0 mt-6">
+        <main className="pb-12 pt-2">
           <div className="container px-4 sm:px-6 md:px-8">
             {error ? (
               <div className="bg-red-50 p-4 rounded-md">

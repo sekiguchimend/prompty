@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
 import { Heart, Bookmark, BookmarkPlus, MoreVertical } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '../hooks/use-toast';
@@ -601,6 +601,23 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   // 非表示の投稿を管理するための状態
   const [hiddenPromptIds, setHiddenPromptIds] = useState<string[]>([]);
   const isMobile = useIsMobile(); // スマホかどうかを判定
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null); // スクロールコンテナへの参照を追加
+  const [canScrollLeft, setCanScrollLeft] = useState(false); // 左スクロール可能かどうか
+  const [canScrollRight, setCanScrollRight] = useState(false); // 右スクロール可能かどうか
+  
+  // スクロール状態を確認する関数
+  const checkScrollability = useCallback(() => {
+    if (scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      // 左にスクロール可能か判定（現在のスクロール位置が0より大きいか）
+      setCanScrollLeft(container.scrollLeft > 0);
+      // 右にスクロール可能か判定（残りのスクロール量が存在するか）
+      setCanScrollRight(
+        container.scrollWidth > container.clientWidth &&
+        container.scrollLeft < (container.scrollWidth - container.clientWidth - 10) // 10pxの余裕を持たせる
+      );
+    }
+  }, []);
   
   // 初期表示時に非表示リストを読み込む
   useEffect(() => {
@@ -613,6 +630,54 @@ const PromptGrid: React.FC<PromptGridProps> = ({
       console.error('非表示リストの読み込みに失敗しました', error);
     }
   }, []);
+
+  // 初期表示時とウィンドウリサイズ時にスクロール可能性をチェック
+  useEffect(() => {
+    if (horizontalScroll) {
+      checkScrollability();
+      
+      // リサイズ時にも確認
+      const handleResize = () => checkScrollability();
+      window.addEventListener('resize', handleResize);
+      
+      return () => {
+        window.removeEventListener('resize', handleResize);
+      };
+    }
+  }, [horizontalScroll, checkScrollability]);
+  
+  // 横スクロールを処理する関数
+  const handleScroll = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      const cardWidth = 200; // カードの横幅
+      const scrollAmount = cardWidth * 3; // 3カード分の幅
+
+      if (direction === 'left') {
+        container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+      } else {
+        container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+      }
+      
+      // スクロール後にスクロール可能状態を更新するため少し遅延させる
+      setTimeout(checkScrollability, 400);
+    }
+  };
+  
+  // スクロールイベントのリスナーを追加
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container && horizontalScroll) {
+      const handleScrollEvent = () => {
+        checkScrollability();
+      };
+      
+      container.addEventListener('scroll', handleScrollEvent);
+      return () => {
+        container.removeEventListener('scroll', handleScrollEvent);
+      };
+    }
+  }, [horizontalScroll, checkScrollability]);
   
   // スマホ表示とPC表示でコンテナクラスを切り分け
   const containerClass = isMobile 
@@ -684,55 +749,87 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   
   return (
     <FeatureSectionContext.Provider value={isFeatureSection}>
-      <div className={containerClass}>
-        {limitedPrompts.map((prompt) => (
-          <div key={`${sectionPrefix}-${prompt.id}`} className={cardClass}>
-            <PromptCard
-              id={prompt.id}
-              title={prompt.title}
-              thumbnailUrl={prompt.thumbnailUrl}
-              user={prompt.user}
-              postedAt={prompt.postedAt}
-              likeCount={prompt.likeCount}
-              isLiked={prompt.isLiked}
-              isBookmarked={prompt.isBookmarked}
-              onHide={() => handleHidePrompt(prompt.id)}
-            />
-          </div>
-        ))}
+      <div className="relative">
+        {/* 横スクロール用の左矢印ボタン - 左にスクロール可能な場合のみ表示 */}
+        {horizontalScroll && !isMobile && canScrollLeft && (
+          <button 
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 bg-white rounded-full shadow-xl drop-shadow-md p-2 flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors"
+            onClick={() => handleScroll('left')}
+            aria-label="左にスクロール"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        )}
         
-        {/* すべてを見るカード（6件より多い場合かつshowViewAllがtrueの場合のみ表示） */}
-        {showViewAll && visiblePrompts.length > 6 && (
-          <div className={viewAllCardClass}>
-            {isMobile ? (
-              // スマホ表示ではテキストリンク
-              <Link href={viewAllPath} className="block text-center py-4 font-bold text-gray-500 hover:underline">
-                <span className="flex items-center justify-center">
-                  すべてを見る 
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </span>
-              </Link>
-            ) : (
-              // PC表示ではカード
-              <Link href={viewAllPath} passHref legacyBehavior>
-                <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm cursor-pointer h-full" data-id="view-all">
-                  <div className="flex items-center justify-center h-full w-full p-2 bg-gray-100">
-                    <div className="flex flex-col items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                      <div className={`text-gray-700 text-center ${notoSansJP.className}`} style={{ fontWeight: 700 }}>
-                        すべてを見る
+        {/* 横スクロール用の右矢印ボタン - 右にスクロール可能な場合のみ表示 */}
+        {horizontalScroll && !isMobile && canScrollRight && (
+          <button 
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 bg-white rounded-full shadow-xl drop-shadow-md p-2 flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors"
+            onClick={() => handleScroll('right')}
+            aria-label="右にスクロール"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        )}
+        
+        <div 
+          ref={scrollContainerRef} 
+          className={containerClass}
+          onLoad={checkScrollability} // コンテンツ読み込み完了時にスクロール可能性をチェック
+        >
+          {limitedPrompts.map((prompt) => (
+            <div key={`${sectionPrefix}-${prompt.id}`} className={cardClass}>
+              <PromptCard
+                id={prompt.id}
+                title={prompt.title}
+                thumbnailUrl={prompt.thumbnailUrl}
+                user={prompt.user}
+                postedAt={prompt.postedAt}
+                likeCount={prompt.likeCount}
+                isLiked={prompt.isLiked}
+                isBookmarked={prompt.isBookmarked}
+                onHide={() => handleHidePrompt(prompt.id)}
+              />
+            </div>
+          ))}
+          
+          {/* すべてを見るカード（6件より多い場合かつshowViewAllがtrueの場合のみ表示） */}
+          {showViewAll && visiblePrompts.length > 6 && (
+            <div className={viewAllCardClass}>
+              {isMobile ? (
+                // スマホ表示ではテキストリンク
+                <Link href={viewAllPath} className="block text-center py-4 font-bold text-gray-500 hover:underline">
+                  <span className="flex items-center justify-center">
+                    すべてを見る 
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </span>
+                </Link>
+              ) : (
+                // PC表示ではカード
+                <Link href={viewAllPath} passHref legacyBehavior>
+                  <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm cursor-pointer h-full" data-id="view-all">
+                    <div className="flex items-center justify-center h-full w-full p-2 bg-gray-100">
+                      <div className="flex flex-col items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                        <div className={`text-gray-700 text-center ${notoSansJP.className}`} style={{ fontWeight: 700 }}>
+                          すべてを見る
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </Link>
-            )}
-          </div>
-        )}
+                </Link>
+              )}
+            </div>
+          )}
+        </div>
       </div>
       <GlobalToast />
     </FeatureSectionContext.Provider>

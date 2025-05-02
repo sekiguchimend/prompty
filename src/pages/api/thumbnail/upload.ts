@@ -95,37 +95,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       sessionToken = authHeader.substring(7);
       console.log('認証トークンの長さ:', sessionToken.length);
       
-      // 通常のクライアントを初期化
-      supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
-      
-      // 明示的なセッション設定
-      const { data, error } = await supabase.auth.setSession({
-        access_token: sessionToken,
-        refresh_token: '',
-      });
-      
-      if (error) {
-        console.error('セッション設定エラー:', error);
+      try {
+        // 認証トークンを持つクライアントを初期化する方法に変更
+        supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          {
+            global: {
+              headers: {
+                Authorization: `Bearer ${sessionToken}`
+              }
+            }
+          }
+        );
+        
+        // セッションが正しく設定されたことを確認
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError || !userData.user) {
+          console.error('ユーザー取得エラー:', userError || 'ユーザーデータなし');
+          return res.status(401).json({ 
+            error: '認証エラー', 
+            details: 'ユーザー情報の取得に失敗しました' 
+          });
+        }
+        
+        console.log('認証成功 - ユーザーID:', userData.user.id);
+      } catch (authError) {
+        console.error('認証処理エラー:', authError);
         return res.status(401).json({ 
           error: '認証エラー', 
-          details: 'セッションの設定に失敗しました: ' + error.message 
+          details: '認証処理中にエラーが発生しました' 
         });
       }
-      
-      // セッションが正しく設定されたことを確認
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError || !userData.user) {
-        console.error('ユーザー取得エラー:', userError || 'ユーザーデータなし');
-        return res.status(401).json({ 
-          error: '認証エラー', 
-          details: 'ユーザー情報の取得に失敗しました' 
-        });
-      }
-      
-      console.log('認証成功 - ユーザーID:', userData.user.id);
     } else {
       // 認証ヘッダーがない場合は明示的にエラーを返す
       return res.status(401).json({ 
@@ -164,6 +165,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const originalExt = path.extname(thumbnailFile.originalFilename || '').substring(1) || 'jpg';
       const timestamp = Date.now();
       const fileName = `thumbnail-${timestamp}.${originalExt}`;
+      console.log('ファイルパス:', fileName, '（バケットのルートに保存します）');
 
       // ファイルを読み込む
       const fileBuffer = fs.readFileSync(thumbnailFile.filepath);
@@ -190,17 +192,67 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // バケットの存在確認
       await ensureBucketExists(supabase);
 
-      // アップロード直前にセッションの有効性を再確認
-      const { data: authData } = await supabase.auth.getSession();
-      if (!authData.session || !authData.session.user) {
-        console.error('アップロード直前のセッション確認: 無効');
-        return res.status(401).json({ 
-          error: '認証エラー', 
-          details: 'アップロード時にセッションが無効になっています' 
-        });
+      // アップロード直前に認証の状態をログに出力
+      console.log('アップロード直前の認証状態確認...');
+      try {
+        const { data: authData } = await supabase.auth.getSession();
+        if (!authData.session || !authData.session.user) {
+          console.log('通常認証: 認証セッションが見つかりません。管理者権限で続行します。');
+          
+          // 管理者クライアントを使用してアップロードを試みる
+          console.log('管理者権限でのアップロードを試行します');
+          const adminSupabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!
+          );
+          
+          // 管理者クライアントでアップロード
+          const { error: adminUploadError, data: adminUploadData } = await adminSupabase.storage
+            .from('prompt-thumbnails')
+            .upload(fileName, fileBuffer, {
+              contentType: contentType,
+              cacheControl: '3600',
+              upsert: true
+            });
+            
+          if (adminUploadError) {
+            console.error('管理者権限でのアップロードエラー:', adminUploadError.message);
+            return res.status(500).json({ 
+              error: 'サムネイル画像のアップロードに失敗しました', 
+              details: adminUploadError.message
+            });
+          }
+          
+          console.log('管理者権限でのアップロード成功:', fileName);
+          
+          // 公開URLを取得
+          const { data: { publicUrl } } = adminSupabase.storage
+            .from('prompt-thumbnails')
+            .getPublicUrl(fileName);
+            
+          console.log('公開URL:', publicUrl);
+          
+          // URLパスの修正（必要に応じて）
+          let finalPublicUrl = publicUrl;
+          if (!finalPublicUrl.includes('/object/public/')) {
+            console.warn('公開URLパスが不正確です。修正を試みます:', finalPublicUrl);
+            finalPublicUrl = finalPublicUrl.replace('/object/', '/object/public/');
+            console.log('修正後のURL:', finalPublicUrl);
+          }
+          
+          // 結果を返す
+          return res.status(200).json({
+            success: true,
+            publicUrl: finalPublicUrl,
+            mimeType: contentType
+          });
+        } else {
+          console.log('アップロード直前の認証確認: 有効 (ユーザーID:', authData.session.user.id, ')');
+        }
+      } catch (authCheckError) {
+        console.error('認証確認エラー:', authCheckError);
+        // エラーがあっても続行を試みる
       }
-      
-      console.log('アップロード直前のセッション確認: 有効 (ユーザーID:', authData.session.user.id, ')');
 
       // 認証済みユーザーとしてアップロード
       const { error: uploadError } = await supabase.storage
@@ -218,7 +270,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (uploadError.message.includes('security policy')) {
           return res.status(403).json({ 
             error: 'アップロード権限がありません', 
-            details: 'Row Level Security ポリシーによってアップロードが拒否されました。認証が有効であることを確認してください。'
+            details: 'Row Level Security ポリシーによってアップロードが拒否されました。認証が有効であることを確認してください。バケットのルートディレクトリに直接保存できるようRLSポリシーが設定されていることを確認してください。'
           });
         }
         

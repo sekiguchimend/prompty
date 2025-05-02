@@ -384,7 +384,7 @@ const PromptDetail = ({ postData, popularPosts }: { postData: ExtendedPostItem; 
     <div className="flex min-h-screen flex-col">
       <Header />
       
-      <main className="flex-1 bg-white md:mt-10">
+      <main className="flex-1 bg-white">
         <div className="container px-4 md:px-6 py-6 max-w-7xl mx-auto">
           {/* Back link */}
           <Link href="/" className="inline-flex items-center text-gray-500 mb-6 mt-10 md:mt-0">
