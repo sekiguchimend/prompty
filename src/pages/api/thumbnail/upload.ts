@@ -5,57 +5,6 @@ import fs from 'fs';
 import path from 'path';
 import { getMimeTypeFromExt } from '../../../utils/file-upload';
 
-// JWTトークンの中身を確認するデバッグ関数
-function analyzeJwt(token: string): { header: any; payload: any; isValidFormat: boolean } {
-  try {
-    // JWTの標準的な形式は「ヘッダー.ペイロード.署名」
-    const parts = token.split('.');
-    if (parts.length !== 3) {
-      return { 
-        header: null, 
-        payload: null, 
-        isValidFormat: false 
-      };
-    }
-    
-    // Base64デコード関数（URLセーフなBase64を標準Base64に変換してからデコード）
-    const decodeBase64 = (base64Url: string) => {
-      try {
-        // URLセーフなBase64を標準Base64に変換
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        // パディングを追加（必要な場合）
-        const paddedBase64 = base64.padEnd(
-          base64.length + (4 - (base64.length % 4)) % 4, 
-          '='
-        );
-        // Base64デコード
-        const decoded = Buffer.from(paddedBase64, 'base64').toString();
-        return JSON.parse(decoded);
-      } catch (e) {
-        console.error('JWT部分のデコードに失敗:', e);
-        return null;
-      }
-    };
-    
-    // ヘッダーとペイロードをデコード
-    const header = decodeBase64(parts[0]);
-    const payload = decodeBase64(parts[1]);
-    
-    return {
-      header,
-      payload,
-      isValidFormat: true
-    };
-  } catch (error) {
-    console.error('JWTトークン解析エラー:', error);
-    return { 
-      header: null, 
-      payload: null, 
-      isValidFormat: false 
-    };
-  }
-}
-
 // FormDataのパースを有効にする
 export const config = {
   api: {
@@ -129,23 +78,6 @@ async function ensureBucketExists(supabase: SupabaseClient) {
   }
 }
 
-// サービスロールキーを使用した管理者用のSupabaseクライアントを作成する関数
-function createAdminClient(): SupabaseClient {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  
-  if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error('Supabase環境変数が設定されていません');
-  }
-  
-  return createClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  });
-}
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // POSTリクエスト以外は許可しない
   if (req.method !== 'POST') {
@@ -153,86 +85,52 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // 認証ヘッダーから認証トークンを取得 (ユーザー情報の参照用)
+    // 認証ヘッダーから認証トークンを取得
     const authHeader = req.headers.authorization;
-    let userId: string | null = null;
-    
-    // 認証トークンがある場合、ユーザー情報を取得（成功しなくてもアップロードは続行）
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      try {
-        const sessionToken = authHeader.substring(7);
-        
-        // トークンの詳細情報をデバッグ出力
-        const tokenLength = sessionToken.length;
-        const tokenStart = sessionToken.substring(0, 20);
-        const tokenEnd = sessionToken.substring(tokenLength - 20);
-        console.log('サーバーが受信したトークンの詳細：', {
-          長さ: tokenLength,
-          先頭20文字: tokenStart,
-          末尾20文字: tokenEnd,
-          ドット数: sessionToken.split('.').length - 1, // JWTは通常2つのドットを含む
-          ヘッダー全体の長さ: authHeader.length
-        });
-        
-        // JWTトークンの中身を解析（デバッグ用）
-        const jwtAnalysis = analyzeJwt(sessionToken);
-        if (jwtAnalysis.isValidFormat) {
-          console.log('JWT解析結果:');
-          console.log('- ヘッダー:', jwtAnalysis.header);
-          console.log('- ペイロード:', {
-            ...jwtAnalysis.payload,
-            exp: jwtAnalysis.payload?.exp 
-              ? `${jwtAnalysis.payload.exp} (${new Date(jwtAnalysis.payload.exp * 1000).toISOString()})` 
-              : 'なし'
-          });
-          
-          // 有効期限のチェック
-          const now = Math.floor(Date.now() / 1000);
-          if (jwtAnalysis.payload?.exp) {
-            const isExpired = now > jwtAnalysis.payload.exp;
-            console.log(`- 有効期限: ${isExpired ? '期限切れ' : '有効'} (現在時刻: ${now})`);
-          } else {
-            console.log('- 有効期限: 不明（expフィールドなし）');
-          }
-        } else {
-          console.log('JWT形式ではないか、解析できないトークンです');
-        }
-        
-        console.log('認証トークンの長さ:', sessionToken.length);
-        
-        // クライアント用のSupabaseインスタンスを作成
-        const authClient = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        );
-        
-        // トークンからユーザー情報を取得
-        const { data: userData, error: userError } = await authClient.auth.getUser(sessionToken);
-        
-        if (userError) {
-          console.warn('トークンからのユーザー取得エラー:', userError.message);
-        } else if (userData.user) {
-          userId = userData.user.id;
-          console.log('認証ユーザーID:', userId);
-        } else {
-          console.warn('トークンからユーザーが取得できませんでした');
-        }
-      } catch (authError) {
-        console.error('認証エラー:', authError);
-        // エラーがあっても処理は続行
-      }
-    }
-
-    // 管理者権限を持つSupabaseクライアントを作成
+    let sessionToken = '';
     let supabase: SupabaseClient;
-    try {
-      supabase = createAdminClient();
-      console.log('管理者クライアント作成成功');
-    } catch (adminError) {
-      console.error('管理者クライアント作成エラー:', adminError);
-      return res.status(500).json({ 
-        error: 'サーバー設定エラー', 
-        details: '管理者クライアントの作成に失敗しました' 
+
+    // 認証処理
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      sessionToken = authHeader.substring(7);
+      console.log('認証トークンの長さ:', sessionToken.length);
+      
+      // 通常のクライアントを初期化
+      supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+      
+      // 明示的なセッション設定
+      const { data, error } = await supabase.auth.setSession({
+        access_token: sessionToken,
+        refresh_token: '',
+      });
+      
+      if (error) {
+        console.error('セッション設定エラー:', error);
+        return res.status(401).json({ 
+          error: '認証エラー', 
+          details: 'セッションの設定に失敗しました: ' + error.message 
+        });
+      }
+      
+      // セッションが正しく設定されたことを確認
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user) {
+        console.error('ユーザー取得エラー:', userError || 'ユーザーデータなし');
+        return res.status(401).json({ 
+          error: '認証エラー', 
+          details: 'ユーザー情報の取得に失敗しました' 
+        });
+      }
+      
+      console.log('認証成功 - ユーザーID:', userData.user.id);
+    } else {
+      // 認証ヘッダーがない場合は明示的にエラーを返す
+      return res.status(401).json({ 
+        error: '認証エラー', 
+        details: 'アップロードには認証が必要です' 
       });
     }
 
@@ -265,15 +163,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // ファイル名と拡張子の設定
       const originalExt = path.extname(thumbnailFile.originalFilename || '').substring(1) || 'jpg';
       const timestamp = Date.now();
-      
-      // ファイル名の生成（ユーザーIDが取得できた場合はパスに含める）
-      let fileName = `thumbnail-${timestamp}.${originalExt}`;
-      if (userId) {
-        fileName = `${userId}/${fileName}`;
-        console.log('ユーザーIDを含めたファイルパス:', fileName);
-      } else {
-        console.log('匿名ユーザー用ファイルパス:', fileName);
-      }
+      const fileName = `thumbnail-${timestamp}.${originalExt}`;
 
       // ファイルを読み込む
       const fileBuffer = fs.readFileSync(thumbnailFile.filepath);
@@ -299,10 +189,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // バケットの存在確認
       await ensureBucketExists(supabase);
+
+      // アップロード直前にセッションの有効性を再確認
+      const { data: authData } = await supabase.auth.getSession();
+      if (!authData.session || !authData.session.user) {
+        console.error('アップロード直前のセッション確認: 無効');
+        return res.status(401).json({ 
+          error: '認証エラー', 
+          details: 'アップロード時にセッションが無効になっています' 
+        });
+      }
       
-      console.log('バケットの存在を確認、管理者権限でアップロード実行');
-      
-      // 管理者権限でアップロード（RLSポリシーをバイパス）
+      console.log('アップロード直前のセッション確認: 有効 (ユーザーID:', authData.session.user.id, ')');
+
+      // 認証済みユーザーとしてアップロード
       const { error: uploadError } = await supabase.storage
         .from('prompt-thumbnails')
         .upload(fileName, fileBuffer, {
@@ -314,23 +214,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (uploadError) {
         console.error('アップロードエラー:', uploadError.message);
         
-        // アップロードエラーを詳細に分析
-        if (uploadError.message.includes('bucket') && uploadError.message.includes('not found')) {
-          return res.status(500).json({ 
-            error: 'バケットが存在しません', 
-            details: 'prompt-thumbnailsバケットを作成してください' 
-          });
-        } else if (uploadError.message.includes('security policy')) {
-          return res.status(500).json({ 
-            error: 'セキュリティポリシーエラー', 
-            details: '管理者権限でもRLSポリシーをバイパスできませんでした。ポリシー設定を確認してください。' 
-          });
-        } else {
-          return res.status(500).json({ 
-            error: 'サムネイル画像のアップロードに失敗しました', 
-            details: uploadError.message 
+        // RLSポリシー違反の場合
+        if (uploadError.message.includes('security policy')) {
+          return res.status(403).json({ 
+            error: 'アップロード権限がありません', 
+            details: 'Row Level Security ポリシーによってアップロードが拒否されました。認証が有効であることを確認してください。'
           });
         }
+        
+        return res.status(500).json({ 
+          error: 'サムネイル画像のアップロードに失敗しました', 
+          details: uploadError.message
+        });
       }
 
       console.log('アップロード成功:', fileName, 'MIMEタイプ:', contentType);
@@ -356,6 +251,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         publicUrl: finalPublicUrl,
         mimeType: contentType
       });
+      
     } catch (uploadError: any) {
       console.error('サムネイルアップロード例外:', uploadError);
       return res.status(500).json({ 
