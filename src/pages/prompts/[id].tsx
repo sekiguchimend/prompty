@@ -202,6 +202,34 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
             console.error("ビューカウント更新エラー:", error);
           }
         });
+
+      // ユーザーがログインしている場合、prompt_viewsテーブルに閲覧履歴を記録
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const userId = sessionData?.session?.user?.id;
+        
+        if (userId) {
+          // prompt_viewsテーブルに閲覧履歴を記録
+          const { error: promptViewError } = await supabase
+            .from('prompt_views')
+            .upsert({
+              user_id: userId,
+              prompt_id: formattedId,
+              created_at: new Date().toISOString()
+            }, {
+              onConflict: 'user_id,prompt_id',
+              ignoreDuplicates: false // 既存レコードを更新
+            });
+            
+          if (promptViewError) {
+            console.error("閲覧履歴記録エラー:", promptViewError);
+          } else {
+            console.log("閲覧履歴を保存しました:", userId, formattedId);
+          }
+        }
+      } catch (e) {
+        console.error("閲覧履歴保存処理エラー:", e);
+      }
     }
   } catch (e) {
     console.error("ビューカウントシステムエラー:", e);

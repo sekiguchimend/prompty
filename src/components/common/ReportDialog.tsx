@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Flag } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -6,64 +7,83 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '../ui/dialog';
-import { Button } from '../ui/button';
-import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
-import { Label } from '../ui/label';
-import { Textarea } from '../ui/textarea';
+} from '../../components/ui/dialog';
+import { Button } from '../../components/ui/button';
+import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
+import { Label } from '../../components/ui/label';
+import { Textarea } from '../../components/ui/textarea';
 import { ReportReason, ReportTargetType, submitReport } from '../../lib/report-service';
-import { useToast } from '../ui/use-toast';
+import { useToast } from '../../components/ui/use-toast';
+import { supabase } from '../../lib/supabaseClient';
 
-type ReportDialogProps = {
-  isOpen: boolean;
-  onClose: () => void;
-  targetId: string;    // 報告対象ID（コメントIDまたはプロンプトID）
-  promptId: string;    // 親プロンプトID
-  userId: string | null;
-  targetType: ReportTargetType; // 'comment' または 'prompt'
-};
-
-// 報告理由のラベル
+// 報告理由の選択肢
 const REPORT_REASONS: { id: ReportReason; label: string }[] = [
   { id: 'inappropriate', label: '不適切なコンテンツ' },
-  { id: 'spam', label: 'スパム' },
+  { id: 'spam', label: 'スパム・宣伝' },
   { id: 'harassment', label: '嫌がらせ・ハラスメント' },
-  { id: 'misinformation', label: '誤情報・虚偽情報' },
-  { id: 'other', label: 'その他' },
+  { id: 'misinformation', label: '誤情報・フェイク情報' },
+  { id: 'other', label: 'その他' }
 ];
 
-/**
- * 共通の報告ダイアログコンポーネント
- * コメントとプロンプト（コンテンツ）の両方の報告に対応
- */
+interface ReportDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  selectedPostId: string;
+  onComplete?: () => void;
+  targetType?: ReportTargetType; // 'comment' または 'prompt'（省略時は 'prompt'）
+  promptId?: string; // コメント報告時に親プロンプトIDが必要
+}
+
 const ReportDialog: React.FC<ReportDialogProps> = ({
-  isOpen,
-  onClose,
-  targetId,
-  promptId,
-  userId,
-  targetType,
+  open,
+  onOpenChange,
+  selectedPostId,
+  onComplete,
+  targetType = 'prompt', // デフォルトは投稿（プロンプト）の報告
+  promptId
 }) => {
-  const [reason, setReason] = useState<ReportReason>('inappropriate');
-  const [details, setDetails] = useState('');
+  const [selectedReportReasonId, setSelectedReportReasonId] = useState<ReportReason>('inappropriate');
+  const [reportReason, setReportReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const { toast } = useToast();
 
-  // ダイアログタイトルを取得
-  const getDialogTitle = () => {
-    return targetType === 'comment' 
-      ? 'コメントを報告' 
-      : 'コンテンツを報告';
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // 現在のユーザーを取得
+  React.useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setCurrentUser(session?.user || null);
+    };
     
-    if (!targetId || !userId) {
+    if (open) {
+      fetchUser();
+    }
+  }, [open]);
+
+  // 報告ダイアログを閉じる
+  const handleCloseReportDialog = () => {
+    onOpenChange(false);
+    setSelectedReportReasonId('inappropriate');
+    setReportReason('');
+    setIsSubmitting(false);
+  };
+  
+  // 報告を処理する関数
+  const handleReport = async () => {
+    if (!selectedReportReasonId) {
       toast({
-        title: "エラー",
-        description: "報告するにはログインが必要です",
-        variant: "destructive"
+        title: "報告理由を選択してください",
+        description: "報告を送信するには理由の選択が必要です。",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!currentUser) {
+      toast({
+        title: "ログインが必要です",
+        description: "報告するにはログインしてください。",
+        variant: "destructive",
       });
       return;
     }
@@ -71,80 +91,104 @@ const ReportDialog: React.FC<ReportDialogProps> = ({
     setIsSubmitting(true);
     
     try {
+      // コメント報告時は親プロンプトIDが必要
+      if (targetType === 'comment' && !promptId) {
+        throw new Error("親プロンプトIDが指定されていません");
+      }
+      
+      // 実際のデータベースに報告を送信
       await submitReport({
         target_type: targetType,
-        target_id: targetId,
-        prompt_id: promptId,
-        reporter_id: userId,
-        reason,
-        details: details.trim() || undefined,
+        target_id: selectedPostId,
+        prompt_id: targetType === 'comment' ? promptId! : selectedPostId, // コメント報告時は親プロンプトID、投稿報告時は投稿IDを使用
+        reporter_id: currentUser.id,
+        reason: selectedReportReasonId,
+        details: reportReason.trim() || undefined,
       });
       
-      // 成功メッセージはsubmitReport内で表示されます
-      onClose();
-      setReason('inappropriate');
-      setDetails('');
+      // 報告完了後の処理
+      onOpenChange(false);
       
-    } catch (error) {
-      console.error('報告中にエラーが発生:', error);
-      // エラーメッセージはsubmitReport内で表示されます
-    } finally {
+      // 明示的にトースト通知を表示
+      toast({
+        title: "報告を受け付けました",
+        description: "ご報告ありがとうございます。内容を確認いたします。",
+      });
+      
+      // 状態をリセット
+      setSelectedReportReasonId('inappropriate');
+      setReportReason('');
       setIsSubmitting(false);
+      
+      if (onComplete) {
+        onComplete();
+      }
+    } catch (error) {
+      console.error('報告送信エラー:', error);
+      setIsSubmitting(false);
+      
+      // エラー時にトースト通知
+      toast({
+        title: "報告送信エラー",
+        description: "報告の送信中にエラーが発生しました。後でもう一度お試しください。",
+        variant: "destructive",
+      });
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={isOpen => !isOpen && onClose()}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>{getDialogTitle()}</DialogTitle>
+          <DialogTitle>{targetType === 'comment' ? 'コメントを報告' : 'コンテンツを報告'}</DialogTitle>
           <DialogDescription>
             このコンテンツを報告する理由を選択してください。すべての報告は匿名で処理されます。
           </DialogDescription>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium">報告理由</h4>
-            <RadioGroup value={reason} onValueChange={(value) => setReason(value as ReportReason)}>
-              {REPORT_REASONS.map((reasonItem) => (
-                <div key={reasonItem.id} className="flex items-center space-x-2">
-                  <RadioGroupItem value={reasonItem.id} id={`reason-${reasonItem.id}`} />
-                  <Label htmlFor={`reason-${reasonItem.id}`}>{reasonItem.label}</Label>
-                </div>
-              ))}
-            </RadioGroup>
-          </div>
-          
+        <div className="grid gap-4 py-4">
           <div>
-            <Label htmlFor="details">詳細（任意）</Label>
-            <Textarea
-              id="details"
-              placeholder="報告の詳細を入力してください..."
-              value={details}
-              onChange={e => setDetails(e.target.value)}
-              className="min-h-[100px]"
-            />
+            <div className="mb-4">
+              <h4 className="text-sm font-medium mb-2">報告理由</h4>
+              <RadioGroup 
+                value={selectedReportReasonId} 
+                onValueChange={(value) => setSelectedReportReasonId(value as ReportReason)}
+                className="space-y-2"
+              >
+                {REPORT_REASONS.map((reason) => (
+                  <div key={reason.id} className="flex items-center space-x-2">
+                    <RadioGroupItem value={reason.id} id={`reason-${reason.id}`} />
+                    <Label htmlFor={`reason-${reason.id}`} className="text-sm font-normal">
+                      {reason.label}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
+            
+            <div>
+              <h4 className="text-sm font-medium mb-2">詳細情報（任意）</h4>
+              <Textarea 
+                placeholder="追加の詳細情報があれば入力してください..." 
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                className="resize-none"
+                rows={3}
+              />
+            </div>
           </div>
-          
-          <DialogFooter className="sm:justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
-              キャンセル
-            </Button>
-            <Button 
-              type="submit"
-              variant="destructive"
-              disabled={isSubmitting || !userId}
-            >
-              {isSubmitting ? '送信中...' : '報告する'}
-            </Button>
-          </DialogFooter>
-        </form>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="secondary" onClick={handleCloseReportDialog}>
+            キャンセル
+          </Button>
+          <Button 
+            type="button" 
+            onClick={handleReport} 
+            disabled={isSubmitting || !currentUser}
+          >
+            {isSubmitting ? '送信中...' : '報告する'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

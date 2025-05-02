@@ -200,7 +200,7 @@ const HomePage: React.FC = () => {
         <Header />
         <Sidebar />
         <div className="flex-1 md:ml-[240px]">
-          <main className="pb-12 pt-2 md:mt-0 mt-6">
+          <main className="pb-12 pt-0">
             <div className="container px-4 sm:px-6 md:px-8">
               <div className="animate-pulse">
                 <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
@@ -223,7 +223,7 @@ const HomePage: React.FC = () => {
       <Sidebar />
       
       <div className="flex-1 md:ml-[240px]">
-        <main className="pb-12 md:mt-0">
+        <main className="pb-12 pt-0">
           <div className="container px-4 sm:px-6 md:px-8">
             {error && (
               <div className="bg-red-50 p-4 rounded-md mb-4">
@@ -243,7 +243,7 @@ const HomePage: React.FC = () => {
               showMoreLink={true}
               horizontalScroll={shouldUseHorizontalScroll}
               maxVisible={getDisplayCount}
-              className="mt-12"
+              className="mt-0"
               categoryUrl="/Popular"
               moreLinkUrl="/Popular"
               isFeatureSection={true}
@@ -262,7 +262,7 @@ const HomePage: React.FC = () => {
                 showMoreLink={true}
                 horizontalScroll={shouldUseHorizontalScroll}
                 maxVisible={getDisplayCount}
-                className="mt-12"
+                className="mt-4"
                 categoryUrl={getCategoryUrl(categoryContent.category.name, categoryContent.category.slug)}
                 moreLinkUrl={getCategoryUrl(categoryContent.category.name, categoryContent.category.slug)}
               />
@@ -273,7 +273,7 @@ const HomePage: React.FC = () => {
               cat.category.name === '生成AI' ||
               cat.category.slug === 'generative-ai'
             ).length === 0 && (
-              <div className="mt-12">
+              <div className="mt-4">
                 <h2 className="text-xl font-bold flex items-center mb-6">
                   <span className="flex-1">生成AI</span>
                   <a href="/category/generative-ai" className="text-sm font-normal text-blue-600 hover:underline">
@@ -297,7 +297,7 @@ const HomePage: React.FC = () => {
                 showMoreLink={true}
                 horizontalScroll={shouldUseHorizontalScroll}
                 maxVisible={getDisplayCount}
-                className="mt-12"
+                className="mt-4"
                 categoryUrl={`/category/${categoryContent.category.slug}`}
                 moreLinkUrl={`/category/${categoryContent.category.slug}`}
               />

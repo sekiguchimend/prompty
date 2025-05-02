@@ -148,6 +148,11 @@ const PurchasedArticles = () => {
     }).format(price);
   };
 
+  // 記事詳細ページへの遷移関数
+  const navigateToArticle = (articleId: string) => {
+    window.location.href = `/prompts/${articleId}`;
+  };
+
   return (
     <div className="purchased-articles">
       <div className="articles-container">
@@ -167,7 +172,11 @@ const PurchasedArticles = () => {
             <p className="text-center py-6 text-red-500">{error}</p>
           ) : purchasedArticles.length > 0 ? (
             purchasedArticles.map((article) => (
-              <div key={article.id} className="article-item">
+              <div 
+                key={article.id} 
+                className="article-item cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => navigateToArticle(article.id)}
+              >
                 <div className="article-content">
                   <h3>{article.title}</h3>
                   <div className="article-meta">
@@ -175,10 +184,10 @@ const PurchasedArticles = () => {
                     <span className="date">{formatDate(article.published_at)}</span>
                   </div>
                   <div className="article-actions mt-2 flex items-center">
-                    <button className="flex items-center text-amber-500 mr-3">
+                    <div className="flex items-center text-amber-500 mr-3">
                       <ShoppingBag className="h-4 w-4 mr-1" />
                       <span className="text-xs">{formatPrice(article.price)}</span>
-                    </button>
+                    </div>
                     <span className="text-xs text-gray-500">購入日: {formatDate(article.purchased_at)}</span>
                   </div>
                 </div>
@@ -194,7 +203,15 @@ const PurchasedArticles = () => {
                     />
                   </div>
                 )}
-                <button className="more-options">
+                <button 
+                  className="more-options"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // ここに追加メニューの処理を実装
+                    console.log('More options clicked for:', article.id);
+                  }}
+                >
                   <MoreVertical className="h-4 w-4" />
                 </button>
               </div>

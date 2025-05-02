@@ -5,7 +5,7 @@ import SidebarTabs from '../components/myArticle/SidebarTabs';
 import LikedArticles from '../components/myArticle/LikedArticles';
 import PurchasedArticles from '../components/myArticle/PurchasedArticles';
 import BookmarkedArticles from '../components/myArticle/BookmarkedArticles';
-import RecentlyViewedArticles from '../components/myArticle/RecentlyViewedArticles';
+// import RecentlyViewedArticles from '../components/myArticle/RecentlyViewedArticles';
 import ArticleDropdownMenu from '../components/ArticleDropdownMenu';
 import ArticleActionsMenu from '../components/ArticleActionsMenu';
 import '../styles/NotePage.css';
@@ -351,6 +351,11 @@ const MyArticles = () => {
     });
   };
 
+  // 記事詳細ページへの遷移関数
+  const navigateToArticle = (articleId: string) => {
+    window.location.href = `/prompts/${articleId}`;
+  };
+
   // タブコンテンツの選択ロジック
   const renderTabContent = () => {
     switch (activeTab) {
@@ -371,80 +376,89 @@ const MyArticles = () => {
               
               <div className="articles-header">
                 <h2>{myArticles.length} 記事</h2>
-              <div className="filter-controls">
-                <div className="status-dropdown">
-                  <button>公開ステータス <span>▼</span></button>
-                </div>
-                <div className="period-dropdown">
-                  <button>期間 <span>▼</span></button>
-                </div>
-                <div className="magazine-dropdown">
-                  <button>マガジン <span>▼</span></button>
+                <div className="filter-controls">
+                  <div className="status-dropdown">
+                    <button>公開ステータス <span>▼</span></button>
+                  </div>
+                  <div className="period-dropdown">
+                    <button>期間 <span>▼</span></button>
+                  </div>
+                  <div className="magazine-dropdown">
+                    <button>マガジン <span>▼</span></button>
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            <div className="articles-list">
-              {loading ? (
-                <p className="text-center py-6">読み込み中...</p>
-              ) : error ? (
-                <p className="text-center py-6 text-red-500">{error}</p>
-              ) : myArticles.length > 0 ? (
-                myArticles.map((article) => (
-                  <div key={article.id} className="article-item">
-                    <input 
-                      type="checkbox" 
-                      checked={selectedArticles.includes(article.id)}
-                      onChange={() => handleCheckboxChange(article.id)}
-                    />
-                    <div className="article-content">
-                      <h3>{article.title}</h3>
-                      {article.description && <p>{article.description}</p>}
-                      <div className="article-meta">
-                        <span className={article.published ? "published-indicator" : "draft-indicator"}>
-                          {article.published ? '公開中' : '下書き'}
-                        </span>
-                        <span className="date">{formatDate(article.created_at)}</span>
+              
+              <div className="articles-list">
+                {loading ? (
+                  <p className="text-center py-6">読み込み中...</p>
+                ) : error ? (
+                  <p className="text-center py-6 text-red-500">{error}</p>
+                ) : myArticles.length > 0 ? (
+                  myArticles.map((article) => (
+                    <div 
+                      key={article.id} 
+                      className="article-item cursor-pointer hover:bg-gray-50 transition-colors"
+                      onClick={() => article.published && navigateToArticle(article.id)}
+                    >
+                      <input 
+                        type="checkbox" 
+                        checked={selectedArticles.includes(article.id)}
+                        onChange={(e) => {
+                          e.stopPropagation(); // クリックイベントの伝播を防止
+                          handleCheckboxChange(article.id);
+                        }}
+                      />
+                      <div className="article-content">
+                        <h3>{article.title}</h3>
+                        {article.description && <p>{article.description}</p>}
+                        <div className="article-meta">
+                          <span className={article.published ? "published-indicator" : "draft-indicator"}>
+                            {article.published ? '公開中' : '下書き'}
+                          </span>
+                          <span className="date">{formatDate(article.created_at)}</span>
+                        </div>
+                      </div>
+                      {article.thumbnail_url && (
+                        <div className="article-thumbnail">
+                          <img src={article.thumbnail_url} alt={article.title} />
+                        </div>
+                      )}
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <ArticleDropdownMenu 
+                          articleId={article.id}
+                          isPublished={article.published}
+                          onEdit={handleEditArticle}
+                          onDelete={handleDeleteArticle}
+                          onDuplicate={handleDuplicateArticle}
+                          onTogglePublish={handleTogglePublishArticle}
+                          onArchive={handleArchiveArticle}
+                        />
                       </div>
                     </div>
-                    {article.thumbnail_url && (
-                      <div className="article-thumbnail">
-                        <img src={article.thumbnail_url} alt={article.title} />
-                      </div>
-                    )}
-                    <ArticleDropdownMenu 
-                      articleId={article.id}
-                      isPublished={article.published}
-                      onEdit={handleEditArticle}
-                      onDelete={handleDeleteArticle}
-                      onDuplicate={handleDuplicateArticle}
-                      onTogglePublish={handleTogglePublishArticle}
-                      onArchive={handleArchiveArticle}
-                    />
+                  ))
+                ) : (
+                  <div className="empty-state p-6 text-center">
+                    <p className="text-gray-500">表示する記事がありません</p>
+                    <button 
+                      onClick={() => router.push('/create-prompt')}
+                      className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                    >
+                      新しい記事を作成
+                    </button>
                   </div>
-                ))
-              ) : (
-                <div className="empty-state p-6 text-center">
-                  <p className="text-gray-500">表示する記事がありません</p>
-                  <button 
-                    onClick={() => router.push('/create-prompt')}
-                    className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  >
-                    新しい記事を作成
-                  </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
-        );
+          );
       case 'likedArticles':
         return <LikedArticles />;
       case 'purchasedArticles':
         return <PurchasedArticles />;
       case 'bookmarkedArticles':
         return <BookmarkedArticles />;
-      case 'recentlyViewedArticles':
-        return <RecentlyViewedArticles />;
+      // case 'recentlyViewedArticles':
+      //   return <RecentlyViewedArticles />;
       default:
         return <div>タブを選択してください</div>;
     }

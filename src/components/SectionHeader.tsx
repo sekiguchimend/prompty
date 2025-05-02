@@ -25,7 +25,7 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
   onSearchClick = () => {},
 }) => {
   return (
-    <div className="flex items-center justify-between py-2">
+    <div className="flex items-center justify-between py-1">
       <div className="flex items-center">
         {categoryUrl ? (
           <Link href={categoryUrl} className="group">

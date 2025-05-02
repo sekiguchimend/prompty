@@ -32,7 +32,7 @@ const PromptSection: React.FC<PromptSectionProps> = ({
   isFeatureSection = false
 }) => {
   return (
-    <section className={`mt-6 md:mt-8 first:mt-0 ${className}`}>
+    <section className={`mt-4 first:mt-0 ${className}`}>
       <SectionHeader 
         title={title} 
         showMoreLink={showMoreLink} 
@@ -41,7 +41,7 @@ const PromptSection: React.FC<PromptSectionProps> = ({
         categoryUrl={categoryUrl}
         moreLinkUrl={moreLinkUrl || categoryUrl}
       />
-      <div className="mt-3">
+      <div className="mt-2">
         {prompts && prompts.length > 0 ? (
           <PromptGrid 
             prompts={prompts} 

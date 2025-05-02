@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
-
+import Image from 'next/image';
 export default function SetupProfile() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -233,7 +233,19 @@ export default function SetupProfile() {
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <Link href="/">
-            <img src="/prompty_logo.jpg" alt="Prompty" className="h-40 mx-auto" />
+          <Image
+                    src="https://qrxrulntwojimhhhnwqk.supabase.co/storage/v1/object/public/prompt-thumbnails//prompty_logo(1).png" 
+                    alt="Prompty" 
+                    className="object-contain rounded-sm"
+                    width={100}
+                    height={40}
+                    style={{
+                      objectFit: 'contain',
+                      maxHeight: '30px',
+                      width: 'auto'
+                    }}
+                    priority
+                  />
           </Link>
         </div>
         

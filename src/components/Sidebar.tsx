@@ -105,7 +105,7 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="hidden md:block fixed left-0 top-16 w-[240px] h-[calc(100vh-64px)] flex-shrink-0 border-r bg-white overflow-y-auto scrollbar-none z-20">
+    <aside className="hidden md:block fixed left-0 top-[64px] w-[240px] h-[calc(100vh-64px)] flex-shrink-0 border-r bg-white overflow-y-auto scrollbar-none z-20">
       <nav className="flex flex-col h-full py-4">
         <div className="space-y-1 px-3 flex-grow">
           {categories.map(category => (
