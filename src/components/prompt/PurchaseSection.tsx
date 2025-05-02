@@ -966,11 +966,10 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
 
       {/* 報告ダイアログ */}
       <ReportDialog
-        isOpen={isReportDialogOpen}
-        onClose={() => setIsReportDialogOpen(false)}
-        targetId={promptId}
+        open={isReportDialogOpen}
+        onOpenChange={() => setIsReportDialogOpen(false)}
+        selectedPostId={promptId}
         promptId={promptId}
-        userId={currentUser?.id || null}
         targetType="prompt"
       />
     </div>

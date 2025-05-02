@@ -569,11 +569,10 @@ const PromptCard: React.FC<PromptCardProps> = ({
 
       {/* 報告ダイアログ */}
       <ReportDialog
-        isOpen={reportDialogOpen}
-        onClose={handleCloseReportDialog}
-        targetId={promptId}
+        open={reportDialogOpen}
+        onOpenChange={handleCloseReportDialog}
+        selectedPostId={promptId}
         promptId={promptId}
-        userId={currentUser?.id || null}
         targetType="prompt"
       />
     </div>

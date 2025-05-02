@@ -530,11 +530,10 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
 
       {/* 報告ダイアログ */}
       <ReportDialog
-        isOpen={isReportDialogOpen}
-        onClose={closeReportDialog}
-        targetId={selectedCommentId || ''}
+        open={isReportDialogOpen}
+        onOpenChange={closeReportDialog}
+        selectedPostId={selectedCommentId || ''}
         promptId={promptId}
-        userId={currentUser?.id || null}
         targetType="comment"
       />
     </div>

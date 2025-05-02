@@ -962,4 +962,22 @@
     - [✓] 結果を結合して表示する処理の実装
   - [✓] 報告理由を日本語に変換する機能追加
   - [✓] コメント表示UIの改善
+
+# ReportDialogコンポーネント統合エラー修正タスク
+- [✓] ReportDialogコンポーネントのプロパティ名不一致の修正
+  - [✓] Comments.tsxでのReportDialogプロパティ名修正
+    - [✓] `isOpen`を`open`に変更
+    - [✓] `onClose`を`onOpenChange`に変更
+    - [✓] `targetId`を`selectedPostId`に変更
+    - [✓] 不要な`userId`プロパティを削除
+  - [✓] PurchaseSection.tsxでのReportDialogプロパティ名修正
+    - [✓] `isOpen`を`open`に変更
+    - [✓] `onClose`を`onOpenChange`に変更
+    - [✓] `targetId`を`selectedPostId`に変更
+    - [✓] 不要な`userId`プロパティを削除
+  - [✓] PromptGrid.tsxでのReportDialogプロパティ名修正
+    - [✓] `isOpen`を`open`に変更
+    - [✓] `onClose`を`onOpenChange`に変更
+    - [✓] `targetId`を`selectedPostId`に変更
+    - [✓] 不要な`userId`プロパティを削除
   
