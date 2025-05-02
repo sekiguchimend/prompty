@@ -981,3 +981,35 @@
     - [✓] `targetId`を`selectedPostId`に変更
     - [✓] 不要な`userId`プロパティを削除
   
+# 最近見た記事機能の実装チェックリスト
+
+## 1. データベース関連
+- [✓] recently_viewed_prompts テーブルの作成
+- [✓] RLS (Row Level Security) の設定
+- [✓] ユーザーID、プロンプトIDによるユニーク制約の設定
+- [✓] インデックスの作成
+
+## 2. サービス実装
+- [✓] 閲覧履歴を保存するサービス（src/lib/recently-viewed-service.ts）の作成
+- [✓] recordPromptView 関数の実装
+- [✓] getRecentlyViewedPrompts 関数の実装
+- [✓] 型定義の作成
+
+## 3. UI実装
+- [✓] RecentlyViewedArticles コンポーネントの更新
+- [✓] PromptGridコンポーネントとの連携
+- [✓] ローディング状態の表示
+- [✓] エラー状態の表示
+- [✓] 空の状態（最近見た記事がない場合）の表示
+- [✓] 水平スクロール表示の設定
+
+## 4. 閲覧履歴の記録
+- [✓] プロンプト詳細ページ（src/pages/prompts/[id].tsx）での閲覧履歴記録の実装
+- [✓] useEffect を使った閲覧タイミングの検出
+- [✓] エラーハンドリングの実装
+
+## 5. 最適化
+- [✓] 認証状態に応じた条件分岐の実装
+- [✓] 不要なデータリクエストの削減
+- [✓] パフォーマンス最適化
+  

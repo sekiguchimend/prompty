@@ -1,273 +1,81 @@
-// // components/RecentlyViewedArticles.tsx
-// import React, { useState, useEffect } from 'react';
-// import { Clock, MoreVertical } from 'lucide-react';
-// import { createClient } from '@supabase/supabase-js';
-// import { useAuth } from '../../lib/auth-context';
-// import Image from 'next/image';
+// components/RecentlyViewedArticles.tsx
+import React, { useState, useEffect } from 'react';
+import { getRecentlyViewedPrompts } from '../../lib/recently-viewed-service';
+import PromptGrid from '../PromptGrid';
+import { PromptItem } from '../../pages/prompts/[id]';
+import { LoadingSpinner } from '../ui/loading-spinner';
+import { useAuth } from '../../lib/auth-context';
 
-// // Supabaseクライアントの初期化
-// const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-// const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-// const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const RecentlyViewedArticles: React.FC = () => {
+  const [recentlyViewedPrompts, setRecentlyViewedPrompts] = useState<PromptItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { user, isLoading: isAuthLoading } = useAuth();
 
-// // プロフィールの型定義
-// interface Profile {
-//   id: string;
-//   display_name: string;
-//   avatar_url: string;
-// }
-
-// // 記事データの型定義
-// interface ArticleData {
-//   id: string;
-//   title: string;
-//   thumbnail_url: string | null;
-//   created_at: string;
-//   profiles: Profile;
-// }
-
-// // 最近見た記事の型定義
-// interface ViewedArticle {
-//   id: string;
-//   title: string;
-//   author: {
-//     id: string;
-//     display_name: string;
-//     avatar_url: string;
-//   };
-//   published_at: string;
-//   viewed_at: string;
-//   thumbnail_url: string | null;
-// }
-
-// const RecentlyViewedArticles = () => {
-//   const { user } = useAuth();
-//   const [viewedArticles, setViewedArticles] = useState<ViewedArticle[]>([]);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState<string | null>(null);
-
-//   useEffect(() => {
-//     const fetchRecentlyViewedArticles = async () => {
-//       if (!user) {
-//         setLoading(false);
-//         return;
-//       }
-
-//       setLoading(true);
-//       setError(null); // エラー状態をリセット
+  useEffect(() => {
+    const fetchRecentlyViewedPrompts = async () => {
+      if (isAuthLoading) return;
       
-//       try {
-//         console.log('最近閲覧した記事を取得中...');
-        
-//         // 最近見た記事の履歴を取得
-//         const { data: viewsData, error: viewsError } = await supabase
-//           .from('prompt_views')
-//           .select('prompt_id, created_at')
-//           .eq('user_id', user.id)
-//           .order('created_at', { ascending: false })
-//           .limit(20); // 取得件数を増やす
+      if (!user) {
+        setIsLoading(false);
+        setError('閲覧履歴を表示するにはログインしてください');
+        return;
+      }
 
-//         if (viewsError) {
-//           console.error('最近閲覧した記事の履歴取得エラー:', viewsError);
-//           throw viewsError;
-//         }
+      setIsLoading(true);
+      try {
+        const result = await getRecentlyViewedPrompts(10);
+        if (result.success && result.data) {
+          setRecentlyViewedPrompts(result.data);
+        } else {
+          setError('最近見た記事の取得に失敗しました');
+        }
+      } catch (err) {
+        console.error('最近見た記事取得エラー:', err);
+        setError('最近見た記事の読み込み中にエラーが発生しました');
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-//         console.log('閲覧履歴データ:', viewsData?.length || 0, '件取得');
-        
-//         if (viewsData && viewsData.length > 0) {
-//           // 最近見た記事のIDをリストにする
-//           const promptIds = viewsData.map(view => view.prompt_id);
-//           console.log('取得したプロンプトID:', promptIds);
+    fetchRecentlyViewedPrompts();
+  }, [user, isAuthLoading]);
 
-//           // 最近見た記事の詳細情報を取得
-//           const { data: articlesData, error: articlesError } = await supabase
-//             .from('prompts')
-//             .select(`
-//               id,
-//               title,
-//               thumbnail_url,
-//               created_at,
-//               profiles:author_id (
-//                 id,
-//                 display_name,
-//                 avatar_url
-//               )
-//             `)
-//             .in('id', promptIds)
-//             .eq('published', true);
+  if (isLoading || isAuthLoading) {
+    return (
+      <div className="p-4 flex justify-center">
+        <LoadingSpinner size="md" />
+      </div>
+    );
+  }
 
-//           if (articlesError) {
-//             console.error('記事詳細情報取得エラー:', articlesError);
-//             throw articlesError;
-//           }
+  if (error) {
+    return (
+      <div className="p-4 text-center text-gray-500">
+        <p>{error}</p>
+      </div>
+    );
+  }
 
-//           console.log('記事詳細データ:', articlesData?.length || 0, '件取得');
-          
-//           if (!articlesData || articlesData.length === 0) {
-//             setViewedArticles([]);
-//             setError('最近閲覧した記事の情報を取得できませんでした');
-//             setLoading(false);
-//             return;
-//           }
+  if (recentlyViewedPrompts.length === 0) {
+    return (
+      <div className="p-4 text-center text-gray-500">
+        <p>最近見た記事はありません</p>
+        <p className="text-sm mt-2">記事を閲覧すると、ここに表示されます</p>
+      </div>
+    );
+  }
 
-//           // 閲覧日時と合わせた記事データを作成
-//           const viewedArticlesWithDetails = articlesData.map((article: any) => {
-//             // 閲覧日時を取得
-//             const view = viewsData.find(v => v.prompt_id === article.id);
-//             const viewedAt = view ? view.created_at : '';
+  return (
+    <div className="recently-viewed-articles">
+      <PromptGrid
+        prompts={recentlyViewedPrompts}
+        sectionPrefix="recently-viewed"
+        horizontalScroll={true}
+        showViewAll={false}
+      />
+    </div>
+  );
+};
 
-//             // profilesがnullまたは存在しない場合のフォールバック
-//             const authorProfile = article.profiles || {
-//               id: 'unknown',
-//               display_name: '不明なユーザー',
-//               avatar_url: null
-//             };
-
-//             // 記事データを整形
-//             return {
-//               id: article.id,
-//               title: article.title || '無題の記事',
-//               author: {
-//                 id: authorProfile.id,
-//                 display_name: authorProfile.display_name || '不明なユーザー',
-//                 avatar_url: authorProfile.avatar_url || '/images/default-avatar.svg'
-//               },
-//               published_at: article.created_at,
-//               viewed_at: viewedAt,
-//               thumbnail_url: article.thumbnail_url || '/images/default-thumbnail.svg'
-//             };
-//           });
-
-//           // 閲覧日時の新しい順にソート
-//           const sortedArticles = viewedArticlesWithDetails.sort((a, b) => 
-//             new Date(b.viewed_at).getTime() - new Date(a.viewed_at).getTime()
-//           );
-
-//           console.log('整形後の記事データ:', sortedArticles.length, '件');
-//           setViewedArticles(sortedArticles);
-//         } else {
-//           console.log('閲覧履歴が見つかりません');
-//           setViewedArticles([]);
-//         }
-//       } catch (error) {
-//         console.error('最近見た記事取得エラー:', error);
-//         setError('記事の読み込みに失敗しました。後でもう一度お試しください。');
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchRecentlyViewedArticles();
-//   }, [user]);
-
-//   // 日付のフォーマット関数
-//   const formatDate = (dateString: string) => {
-//     const date = new Date(dateString);
-//     return date.toLocaleDateString('ja-JP', {
-//       year: 'numeric',
-//       month: 'long',
-//       day: 'numeric'
-//     });
-//   };
-
-//   // 閲覧日時のフォーマット関数
-//   const formatViewedDate = (dateString: string) => {
-//     const date = new Date(dateString);
-//     const now = new Date();
-//     const diffTime = Math.abs(now.getTime() - date.getTime());
-//     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-//     if (diffDays === 0) {
-//       const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-//       if (diffHours === 0) {
-//         const diffMinutes = Math.floor(diffTime / (1000 * 60));
-//         return `${diffMinutes}分前`;
-//       }
-//       return `${diffHours}時間前`;
-//     } else if (diffDays < 7) {
-//       return `${diffDays}日前`;
-//     } else {
-//       return formatDate(dateString);
-//     }
-//   };
-
-//   // 記事詳細ページへの遷移関数
-//   const navigateToArticle = (articleId: string) => {
-//     window.location.href = `/prompts/${articleId}`;
-//   };
-
-//   return (
-//     <div className="recently-viewed-articles">
-//       <div className="articles-container">
-//         <div className="articles-header">
-//           <h2>{viewedArticles.length} 記事</h2>
-//           <div className="filter-controls">
-//             <div className="period-dropdown">
-//               <button>期間 <span>▼</span></button>
-//             </div>
-//           </div>
-//         </div>
-        
-//         <div className="articles-list">
-//           {loading ? (
-//             <p className="text-center py-6">読み込み中...</p>
-//           ) : error ? (
-//             <p className="text-center py-6 text-red-500">{error}</p>
-//           ) : viewedArticles.length > 0 ? (
-//             viewedArticles.map((article) => (
-//               <div 
-//                 key={article.id} 
-//                 className="article-item cursor-pointer hover:bg-gray-50 transition-colors"
-//                 onClick={() => navigateToArticle(article.id)}
-//               >
-//                 <div className="article-content">
-//                   <h3>{article.title}</h3>
-//                   <div className="article-meta">
-//                     <span>{article.author.display_name}</span>
-//                     <span className="date">{formatDate(article.published_at)}</span>
-//                   </div>
-//                   <div className="article-actions mt-2 flex items-center">
-//                     <div className="flex items-center text-gray-500 mr-3">
-//                       <Clock className="h-4 w-4 mr-1" />
-//                       <span className="text-xs">{formatViewedDate(article.viewed_at)}</span>
-//                     </div>
-//                   </div>
-//                 </div>
-//                 {article.thumbnail_url && (
-//                   <div className="article-thumbnail relative h-16 w-16">
-//                     <Image 
-//                       src={article.thumbnail_url}
-//                       alt={article.title}
-//                       fill
-//                       sizes="64px"
-//                       style={{ objectFit: 'cover' }}
-//                       className="rounded-md"
-//                     />
-//                   </div>
-//                 )}
-                
-//                   <button 
-//                     className="more-options" 
-//                     onClick={(e) => {
-//                       e.preventDefault();
-//                       e.stopPropagation();
-//                       // ここに追加メニューの処理を実装
-//                       console.log('More options clicked for:', article.id);
-//                     }}
-//                   >
-//                     <MoreVertical className="h-4 w-4" />
-//                   </button>
-//                 </div>
-//             ))
-//           ) : (
-//             <div className="empty-state p-6 text-center">
-//               <p className="text-gray-500">表示する最近見た記事はありません</p>
-//             </div>
-//           )}
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default RecentlyViewedArticles;
+export default RecentlyViewedArticles;

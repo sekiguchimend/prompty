@@ -13,6 +13,7 @@ import { GetServerSideProps } from 'next';
 import { PostItem } from '../../data/posts';
 import { supabase } from '../../lib/supabaseClient';
 import { useRouter } from 'next/router';
+import { recordPromptView } from '../../lib/recently-viewed-service';
 
 // PromptItemの型定義 - エクスポートする
 export interface PromptItem {
@@ -345,6 +346,9 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
 // propsを受け取るようにコンポーネントを修正
 const PromptDetail = ({ postData, popularPosts }: { postData: ExtendedPostItem; popularPosts: PromptItem[] }) => {
   const router = useRouter();  
+  const [prompt, setPrompt] = useState<ExtendedPostItem | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
   // 404処理
   if (router.isFallback) {
     return (
@@ -373,7 +377,7 @@ const PromptDetail = ({ postData, popularPosts }: { postData: ExtendedPostItem; 
   }
   
   // コンポーネントの型に合わせて整形
-  const prompt = {
+  const promptData = {
     ...postData,
     // AuthorSidebarの型に合わせる
     authorForSidebar: {
@@ -408,6 +412,23 @@ const PromptDetail = ({ postData, popularPosts }: { postData: ExtendedPostItem; 
     date: post.postedAt || '不明'
   })) || [];
 
+  useEffect(() => {
+    if (postData) {
+      setPrompt(postData);
+      setIsLoading(false);
+    }
+  }, [postData]);
+  
+  // 閲覧履歴を記録する
+  useEffect(() => {
+    if (prompt && prompt.id && !isLoading) {
+      // 閲覧履歴を記録
+      recordPromptView(prompt.id).catch(error => {
+        console.error('閲覧履歴の記録に失敗しました:', error);
+      });
+    }
+  }, [prompt, isLoading]);
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
@@ -425,9 +446,9 @@ const PromptDetail = ({ postData, popularPosts }: { postData: ExtendedPostItem; 
             <div className="hidden md:block md:w-56 flex-shrink-0 pr-6">
               <div className="sticky top-20">
                 <AuthorSidebar
-                  author={prompt.authorForSidebar}
-                  tags={prompt.tags || []}
-                  website={prompt.user.website || ''}
+                  author={promptData.authorForSidebar}
+                  tags={promptData.tags || []}
+                  website={promptData.user.website || ''}
                 />
               </div>
             </div>
@@ -435,26 +456,26 @@ const PromptDetail = ({ postData, popularPosts }: { postData: ExtendedPostItem; 
             {/* Main content (centered) */}
             <div className="flex-1 max-w-3xl mx-auto">
               <PromptContent
-                imageUrl={prompt.thumbnailUrl}
-                title={prompt.title}
-                content={prompt.content || []}
-                author={prompt.authorForContent}
-                price={prompt.price || 0}
-                systemImageUrl={prompt.systemImageUrl}
+                imageUrl={promptData.thumbnailUrl}
+                title={promptData.title}
+                content={promptData.content || []}
+                author={promptData.authorForContent}
+                price={promptData.price || 0}
+                systemImageUrl={promptData.systemImageUrl}
                 systemUrl={postData.site_url || ''}
                 description={postData.description}
               />
               
               {/* Purchase section */}
               <PurchaseSection
-                wordCount={prompt.wordCount || 0}
-                price={prompt.price || 0}
-                tags={prompt.tags || []}
-                reviewers={prompt.reviewers || []}
-                reviewCount={prompt.reviewCount || 0}
-                likes={prompt.likeCount}
-                author={prompt.authorForPurchase}
-                socialLinks={prompt.socialLinks || []}
+                wordCount={promptData.wordCount || 0}
+                price={promptData.price || 0}
+                tags={promptData.tags || []}
+                reviewers={promptData.reviewers || []}
+                reviewCount={promptData.reviewCount || 0}
+                likes={promptData.likeCount}
+                author={promptData.authorForPurchase}
+                socialLinks={promptData.socialLinks || []}
               />
             </div>
             

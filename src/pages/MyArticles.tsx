@@ -5,7 +5,7 @@ import SidebarTabs from '../components/myArticle/SidebarTabs';
 import LikedArticles from '../components/myArticle/LikedArticles';
 import PurchasedArticles from '../components/myArticle/PurchasedArticles';
 import BookmarkedArticles from '../components/myArticle/BookmarkedArticles';
-// import RecentlyViewedArticles from '../components/myArticle/RecentlyViewedArticles';
+import RecentlyViewedArticles from '../components/myArticle/RecentlyViewedArticles';
 import ArticleDropdownMenu from '../components/ArticleDropdownMenu';
 import ArticleActionsMenu from '../components/ArticleActionsMenu';
 import '../styles/NotePage.css';
@@ -457,8 +457,8 @@ const MyArticles = () => {
         return <PurchasedArticles />;
       case 'bookmarkedArticles':
         return <BookmarkedArticles />;
-      // case 'recentlyViewedArticles':
-      //   return <RecentlyViewedArticles />;
+      case 'recentlyViewedArticles':
+        return <RecentlyViewedArticles />;
       default:
         return <div>タブを選択してください</div>;
     }
