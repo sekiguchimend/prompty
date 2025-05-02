@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, createContext, useContext } from 'react';
 import { Heart, Bookmark, BookmarkPlus, MoreVertical } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '../hooks/use-toast';
@@ -107,6 +107,29 @@ const GlobalToast: React.FC = () => {
   );
 };
 
+// スマホかどうかを判定するためのカスタムフック
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 640); // sm ブレークポイント未満をモバイルとみなす
+    };
+    
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkIsMobile);
+    };
+  }, []);
+  
+  return isMobile;
+};
+
+// FeatureSectionContextを追加
+const FeatureSectionContext = createContext<boolean>(false);
+
 const PromptCard: React.FC<PromptCardProps> = ({
   id,
   title,
@@ -127,9 +150,15 @@ const PromptCard: React.FC<PromptCardProps> = ({
   const [isLikeProcessing, setIsLikeProcessing] = useState(false);
   const [isBookmarkProcessing, setIsBookmarkProcessing] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
+  const isMobile = useIsMobile();
+  const isFeatureSection = useContext(FeatureSectionContext);
   
   const { toast } = useToast();
   const { user: currentUser, isLoading } = useAuth();
+  
+  // URLがない場合のプレースホルダー
+  const defaultThumbnail = '/images/default-thumbnail.svg';
+  const imageUrl = thumbnailUrl || defaultThumbnail;
   
   // IDはそのまま使う
   const promptId = id;
@@ -393,97 +422,150 @@ const PromptCard: React.FC<PromptCardProps> = ({
     return null;
   }
   
-  return (
-    <>
-      <Link href={`/prompts/${promptId}`} passHref legacyBehavior>
-        <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm cursor-pointer h-full" data-id={id}>
-          <div className="block">
-            <div className="relative pb-[56.25%]">
-              <Image 
-                width={100}
-                height={100}
-                src={thumbnailUrl || '/placeholder.jpg'}
-                alt={title} 
-                priority={true} 
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-            </div>
-          </div>
-          <div className="flex flex-col p-2 flex-1">
-            <div className="flex justify-between items-start mb-2">
-              <div className={`line-clamp-2 text-gray-700 hover:text-prompty-primary flex-1 mr-2 h-12 overflow-hidden ${notoSansJP.className}`} style={{ fontWeight: 700 }}>
-                {title}
-              </div>
-              
-              {/* 三点メニュー */}
-              <div className="relative">
-                <button 
-                  className="text-gray-400 hover:text-gray-600 p-1 rounded-full"
-                  onClick={toggleOptions}
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </button>
-                
-                {showOptions && (
-                  <div className="absolute right-0 bottom-full mb-1 bg-white shadow-lg rounded-md border border-gray-200 py-1 z-10 w-32">
-                    <button 
-                      className="w-full text-left px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                      onClick={handleHide}
-                    >
-                      非表示にする
-                    </button>
-                    <button
-                      className="w-full text-left px-3 py-1 text-sm text-red-600 hover:bg-gray-100 transition-colors"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openReportDialog();
-                      }}
-                    >
-                      報告する
-                    </button>
+  // スマホ表示時の「今日の注目記事」以外で使用するリストスタイルレイアウト
+  if (isMobile && !isFeatureSection) {
+    return (
+      <div className="flex items-center border-b border-gray-300 py-3 relative">
+        {/* カード左側：テキスト情報 */}
+        <div className="flex-1 pr-3">
+          <h3 className="text-base font-medium line-clamp-2 mb-1">
+            <Link href={`/prompts/${id}`} passHref>
+              <span className="cursor-pointer hover:text-blue-600">{title}</span>
+            </Link>
+          </h3>
+          
+          <div className="flex items-center text-xs text-gray-500 mt-1">
+            {/* ユーザー情報 */}
+            <div className="flex items-center">
+              <div className="w-4 h-4 rounded-full overflow-hidden mr-1">
+                {user.avatarUrl ? (
+                  <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-gray-200 flex items-center justify-center text-xs">
+                    {user.name.charAt(0)}
                   </div>
                 )}
               </div>
+              <span className="mr-2">{user.name}</span>
             </div>
             
-            <div className="mt-auto">
-              <div className="flex items-center gap-2">
-                <span className="block h-5 w-5 overflow-hidden rounded-full" onClick={(e) => e.stopPropagation()}>
-                  <img 
-                    src={user.avatarUrl} 
-                    alt={user.account_name || user.name} 
-                    className="h-full w-full object-cover"
-                  />
-                </span>
-                <span className="text-xs text-gray-600">
-                  {user.account_name || user.name}
-                </span>
-                <span className="text-xs text-gray-500">{postedAt}</span>
+            {/* 投稿日時 */}
+            <span className="mr-2">{postedAt}</span>
+            
+            {/* いいね数 */}
+            <div className="flex items-center">
+              <Heart className={`w-3.5 h-3.5 mr-0.5 ${liked ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
+              <span>{currentLikeCount}</span>
+            </div>
+          </div>
+        </div>
+        
+        {/* カード右側：サムネイル画像 */}
+        <div className="w-20 h-16 flex-shrink-0">
+          <Link href={`/prompts/${id}`} passHref>
+            <div className="w-full h-full rounded overflow-hidden">
+              <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
+            </div>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+  
+  // 通常のカードレイアウト（PC表示および「今日の注目記事」セクション）
+  return (
+    <div className="relative group h-full">
+      <div className="cursor-pointer bg-white border border-gray-100 rounded-lg shadow-sm hover:shadow-md transition duration-200 h-full overflow-hidden flex flex-col">
+        <div className="relative pt-[56.25%] bg-gray-50">
+          <Link href={`/prompts/${id}`} passHref>
+            <div className="absolute inset-0">
+              <img
+                src={imageUrl}
+                alt={title}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  // 画像読み込みエラー時の代替画像
+                  e.currentTarget.src = defaultThumbnail;
+                }}
+              />
+            </div>
+          </Link>
+        </div>
+
+        <div className="flex flex-col p-2 flex-1">
+          <div className="flex justify-between items-start mb-2">
+            <div className={`line-clamp-2 text-gray-700 hover:text-prompty-primary flex-1 mr-2 h-12 overflow-hidden ${notoSansJP.className}`} style={{ fontWeight: 700 }}>
+              {title}
+            </div>
+            
+            {/* 三点メニュー */}
+            <div className="relative">
+              <button 
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-full"
+                onClick={toggleOptions}
+              >
+                <MoreVertical className="h-4 w-4" />
+              </button>
+              
+              {showOptions && (
+                <div className="absolute right-0 bottom-full mb-1 bg-white shadow-lg rounded-md border border-gray-200 py-1 z-10 w-32">
+                  <button 
+                    className="w-full text-left px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    onClick={handleHide}
+                  >
+                    非表示にする
+                  </button>
+                  <button
+                    className="w-full text-left px-3 py-1 text-sm text-red-600 hover:bg-gray-100 transition-colors"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      openReportDialog();
+                    }}
+                  >
+                    報告する
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="mt-auto">
+            <div className="flex items-center gap-2">
+              <span className="block h-5 w-5 overflow-hidden rounded-full" onClick={(e) => e.stopPropagation()}>
+                <img 
+                  src={user.avatarUrl} 
+                  alt={user.account_name || user.name} 
+                  className="h-full w-full object-cover"
+                />
+              </span>
+              <span className="text-xs text-gray-600">
+                {user.account_name || user.name}
+              </span>
+              <span className="text-xs text-gray-500">{postedAt}</span>
+            </div>
+            <div className="flex items-center">
+              <div className="flex items-center text-gray-500 mt-3">
+                <button 
+                  className={`like-button flex items-center ${liked ? 'text-pink-500' : 'text-gray-400'}`}
+                  onClick={toggleLike}
+                >
+                  <Heart className={`mr-1 h-4 w-4 ${liked ? 'fill-pink-500' : ''}`} />
+                </button>
+                <span className="text-xs">{currentLikeCount}</span>
               </div>
-              <div className="flex items-center">
-                <div className="flex items-center text-gray-500 mt-3">
-                  <button 
-                    className={`like-button flex items-center ${liked ? 'text-pink-500' : 'text-gray-400'}`}
-                    onClick={toggleLike}
-                  >
-                    <Heart className={`mr-1 h-4 w-4 ${liked ? 'fill-pink-500' : ''}`} />
-                  </button>
-                  <span className="text-xs">{currentLikeCount}</span>
-                </div>
-                <div className="flex items-center text-gray-500 mt-3 ml-2">
-                  <button 
-                    className={`bookmark-button flex items-center ${bookmarked ? 'text-blue-300' : 'text-gray-500'}`}
-                    onClick={toggleBookmark}
-                  >
-                    <BookmarkPlus className={`mr-1 h-4 w-4 ${bookmarked ? 'fill-blue-500 text-blue-500' : 'text-gray-400 hover:text-gray-600'}`} />
-                  </button>
-                </div>
+              <div className="flex items-center text-gray-500 mt-3 ml-2">
+                <button 
+                  className={`bookmark-button flex items-center ${bookmarked ? 'text-blue-300' : 'text-gray-500'}`}
+                  onClick={toggleBookmark}
+                >
+                  <BookmarkPlus className={`mr-1 h-4 w-4 ${bookmarked ? 'fill-blue-500 text-blue-500' : 'text-gray-400 hover:text-gray-600'}`} />
+                </button>
               </div>
             </div>
           </div>
         </div>
-      </Link>
+      </div>
 
       {/* 報告ダイアログ */}
       <ReportDialog
@@ -494,7 +576,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
         userId={currentUser?.id || null}
         targetType="prompt"
       />
-    </>
+    </div>
   );
 };
 
@@ -504,16 +586,21 @@ interface PromptGridProps {
   sectionPrefix?: string;
   horizontalScroll?: boolean;
   categoryPath?: string;  // カテゴリパスを追加（すべてを見るカードのリンク先）
+  showViewAll?: boolean;  // すべてを見るカードを表示するかどうか
+  isFeatureSection?: boolean; // 「今日の注目記事」セクションかどうか
 }
 
 const PromptGrid: React.FC<PromptGridProps> = ({ 
   prompts, 
   sectionPrefix = '',
   horizontalScroll = false,
-  categoryPath = '' 
+  categoryPath = '',
+  showViewAll = true, // デフォルトは表示する
+  isFeatureSection = false // デフォルトは「今日の注目記事」セクションではない
 }) => {
   // 非表示の投稿を管理するための状態
   const [hiddenPromptIds, setHiddenPromptIds] = useState<string[]>([]);
+  const isMobile = useIsMobile(); // スマホかどうかを判定
   
   // 初期表示時に非表示リストを読み込む
   useEffect(() => {
@@ -527,14 +614,32 @@ const PromptGrid: React.FC<PromptGridProps> = ({
     }
   }, []);
   
-  // 常に横スクロールのクラスを使用
-  const containerClass = 'flex flex-nowrap overflow-x-auto pb-4 gap-3 snap-x snap-mandatory pr-4 -mr-4 scroll-smooth scrollbar-none w-auto min-w-0';
+  // スマホ表示とPC表示でコンテナクラスを切り分け
+  const containerClass = isMobile 
+    ? isFeatureSection 
+      ? horizontalScroll ? 'flex flex-nowrap overflow-x-auto pb-4 gap-3 snap-x snap-mandatory pr-4 -mr-4 scroll-smooth scrollbar-none w-auto min-w-0' : 'grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4'
+      : 'flex flex-col' // 今日の注目記事以外は縦並びのリスト
+    : horizontalScroll 
+      ? 'flex flex-nowrap overflow-x-auto pb-4 gap-3 snap-x snap-mandatory pr-4 -mr-4 scroll-smooth scrollbar-none w-auto min-w-0'
+      : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-4';
   
-  // カードクラスの設定も常に横スクロールのものを使用
-  const cardClass = 'flex-shrink-0 w-[180px] snap-start md:w-[200px] h-full pt-2';
+  // カードクラスもスマホ表示用に調整
+  const cardClass = isMobile 
+    ? isFeatureSection
+      ? horizontalScroll ? 'flex-shrink-0 w-[180px] snap-start md:w-[200px] h-full pt-2' : 'h-full pt-2'
+      : 'w-full'  // 今日の注目記事以外では幅いっぱい
+    : horizontalScroll
+      ? 'flex-shrink-0 w-[180px] snap-start md:w-[200px] h-full pt-2'
+      : 'h-full pt-2';
   
   // 「すべてを見る」カードのクラス
-  const viewAllCardClass = 'flex-shrink-0 w-[180px] snap-start md:w-[200px] h-100px pt-2';
+  const viewAllCardClass = isMobile
+    ? isFeatureSection
+      ? horizontalScroll ? 'flex-shrink-0 w-[180px] snap-start md:w-[200px] h-100px pt-2' : 'h-full pt-2'
+      : 'w-full mt-2'  // 今日の注目記事以外では幅いっぱい
+    : horizontalScroll
+      ? 'flex-shrink-0 w-[180px] snap-start md:w-[200px] h-100px pt-2'
+      : 'h-full pt-2';
   
   // 非表示処理の関数
   const handleHidePrompt = (id: string) => {
@@ -578,7 +683,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   `);
   
   return (
-    <>
+    <FeatureSectionContext.Provider value={isFeatureSection}>
       <div className={containerClass}>
         {limitedPrompts.map((prompt) => (
           <div key={`${sectionPrefix}-${prompt.id}`} className={cardClass}>
@@ -591,33 +696,46 @@ const PromptGrid: React.FC<PromptGridProps> = ({
               likeCount={prompt.likeCount}
               isLiked={prompt.isLiked}
               isBookmarked={prompt.isBookmarked}
-              onHide={handleHidePrompt}
+              onHide={() => handleHidePrompt(prompt.id)}
             />
           </div>
         ))}
         
-        {/* すべてを見るカード（6件より多い場合のみ表示） */}
-        {visiblePrompts.length > 6 && (
+        {/* すべてを見るカード（6件より多い場合かつshowViewAllがtrueの場合のみ表示） */}
+        {showViewAll && visiblePrompts.length > 6 && (
           <div className={viewAllCardClass}>
-            <Link href={viewAllPath} passHref legacyBehavior>
-              <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm cursor-pointer h-full" data-id="view-all">
-                <div className="flex items-center justify-center h-full w-full p-2 bg-gray-100">
-                  <div className="flex flex-col items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                    <div className={`text-gray-700 text-center ${notoSansJP.className}`} style={{ fontWeight: 700 }}>
-                      すべてを見る
+            {isMobile ? (
+              // スマホ表示ではテキストリンク
+              <Link href={viewAllPath} className="block text-center py-4 font-bold text-gray-500 hover:underline">
+                <span className="flex items-center justify-center">
+                  すべてを見る 
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </span>
+              </Link>
+            ) : (
+              // PC表示ではカード
+              <Link href={viewAllPath} passHref legacyBehavior>
+                <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm cursor-pointer h-full" data-id="view-all">
+                  <div className="flex items-center justify-center h-full w-full p-2 bg-gray-100">
+                    <div className="flex flex-col items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                      <div className={`text-gray-700 text-center ${notoSansJP.className}`} style={{ fontWeight: 700 }}>
+                        すべてを見る
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </Link>
+              </Link>
+            )}
           </div>
         )}
       </div>
       <GlobalToast />
-    </>
+    </FeatureSectionContext.Provider>
   );
 };
 

@@ -22,8 +22,8 @@ const Popular: React.FC = () => {
         setIsLoading(true);
         setError(null);
         
-        // Supabaseから人気の記事を取得
-        const popularPrompts = await getPopularPrompts(30); // 多めに取得（30件）
+        // Supabaseから人気の記事を取得（制限を大きく設定して実質すべて表示）
+        const popularPrompts = await getPopularPrompts(50); // 100件まで表示可能に変更
         setPrompts(popularPrompts);
         
       } catch (error) {
@@ -90,14 +90,16 @@ const Popular: React.FC = () => {
                 <div className="mb-8">
                   <h1 className="text-2xl font-bold mb-2">人気の記事</h1>
                   <p className="text-gray-600">
-                    多くのユーザーに読まれている人気記事を集めました。ビュー数の多い記事をご紹介します。
+                    多くのユーザーに読まれている人気記事を集めました。ビュー数の多い記事をすべて表示しています。
                   </p>
+                  <p className="text-sm text-gray-500 mt-2">表示件数: {prompts.length}件</p>
                 </div>
                 
                 {prompts.length > 0 ? (
                   <PromptGrid 
                     prompts={prompts}
                     horizontalScroll={false}
+                    showViewAll={false}
                   />
                 ) : (
                   <div className="text-center py-12">

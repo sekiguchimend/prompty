@@ -13,6 +13,8 @@ interface PromptSectionProps {
   className?: string;
   categoryUrl?: string;
   moreLinkUrl?: string;
+  showViewAll?: boolean;
+  isFeatureSection?: boolean;
 }
 
 const PromptSection: React.FC<PromptSectionProps> = ({ 
@@ -25,7 +27,9 @@ const PromptSection: React.FC<PromptSectionProps> = ({
   maxVisible,
   className = '',
   categoryUrl,
-  moreLinkUrl
+  moreLinkUrl,
+  showViewAll = true,
+  isFeatureSection = false
 }) => {
   return (
     <section className={`mt-6 md:mt-8 first:mt-0 ${className}`}>
@@ -37,12 +41,24 @@ const PromptSection: React.FC<PromptSectionProps> = ({
         categoryUrl={categoryUrl}
         moreLinkUrl={moreLinkUrl || categoryUrl}
       />
-      <PromptGrid 
-        prompts={prompts} 
-        sectionPrefix={sectionPrefix} 
-        horizontalScroll={horizontalScroll}
-        categoryPath={categoryUrl} 
-      />
+      <div className="mt-3">
+        {prompts && prompts.length > 0 ? (
+          <PromptGrid 
+            prompts={prompts} 
+            sectionPrefix={sectionPrefix} 
+            horizontalScroll={horizontalScroll}
+            categoryPath={categoryUrl}
+            showViewAll={showViewAll}
+            isFeatureSection={isFeatureSection}
+          />
+        ) : (
+          <div className="p-4 bg-gray-50 rounded-md border border-gray-200">
+            <p className="text-gray-500 text-center">
+              {title}の記事はまだありません。
+            </p>
+          </div>
+        )}
+      </div>
     </section>
   );
 };

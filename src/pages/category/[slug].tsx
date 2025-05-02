@@ -203,6 +203,7 @@ const CategoryPage: React.FC = () => {
                   <PromptGrid 
                     prompts={prompts}
                     horizontalScroll={false}
+                    showViewAll={false}
                   />
                 ) : (
                   <div className="text-center py-12">

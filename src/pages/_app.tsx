@@ -8,29 +8,68 @@ import { initializeSupabaseSession, validateSession } from '../lib/supabaseClien
 import { Toaster } from '../components/ui/toaster';
 import Head from 'next/head';
 
+// セッション検証のデバウンス状態管理
+let isValidating = false;
+let lastValidationTime = 0;
+const VALIDATION_COOLDOWN = 5000; // 5秒間のクールダウン
+
 function MyApp({ Component, pageProps }: AppProps) {
   const router = useRouter();
 
   // ページ遷移時にセッションを検証
   useEffect(() => {
-    const handleRouteChange = async () => {
-      console.log('ページ遷移を検出: セッション検証を実行...');
+    const handleRouteChange = async (url: string) => {
+      // セッション検証が現在実行中の場合やクールダウン中の場合はスキップ
+      const now = Date.now();
+      if (isValidating || now - lastValidationTime < VALIDATION_COOLDOWN) {
+        return;
+      }
+
       try {
+        isValidating = true;
+        console.log('ページ遷移を検出: セッション検証を実行...', url);
+        
         // Supabaseセッションの初期化を試みる
         await initializeSupabaseSession();
         
-        // 定期的なセッション検証（オプション）
+        // セッション検証
         const sessionValid = await validateSession();
         console.log('セッション検証結果:', sessionValid ? '有効' : '無効');
+        
+        // 保護されたルートでセッションが無効な場合、ログインページにリダイレクト
+        const protectedRoutes = ['/profile', '/dashboard', '/settings', '/prompts/create'];
+        const isProtectedRoute = protectedRoutes.some(route => url.startsWith(route));
+        
+        if (!sessionValid && isProtectedRoute) {
+          console.log('保護されたルートへのアクセスを試みましたが、セッションが無効です');
+          router.replace('/login?redirect=' + encodeURIComponent(url));
+        }
       } catch (error) {
         console.error('ルート変更時のセッション検証エラー:', error);
+      } finally {
+        isValidating = false;
+        lastValidationTime = Date.now();
       }
     };
 
     // 初期ロード時にセッションを初期化
     (async () => {
       try {
-        await initializeSupabaseSession();
+        const initialized = await initializeSupabaseSession();
+        console.log('初期セッション初期化:', initialized ? '成功' : '失敗');
+        
+        // 現在のルートが保護されたルートで、セッションが無効な場合はリダイレクト
+        const currentPath = router.pathname;
+        const protectedRoutes = ['/profile', '/dashboard', '/settings', '/prompts/create'];
+        const isProtectedRoute = protectedRoutes.some(route => currentPath.startsWith(route));
+        
+        if (isProtectedRoute) {
+          const sessionValid = await validateSession();
+          if (!sessionValid) {
+            console.log('保護されたルートへのアクセスを試みましたが、セッションが無効です');
+            router.replace('/login?redirect=' + encodeURIComponent(currentPath));
+          }
+        }
       } catch (error) {
         console.error('初期セッション初期化エラー:', error);
       }
@@ -52,7 +91,7 @@ function MyApp({ Component, pageProps }: AppProps) {
         <meta name="description" content="LLMを活用したプロンプト共有・販売プラットフォーム" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
         
-        {/* ファビコン設定 - app/layout.tsxと一致させる */}
+        {/* ファビコン設定 */}
         <link rel="icon" href="https://prompty-zeta.vercel.app/favicon.ico" type="image/x-icon" />
         <link rel="shortcut icon" href="https://prompty-zeta.vercel.app/favicon.ico" type="image/x-icon" />
         <link rel="apple-touch-icon" href="https://prompty-zeta.vercel.app/favicon.ico" type="image/x-icon" />

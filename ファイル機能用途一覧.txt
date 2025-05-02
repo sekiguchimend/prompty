@@ -1,0 +1,40 @@
+# ファイル機能用途一覧
+
+## 認証関連ファイル
+
+### src/pages/Login.tsx
+- ユーザーログイン機能を提供するページコンポーネント
+- メールアドレスとパスワードでのログイン処理
+- Googleなどのソーシャルアカウントでのログイン処理
+- 「パスワードを忘れた方」リンク（/forgot-passwordへの遷移）を提供
+- Supabaseの認証APIを直接使用して429エラー（Too Many Requests）を回避
+
+### src/pages/Register.tsx
+- ユーザー登録機能を提供するページコンポーネント
+- メールアドレスとパスワードでの登録処理
+- Googleなどのソーシャルアカウントでの登録処理
+- 登録モーダルの表示と処理
+- Supabaseの認証APIを直接使用して429エラー（Too Many Requests）を回避
+
+### src/pages/forgot-password.tsx
+- パスワードリセットメール送信機能を提供するページコンポーネント
+- メールアドレス入力フォームの提供
+- パスワードリセットメール送信処理
+- Supabase認証機能との連携（resetPasswordForEmail）
+
+### src/pages/reset-password.tsx
+- パスワードリセット機能を提供するページコンポーネント
+- 新しいパスワード入力フォームの提供
+- パスワード更新処理
+- Supabase認証機能との連携（updateUser）
+
+### lib/supabase/client.ts
+- クライアントサイドでSupabaseを使用するための共通設定
+- 環境変数からSupabase URLとanon keyを読み込み
+- createClientによるSupabaseクライアントインスタンスの作成
+
+### lib/auth-context.tsx
+- 認証状態を管理するためのReactコンテキスト
+- アプリ全体での認証状態の共有
+- ユーザー情報の取得と管理
+- 認証状態変更の監視（セッション更新など） 

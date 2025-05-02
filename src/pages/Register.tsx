@@ -7,6 +7,7 @@ import { Card, CardContent } from '../components/ui/card';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { supabase } from '../../lib/supabase/client';
 
 // モーダルコンポーネント - noteスタイル
 const Modal = ({ isOpen, onClose, children }: { isOpen: boolean, onClose: () => void, children: React.ReactNode }) => {
@@ -51,16 +52,17 @@ const Register = () => {
     setError(null);
     
     try {
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+      // クライアントサイドからSupabaseに直接接続
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/setup-profile`,
+        }
       });
-
-      const data = await response.json();
       
-      if (!response.ok) {
-        throw new Error(data.error || 'サインアップに失敗しました');
+      if (signUpError) {
+        throw new Error(signUpError.message || 'サインアップに失敗しました');
       }
 
       // サインアップ成功
@@ -102,20 +104,20 @@ const Register = () => {
     setError(null);
     
     try {
-      const response = await fetch('/api/auth/social-signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider }),
+      // クライアントサイドからSupabaseに直接接続
+      const { data, error: signUpError } = await supabase.auth.signInWithOAuth({
+        provider: provider.toLowerCase() as any,
+        options: {
+          redirectTo: `${window.location.origin}/setup-profile`,
+        }
       });
-
-      const data = await response.json();
       
-      if (!response.ok) {
-        throw new Error(data.error || `${provider}での登録に失敗しました`);
+      if (signUpError) {
+        throw new Error(signUpError.message || `${provider}での登録に失敗しました`);
       }
 
       // リダイレクトURLがある場合はそこに遷移
-      if (data.url) {
+      if (data?.url) {
         window.location.href = data.url;
         return;
       }

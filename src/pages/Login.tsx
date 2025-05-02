@@ -7,6 +7,7 @@ import { Mail, Lock, AlertCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../lib/auth-context';
 import Image from 'next/image';
+import { supabase } from '../../lib/supabase/client';
 // Manually implement or mock the missing components
 const Input = ({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) => (
   <input className={`border rounded px-3 py-2 w-full ${className}`} {...props} />
@@ -95,31 +96,18 @@ const Login = () => {
     try {
       console.log('ログイン試行:', { email, passwordLength: password.length });
       
-      const response = await fetch('/api/auth/signin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-      
-      console.log('ログインレスポンス:', {
-        status: response.status,
-        statusText: response.statusText,
-        data
+      // クライアントサイドからSupabaseに直接接続
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
       
-      if (!response.ok) {
-        throw new Error(data.error || 'ログインに失敗しました');
+      if (signInError) {
+        throw new Error(signInError.message || 'ログインに失敗しました');
       }
 
       // ログイン成功
       console.log('ログイン成功:', data);
-      
-      // セッション情報をローカルストレージに保存
-      if (data.session) {
-        localStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
-      }
       
       // 1秒待機してから遷移（セッション情報が反映されるのを待つ）
       setTimeout(() => {
@@ -138,30 +126,23 @@ const Login = () => {
     setError(null);
     
     try {
-      const response = await fetch('/api/auth/social-signin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider: provider.toLowerCase() }),
+      // クライアントサイドからSupabaseに直接接続
+      const { data, error: signInError } = await supabase.auth.signInWithOAuth({
+        provider: provider.toLowerCase() as any,
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        },
       });
-
-      const data = await response.json();
       
-      if (!response.ok) {
-        // プロバイダーが有効化されていないエラーの場合、わかりやすいメッセージを表示
-        if (data.error_code === 'validation_failed' && data.msg?.includes('provider is not enabled')) {
-          throw new Error(`${provider}でのログインは現在設定されていません。管理者に連絡してください。`);
-        }
-        throw new Error(data.error || data.msg || `${provider}でのログインに失敗しました`);
+      if (signInError) {
+        throw new Error(signInError.message || `${provider}でのログインに失敗しました`);
       }
 
       // リダイレクトURLがある場合はそこに遷移
-      if (data.url) {
+      if (data?.url) {
         window.location.href = data.url;
         return;
       }
-      
-      // リダイレクトURLがない場合もホームページに遷移
-      window.location.href = '/';
     } catch (err) {
       console.error(`${provider}ログインエラー:`, err);
       setError(err instanceof Error ? err.message : '予期せぬエラーが発生しました');

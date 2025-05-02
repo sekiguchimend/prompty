@@ -43,7 +43,7 @@ const HomePage: React.FC = () => {
   }, [isDesktop, isTablet, width]);
 
   // 横スクロール表示の条件（タブレット以下で適用）
-  const shouldUseHorizontalScroll = useMemo(() => isMobile || (isTablet && width < 900), [isMobile, isTablet, width]);
+  const shouldUseHorizontalScroll = true; // ホームページでは常に横スクロール表示を使用
   
   // APIから取得したプロンプトデータ
   const [processingFeaturedPrompts, setProcessingFeaturedPrompts] = useState<PromptItem[]>([]);
@@ -223,7 +223,7 @@ const HomePage: React.FC = () => {
       <Sidebar />
       
       <div className="flex-1 md:ml-[240px]">
-        <main className="pb-12 pt-2 md:mt-0 mt-6">
+        <main className="pb-12 md:mt-0">
           <div className="container px-4 sm:px-6 md:px-8">
             {error && (
               <div className="bg-red-50 p-4 rounded-md mb-4">
@@ -236,24 +236,8 @@ const HomePage: React.FC = () => {
                 </button>
               </div>
             )}
-          
-            {/* Featured prompts section */}
-            <div className="mt-0">
-              <PromptSection 
-                title="今日の注目プロンプト" 
-                prompts={processingFeaturedPrompts}
-                showMoreLink={true}
-                showRssIcon={false}
-                horizontalScroll={shouldUseHorizontalScroll}
-                maxVisible={getDisplayCount}
-                className="mt-0"
-                categoryUrl="/Featured"
-                moreLinkUrl="/Featured"
-              />
-            </div>
-
-            {/* Popular posts section */}
-            <PromptSection 
+                 {/* Popular posts section */}
+                 <PromptSection 
               title="人気の記事" 
               prompts={processingPopularPosts}
               showMoreLink={true}
@@ -262,7 +246,12 @@ const HomePage: React.FC = () => {
               className="mt-12"
               categoryUrl="/Popular"
               moreLinkUrl="/Popular"
+              isFeatureSection={true}
             />
+            {/* Featured prompts section */}
+           
+
+     
 
             {/* 特別カテゴリーのセクション */}
             {specialCategoryContents.map((categoryContent) => (

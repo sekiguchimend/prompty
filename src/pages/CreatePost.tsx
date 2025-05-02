@@ -331,6 +331,24 @@ const CreatePost = () => {
       const { data: { session } } = await supabase.auth.getSession();
       const authToken = session?.access_token;
       
+      // トークンのデバッグ情報を詳細に出力
+      if (authToken) {
+        const tokenLength = authToken.length;
+        const tokenStart = authToken.substring(0, 20);
+        const tokenEnd = authToken.substring(tokenLength - 20);
+        console.log('トークンデバッグ情報：', {
+          長さ: tokenLength,
+          先頭20文字: tokenStart,
+          末尾20文字: tokenEnd,
+          ドット数: authToken.split('.').length - 1 // JWTは通常2つのドットを含む
+        });
+      } else {
+        console.log('トークンがありません');
+      }
+      
+      // ★★★ 追加: 送信する認証トークンをログに出力 ★★★
+      console.log('送信する認証トークン:', authToken ? authToken.substring(0, 10) + '...' : 'トークンなし');
+
       // FormDataを作成
       const formData = new FormData();
       formData.append('thumbnailImage', file);
@@ -628,16 +646,20 @@ const CreatePost = () => {
                       // FormDataを使用して再アップロード
                       const formData = new FormData();
                       formData.append('thumbnailImage', imageFile);
-                      
-                      // 認証トークンを取得
-                      const { data: { session } } = await supabase.auth.getSession();
-                      const authToken = session?.access_token;
-                      
+
+                      // 認証トークンを取得（再試行直前に取得）
+                      const { data: { session: retrySession } } = await supabase.auth.getSession();
+                      const retryAuthToken = retrySession?.access_token;
+
+                      // ★★★ 修正: 再試行時に送信する認証トークンをログに出力 ★★★
+                      console.log('再試行時に送信する認証トークン:', retryAuthToken ? retryAuthToken.substring(0, 10) + '...' : 'トークンなし');
+
                       // API経由でアップロード
                       const retryResponse = await fetch('/api/thumbnail/upload', {
                         method: 'POST',
                         headers: {
-                          ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+                          // ★★★ 修正: 再取得したトークンを使用 ★★★
+                          ...(retryAuthToken ? { 'Authorization': `Bearer ${retryAuthToken}` } : {})
                         },
                         body: formData,
                       });
