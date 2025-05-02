@@ -106,15 +106,24 @@ export async function getBatchPrompts(limit: number = 10): Promise<{
     
     // 6. 各プロンプトセットにいいね数を追加して返す
     const processedFeaturedPrompts = featuredData 
-      ? featuredData.map(item => transformToPromptItem({...item, like_count: likeCounts[item.id as string] || 0}))
+      ? featuredData.map(item => transformToPromptItem({
+          ...item, 
+          like_count: likeCounts[item.id as string] || 0
+        }))
       : [];
       
     const processedAiGeneratedPrompts = aiGeneratedData
-      ? aiGeneratedData.map(item => transformToPromptItem({...item, like_count: likeCounts[item.id as string] || 0}))
+      ? aiGeneratedData.map(item => transformToPromptItem({
+          ...item, 
+          like_count: likeCounts[item.id as string] || 0
+        }))
       : [];
       
     const processedPopularPrompts = popularData
-      ? popularData.map(item => transformToPromptItem({...item, like_count: likeCounts[item.id as string] || 0}))
+      ? popularData.map(item => transformToPromptItem({
+          ...item, 
+          like_count: likeCounts[item.id as string] || 0
+        }))
       : [];
     
     return {
@@ -275,20 +284,25 @@ export async function getUserLikedPrompts(userId: string | null): Promise<string
 
 // Supabaseから取得したデータをPromptItem形式に変換
 function transformToPromptItem(item: any): PromptItem {
-  // 投稿日を相対時間に変換
+  // プロフィール情報を取得（存在する場合）
+  const profileData = item.profiles || {};
+  const displayName = profileData.display_name || '匿名';  // usernameは使わず、display_nameがなければ「匿名」
+
+  // 日付の相対表示
   const postedAt = getRelativeTimeString(new Date(item.created_at));
-  
+
   return {
     id: item.id,
     title: item.title,
-    thumbnailUrl: item.thumbnail_url || '/images/default-thumbnail.svg', // デフォルト画像
+    thumbnailUrl: item.thumbnail_url || '/images/default-thumbnail.svg',
     user: {
-      name: item.profiles?.display_name && item.profiles?.display_name.trim() !== '' ? item.profiles.display_name : '匿名',
-      avatarUrl: item.profiles?.avatar_url || '/images/default-avatar.svg',
+      name: displayName,
+      account_name: displayName,
+      avatarUrl: profileData.avatar_url || '/images/default-avatar.svg',
     },
-    postedAt,
-    likeCount: item.like_count || 0,
-    isLiked: false // この値はログインユーザーの状態に応じて別途設定する必要がある
+    postedAt: postedAt,
+    // like_countが設定されていればそれを使用（likesテーブルから取得した値）
+    likeCount: item.like_count ?? 0,
   };
 }
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FormControl, FormField, FormItem, FormLabel } from "../../components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { Button } from "../../components/ui/button";
@@ -45,6 +45,24 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  
+  // コンポーネントマウント時のカテゴリー確認
+  useEffect(() => {
+    if (categories && categories.length > 0) {
+      console.log('利用可能なカテゴリー:', categories.map(c => `${c.name}(${c.id})`));
+      
+      // 「生成AI」カテゴリーの存在確認
+      const genAICategory = categories.find(cat => 
+        cat.name === '生成AI' || cat.slug === 'generative-ai'
+      );
+      
+      if (genAICategory) {
+        console.log('「生成AI」カテゴリーが見つかりました:', genAICategory);
+      } else {
+        console.log('「生成AI」カテゴリーは見つかりませんでした');
+      }
+    }
+  }, [categories]);
   
   // 新規カテゴリ作成フォーム
   const createCategoryForm = useForm<NewCategoryFormValues>({
@@ -140,7 +158,10 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
             <div className="flex gap-2 items-center">
               <div className="flex-1">
                 <Select
-                  onValueChange={field.onChange}
+                  onValueChange={(value) => {
+                    console.log('カテゴリー選択:', value);
+                    field.onChange(value);
+                  }}
                   defaultValue={field.value || undefined}
                   disabled={isLoading}
                 >

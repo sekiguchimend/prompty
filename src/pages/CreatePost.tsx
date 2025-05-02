@@ -766,6 +766,7 @@ const CreatePost = () => {
         prompt_title_length: requestBody.prompt_title.length,
         prompt_content_length: requestBody.prompt_content.length,
         prompt_content_preview: requestBody.prompt_content.substring(0, 50) + '...',
+        category_id: requestBody.category_id || 'カテゴリー未選択'
       });
       
       const mainPromptResponse = await fetch('/api/prompts/create', {

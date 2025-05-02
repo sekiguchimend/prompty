@@ -3,59 +3,113 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import Sidebar from '../components/Sidebar';
 import PromptGrid from '../components/PromptGrid';
-import { getPopularPosts } from '../data/posts';
+import { getPopularPrompts } from '../lib/api';
 import { useResponsive } from '../hooks/use-responsive';
-import { Helmet } from 'react-helmet';
+import Head from 'next/head';
 import { PromptItem } from '../components/PromptGrid';
+import Link from 'next/link';
+import { ChevronRight, Home } from 'lucide-react';
 
 const Popular: React.FC = () => {
   const { isMobile, isTablet } = useResponsive();
   const [prompts, setPrompts] = useState<PromptItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // 人気記事を取得
-    const popularPosts = getPopularPosts();
-
-    // ランダムにいいね状態を追加する関数
-    const addRandomLikeState = (items: PromptItem[]): PromptItem[] => {
-      return items.map(item => ({
-        ...item,
-        isLiked: Math.random() > 0.5 // 50%の確率でいいね済みにする
-      }));
+    const fetchPopularPrompts = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        // Supabaseから人気の記事を取得
+        const popularPrompts = await getPopularPrompts(30); // 多めに取得（30件）
+        setPrompts(popularPrompts);
+        
+      } catch (error) {
+        console.error('人気記事取得エラー:', error);
+        setError('人気記事の取得に失敗しました。');
+      } finally {
+        setIsLoading(false);
+      }
     };
-
-    setPrompts(addRandomLikeState(popularPosts));
+    
+    fetchPopularPrompts();
   }, []);
+
+  // ブレッドクラムコンポーネント
+  const Breadcrumb = () => (
+    <div className="bg-gray-50 py-3 px-4 sm:px-6 md:px-8 border-b">
+      <div className="container mx-auto flex items-center text-sm text-gray-600">
+        <Link href="/" className="flex items-center hover:text-gray-900">
+          <Home size={14} className="mr-1" />
+          ホーム
+        </Link>
+        <ChevronRight size={14} className="mx-2" />
+        <span className="font-medium text-gray-900">人気の記事</span>
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex min-h-screen flex-col">
-     <div className="flex flex-col flex-1 md:ml-[240px]">
-
-      <Helmet>
-        <title>人気の記事 | prompty</title>
-      </Helmet>
+      <Head>
+        <title>人気の記事 | Prompty</title>
+        <meta name="description" content="Promptyで人気の記事一覧です。多くのユーザーに読まれている人気の記事をチェックできます。" />
+      </Head>
+      
       <Header />
       <Sidebar />
       
-      <div className="flex flex-1 pt-10">
-        {/* PC画面でのみサイドバーのスペースを確保 */}
-        
-        <main className="flex-1 pb-12 overflow-x-hidden md:mt-0 mt-5">
-          <div className="container px-4 py-6 sm:px-6 md:px-8">
-            <h1 className="text-2xl font-bold mb-6">人気の記事</h1>
-            <p className="text-gray-600 mb-8">
-              多くのユーザーに読まれている人気記事を集めました。過去に投稿された中からトレンドの記事をご紹介します。
-            </p>
-            
-            <PromptGrid 
-              prompts={prompts} 
-              horizontalScroll={false} 
-            />
+      <div className="flex-1 md:ml-[240px]">
+        <Breadcrumb />
+        <main className="pb-12 pt-2 md:mt-0 mt-6">
+          <div className="container px-4 sm:px-6 md:px-8">
+            {error ? (
+              <div className="bg-red-50 p-4 rounded-md">
+                <p className="text-red-600">{error}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="mt-2 text-blue-600 hover:underline"
+                >
+                  再読み込み
+                </button>
+              </div>
+            ) : isLoading ? (
+              <div className="animate-pulse">
+                <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+                <div className="h-5 bg-gray-200 rounded w-2/3 mb-8"></div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {Array(8).fill(0).map((_, index) => (
+                    <div key={index} className="bg-gray-200 h-64 rounded"></div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="mb-8">
+                  <h1 className="text-2xl font-bold mb-2">人気の記事</h1>
+                  <p className="text-gray-600">
+                    多くのユーザーに読まれている人気記事を集めました。ビュー数の多い記事をご紹介します。
+                  </p>
+                </div>
+                
+                {prompts.length > 0 ? (
+                  <PromptGrid 
+                    prompts={prompts}
+                    horizontalScroll={false}
+                  />
+                ) : (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500">人気の記事がまだありません。</p>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </main>
-      </div>
-      
-      <Footer />
+        
+        <Footer />
       </div>
     </div>
   );

@@ -108,7 +108,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       prompt_title: promptData.prompt_title, // プロンプトタイトル
       prompt_content: promptData.prompt_content, // プロンプト内容
       thumbnail_url: promptData.thumbnail_url || null,
-      category_id: promptData.category_id === 'none' ? null : promptData.category_id || null,
+      category_id: promptData.category_id && promptData.category_id !== 'none' 
+        ? String(promptData.category_id) // 明示的に文字列に変換
+        : null,
       price: promptData.price || 0,
       is_free: promptData.is_free !== undefined ? promptData.is_free : true,
       is_premium: promptData.is_premium !== undefined ? promptData.is_premium : false,
@@ -117,6 +119,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       published: promptData.published !== undefined ? promptData.published : true,
       site_url: promptData.site_url || null
     };
+    
+    // カテゴリーIDのデバッグログ
+    console.log('カテゴリーID詳細:', {
+      original: promptData.category_id,
+      processed: insertData.category_id,
+      type: typeof insertData.category_id
+    });
     
     console.log('🔄 挿入データ:', JSON.stringify({
       author_id: insertData.author_id,
