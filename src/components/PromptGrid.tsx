@@ -429,7 +429,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
         {/* カード左側：テキスト情報 */}
         <div className="flex-1 pr-3">
           <h3 className="text-base font-medium line-clamp-2 mb-1">
-            <Link href={`/prompts/${id}`} passHref>
+            <Link href={`/prompts/${id}`} passHref legacyBehavior>
               <span className="cursor-pointer hover:text-blue-600">{title}</span>
             </Link>
           </h3>
@@ -462,7 +462,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
         
         {/* カード右側：サムネイル画像 */}
         <div className="w-20 h-16 flex-shrink-0">
-          <Link href={`/prompts/${id}`} passHref>
+          <Link href={`/prompts/${id}`} passHref legacyBehavior>
             <div className="w-full h-full rounded overflow-hidden">
               <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
             </div>
@@ -477,7 +477,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
     <div className="relative group h-full">
       <div className="cursor-pointer bg-white border border-gray-100 rounded-lg shadow-sm hover:shadow-md transition duration-200 h-full overflow-hidden flex flex-col">
         <div className="relative pt-[56.25%] bg-gray-50">
-          <Link href={`/prompts/${id}`} passHref>
+          <Link href={`/prompts/${id}`} passHref legacyBehavior>
             <div className="absolute inset-0">
               <img
                 src={imageUrl}

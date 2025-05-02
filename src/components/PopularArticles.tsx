@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Heart, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from './ui/button';
@@ -14,16 +14,31 @@ interface Article {
 
 interface PopularArticlesProps {
   articles: Article[];
+  prevArticle?: Article | null;
+  nextArticle?: Article | null;
 }
 
-const PopularArticles: React.FC<PopularArticlesProps> = ({ articles }) => {
+const PopularArticles: React.FC<PopularArticlesProps> = ({ articles, prevArticle, nextArticle }) => {
+  const [showMore, setShowMore] = useState(false);
+  
+  // 表示する記事の数を制限（初期状態では3つ、もっと見るをクリックしたら6つ）
+  const displayArticles = showMore ? articles.slice(0, 6) : articles.slice(0, 3);
+  
+  // もっと見るボタンのクリックハンドラ
+  const handleShowMore = () => {
+    setShowMore(true);
+  };
+  
+  // いいね数が多い順に並べ替えた記事のトップ2を取得（ピックアップ用）
+  const topPickedArticles = [...articles].sort((a, b) => b.likes - a.likes).slice(0, 2);
+  
   return (
     <div className="mt-12 bg-white pt-6 pb-10">
       <div className="container px-4 md:px-8 max-w-6xl mx-auto">
         <h2 className="text-xl font-bold mb-6">人気記事</h2>
         
         <div className="space-y-4">
-          {articles.map((article) => (
+          {displayArticles.map((article) => (
             <div key={article.id} className="flex items-start gap-4 py-3 border-b border-gray-100">
               <div className="flex-1">
                 <Link href={`/prompts/${article.id}`} className="group">
@@ -54,86 +69,147 @@ const PopularArticles: React.FC<PopularArticlesProps> = ({ articles }) => {
           ))}
         </div>
         
-        <div className="flex justify-center mt-6">
-          <Button variant="outline" className="text-sm text-gray-600">
-            もっとみる
-          </Button>
-        </div>
+        {/* もっと見るボタンは、全記事数が3より多く、かつまだ全部表示していない場合のみ表示 */}
+        {articles.length > 3 && !showMore && (
+          <div className="flex justify-center mt-6">
+            <Button 
+              variant="outline" 
+              className="text-sm text-gray-600"
+              onClick={handleShowMore}
+            >
+              もっとみる
+            </Button>
+          </div>
+        )}
         
         <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="border rounded-md p-5 flex-1">
-            <div className="flex items-start">
-              <div className="flex-1">
-                <h3 className="font-medium text-sm mb-2">前の記事</h3>
-                <Link href="#" className="text-lg font-medium leading-tight hover:text-blue-600 transition-colors line-clamp-2">
-                  noteを書くだけで夢が動き出す—未来を引き寄せる言葉の力
-                </Link>
-              </div>
-              <div className="pl-4">
-                <ChevronLeft className="h-5 w-5 text-gray-400" />
+          {prevArticle ? (
+            <div className="border rounded-md p-5 flex-1">
+              <div className="flex items-start">
+                <div className="flex-1">
+                  <h3 className="font-medium text-sm mb-2">前の記事</h3>
+                  <Link href={`/prompts/${prevArticle.id}`} className="text-lg font-medium leading-tight hover:text-blue-600 transition-colors line-clamp-2">
+                    {prevArticle.title}
+                  </Link>
+                </div>
+                <div className="pl-4">
+                  <ChevronLeft className="h-5 w-5 text-gray-400" />
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="border rounded-md p-5 flex-1 opacity-50">
+              <div className="flex items-start">
+                <div className="flex-1">
+                  <h3 className="font-medium text-sm mb-2">前の記事</h3>
+                  <p className="text-lg font-medium leading-tight text-gray-400 line-clamp-2">
+                    前の記事はありません
+                  </p>
+                </div>
+                <div className="pl-4">
+                  <ChevronLeft className="h-5 w-5 text-gray-400" />
+                </div>
+              </div>
+            </div>
+          )}
           
-          <div className="border rounded-md p-5 flex-1">
-            <div className="flex items-start">
-              <div className="flex-1">
-                <h3 className="font-medium text-sm mb-2">次の記事</h3>
-                <Link href="#" className="text-lg font-medium leading-tight hover:text-blue-600 transition-colors line-clamp-2">
-                  「これ言ったら嫌われるかも」の壁を越えたら、人生が劇的に面白くなった話
-                </Link>
-              </div>
-              <div className="pl-4">
-                <ChevronRight className="h-5 w-5 text-gray-400" />
+          {nextArticle ? (
+            <div className="border rounded-md p-5 flex-1">
+              <div className="flex items-start">
+                <div className="flex-1">
+                  <h3 className="font-medium text-sm mb-2">次の記事</h3>
+                  <Link href={`/prompts/${nextArticle.id}`} className="text-lg font-medium leading-tight hover:text-blue-600 transition-colors line-clamp-2">
+                    {nextArticle.title}
+                  </Link>
+                </div>
+                <div className="pl-4">
+                  <ChevronRight className="h-5 w-5 text-gray-400" />
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="border rounded-md p-5 flex-1 opacity-50">
+              <div className="flex items-start">
+                <div className="flex-1">
+                  <h3 className="font-medium text-sm mb-2">次の記事</h3>
+                  <p className="text-lg font-medium leading-tight text-gray-400 line-clamp-2">
+                    次の記事はありません
+                  </p>
+                </div>
+                <div className="pl-4">
+                  <ChevronRight className="h-5 w-5 text-gray-400" />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         
         <div className="mt-12">
           <h2 className="text-xl font-bold mb-6">ピックアップされています</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="border hover:shadow-md transition-shadow duration-200">
-              <CardContent className="p-4">
-                <div className="flex gap-4">
-                  <div className="flex-1">
-                    <Link href="#" className="font-medium text-lg hover:text-blue-600 transition-colors">
-                      目に止まったnote
-                    </Link>
-                    <div className="flex items-center mt-3 text-sm text-gray-600">
-                      <BookOpen className="h-4 w-4 mr-1" />
-                      <span>22,574本</span>
+            {topPickedArticles.length > 0 ? (
+              topPickedArticles.map((article) => (
+                <Card key={article.id} className="border hover:shadow-md transition-shadow duration-200">
+                  <CardContent className="p-4">
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <Link href={`/prompts/${article.id}`} className="font-medium text-lg hover:text-blue-600 transition-colors">
+                          {article.title}
+                        </Link>
+                        <div className="flex items-center mt-3 text-sm text-gray-600">
+                          <Heart className="h-4 w-4 mr-1 text-gray-400" />
+                          <span>{article.likes.toLocaleString()}件のいいね</span>
+                        </div>
+                      </div>
+                      {article.thumbnailUrl ? (
+                        <div className="w-16 h-16 shrink-0 overflow-hidden rounded-md bg-purple-100">
+                          <img 
+                            src={article.thumbnailUrl} 
+                            alt={article.title} 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-16 h-16 shrink-0 overflow-hidden rounded-md flex items-center justify-center bg-gray-100">
+                          <BookOpen className="h-8 w-8 text-gray-400" />
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  <div className="w-16 h-16 shrink-0 overflow-hidden rounded-md bg-purple-100">
-                    <img 
-                      src="/lovable-uploads/4ed80f0e-6902-4a40-92fc-56fea3e5bd1c.png" 
-                      alt="Open Book" 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="border hover:shadow-md transition-shadow duration-200">
-              <CardContent className="p-4">
-                <div className="flex gap-4">
-                  <div className="flex-1">
-                    <Link href="#" className="font-medium text-lg hover:text-blue-600 transition-colors">
-                      先達に学ぶ描き方書き方届け方のコツ
-                    </Link>
-                    <div className="flex items-center mt-3 text-sm text-gray-600">
-                      <BookOpen className="h-4 w-4 mr-1" />
-                      <span>171本</span>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <>
+                <Card className="border hover:shadow-md transition-shadow duration-200">
+                  <CardContent className="p-4">
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <p className="font-medium text-lg text-gray-400">
+                          ピックアップ記事はありません
+                        </p>
+                      </div>
+                      <div className="w-16 h-16 shrink-0 overflow-hidden rounded-md flex items-center justify-center bg-gray-100">
+                        <BookOpen className="h-8 w-8 text-gray-400" />
+                      </div>
                     </div>
-                  </div>
-                  <div className="w-16 h-16 shrink-0 overflow-hidden rounded-md flex items-center justify-center bg-gray-100">
-                    <BookOpen className="h-8 w-8 text-gray-400" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+                <Card className="border hover:shadow-md transition-shadow duration-200">
+                  <CardContent className="p-4">
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <p className="font-medium text-lg text-gray-400">
+                          ピックアップ記事はありません
+                        </p>
+                      </div>
+                      <div className="w-16 h-16 shrink-0 overflow-hidden rounded-md flex items-center justify-center bg-gray-100">
+                        <BookOpen className="h-8 w-8 text-gray-400" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </div>
         </div>
       </div>

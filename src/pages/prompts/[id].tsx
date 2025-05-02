@@ -7,7 +7,7 @@ import PopularArticles from '../../components/PopularArticles';
 import AuthorSidebar from '../../components/prompt/AuthorSidebar';
 import PromptContent from '../../components/prompt/PromptContent';
 import PurchaseSection from '../../components/prompt/PurchaseSection';
-import { getDetailPost, getPopularPosts } from '../../data/posts';
+import { getDetailPost, getPopularPosts, getPrevNextPosts } from '../../data/posts';
 import Link from 'next/link';
 import { GetServerSideProps } from 'next';
 import { PostItem } from '../../data/posts';
@@ -250,6 +250,9 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
   // 人気記事を取得
   const popularPosts = await getPopularPosts();
   
+  // 前後の記事を取得
+  const { prev: prevPost, next: nextPost } = await getPrevNextPosts(formattedId);
+  
   // プロフィールデータの取得と処理
   let authorProfile = null;
   if (promptData.profiles) {
@@ -338,13 +341,25 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
   return {
     props: {
       postData,
-      popularPosts
+      popularPosts,
+      prevPost,
+      nextPost
     }
   };
 };
 
 // propsを受け取るようにコンポーネントを修正
-const PromptDetail = ({ postData, popularPosts }: { postData: ExtendedPostItem; popularPosts: PromptItem[] }) => {
+const PromptDetail = ({ 
+  postData, 
+  popularPosts, 
+  prevPost, 
+  nextPost 
+}: { 
+  postData: ExtendedPostItem; 
+  popularPosts: PromptItem[]; 
+  prevPost: PostItem | null;
+  nextPost: PostItem | null;
+}) => {
   const router = useRouter();  
   const [prompt, setPrompt] = useState<ExtendedPostItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -411,6 +426,23 @@ const PromptDetail = ({ postData, popularPosts }: { postData: ExtendedPostItem; 
     thumbnailUrl: post.thumbnailUrl || '/images/default-thumbnail.svg',
     date: post.postedAt || '不明'
   })) || [];
+
+  // 前後の記事データも同様に変換
+  const prevArticle = prevPost ? {
+    id: prevPost.id,
+    title: prevPost.title,
+    likes: prevPost.likeCount,
+    thumbnailUrl: prevPost.thumbnailUrl,
+    date: prevPost.postedAt
+  } : null;
+
+  const nextArticle = nextPost ? {
+    id: nextPost.id,
+    title: nextPost.title,
+    likes: nextPost.likeCount,
+    thumbnailUrl: nextPost.thumbnailUrl,
+    date: nextPost.postedAt
+  } : null;
 
   useEffect(() => {
     if (postData) {
@@ -487,7 +519,11 @@ const PromptDetail = ({ postData, popularPosts }: { postData: ExtendedPostItem; 
         {/* Popular Articles Section */}
         <Separator className="my-12" />
         {popularArticles.length > 0 ? (
-          <PopularArticles articles={popularArticles} />
+          <PopularArticles 
+            articles={popularArticles} 
+            prevArticle={prevArticle}
+            nextArticle={nextArticle}
+          />
         ) : (
           <div className="container px-4 md:px-6 py-6 max-w-7xl mx-auto">
             <h2 className="text-xl font-bold mb-6">人気記事</h2>

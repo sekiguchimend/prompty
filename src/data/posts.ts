@@ -1,3 +1,5 @@
+import { supabase } from '../lib/supabaseClient';
+
 // 投稿の型定義
 export interface PostItem {
   id: string;
@@ -200,8 +202,60 @@ export const getTodayForYouPosts = (): PostItem[] => {
 };
 
 // 人気記事を取得
-export const getPopularPosts = (): PostItem[] => {
-  return allPosts.filter(post => post.status === 'popular');
+export const getPopularPosts = async (): Promise<PostItem[]> => {
+  try {
+    // Supabaseからいいね数が多い順に記事を取得
+    const { data, error } = await supabase
+      .from('prompts')
+      .select(`
+        id,
+        title,
+        thumbnail_url,
+        created_at,
+        profiles:profiles(id, username, display_name, avatar_url)
+      `)
+      .order('view_count', { ascending: false }) // 閲覧数が多い順
+      .limit(6); // 最大6件取得
+      
+    if (error) {
+      console.error('人気記事取得エラー:', error);
+      return allPosts.filter(post => post.status === 'popular');
+    }
+    
+    if (!data || data.length === 0) {
+      return allPosts.filter(post => post.status === 'popular');
+    }
+    
+    // いいね数を取得
+    const postsWithLikes = await Promise.all(
+      data.map(async (post: any) => {
+        const { count, error: likeError } = await supabase
+          .from('likes')
+          .select('*', { count: 'exact', head: true })
+          .eq('prompt_id', post.id);
+          
+        return {
+          id: post.id,
+          title: post.title || 'タイトルなし',
+          thumbnailUrl: post.thumbnail_url || '/images/default-thumbnail.svg',
+          user: {
+            name: post.profiles?.display_name || post.profiles?.username || '名無し',
+            avatarUrl: post.profiles?.avatar_url || '/images/default-avatar.svg',
+            userId: post.profiles?.id || '',
+          },
+          postedAt: new Date(post.created_at).toLocaleDateString('ja-JP'),
+          likeCount: count || 0,
+          status: 'popular' as 'popular' // 明示的に型を指定
+        };
+      })
+    );
+    
+    return postsWithLikes;
+  } catch (error) {
+    console.error('人気記事取得中にエラーが発生しました:', error);
+    // エラーが発生した場合はダミーデータを返す
+    return allPosts.filter(post => post.status === 'popular');
+  }
 };
 
 // カテゴリ別の投稿を取得
@@ -222,6 +276,85 @@ export const getDetailPost = (): PostItem => {
 // すべての投稿を取得
 export const getAllPosts = (): PostItem[] => {
   return allPosts;
+};
+
+// 前後の記事を取得する
+export const getPrevNextPosts = async (currentId: string): Promise<{ prev: PostItem | null, next: PostItem | null }> => {
+  try {
+    // 現在の記事のcreated_atを取得
+    const { data: currentPost, error: currentError } = await supabase
+      .from('prompts')
+      .select('created_at')
+      .eq('id', currentId)
+      .single();
+      
+    if (currentError || !currentPost) {
+      console.error('現在の記事情報取得エラー:', currentError);
+      return { prev: null, next: null };
+    }
+    
+    // 前の記事（より新しい記事）を取得
+    const { data: prevData, error: prevError } = await supabase
+      .from('prompts')
+      .select(`
+        id,
+        title,
+        thumbnail_url,
+        created_at,
+        profiles:profiles(id, username, display_name, avatar_url)
+      `)
+      .gt('created_at', currentPost.created_at)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .single();
+      
+    // 次の記事（より古い記事）を取得
+    const { data: nextData, error: nextError } = await supabase
+      .from('prompts')
+      .select(`
+        id,
+        title,
+        thumbnail_url,
+        created_at,
+        profiles:profiles(id, username, display_name, avatar_url)
+      `)
+      .lt('created_at', currentPost.created_at)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+      
+    // いいね数を取得して結果を整形
+    const formatPost = async (post: any): Promise<PostItem | null> => {
+      if (!post) return null;
+      
+      const { count, error: likeError } = await supabase
+        .from('likes')
+        .select('*', { count: 'exact', head: true })
+        .eq('prompt_id', post.id);
+        
+      return {
+        id: post.id,
+        title: post.title || 'タイトルなし',
+        thumbnailUrl: post.thumbnail_url || '/images/default-thumbnail.svg',
+        user: {
+          name: post.profiles?.display_name || post.profiles?.username || '名無し',
+          avatarUrl: post.profiles?.avatar_url || '/images/default-avatar.svg',
+          userId: post.profiles?.id || '',
+        },
+        postedAt: new Date(post.created_at).toLocaleDateString('ja-JP'),
+        likeCount: count || 0,
+        status: 'normal' as 'normal'
+      };
+    };
+    
+    const prev = prevError ? null : await formatPost(prevData);
+    const next = nextError ? null : await formatPost(nextData);
+    
+    return { prev, next };
+  } catch (error) {
+    console.error('前後の記事取得中にエラーが発生しました:', error);
+    return { prev: null, next: null };
+  }
 };
 
 export default allPosts; 
