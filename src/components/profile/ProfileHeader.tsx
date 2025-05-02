@@ -69,7 +69,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => router.push('/settings')} className="cursor-pointer">
+                    <DropdownMenuItem onClick={() => router.push('/SettingsPage')} className="cursor-pointer">
                       <Settings className="mr-2 h-4 w-4" />
                       <span>アカウント設定</span>
                     </DropdownMenuItem>

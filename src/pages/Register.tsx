@@ -289,8 +289,8 @@ const Register = () => {
           </form>
           
           <div className="mt-4 text-sm text-center text-gray-500">
-            会員登録には、<Link href="/terms" className="text-gray-800 hover:underline">利用規約</Link>と
-            <Link href="/privacy" className="text-gray-800 hover:underline">プライバシーポリシー</Link>への同意が必要です。
+            会員登録には、<Link href="/Terms" className="text-gray-800 hover:underline">利用規約</Link>と
+            <Link href="/Privacy" className="text-gray-800 hover:underline">プライバシーポリシー</Link>への同意が必要です。
           </div>
           
           <div className="mt-6 pt-4 border-t border-gray-200 text-center">

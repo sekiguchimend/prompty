@@ -407,7 +407,7 @@ const DashboardPage: React.FC = () => {
                         <Eye className="h-10 w-10 text-gray-300 mx-auto mb-4" />
                         <p className="text-gray-500 mb-2">まだ投稿がありません</p>
                         <button 
-                          onClick={() => router.push('/create-prompt')}
+                          onClick={() => router.push('/CreatePost')}
                           className="mt-4 px-4 py-2 bg-black text-white rounded-md text-sm">
                           新しい投稿を作成する
                         </button>
@@ -561,7 +561,7 @@ const DashboardPage: React.FC = () => {
                   <p className="text-xs sm:text-sm text-gray-600 mb-2">
                     振込先口座が登録されていません。売上が発生した場合に振込を受け取るには、振込先口座の登録が必要です。
                   </p>
-                  <Link href="/settings?tab=payment">
+                  <Link href="/">
                     <span className="text-blue-500 text-xs sm:text-sm font-medium hover:underline inline-flex items-center cursor-pointer">
                       振込先口座を登録する
                       <ChevronRight className="h-3 w-3 ml-1" />

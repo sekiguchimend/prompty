@@ -233,15 +233,15 @@ export default function SetupProfile() {
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <Link href="/">
-          <Image
-                    src="https://qrxrulntwojimhhhnwqk.supabase.co/storage/v1/object/public/prompt-thumbnails//prompty_logo(1).png" 
+          <Image 
+                    src="https://qrxrulntwojimhhhnwqk.supabase.co/storage/v1/object/public/prompt-thumbnails/prompty_logo(1).png" 
                     alt="Prompty" 
                     className="object-contain rounded-sm"
-                    width={100}
+                    width={120}
                     height={40}
                     style={{
                       objectFit: 'contain',
-                      maxHeight: '30px',
+                      maxHeight: '40px',
                       width: 'auto'
                     }}
                     priority

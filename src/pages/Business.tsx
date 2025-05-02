@@ -310,9 +310,7 @@ const Business = () => {
                 ログインはこちら
               </Link>
               <div className="mt-4">
-                <Link href="/Register" className="text-prompty-primary hover:underline text-sm">
-                  登録でお困りの方
-                </Link>
+                
               </div>
             </div>
           </CardContent>

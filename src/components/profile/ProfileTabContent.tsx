@@ -88,7 +88,7 @@ const ProfileTabContent: React.FC<ProfileTabContentProps> = ({
         <div>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg font-bold">あなたのマガジン</h2>
-            <Button onClick={onCreateMagazine} className="px-4 py-2 text-sm h-9 rounded-full bg-black hover:bg-gray-800">
+            <Button className="px-4 py-2 text-sm h-9 rounded-full bg-black hover:bg-gray-800">
               <Plus className="h-4 w-4 mr-2" />
               新規マガジン
             </Button>
@@ -102,7 +102,7 @@ const ProfileTabContent: React.FC<ProfileTabContentProps> = ({
             <div className="text-center py-10">
               <BookOpen className="h-12 w-12 mx-auto mb-3 text-gray-300" />
               <p className="text-gray-500">まだマガジンがありません</p>
-              <Button onClick={onCreateMagazine} className="mt-4 px-4 py-2 text-sm h-9 rounded-full bg-black hover:bg-gray-800">
+              <Button className="mt-4 px-4 py-2 text-sm h-9 rounded-full bg-black hover:bg-gray-800">
                 最初のマガジンを作成
               </Button>
             </div>
