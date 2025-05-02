@@ -1,21 +1,251 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/button';
 import { Switch } from '../../components/ui/switch';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Loader2 } from 'lucide-react';
+import { useToast } from '../../hooks/use-toast';
+import { Skeleton } from '../../components/ui/skeleton';
+import { supabase } from '../../lib/supabaseClient';
 
-const AccountSettings: React.FC = () => {
-  const [isBusinessAccount, setIsBusinessAccount] = useState(false);
+// アカウント設定のインターフェース
+interface AccountSettings {
+  is_business_account: boolean;
+  invoice_registration_number: string | null;
+  social_connections: {
+    twitter: boolean;
+    google: boolean;
+    apple: boolean;
+  };
+  display_account_on_creator_page: boolean;
+  add_mention_when_shared: boolean;
+  allow_introduction_on_official_sns: boolean;
+  show_recommended_articles: boolean;
+  use_mincho_font: boolean;
+  accept_tip_payments: boolean;
+  allow_purchase_by_non_registered_users: boolean;
+  restrict_ai_learning: boolean;
+}
+
+// デフォルト設定
+const defaultSettings: AccountSettings = {
+  is_business_account: false,
+  invoice_registration_number: null,
+  social_connections: {
+    twitter: false,
+    google: false,
+    apple: false
+  },
+  display_account_on_creator_page: true,
+  add_mention_when_shared: true,
+  allow_introduction_on_official_sns: true,
+  show_recommended_articles: true,
+  use_mincho_font: false,
+  accept_tip_payments: true,
+  allow_purchase_by_non_registered_users: true,
+  restrict_ai_learning: false
+};
+
+const AccountSettingsComponent: React.FC = () => {
+  const [settings, setSettings] = useState<AccountSettings>(defaultSettings);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const { toast } = useToast();
   
   // アカウント情報（実際の実装ではAPIから取得）
-  const accountInfo = {
-    creatorName: 'しゅんや@勤勉的なアプリ運営',
-    noteId: 'rattt774',
-    email: 'sekiguchishunya0619@outlook.jp',
+  const [accountInfo, setAccountInfo] = useState({
+    creatorName: '',
+    noteId: '',
+    email: '',
+  });
+  
+  // ユーザー情報を取得
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setCurrentUser(session.user);
+        
+        // プロフィール情報を取得
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('username, display_name')
+          .eq('id', session.user.id)
+          .single();
+          
+        if (profileData) {
+          setAccountInfo(prev => ({
+            ...prev,
+            creatorName: profileData.display_name || '名前未設定',
+            noteId: profileData.username || '',
+            email: session.user.email || ''
+          }));
+        }
+      }
+    };
+    
+    fetchUser();
+  }, []);
+
+  // 設定を取得
+  useEffect(() => {
+    if (!currentUser) return;
+    
+    const fetchSettings = async () => {
+      setIsLoading(true);
+      
+      try {
+        // ユーザー設定を取得
+        const { data: settingsData, error: settingsError } = await supabase
+          .from('user_settings')
+          .select('account_settings')
+          .eq('user_id', currentUser.id)
+          .single();
+        
+        if (settingsError && settingsError.code !== 'PGRST116') { // 'PGRST116'は結果が見つからないエラー
+          throw settingsError;
+        }
+        
+        if (settingsData && settingsData.account_settings) {
+          setSettings(settingsData.account_settings);
+        } else {
+          // デフォルト設定
+          setSettings(defaultSettings);
+        }
+      } catch (error) {
+        console.error('設定の取得に失敗しました:', error);
+        toast({
+          title: 'エラー',
+          description: '設定の読み込みに失敗しました',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchSettings();
+  }, [currentUser, toast]);
+
+  // 設定の保存
+  const saveSettings = async () => {
+    if (!currentUser) {
+      toast({
+        title: 'エラー',
+        description: 'ログインが必要です',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setIsSaving(true);
+    
+    try {
+      // 既存の設定を取得
+      const { data: existingSettings, error: fetchError } = await supabase
+        .from('user_settings')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .single();
+      
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
+      }
+      
+      // upsertするデータを準備
+      const upsertData: Record<string, any> = {
+        user_id: currentUser.id,
+        account_settings: settings,
+        updated_at: new Date().toISOString(),
+      };
+      
+      // 既存の設定がある場合は他の設定も保持
+      if (existingSettings) {
+        upsertData.notification_settings = existingSettings.notification_settings;
+        upsertData.reaction_settings = existingSettings.reaction_settings;
+        upsertData.comment_settings = existingSettings.comment_settings;
+      }
+      
+      // user_settings テーブルにupsert
+      const { error } = await supabase
+        .from('user_settings')
+        .upsert(upsertData, {
+          onConflict: 'user_id',
+          ignoreDuplicates: false
+        });
+      
+      if (error) throw error;
+      
+      toast({
+        title: '設定を保存しました',
+        description: 'アカウント設定が更新されました',
+      });
+    } catch (error) {
+      console.error('設定の保存に失敗しました:', error);
+      toast({
+        title: 'エラー',
+        description: '設定の保存に失敗しました',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  // 設定の更新
+  const updateSetting = (key: keyof AccountSettings, value: any) => {
+    setSettings(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  // ソーシャル連携の更新
+  const updateSocialConnection = (platform: keyof AccountSettings['social_connections'], value: boolean) => {
+    setSettings(prev => ({
+      ...prev,
+      social_connections: {
+        ...prev.social_connections,
+        [platform]: value
+      }
+    }));
+  };
+  
+  if (!currentUser) {
+    return (
+      <div className="text-center py-8">
+        <p>設定を表示するにはログインが必要です。</p>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-xl font-bold mb-6">アカウント</h1>
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div>
-      <h1 className="text-xl font-bold mb-6">アカウント</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-xl font-bold">アカウント</h1>
+        <Button
+          onClick={saveSettings}
+          disabled={isSaving}
+          className="flex items-center"
+        >
+          {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          保存
+        </Button>
+      </div>
       
       <div className="space-y-6">
         {/* クリエイター名 */}
@@ -99,8 +329,8 @@ const AccountSettings: React.FC = () => {
               ビジネスでの機能強化に向けて準備を進めています。</div>
             </div>
             <Switch
-              checked={isBusinessAccount}
-              onCheckedChange={setIsBusinessAccount}
+              checked={settings.is_business_account}
+              onCheckedChange={(value) => updateSetting('is_business_account', value)}
             />
           </div>
         </div>
@@ -110,7 +340,7 @@ const AccountSettings: React.FC = () => {
           <div className="flex justify-between items-center">
             <div>
               <label className="block text-sm font-medium text-gray-700">インボイス発行事業者の登録番号</label>
-              <div className="mt-1 text-sm">未登録</div>
+              <div className="mt-1 text-sm">{settings.invoice_registration_number || '未登録'}</div>
             </div>
             <Button 
               variant="ghost" 
@@ -139,8 +369,9 @@ const AccountSettings: React.FC = () => {
               variant="secondary" 
               size="sm" 
               className="bg-gray-900 text-white hover:bg-gray-800"
+              onClick={() => updateSocialConnection('twitter', true)}
             >
-              連携
+              {settings.social_connections.twitter ? '連携済み' : '連携'}
             </Button>
           </div>
           
@@ -159,8 +390,9 @@ const AccountSettings: React.FC = () => {
               variant="secondary" 
               size="sm" 
               className="bg-gray-900 text-white hover:bg-gray-800"
+              onClick={() => updateSocialConnection('google', true)}
             >
-              連携
+              {settings.social_connections.google ? '連携済み' : '連携'}
             </Button>
           </div>
           
@@ -178,8 +410,9 @@ const AccountSettings: React.FC = () => {
               variant="secondary" 
               size="sm" 
               className="bg-gray-900 text-white hover:bg-gray-800"
+              onClick={() => updateSocialConnection('apple', true)}
             >
-              連携
+              {settings.social_connections.apple ? '連携済み' : '連携'}
             </Button>
           </div>
           
@@ -187,12 +420,18 @@ const AccountSettings: React.FC = () => {
           <div className="mt-8 space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-sm">クリエイターページにアカウントを表示</span>
-              <Switch defaultChecked />
+              <Switch 
+                checked={settings.display_account_on_creator_page}
+                onCheckedChange={(value) => updateSetting('display_account_on_creator_page', value)}
+              />
             </div>
             
             <div className="flex justify-between items-center">
               <span className="text-sm">自分の記事がXでシェアされる際にメンションをつける</span>
-              <Switch defaultChecked />
+              <Switch 
+                checked={settings.add_mention_when_shared}
+                onCheckedChange={(value) => updateSetting('add_mention_when_shared', value)}
+              />
             </div>
           </div>
         </div>
@@ -209,7 +448,10 @@ const AccountSettings: React.FC = () => {
                  promptyが運営するXのSNSで紹介したり、SmartNewsやLINE NEWSなどの外部サイトへ転載したり、出版社に紹介したりすることがあります。
                 </p>
               </div>
-              <Switch defaultChecked />
+              <Switch 
+                checked={settings.allow_introduction_on_official_sns}
+                onCheckedChange={(value) => updateSetting('allow_introduction_on_official_sns', value)}
+              />
             </div>
             
             <div className="flex justify-between items-center">
@@ -219,12 +461,18 @@ const AccountSettings: React.FC = () => {
                   他のクリエイターとあなたの記事と相互に、読者が読む可能性が高まります。
                 </p>
               </div>
-              <Switch defaultChecked />
+              <Switch 
+                checked={settings.show_recommended_articles}
+                onCheckedChange={(value) => updateSetting('show_recommended_articles', value)}
+              />
             </div>
             
             <div className="flex justify-between items-center">
               <span className="text-sm">記事を明朝体で表示する</span>
-              <Switch />
+              <Switch 
+                checked={settings.use_mincho_font}
+                onCheckedChange={(value) => updateSetting('use_mincho_font', value)}
+              />
             </div>
             
             <div className="flex justify-between items-center">
@@ -234,12 +482,18 @@ const AccountSettings: React.FC = () => {
                   prompty proを含め、すべての支払いを受け付けることができます。
                 </p>
               </div>
-              <Switch defaultChecked />
+              <Switch 
+                checked={settings.accept_tip_payments}
+                onCheckedChange={(value) => updateSetting('accept_tip_payments', value)}
+              />
             </div>
             
             <div className="flex justify-between items-center">
               <span className="text-sm">prompty未登録ユーザーの購入を許可する</span>
-              <Switch defaultChecked />
+              <Switch 
+                checked={settings.allow_purchase_by_non_registered_users}
+                onCheckedChange={(value) => updateSetting('allow_purchase_by_non_registered_users', value)}
+              />
             </div>
             
             <div className="flex justify-between items-center">
@@ -249,20 +503,16 @@ const AccountSettings: React.FC = () => {
                   投稿したコンテンツを生成AIの学習データとして使用しないよう制限を設定します。
                 </p>
               </div>
-              <Switch />
+              <Switch 
+                checked={settings.restrict_ai_learning}
+                onCheckedChange={(value) => updateSetting('restrict_ai_learning', value)}
+              />
             </div>
           </div>
-        </div>
-        
-        {/* 退会手続きへボタン */}
-        <div className="pt-4">
-          <Button variant="link" className="text-gray-500 hover:text-gray-700 p-0">
-            退会手続きへ
-          </Button>
         </div>
       </div>
     </div>
   );
 };
 
-export default AccountSettings; 
+export default AccountSettingsComponent; 

@@ -7,22 +7,48 @@ import { Checkbox } from '../ui/checkbox';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
 import { Skeleton } from '../ui/skeleton';
+import { Loader2 } from 'lucide-react';
+import { Badge } from '../ui/badge';
 
-type CommentSettings = {
+// コメント設定のインターフェース
+interface CommentSettings {
+  allow_comments: boolean;
+  comment_notification: boolean;
+  require_approval: boolean;
+  allow_anonymous_comments: boolean;
   auto_hide_reported: boolean;
   hidden_comments: string[];
+}
+
+// デフォルト設定
+const defaultSettings: CommentSettings = {
+  allow_comments: true,
+  comment_notification: true,
+  require_approval: false,
+  allow_anonymous_comments: true,
+  auto_hide_reported: false,
+  hidden_comments: []
 };
 
-const CommentSettings: React.FC = () => {
-  const [settings, setSettings] = useState<CommentSettings>({
-    auto_hide_reported: false,
-    hidden_comments: [],
-  });
+const CommentSettingsComponent: React.FC = () => {
+  const [settings, setSettings] = useState<CommentSettings>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [reportedComments, setReportedComments] = useState<any[]>([]);
   const { toast } = useToast();
+
+  // 理由を日本語に変換する関数
+  const translateReason = (reason: string): string => {
+    const reasonMap: Record<string, string> = {
+      'inappropriate': '不適切',
+      'spam': 'スパム',
+      'harassment': 'ハラスメント',
+      'misinformation': '誤情報',
+      'other': 'その他'
+    };
+    return reasonMap[reason] || reason;
+  };
 
   // ユーザー情報を取得
   useEffect(() => {
@@ -47,7 +73,7 @@ const CommentSettings: React.FC = () => {
         // ユーザー設定を取得
         const { data: settingsData, error: settingsError } = await supabase
           .from('user_settings')
-          .select('*')
+          .select('comment_settings')
           .eq('user_id', currentUser.id)
           .single();
         
@@ -55,17 +81,16 @@ const CommentSettings: React.FC = () => {
           throw settingsError;
         }
         
-        if (settingsData) {
-          setSettings({
-            auto_hide_reported: settingsData.auto_hide_reported || false,
-            hidden_comments: settingsData.hidden_comments || [],
-          });
+        if (settingsData && settingsData.comment_settings) {
+          // 取得した設定データにhidden_commentsが含まれているか確認
+          const loadedSettings = {
+            ...settingsData.comment_settings,
+            hidden_comments: settingsData.comment_settings.hidden_comments || []
+          };
+          setSettings(loadedSettings);
         } else {
           // デフォルト設定
-          setSettings({
-            auto_hide_reported: false,
-            hidden_comments: [],
-          });
+          setSettings(defaultSettings);
         }
         
         // ローカルストレージの非表示コメントを読み込んで統合
@@ -86,29 +111,59 @@ const CommentSettings: React.FC = () => {
         
         // ユーザーが報告したコメントを取得
         const { data: reportedData, error: reportedError } = await supabase
-          .from('comment_reports')
+          .from('reports')
           .select(`
             id,
-            comment_id,
+            target_id,
             prompt_id,
             reason,
-            created_at,
-            comments:comment_id(
-              id,
-              content,
-              created_at,
-              user_id,
-              profiles:user_id(username, display_name, avatar_url)
-            )
+            created_at
           `)
           .eq('reporter_id', currentUser.id)
+          .eq('target_type', 'comment')
           .order('created_at', { ascending: false });
         
         if (reportedError) {
           throw reportedError;
         }
         
-        setReportedComments(reportedData || []);
+        // 報告されたコメントの詳細情報を個別に取得
+        let commentDetails: any[] = [];
+        if (reportedData && reportedData.length > 0) {
+          // target_idの配列を作成
+          const commentIds = reportedData.map(report => report.target_id);
+          
+          // コメント情報を取得
+          const { data: commentsData, error: commentsError } = await supabase
+            .from('comments')
+            .select(`
+              id,
+              content,
+              created_at,
+              user_id,
+              profiles:user_id(username, display_name, avatar_url)
+            `)
+            .in('id', commentIds);
+          
+          if (commentsError) {
+            console.error('コメント情報の取得に失敗しました:', commentsError);
+          }
+          
+          // 報告データとコメントデータを結合
+          if (commentsData) {
+            commentDetails = reportedData.map(report => {
+              const commentData = commentsData.find(comment => comment.id === report.target_id);
+              return {
+                ...report,
+                comments: commentData || null
+              };
+            });
+          } else {
+            commentDetails = reportedData;
+          }
+        }
+        
+        setReportedComments(commentDetails);
         
       } catch (error) {
         console.error('設定の取得に失敗しました:', error);
@@ -139,14 +194,37 @@ const CommentSettings: React.FC = () => {
     setIsSaving(true);
     
     try {
+      // 既存の設定を取得
+      const { data: existingSettings, error: fetchError } = await supabase
+        .from('user_settings')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .single();
+      
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
+      }
+      
+      // upsertするデータを準備
+      const upsertData: Record<string, any> = {
+        user_id: currentUser.id,
+        comment_settings: settings,
+        updated_at: new Date().toISOString(),
+      };
+      
+      // 既存の設定がある場合は他の設定も保持
+      if (existingSettings) {
+        upsertData.notification_settings = existingSettings.notification_settings;
+        upsertData.account_settings = existingSettings.account_settings;
+        upsertData.reaction_settings = existingSettings.reaction_settings;
+      }
+      
       // user_settings テーブルにupsert（存在すれば更新、なければ挿入）
       const { error } = await supabase
         .from('user_settings')
-        .upsert({
-          user_id: currentUser.id,
-          auto_hide_reported: settings.auto_hide_reported,
-          hidden_comments: settings.hidden_comments,
-          updated_at: new Date().toISOString(),
+        .upsert(upsertData, {
+          onConflict: 'user_id',
+          ignoreDuplicates: false
         });
       
       if (error) throw error;
@@ -170,11 +248,19 @@ const CommentSettings: React.FC = () => {
     }
   };
 
+  // 設定の更新
+  const updateSetting = (key: keyof CommentSettings, value: any) => {
+    setSettings(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
   // 非表示コメントの削除（表示に戻す）
   const removeHiddenComment = (commentId: string) => {
     setSettings(prev => ({
       ...prev,
-      hidden_comments: prev.hidden_comments.filter(id => id !== commentId),
+      hidden_comments: (prev.hidden_comments || []).filter(id => id !== commentId),
     }));
   };
 
@@ -194,147 +280,204 @@ const CommentSettings: React.FC = () => {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <div>
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
         <h3 className="text-lg font-medium">コメント設定</h3>
-        <p className="text-sm text-gray-500">
-          コメントの表示設定と報告したコメントを管理します
-        </p>
-      </div>
-      
-      <Separator />
-      
-      {isLoading ? (
         <div className="space-y-4">
           <Skeleton className="h-8 w-full" />
           <Skeleton className="h-8 w-full" />
           <Skeleton className="h-8 w-full" />
         </div>
-      ) : (
-        <>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="text-base">自動非表示</Label>
-                <p className="text-sm text-gray-500">
-                  報告したコメントを自動的に非表示にします
-                </p>
-              </div>
-              <Switch
-                checked={settings.auto_hide_reported}
-                onCheckedChange={(checked) => 
-                  setSettings(prev => ({ ...prev, auto_hide_reported: checked }))
-                }
-              />
-            </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-medium">コメント設定</h3>
+          <p className="text-sm text-gray-500">
+            コメントの表示設定と報告したコメントを管理します
+          </p>
+        </div>
+        <Button
+          onClick={saveSettings}
+          disabled={isSaving}
+          className="flex items-center"
+        >
+          {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          保存
+        </Button>
+      </div>
+      
+      <Separator />
+      
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label className="text-base">コメントを許可する</Label>
+            <p className="text-sm text-gray-500">
+              あなたの記事へのコメントを許可します
+            </p>
           </div>
-          
-          <Separator />
-          
-          <div>
-            <h4 className="text-base font-medium mb-4">非表示コメント管理</h4>
-            
-            {settings.hidden_comments.length > 0 ? (
-              <>
-                <div className="space-y-3 max-h-80 overflow-y-auto p-2">
-                  {settings.hidden_comments.map(commentId => (
-                    <div key={commentId} className="flex items-center justify-between p-2 border border-gray-200 rounded-md bg-gray-50">
-                      <span className="text-sm truncate max-w-md">
-                        ID: {commentId}
-                      </span>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        onClick={() => removeHiddenComment(commentId)}
-                      >
-                        表示する
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="mt-4 text-right">
+          <Switch
+            checked={settings.allow_comments}
+            onCheckedChange={(checked) => updateSetting('allow_comments', checked)}
+          />
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label className="text-base">コメント通知</Label>
+            <p className="text-sm text-gray-500">
+              新しいコメントが投稿されたときに通知を受け取ります
+            </p>
+          </div>
+          <Switch
+            checked={settings.comment_notification}
+            onCheckedChange={(checked) => updateSetting('comment_notification', checked)}
+          />
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label className="text-base">コメント承認制</Label>
+            <p className="text-sm text-gray-500">
+              コメントがあなたの承認後に表示されるようにします
+            </p>
+          </div>
+          <Switch
+            checked={settings.require_approval}
+            onCheckedChange={(checked) => updateSetting('require_approval', checked)}
+          />
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label className="text-base">匿名コメントを許可</Label>
+            <p className="text-sm text-gray-500">
+              ログインしていないユーザーからのコメントを許可します
+            </p>
+          </div>
+          <Switch
+            checked={settings.allow_anonymous_comments}
+            onCheckedChange={(checked) => updateSetting('allow_anonymous_comments', checked)}
+          />
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label className="text-base">自動非表示</Label>
+            <p className="text-sm text-gray-500">
+              報告したコメントを自動的に非表示にします
+            </p>
+          </div>
+          <Switch
+            checked={settings.auto_hide_reported}
+            onCheckedChange={(checked) => updateSetting('auto_hide_reported', checked)}
+          />
+        </div>
+      </div>
+      
+      <Separator />
+      
+      <div>
+        <h4 className="text-base font-medium mb-4">非表示コメント管理</h4>
+        
+        {settings.hidden_comments?.length > 0 ? (
+          <>
+            <div className="space-y-3 max-h-80 overflow-y-auto p-2">
+              {settings.hidden_comments.map(commentId => (
+                <div key={commentId} className="flex items-center justify-between p-2 border border-gray-200 rounded-md bg-gray-50">
+                  <span className="text-sm truncate max-w-md">
+                    ID: {commentId}
+                  </span>
                   <Button 
-                    variant="outline" 
                     size="sm" 
-                    onClick={clearAllHiddenComments}
+                    variant="ghost" 
+                    onClick={() => removeHiddenComment(commentId)}
                   >
-                    すべて表示する
+                    表示に戻す
                   </Button>
                 </div>
-              </>
-            ) : (
-              <p className="text-sm text-gray-500 py-2">
-                非表示にしたコメントはありません
-              </p>
-            )}
-          </div>
-          
-          <Separator />
-          
-          <div>
-            <h4 className="text-base font-medium mb-4">報告済みコメント</h4>
+              ))}
+            </div>
             
-            {reportedComments.length > 0 ? (
-              <div className="space-y-3 max-h-80 overflow-y-auto p-2">
-                {reportedComments.map(report => (
-                  <div key={report.id} className="p-3 border border-gray-200 rounded-md">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <p className="text-sm font-medium">
-                          {report.comments?.profiles?.display_name || report.comments?.profiles?.username || '削除されたユーザー'}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(report.created_at).toLocaleDateString('ja-JP')}に報告 - 理由: {report.reason}
-                        </p>
-                      </div>
+            <div className="mt-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={clearAllHiddenComments}
+              >
+                すべて表示に戻す
+              </Button>
+            </div>
+          </>
+        ) : (
+          <p className="text-sm text-gray-500 italic">
+            非表示にしたコメントはありません
+          </p>
+        )}
+      </div>
+      
+      <Separator />
+      
+      <div>
+        <h4 className="text-base font-medium mb-4">報告したコメント</h4>
+        
+        {reportedComments.length > 0 ? (
+          <div className="space-y-4 max-h-80 overflow-y-auto p-2">
+            {reportedComments.map(report => (
+              <div key={report.id} className="p-3 border rounded-md bg-gray-50 mb-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="text-sm font-medium">
+                      {report.comments?.profiles?.display_name || report.comments?.profiles?.username || '不明なユーザー'}
                     </div>
-                    <p className="text-sm line-clamp-2">
-                      {report.comments?.content || '[コメントは削除されました]'}
-                    </p>
-                    <div className="mt-2 flex justify-end">
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        onClick={() => {
-                          // 非表示リストにコメントIDがなければ追加
-                          if (!settings.hidden_comments.includes(report.comment_id)) {
-                            setSettings(prev => ({
-                              ...prev,
-                              hidden_comments: [...prev.hidden_comments, report.comment_id],
-                            }));
-                          } else {
-                            // すでにリストにある場合は削除
-                            removeHiddenComment(report.comment_id);
-                          }
-                        }}
-                      >
-                        {settings.hidden_comments.includes(report.comment_id) ? '表示する' : '非表示にする'}
-                      </Button>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {new Date(report.created_at).toLocaleString('ja-JP')}
                     </div>
                   </div>
-                ))}
+                  <Badge variant="outline" className="text-xs">
+                    {translateReason(report.reason)}
+                  </Badge>
+                </div>
+                <div className="mt-3 p-2 bg-white rounded border text-sm">
+                  {report.comments?.content || '（コメントは削除されました）'}
+                </div>
+                
+                <div className="mt-2 flex justify-end">
+                  <Checkbox 
+                    id={`hide-${report.target_id}`}
+                    checked={settings.hidden_comments?.includes(report.target_id)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSettings(prev => ({
+                          ...prev,
+                          hidden_comments: [...(prev.hidden_comments || []), report.target_id]
+                        }));
+                      } else {
+                        removeHiddenComment(report.target_id);
+                      }
+                    }}
+                  />
+                  <Label htmlFor={`hide-${report.target_id}`} className="ml-2 text-sm cursor-pointer">
+                    非表示にする
+                  </Label>
+                </div>
               </div>
-            ) : (
-              <p className="text-sm text-gray-500 py-2">
-                報告したコメントはありません
-              </p>
-            )}
+            ))}
           </div>
-          
-          <div className="pt-4 text-right">
-            <Button 
-              onClick={saveSettings} 
-              disabled={isSaving}
-            >
-              {isSaving ? '保存中...' : '設定を保存'}
-            </Button>
-          </div>
-        </>
-      )}
+        ) : (
+          <p className="text-sm text-gray-500 italic">
+            報告したコメントはありません
+          </p>
+        )}
+      </div>
     </div>
   );
 };
 
-export default CommentSettings; 
+export default CommentSettingsComponent; 

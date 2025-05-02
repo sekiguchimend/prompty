@@ -82,6 +82,20 @@
   - リアクション設定はJSON形式で保存（reaction_settings列）
   - ログインユーザーのみ設定可能
 
+### src/components/settings/AccountSettings.tsx
+- ユーザーのアカウント設定を管理するコンポーネント
+- クリエイター名、プロンプティID、メールアドレス、パスワード管理
+- 法人/個人アカウント設定、インボイス発行事業者登録番号
+- ソーシャルアカウント連携（Twitter/X、Google、Apple）
+- 記事表示や販売に関する詳細設定
+- データベース連携機能：
+  - user_settingsテーブルからアカウント設定を読み込み
+  - profilesテーブルからアカウント基本情報を取得
+  - 設定変更をリアルタイムで追跡
+  - 設定保存ボタンでデータベースに更新
+  - アカウント設定はJSON形式で保存（account_settings列）
+  - ログインユーザーのみ設定可能
+
 ### src/components/settings/CommentSettings.tsx
 - コメント表示・非表示設定を管理するコンポーネント
 - 報告したコメントの自動非表示設定

@@ -123,13 +123,37 @@ const NotificationSettingsComponent: React.FC = () => {
     setIsSaving(true);
     
     try {
-      // user_settings テーブルにupsert（存在すれば更新、なければ挿入）
+      // 既存の設定を取得
+      const { data: existingSettings, error: fetchError } = await supabase
+        .from('user_settings')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .single();
+      
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
+      }
+      
+      // upsertするデータを準備
+      const upsertData: Record<string, any> = {
+        user_id: currentUser.id,
+        notification_settings: settings,
+        updated_at: new Date().toISOString(),
+      };
+      
+      // 既存の設定がある場合は他の設定も保持
+      if (existingSettings) {
+        upsertData.account_settings = existingSettings.account_settings;
+        upsertData.reaction_settings = existingSettings.reaction_settings;
+        upsertData.comment_settings = existingSettings.comment_settings;
+      }
+      
+      // user_settings テーブルにupsert
       const { error } = await supabase
         .from('user_settings')
-        .upsert({
-          user_id: currentUser.id,
-          notification_settings: settings,
-          updated_at: new Date().toISOString(),
+        .upsert(upsertData, {
+          onConflict: 'user_id',
+          ignoreDuplicates: false
         });
       
       if (error) throw error;
