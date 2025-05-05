@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
+import React, { useState, useEffect, createContext, useContext, useCallback, useMemo } from 'react';
 import { Heart, Bookmark, BookmarkPlus, MoreVertical } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '../hooks/use-toast';
@@ -130,6 +130,27 @@ const useIsMobile = () => {
 // FeatureSectionContextを追加
 const FeatureSectionContext = createContext<boolean>(false);
 
+// 安全な画像URLを取得する関数
+const getSafeImageUrl = (url: string): string => {
+  // デフォルト画像のURL
+  const defaultImage = '/images/default-thumbnail.svg';
+  
+  // URLがない場合はデフォルト画像を返す
+  if (!url) return defaultImage;
+  
+  // ローカルの画像の場合はそのまま返す
+  if (url.startsWith('/')) return url;
+  
+  // Supabaseの画像の場合は常にデフォルト画像を返す（エラー回避のため）
+  if (url.includes('supabase.co')) {
+    console.log('Supabaseの画像URL検出、デフォルト画像に置換:', url);
+    return defaultImage;
+  }
+  
+  // その他の画像URLはそのまま返す
+  return url;
+};
+
 const PromptCard: React.FC<PromptCardProps> = ({
   id,
   title,
@@ -153,12 +174,17 @@ const PromptCard: React.FC<PromptCardProps> = ({
   const isMobile = useIsMobile();
   const isFeatureSection = useContext(FeatureSectionContext);
   
-  const { toast } = useToast();
-  const { user: currentUser, isLoading } = useAuth();
-  
   // URLがない場合のプレースホルダー
   const defaultThumbnail = '/images/default-thumbnail.svg';
-  const imageUrl = thumbnailUrl || defaultThumbnail;
+  
+  // 常に安全なURLを使用（Supabaseのエラー回避）
+  const imageUrl = getSafeImageUrl(thumbnailUrl);
+  
+  // 画像読み込みエラー時のフォールバック設定用の状態
+  const [imageError, setImageError] = useState(false);
+  
+  const { toast } = useToast();
+  const { user: currentUser, isLoading } = useAuth();
   
   // IDはそのまま使う
   const promptId = id;
@@ -430,7 +456,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
         <div className="flex-1 pr-3">
           <h3 className="text-base font-medium line-clamp-2 mb-1">
             <Link href={`/prompts/${id}`} passHref legacyBehavior>
-              <span className="cursor-pointer hover:text-blue-600">{title}</span>
+              <a className="cursor-pointer hover:text-blue-600">{title}</a>
             </Link>
           </h3>
           
@@ -462,9 +488,18 @@ const PromptCard: React.FC<PromptCardProps> = ({
         
         {/* カード右側：サムネイル画像 */}
         <div className="w-20 h-16 flex-shrink-0">
-          <Link href={`/prompts/${id}`} passHref legacyBehavior>
-            <div className="w-full h-full rounded overflow-hidden">
-              <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
+          <Link href={`/prompts/${id}`} passHref legacyBehavior prefetch={true}>
+            <div className="w-full h-full rounded overflow-hidden relative">
+              <img
+                src={imageUrl}
+                alt={title}
+                className="w-full h-full object-cover"
+                loading="lazy"
+                onError={(e) => {
+                  console.log('画像読み込みエラー、デフォルト画像に置換:', thumbnailUrl);
+                  e.currentTarget.src = defaultThumbnail;
+                }}
+              />
             </div>
           </Link>
         </div>
@@ -477,14 +512,15 @@ const PromptCard: React.FC<PromptCardProps> = ({
     <div className="relative group h-full">
       <div className="cursor-pointer bg-white border border-gray-100 rounded-lg shadow-sm hover:shadow-md transition duration-200 h-full overflow-hidden flex flex-col">
         <div className="relative pt-[56.25%] bg-gray-50">
-          <Link href={`/prompts/${id}`} passHref legacyBehavior>
+          <Link href={`/prompts/${id}`} passHref legacyBehavior prefetch={true}>
             <div className="absolute inset-0">
               <img
                 src={imageUrl}
                 alt={title}
                 className="w-full h-full object-cover"
+                loading="lazy"
                 onError={(e) => {
-                  // 画像読み込みエラー時の代替画像
+                  console.log('画像読み込みエラー、デフォルト画像に置換:', thumbnailUrl);
                   e.currentTarget.src = defaultThumbnail;
                 }}
               />
@@ -494,9 +530,13 @@ const PromptCard: React.FC<PromptCardProps> = ({
 
         <div className="flex flex-col p-2 flex-1">
           <div className="flex justify-between items-start mb-2">
-            <div className={`line-clamp-2 text-gray-700 hover:text-prompty-primary flex-1 mr-2 h-12 overflow-hidden ${notoSansJP.className}`} style={{ fontWeight: 700 }}>
-              {title}
-            </div>
+            <Link href={`/prompts/${id}`} passHref legacyBehavior>
+              <a className="flex-1 mr-2">
+                <div className={`line-clamp-2 text-gray-700 hover:text-prompty-primary h-12 overflow-hidden cursor-pointer ${notoSansJP.className}`} style={{ fontWeight: 700 }}>
+                  {title}
+                </div>
+              </a>
+            </Link>
             
             {/* 三点メニュー */}
             <div className="relative">
@@ -603,6 +643,32 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   const scrollContainerRef = React.useRef<HTMLDivElement>(null); // スクロールコンテナへの参照を追加
   const [canScrollLeft, setCanScrollLeft] = useState(false); // 左スクロール可能かどうか
   const [canScrollRight, setCanScrollRight] = useState(false); // 右スクロール可能かどうか
+  
+  // 画面に表示されたときに読み込むための参照
+  const gridRef = React.useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  
+  // インターセクションオブザーバーを使用して、コンポーネントが表示されたときにisVisibleをtrueに設定
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          // 一度表示されたら監視を停止
+          if (gridRef.current) observer.unobserve(gridRef.current);
+        }
+      },
+      { threshold: 0.1 } // 10%表示されたら発火
+    );
+    
+    if (gridRef.current) {
+      observer.observe(gridRef.current);
+    }
+    
+    return () => {
+      if (gridRef.current) observer.unobserve(gridRef.current);
+    };
+  }, []);
   
   // スクロール状態を確認する関数
   const checkScrollability = useCallback(() => {
@@ -748,7 +814,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   
   return (
     <FeatureSectionContext.Provider value={isFeatureSection}>
-      <div className="relative">
+      <div className="relative" ref={gridRef}>
         {/* 横スクロール用の左矢印ボタン - 左にスクロール可能な場合のみ表示 */}
         {horizontalScroll && !isMobile && canScrollLeft && (
           <button 

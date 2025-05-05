@@ -11,7 +11,13 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'prompty-zeta.vercel.app',
       },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        pathname: '/**',
+      },
     ],
+    unoptimized: false,
   },
   assetPrefix: '',
   basePath: '',
