@@ -29,6 +29,24 @@
 - Stripeから直接呼び出される
 - Bodyパーシングを無効化し、署名検証を実施
 
+## 有料記事Stripe連携実装
+
+### supabase/functions/handle_prompts_insert/index.ts
+- 有料記事投稿時にStripe ProductとPriceを生成するEdge Function
+- 記事IDを受け取り、対応するProductとPriceを作成
+- Direct Chargesモデルでプロンプト作者のStripeアカウントに紐づく商品として登録
+- promptsテーブルのstripe_product_idとstripe_price_idを更新
+
+### src/pages/api/proxy/stripe-sync.ts
+- Edge FunctionのURLを隠蔽するためのプロキシAPI
+- クライアントからの記事ID情報を受け取りEdge Functionに転送
+- セキュリティのためのMiddlewareとして機能
+
+### supabase/migrations/20240507_add_stripe_columns_to_prompts.sql
+- promptsテーブルにStripe連携用カラムを追加するマイグレーション
+- stripe_product_id, stripe_price_id, stripe_errorカラムの追加
+- 有料投稿時のRLSポリシー（Stripeアカウント必須）設定
+
 ## フロントエンド実装
 
 ### src/components/settings/StripeConnectSection.tsx

@@ -565,7 +565,7 @@ const CreatePost = () => {
     console.log('投稿処理を開始します:', {
       thumbnail: projectSettings.thumbnail ? `存在します(${projectSettings.thumbnail.length}文字)` : 'なし',
       thumbnailFile: thumbnailFile ? `存在します(${thumbnailFile.name})` : 'なし',
-      prompts: prompts.length
+      prompts: prompts.length 
     });
     
     if (prompts.length === 0) {
@@ -827,6 +827,46 @@ const CreatePost = () => {
       if (prompts.length > 1) {
         // 追加のプロンプトを関連付ける処理
         // 実装方法はバックエンドAPIの設計に依存します
+      }
+      
+      // 有料記事の場合はStripe連携処理を実行
+      if (projectSettings.pricingType === "paid" && promptId) {
+        try {
+          toast({
+            title: "処理中",
+            description: "Stripe商品情報を生成中...",
+            variant: "default",
+          });
+          
+          // Stripe-syncAPIを呼び出し
+          const stripeResponse = await fetch('/api/proxy/stripe-sync', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ record: { id: promptId } }),
+          });
+          
+          if (!stripeResponse.ok) {
+            console.warn('Stripe連携警告:', await stripeResponse.text());
+            // 警告を表示するが、メイン処理は続行
+            toast({
+              title: "注意",
+              description: "Stripe商品情報の生成に問題が発生しましたが、記事は投稿されました",
+              variant: "destructive",
+            });
+          } else {
+            console.log('Stripe連携成功:', await stripeResponse.text());
+          }
+        } catch (stripeError) {
+          console.error('Stripe連携エラー:', stripeError);
+          // 警告を表示するが、メイン処理は続行
+          toast({
+            title: "注意",
+            description: "Stripe連携処理でエラーが発生しましたが、記事は投稿されました",
+            variant: "destructive",
+          });
+        }
       }
       
       toast({

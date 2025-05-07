@@ -16,13 +16,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 
-  if (!process.env.NEXT_PUBLIC_URL) {
-    console.error('NEXT_PUBLIC_URLが設定されていません');
-    return res.status(500).json({ 
-      error: 'リダイレクトURLが設定されていません',
-      message: 'サーバー側の設定に問題があります。管理者に連絡してください。'
-    });
-  }
+  // ベースURLを設定
+  // 環境変数からベースURLを取得するか、リクエストのOriginヘッダーから推測
+  const baseUrl = process.env.NEXT_PUBLIC_URL || 
+                 (req.headers.origin || 'http://localhost:3000');
 
   try {
     const { accountId } = req.body;
@@ -33,8 +30,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // アカウントリンク作成
     const link = await stripe.accountLinks.create({
       account: accountId,
-      refresh_url: `${process.env.NEXT_PUBLIC_URL}/onboard?refresh=true`,
-      return_url: `${process.env.NEXT_PUBLIC_URL}/onboard?completed=true`,
+      refresh_url: `${baseUrl}/onboard?refresh=true`,
+      return_url: `${baseUrl}/onboard?completed=true`,
       type: 'account_onboarding',
     });
 

@@ -6,6 +6,7 @@
   - [ ] STRIPE_SECRET_KEY (秘密鍵を設定)
   - [ ] NEXT_PUBLIC_URL (アプリケーションのURL)
   - [ ] STRIPE_WEBHOOK_SECRET (Webhookの検証用)
+  - [ ] SUPABASE_FUNC_URL (Edge Function用のURL)
 
 ## Supabaseテーブル設定
 - [ ] profilesテーブルにstripe_account_idカラムを追加
@@ -25,13 +26,53 @@
 - [x] Stripeアカウント接続コンポーネント (src/components/settings/StripeConnectSection.tsx)
 - [x] 決済テストフォームコンポーネント (src/components/settings/PaymentTestForm.tsx)
 - [x] アカウント設定ページへの統合 (src/components/settings/AccountSettings.tsx)
+- [x] オンボーディング完了ページ (src/pages/onboard.tsx)
 
 ## エラーハンドリング改善
 - [x] APIエンドポイントの環境変数チェック追加
 - [x] Stripeエラーの詳細な分類と表示
 - [x] フロントエンドでのエラー表示改善
 
+## ドキュメント
+- [x] Webhook設定ガイドの作成 (stripe-webhook-設定ガイド.md)
+
 ## テスト
 - [ ] 環境変数の設定確認
 - [ ] 各APIエンドポイントのテスト
 - [ ] フロントエンド動作確認
+
+## 有料記事投稿Stripe連携機能
+- [x] promptsテーブルにStripe連携用のカラム追加
+  - [x] stripe_product_id
+  - [x] stripe_price_id
+  - [x] stripe_error
+- [x] Edge Function作成 (supabase/functions/handle_prompts_insert/)
+  - [x] Stripe Product・Price生成処理の実装
+  - [x] promptsテーブル更新処理の実装
+- [x] APIプロキシエンドポイント作成 (src/pages/api/proxy/stripe-sync.ts)
+- [x] CreatePostページ修正 (記事投稿後のStripe連携処理追加)
+- [x] RLSポリシー設定 (有料投稿時のStripeアカウント必須)
+
+## Supabase Edge Function実装ノート
+
+Edge Functionをデプロイする際は以下の環境変数が必要です：
+
+1. **Supabase CLI**を使用してデプロイする
+```bash
+supabase functions deploy handle_prompts_insert
+```
+
+2. **Supabase Project Dashboard**で以下の環境変数を設定する
+- STRIPE_SECRET_KEY: Stripeの秘密鍵
+- SUPABASE_URL: プロジェクトのURL
+- SUPABASE_SERVICE_ROLE_KEY: サービスロールキー（RLSバイパス用）
+
+3. **Next.js**に必要な環境変数
+- SUPABASE_FUNC_URL: Edge FunctionのURL（形式：https://<project-ref>.supabase.co/functions/v1）
+
+## 注意事項
+
+1. Edge Functionデプロイ後、実際の投稿が保存されるまでStripe商品情報は生成されません。
+2. 有料記事の場合、投稿者はStripeアカウント連携が必須です。
+3. RLSポリシーにより、Stripeアカウント未連携のユーザーは有料記事を投稿できません。
+4. Stripe連携エラーが発生した場合は、stripe_errorカラムにエラーメッセージが保存されます。
