@@ -838,6 +838,8 @@ const CreatePost = () => {
             variant: "default",
           });
           
+          console.log('Stripe連携処理開始:', promptId);
+          
           // Stripe-syncAPIを呼び出し
           const stripeResponse = await fetch('/api/proxy/stripe-sync', {
             method: 'POST',
@@ -847,24 +849,96 @@ const CreatePost = () => {
             body: JSON.stringify({ record: { id: promptId } }),
           });
           
+          const responseText = await stripeResponse.text();
+          console.log(`Stripe連携レスポンス: ${stripeResponse.status}`, responseText);
+          
+          // 詳細なレスポンス診断ログ
+          console.log('Stripe連携詳細診断:', {
+            status: stripeResponse.status,
+            statusText: stripeResponse.statusText,
+            headers: {
+              contentType: stripeResponse.headers.get('content-type'),
+              contentLength: stripeResponse.headers.get('content-length')
+            },
+            url: '/api/proxy/stripe-sync',
+            promptId: promptId
+          });
+          
           if (!stripeResponse.ok) {
-            console.warn('Stripe連携警告:', await stripeResponse.text());
+            // エラーの詳細を表示
+            console.error('Stripe連携エラー:', {
+              status: stripeResponse.status,
+              statusText: stripeResponse.statusText,
+              response: responseText
+            });
+            
+            let errorMessage = "Stripe商品情報の生成に問題が発生しました";
+            let errorDetails = "";
+            
+            // エラーの種類に応じたメッセージ
+            if (stripeResponse.status === 404) {
+              errorMessage = "Edge Functionが見つかりません。管理者にお問い合わせください。";
+              errorDetails = "SUPABASE_FUNC_URLが正しく設定されていない可能性があります。";
+            } else if (stripeResponse.status === 403) {
+              errorMessage = "Edge Functionへのアクセス権限がありません。";
+              errorDetails = "JWTトークンまたは認証設定の問題かもしれません。";
+            } else if (stripeResponse.status === 500) {
+              try {
+                const errorData = JSON.parse(responseText);
+                errorMessage = errorData.message || errorData.error || errorMessage;
+                errorDetails = JSON.stringify(errorData);
+              } catch (e) {
+                // JSONパースエラー時は元のテキストを使用
+                errorDetails = responseText;
+              }
+            }
+            
+            console.error('Stripe連携エラー詳細:', errorMessage, errorDetails);
+            
             // 警告を表示するが、メイン処理は続行
             toast({
               title: "注意",
-              description: "Stripe商品情報の生成に問題が発生しましたが、記事は投稿されました",
+              description: errorMessage + "（記事は投稿されました）",
               variant: "destructive",
             });
+            
+            // 開発者向け詳細情報をコンソールに出力
+            console.log('開発者向けStripe連携エラー詳細:', {
+              message: errorMessage,
+              details: errorDetails,
+              timestamp: new Date().toISOString(),
+              env: {
+                nodeEnv: process.env.NODE_ENV,
+                hasFuncUrl: !!process.env.SUPABASE_FUNC_URL,
+                funcUrlLength: process.env.SUPABASE_FUNC_URL?.length || 0
+              }
+            });
           } else {
-            console.log('Stripe連携成功:', await stripeResponse.text());
+            console.log('Stripe連携成功:', responseText);
+            toast({
+              title: "成功",
+              description: "Stripe商品情報が正常に生成されました",
+              variant: "default",
+            });
           }
         } catch (stripeError) {
-          console.error('Stripe連携エラー:', stripeError);
+          console.error('Stripe連携例外:', stripeError);
+          // エラー詳細を取得
+          const errorMessage = stripeError instanceof Error ? stripeError.message : '不明なエラー';
+          const errorStack = stripeError instanceof Error ? stripeError.stack : undefined;
+          
           // 警告を表示するが、メイン処理は続行
           toast({
             title: "注意",
-            description: "Stripe連携処理でエラーが発生しましたが、記事は投稿されました",
+            description: `Stripe連携処理でエラーが発生しました: ${errorMessage}（記事は投稿されました）`,
             variant: "destructive",
+          });
+          
+          // 開発者向け詳細情報
+          console.error('Stripe連携例外詳細:', {
+            message: errorMessage,
+            stack: errorStack,
+            timestamp: new Date().toISOString()
           });
         }
       }

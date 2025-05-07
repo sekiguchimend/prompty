@@ -55,6 +55,31 @@
 - [x] RLSポリシー設定 (有料投稿時のStripeアカウント必須)
 - [x] サーバーAPI修正 (サービスロールキーを使用してRLSバイパス)
 
+## Edge Function修正タスク
+- [x] ローカル開発環境設定
+  - [x] Docker Desktopのインストールと起動確認
+  - [x] Supabase CLIのインストール
+  - [x] supabase/functions/.env ファイルの作成と環境変数設定
+    - [x] STRIPE_SECRET_KEY
+    - [x] SUPABASE_URL
+    - [x] SUPABASE_SERVICE_ROLE_KEY
+- [x] Edge Function動作確認
+  - [x] Edge Functionのデプロイ確認
+  - [x] Edge Functionへの接続テスト
+  - [x] ログの確認
+- [x] Edge Functionのテストと修正
+  - [x] handle_prompts_insert関数の動作確認
+  - [x] 必要に応じてコード修正
+  - [x] 再デプロイとテスト
+- [x] アプリケーション環境変数設定
+  - [x] .env.localファイル作成
+  - [x] SUPABASE_FUNC_URLの設定確認
+  - [x] SUPABASE_SERVICE_ROLE_KEYの設定確認
+- [x] フロントエンド連携確認
+  - [x] 有料記事投稿時のStripe連携処理の動作確認
+  - [x] エラーハンドリングの確認
+  - [x] 成功時の処理確認
+
 ## Supabase Edge Function実装ノート
 
 Edge Functionをデプロイする際は以下の環境変数が必要です：
@@ -89,3 +114,21 @@ supabase functions deploy handle_prompts_insert
    - SUPABASE_FUNC_URL: Edge FunctionのURL
    - STRIPE_WEBHOOK_SECRET: Webhookの検証シークレット
 4. 環境変数追加後、デプロイを再実行
+
+## Vercel環境でのEdge Function連携修正
+- [x] 問題診断
+  - [x] 環境変数診断レポート作成
+  - [x] プロキシAPI診断コード追加
+  - [x] Edge Function接続テスト手順書作成
+- [x] コード修正
+  - [x] stripe-sync.tsプロキシAPIを強化（URL正規化・エラーハンドリング改善）
+  - [x] CreatePost.tsxのエラーロギング強化
+  - [x] 診断ログの追加
+- [x] ドキュメント作成
+  - [x] Edge Functionテスト手順書
+  - [x] Vercel環境設定チェックリスト
+  - [x] ファイル機能用途一覧の更新
+- [ ] 最終テスト
+  - [ ] 修正済みコードの本番環境へのデプロイ
+  - [ ] Vercel環境での環境変数設定確認
+  - [ ] 有料記事投稿テスト実施と結果確認

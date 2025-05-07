@@ -253,3 +253,88 @@ bun run build
 
 - **エラー表示の改善**: より詳細なエラーメッセージとログ出力によるデバッグ性向上
 - **API通信の安定化**: プロフィール更新時の通信エラー対策
+
+## Stripe有料記事連携機能の設定方法
+
+Stripeと連携した有料記事機能を使用するには、以下の手順でセットアップを行ってください。
+
+### 1. 環境変数の設定
+
+Vercelダッシュボードで以下の環境変数を設定してください：
+
+```
+# Supabase 関連
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...  # Supabaseダッシュボードから取得
+SUPABASE_FUNC_URL=https://xxxxxxxxxxxx.supabase.co/functions/v1  # プロジェクト固有のURL
+
+# Stripe 関連
+STRIPE_SECRET_KEY=sk_test_...  # Stripeダッシュボードから取得
+STRIPE_WEBHOOK_SECRET=whsec_...  # Webhook設定時に取得
+```
+
+### 2. Supabase Edge Functionのデプロイ
+
+Supabase Edge Functionをデプロイするには、Docker Desktopをインストールした上で以下のコマンドを実行します：
+
+```bash
+# Supabase CLIをインストール (初回のみ)
+npm install -g supabase
+
+# ログイン (初回のみ)
+supabase login
+
+# Edge Functionのデプロイ
+npx supabase functions deploy handle_prompts_insert
+```
+
+### 3. Supabase Edge Functionの環境変数設定
+
+Supabaseダッシュボードの「Functions」タブから、以下の環境変数を設定します：
+
+```
+STRIPE_SECRET_KEY=sk_test_...  # Stripeダッシュボードから取得
+SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co  # プロジェクトURL
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...  # サービスロールキー
+```
+
+### 4. テーブルスキーマの拡張とRLSポリシーの設定
+
+Supabaseのクエリエディタで以下のSQLを実行します：
+
+```sql
+-- スキーマ拡張：Stripe 連携カラム
+ALTER TABLE public.prompts
+  ADD COLUMN IF NOT EXISTS stripe_product_id TEXT,
+  ADD COLUMN IF NOT EXISTS stripe_price_id   TEXT,
+  ADD COLUMN IF NOT EXISTS stripe_error      TEXT;
+
+-- RLS ポリシー：有料投稿は Stripe アカウント必須
+ALTER TABLE public.prompts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY prompts_insert_policy
+  ON public.prompts
+  FOR INSERT
+  WITH CHECK (
+    (
+      is_free = TRUE
+      OR price IS NULL
+      OR price = 0
+    )
+    OR EXISTS (
+      SELECT 1 FROM public.profiles p
+      WHERE p.id = auth.uid()
+        AND p.stripe_account_id IS NOT NULL
+    )
+  );
+```
+
+### 5. デプロイと動作確認
+
+すべての設定が完了したら、アプリケーションを再デプロイし、以下の動作を確認します：
+
+1. Stripeアカウントの連携（設定ページ）
+2. 有料記事の投稿（価格設定あり）
+3. 投稿後のStripe商品情報の生成確認
+4. promptsテーブルのstripe_product_id, stripe_price_idフィールドに値が入っているか確認
+
+エラーが発生した場合は、ブラウザのコンソールログとサーバーログを確認してください。
