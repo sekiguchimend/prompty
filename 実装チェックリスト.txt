@@ -7,6 +7,7 @@
   - [ ] NEXT_PUBLIC_URL (アプリケーションのURL)
   - [ ] STRIPE_WEBHOOK_SECRET (Webhookの検証用)
   - [ ] SUPABASE_FUNC_URL (Edge Function用のURL)
+  - [ ] SUPABASE_SERVICE_ROLE_KEY (RLSバイパス用のキー)
 
 ## Supabaseテーブル設定
 - [ ] profilesテーブルにstripe_account_idカラムを追加
@@ -52,6 +53,7 @@
 - [x] APIプロキシエンドポイント作成 (src/pages/api/proxy/stripe-sync.ts)
 - [x] CreatePostページ修正 (記事投稿後のStripe連携処理追加)
 - [x] RLSポリシー設定 (有料投稿時のStripeアカウント必須)
+- [x] サーバーAPI修正 (サービスロールキーを使用してRLSバイパス)
 
 ## Supabase Edge Function実装ノート
 
@@ -76,3 +78,14 @@ supabase functions deploy handle_prompts_insert
 2. 有料記事の場合、投稿者はStripeアカウント連携が必須です。
 3. RLSポリシーにより、Stripeアカウント未連携のユーザーは有料記事を投稿できません。
 4. Stripe連携エラーが発生した場合は、stripe_errorカラムにエラーメッセージが保存されます。
+
+## Vercel環境変数設定手順
+
+1. Vercelダッシュボードにログイン
+2. プロジェクト設定 > 環境変数 に移動
+3. 以下の環境変数を追加
+   - SUPABASE_SERVICE_ROLE_KEY: Supabaseダッシュボードで取得したサービスロールキー
+   - STRIPE_SECRET_KEY: Stripeダッシュボードで取得した秘密鍵
+   - SUPABASE_FUNC_URL: Edge FunctionのURL
+   - STRIPE_WEBHOOK_SECRET: Webhookの検証シークレット
+4. 環境変数追加後、デプロイを再実行

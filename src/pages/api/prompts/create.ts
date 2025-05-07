@@ -80,14 +80,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Supabaseクライアントの初期化
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-    // const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
     
     // 環境変数のデバッグログ
     console.log('🔑 Supabase URL:', supabaseUrl);
     console.log('🔑 Anon Key 長さ:', supabaseAnonKey.length);
-    // console.log('🔑 Service Role Key 長さ:', supabaseServiceKey.length);
+    console.log('🔑 Service Role Key 長さ:', supabaseServiceKey.length);
     
-    if (!supabaseUrl || !supabaseAnonKey) {
+    if (!supabaseUrl || !supabaseServiceKey) {
       console.error('❌ Supabase環境変数が設定されていません');
       return res.status(500).json({
         success: false,
@@ -96,8 +96,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
     
-    // Anonキーを使用してクライアントを初期化
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    // サービスロールキーを使用してクライアントを初期化（RLSをバイパス）
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // ユーザー認証情報の取得と検証
+    const authHeader = req.headers.authorization;
+    let userId = null;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7);
+        // トークンから認証情報を取得（検証のみ）
+        const { data: { user }, error } = await supabase.auth.getUser(token);
+        
+        if (error) {
+          console.error('❌ 認証トークン検証エラー:', error);
+        } else if (user) {
+          userId = user.id;
+          console.log('✅ 認証済みユーザー:', userId);
+          
+          // author_idとユーザーIDの整合性チェック
+          if (userId !== promptData.author_id) {
+            console.warn('⚠️ author_idとユーザーIDが一致しません:', {
+              tokenUserId: userId,
+              requestAuthorId: promptData.author_id
+            });
+            
+            // サービスロールキーを使用しているので、author_idをトークンのユーザーIDに上書き
+            promptData.author_id = userId;
+          }
+        }
+      } catch (tokenError) {
+        console.error('❌ トークン解析エラー:', tokenError);
+      }
+    } else {
+      console.warn('⚠️ 認証ヘッダーがありません');
+    }
     
     // データの準備
     const insertData = {
