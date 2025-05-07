@@ -949,7 +949,7 @@ const CreatePost = () => {
         variant: "default",
       });
       
-      router.push("/"); // ホームページにリダイレクト
+      // router.push("/"); 
     } catch (error) {
       console.error("プロジェクト投稿エラー:", error);
       toast({
