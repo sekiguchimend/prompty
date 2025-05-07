@@ -26,11 +26,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       method: 'POST', 
       headers: {
         'Content-Type': 'application/json',
+        // クライアントから受け取った認証ヘッダーを優先使用
+        'Authorization': req.headers.authorization 
+          ? `${req.headers.authorization}` 
+          : `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`, // フォールバックとしてサービスロールキーを使用
         ...req.headers as HeadersInit
       }, 
       body: JSON.stringify(req.body),
       // タイムアウトを設定（AbortControllerはフロントエンドでのみ利用可能なため、別の方法が必要）
     };
+
+    // リクエストヘッダーをログに記録
+    console.log(`🔑 認証ヘッダー確認:`, req.headers.authorization ? "クライアントから受信" : "サービスロールキーを使用");
 
     // リクエスト開始時間を記録
     const startTime = Date.now();

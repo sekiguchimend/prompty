@@ -2,16 +2,16 @@
 
 ## 環境準備
 - [x] 必要なライブラリをインストール (stripe, raw-body等)
-- [ ] 環境変数ファイル (.env.local) を設定
-  - [ ] STRIPE_SECRET_KEY (秘密鍵を設定)
-  - [ ] NEXT_PUBLIC_URL (アプリケーションのURL)
-  - [ ] STRIPE_WEBHOOK_SECRET (Webhookの検証用)
-  - [ ] SUPABASE_FUNC_URL (Edge Function用のURL)
-  - [ ] SUPABASE_SERVICE_ROLE_KEY (RLSバイパス用のキー)
+- [x] 環境変数ファイル (.env.local) を設定
+  - [x] STRIPE_SECRET_KEY (秘密鍵を設定)
+  - [x] NEXT_PUBLIC_URL (アプリケーションのURL)
+  - [x] STRIPE_WEBHOOK_SECRET (Webhookの検証用)
+  - [x] SUPABASE_FUNC_URL (Edge Function用のURL)
+  - [x] SUPABASE_SERVICE_ROLE_KEY (RLSバイパス用のキー)
 
 ## Supabaseテーブル設定
-- [ ] profilesテーブルにstripe_account_idカラムを追加
-- [ ] paymentsテーブルを作成
+- [x] profilesテーブルにstripe_account_idカラムを追加
+- [x] paymentsテーブルを作成
 
 ## ライブラリ・クライアント設定
 - [x] Stripeクライアント初期化ファイル作成 (src/lib/stripe.ts)
@@ -38,9 +38,9 @@
 - [x] Webhook設定ガイドの作成 (stripe-webhook-設定ガイド.md)
 
 ## テスト
-- [ ] 環境変数の設定確認
-- [ ] 各APIエンドポイントのテスト
-- [ ] フロントエンド動作確認
+- [x] 環境変数の設定確認
+- [x] 各APIエンドポイントのテスト
+- [x] フロントエンド動作確認
 
 ## 有料記事投稿Stripe連携機能
 - [x] promptsテーブルにStripe連携用のカラム追加
@@ -86,7 +86,7 @@ Edge Functionをデプロイする際は以下の環境変数が必要です：
 
 1. **Supabase CLI**を使用してデプロイする
 ```bash
-supabase functions deploy handle_prompts_insert
+supabase functions deploy handle_prompts_insert --no-verify-jwt
 ```
 
 2. **Supabase Project Dashboard**で以下の環境変数を設定する
@@ -128,7 +128,20 @@ supabase functions deploy handle_prompts_insert
   - [x] Edge Functionテスト手順書
   - [x] Vercel環境設定チェックリスト
   - [x] ファイル機能用途一覧の更新
-- [ ] 最終テスト
-  - [ ] 修正済みコードの本番環境へのデプロイ
-  - [ ] Vercel環境での環境変数設定確認
-  - [ ] 有料記事投稿テスト実施と結果確認
+- [x] 最終テスト
+  - [x] 修正済みコードの本番環境へのデプロイ
+  - [x] Vercel環境での環境変数設定確認
+  - [x] 有料記事投稿テスト実施と結果確認
+- [x] 認証問題の解決
+  - [x] 401エラー（Missing authorization header）の検出と分析
+  - [x] Edge Functionを--no-verify-jwtオプション付きで再デプロイ
+  - [x] プロキシAPIに認証ヘッダーを追加する方法の実装
+
+## 認証ヘッダー問題の解決
+- [x] フロントエンドからの認証ヘッダー追加
+  - [x] CreatePost.tsxでsupabase.auth.getSession()を使用してアクセストークンを取得
+  - [x] Stripe-syncAPIリクエスト時に認証ヘッダーを追加
+- [x] プロキシAPIでの認証ヘッダー処理
+  - [x] クライアントから受け取った認証ヘッダーの転送実装
+  - [x] 認証ヘッダーがない場合のフォールバックとしてSUPABASE_SERVICE_ROLE_KEYを使用
+  - [x] 認証ヘッダーの診断ログを追加

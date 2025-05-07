@@ -841,10 +841,15 @@ const CreatePost = () => {
           console.log('Stripe連携処理開始:', promptId);
           
           // Stripe-syncAPIを呼び出し
+          const { data: sessionData } = await supabase.auth.getSession();
+          const accessToken = sessionData.session?.access_token;
+
+          // Stripe-syncAPIを呼び出し
           const stripeResponse = await fetch('/api/proxy/stripe-sync', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken || ''}`, // 認証ヘッダーを追加
             },
             body: JSON.stringify({ record: { id: promptId } }),
           });
