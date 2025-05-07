@@ -12,6 +12,7 @@ interface StripeConnectSectionProps {
 const StripeConnectSection: React.FC<StripeConnectSectionProps> = ({ userId, stripeAccountId }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isLoginLinkLoading, setIsLoginLinkLoading] = useState(false);
   const [accountStatus, setAccountStatus] = useState<'none' | 'pending' | 'complete'>('none');
   const [apiError, setApiError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -64,6 +65,75 @@ const StripeConnectSection: React.FC<StripeConnectSectionProps> = ({ userId, str
       });
     } finally {
       setIsConnecting(false);
+    }
+  };
+
+  // ログインリンク生成処理
+  const handleLoginToStripe = async () => {
+    if (!stripeAccountId) {
+      toast({
+        title: 'エラー',
+        description: 'Stripeアカウントが接続されていません',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoginLinkLoading(true);
+    
+    try {
+      toast({
+        title: '処理中',
+        description: 'ダッシュボードアクセス用リンクを生成しています...',
+        variant: 'default',
+      });
+      
+      // ログインリンク生成API呼び出し
+      const response = await axios.post('/api/stripe/create-login-link', { 
+        accountId: stripeAccountId 
+      });
+      
+      // 詳細なレスポンス情報をログに出力
+      console.log('ログインリンク生成結果:', {
+        status: response.status,
+        url: response.data.url ? response.data.url.substring(0, 30) + '...' : 'なし',
+        timestamp: response.data.createdAt || new Date().toISOString(),
+        accountId: response.data.accountId
+      });
+      
+      // 新しいタブでStripeダッシュボードを開く
+      window.open(response.data.url, '_blank');
+      
+      toast({
+        title: '成功',
+        description: 'Stripeダッシュボードを新しいタブで開きました。ログイン画面が表示された場合はログインしてください。',
+        variant: 'default',
+      });
+    } catch (error: any) {
+      console.error('Stripeログインリンク生成エラー:', error);
+      
+      // エラーの詳細情報を取得して表示
+      const errorDetails = error.response?.data || {};
+      const errorMessage = errorDetails.error || 
+                           error.response?.data?.message || 
+                           error.message ||
+                           'ログインリンクの生成に失敗しました';
+      
+      console.error('詳細エラー情報:', {
+        message: errorMessage,
+        code: errorDetails.code || error.code,
+        details: errorDetails.details || null,
+        status: error.response?.status || 'unknown',
+        timestamp: errorDetails.timestamp || new Date().toISOString()
+      });
+      
+      toast({
+        title: 'エラー',
+        description: `ダッシュボードへのアクセスに失敗しました: ${errorMessage}`,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoginLinkLoading(false);
     }
   };
 
@@ -127,21 +197,51 @@ const StripeConnectSection: React.FC<StripeConnectSectionProps> = ({ userId, str
       {accountStatus === 'complete' && (
         <div className="mt-4">
           <p className="text-sm mb-4">
-            Stripeアカウントが接続されました。以下の機能が利用可能です：
+            Stripeアカウントが接続されました。アカウントにアクセスして取引や売上を確認できます。
           </p>
           <ul className="list-disc pl-5 text-sm space-y-2">
             <li>ユーザー間の直接取引（C to C）</li>
             <li>クリエイターとして報酬を受け取る</li>
             <li>取引履歴の管理</li>
           </ul>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={() => window.open('https://dashboard.stripe.com/', '_blank')}
-          >
-            <ExternalLink className="mr-2 h-4 w-4" />
-            Stripeダッシュボードを開く
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3 mt-4">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={handleLoginToStripe}
+              disabled={isLoginLinkLoading}
+            >
+              {isLoginLinkLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  生成中...
+                </>
+              ) : (
+                <>
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  アカウントダッシュボードへ
+                </>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => window.open('https://dashboard.stripe.com/', '_blank')}
+            >
+              <ExternalLink className="mr-2 h-4 w-4" />
+              Stripeログインページへ
+            </Button>
+          </div>
+          <div className="bg-amber-50 border border-amber-100 rounded-md p-3 mt-4">
+            <h4 className="text-sm font-medium text-amber-800 mb-1">アカウントへのアクセス方法</h4>
+            <p className="text-xs text-amber-700">
+              1. 上の「アカウントダッシュボードへ」ボタンを押すと自動ログインを試みます。<br />
+              2. もし通常のログイン画面が表示された場合：<br />
+              　・初回のみStripeからのメールで設定したパスワードを入力<br />
+              　・パスワードがわからない場合は「パスワードをお忘れですか？」から再設定<br />
+              　・ログイン情報を保存しておくと次回から簡単にアクセスできます
+            </p>
+          </div>
         </div>
       )}
     </div>

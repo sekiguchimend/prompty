@@ -42,16 +42,54 @@ interface PromptRequest {
 
 // レスポンスハンドラー
 serve(async (req: Request) => {
+  // デバッグ用にリクエストボディを出力
+  console.log('リクエスト受信:', await req.clone().text());
+  
   const { record } = await req.json() as PromptRequest;
-  const { data: prompt } = await supabase
+  console.log('処理開始 - 記事ID:', record.id);
+  
+  const { data: prompt, error } = await supabase
     .from('prompts')
     .select('id, title, is_free, price, currency:currency, author_id')
     .eq('id', record.id)
     .single();
-
-  if (!prompt || prompt.is_free || !prompt.price) {
+  
+  // エラーハンドリングを追加
+  if (error) {
+    console.error('データ取得エラー:', error.message);
+    return new Response(JSON.stringify({ error: error.message }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+  
+  // 取得したデータをログ出力
+  console.log('取得したプロンプトデータ:', JSON.stringify(prompt));
+  
+  // price の型を確認
+  const priceValue = typeof prompt.price === 'string' ? parseInt(prompt.price) : prompt.price;
+  console.log('価格情報:', {
+    元のprice: prompt.price,
+    変換後price: priceValue,
+    型: typeof prompt.price,
+    is_free: prompt.is_free
+  });
+  
+  // 条件判定を明確にする（nullチェック、0チェック、is_freeチェック）
+  if (!prompt || prompt.is_free === true || !priceValue || priceValue <= 0) {
+    console.log('無料記事として処理:', {
+      reason: !prompt ? 'プロンプトなし' : 
+              prompt.is_free === true ? 'is_freeがtrue' : 
+              !priceValue ? 'price値なし' : 'price値が0以下'
+    });
     return new Response('free', { status: 200 });
   }
+
+  console.log('有料記事として処理を続行します:', {
+    id: prompt.id,
+    price: priceValue,
+    is_free: prompt.is_free
+  });
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -60,6 +98,7 @@ serve(async (req: Request) => {
     .single();
 
   if (!profile?.stripe_account_id) {
+    console.log('Stripeアカウントなし - 著者ID:', prompt.author_id);
     await supabase.from('prompts')
       .update({ stripe_error: 'NO_STRIPE_ACCOUNT' })
       .eq('id', prompt.id);
@@ -68,17 +107,25 @@ serve(async (req: Request) => {
 
   try {
     /* ★ ここが核心：Product と Price を 1 API でまとめて生成 ★ */
+    console.log('Stripe処理開始 - アカウントID:', profile.stripe_account_id);
+    
+    // 通貨を'jpy'に固定
+    const currency = 'jpy';
+    console.log('通貨を固定:', currency);
+    
     const product = await stripe.products.create(
       {
         name: prompt.title,
         metadata: { prompt_id: prompt.id },
         default_price_data: {
-          unit_amount: prompt.price,
-          currency: prompt.currency ?? 'jpy',
+          unit_amount: priceValue,
+          currency: currency,
         },
       },
       { stripeAccount: profile.stripe_account_id },
     );
+
+    console.log('Stripe製品作成成功:', product.id);
 
     // Product の default_price がそのまま Price ID
     const priceId =
@@ -86,20 +133,34 @@ serve(async (req: Request) => {
         ? product.default_price
         // @ts-ignore Stripe.Price型のIDプロパティにアクセス
         : (product.default_price).id;
+    
+    console.log('価格ID:', priceId);
 
     // 記事行の更新まで **同じ関数内で完結**（記事保存"までまとめて実行"）
-    await supabase.from('prompts')
+    const { error: updateError } = await supabase.from('prompts')
       .update({
         stripe_product_id: product.id,
         stripe_price_id:  priceId,
         stripe_error:     null,
       })
       .eq('id', prompt.id);
+    
+    if (updateError) {
+      console.error('DB更新エラー:', updateError.message);
+      throw new Error(`DB更新エラー: ${updateError.message}`);
+    }
+    
+    console.log('処理完了 - 記事ID:', prompt.id);
 
   } catch (e) {
+    console.error('Stripeエラー:', (e as Error).message);
     await supabase.from('prompts')
       .update({ stripe_error: (e as Error).message })
       .eq('id', prompt.id);
+    return new Response(JSON.stringify({ error: (e as Error).message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
   return new Response('ok', { status: 200 });

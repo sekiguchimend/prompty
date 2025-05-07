@@ -1,0 +1,82 @@
+──────────────────────────────────────────────
+Stripe Connect アカウントにログインするための
+ワンタイム Login Link 発行手順（テスト／本番共通）
+──────────────────────────────────────────────
+
+【前提】
+  • すでに Connected Account（acct_XXXX…）が API で作成済み
+  • プラットフォーム側の秘密鍵（sk_test_…／sk_live_…）を保持
+  • 以下の３通りの方法のうち都合の良いものを選択
+
+────────────────────────────
+1. API (Node.js/Express などサーバーサイド) で発行
+────────────────────────────
+1.1 依存ライブラリを導入
+    npm install stripe
+
+1.2 コード例（TypeScript / Express）
+    ```ts
+    import Stripe from 'stripe';
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: '2024-06-20',
+    });
+
+    // POST /api/admin/create-login-link  { "accountId": "acct_XXXX" }
+    export async function handler(req, res) {
+      const { accountId } = req.body;
+      try {
+        const loginLink = await stripe.accounts.createLoginLink(
+          accountId,
+          { redirect_url: 'https://your-app.com/after-login' }
+        );
+        res.json({ loginUrl: loginLink.url });
+      } catch (err) {
+        res.status(500).json({ error: err.message });
+      }
+    }
+    ```
+1.3 使い方
+    curl -X POST https://your-app.com/api/admin/create-login-link \
+      -H "Content-Type:application/json" \
+      -d '{"accountId":"acct_XXXX"}'
+
+1.4 返ってきた `loginUrl` をブラウザで開けば
+    そのアカウントの Stripe ダッシュボードへ即ログイン。
+
+────────────────────────────
+2. Stripe CLI で手動発行（開発者用）
+────────────────────────────
+2.1 インストール & ログイン（初回のみ）
+    brew install stripe/stripe-cli/stripe
+    stripe login            # ブラウザで APIキー連携
+
+2.2 テストモードの場合
+    stripe accounts list --test            # acct_XXXX を探す
+    stripe accounts create-login-link acct_XXXX --test \
+      --redirect-url https://your-app.com/after-login
+
+2.3 本番モードの場合は --test を外す。
+    CLI が返す URL をコピー → ブラウザで開いてログイン完了。
+
+────────────────────────────
+3. Stripe Dashboard から発行（GUI）
+────────────────────────────
+3.1 Dashboard にログイン  
+3.2 画面上部の「Viewing test data」トグルを  
+    ・テストアカウントの場合   → ON  
+    ・本番アカウントの場合     → OFF  
+3.3 左メニュー → **Connect → Accounts**  
+3.4 対象アカウントの行の「···」 → **Create login link**  
+3.5 ポップアップに出る URL をコピーしてブラウザで開く。
+
+────────────────────────────
+補足
+────────────────────────────
+✓ Login Link は 24 時間のワンタイム URL。期限切れ時は再発行が必要。  
+✓ Account Links (`type: account_onboarding`) を使うと
+  初回オンボーディング（本人確認・パスワード設定）も同時に案内可能。  
+✓ テストモードで発行したリンクは必ずテストダッシュボードに遷移し、
+  本番キーで発行したリンクは本番ダッシュボードに遷移する。  
+
+これでクリエイター／自分自身どちらも、作成済み Connected Account に
+パスワード不要で安全にログインして確認できます。
