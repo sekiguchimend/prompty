@@ -141,11 +141,8 @@ const getSafeImageUrl = (url: string): string => {
   // ローカルの画像の場合はそのまま返す
   if (url.startsWith('/')) return url;
   
-  // Supabaseの画像の場合は常にデフォルト画像を返す（エラー回避のため）
-  if (url.includes('supabase.co')) {
-    console.log('Supabaseの画像URL検出、デフォルト画像に置換:', url);
-    return defaultImage;
-  }
+  // Supabaseの画像の場合は、そのまま返す（エラー回避のロジックを削除）
+  // 以前はSupabaseの画像を常にデフォルトに置き換えていたが、正しく表示できるようにする
   
   // その他の画像URLはそのまま返す
   return url;
