@@ -1,5 +1,5 @@
-// Edge Function URL を直接クライアントに晒さない
-import type { NextApiRequest, NextApiResponse } from 'next'
+// pages/api/proxy/stripe-sync.ts
+import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -21,23 +21,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log(`🔄 Edge Functionへリクエスト: ${fullUrl}`);
     console.log(`📤 リクエストボディ:`, JSON.stringify(req.body));
 
-    // タイムアウト対策としてフェッチオプションを追加
+    // 認証トークンの取得と検証
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.error("❌ 認証ヘッダーが不正です:", authHeader);
+      return res.status(401).json({
+        code: 401,
+        message: "認証ヘッダーが不正またはありません"
+      });
+    }
+
+    // 認証トークンの抽出
+    const token = authHeader.split(' ')[1];
+    if (!token) {
+      console.error("❌ トークンが抽出できません");
+      return res.status(401).json({
+        code: 401,
+        message: "認証トークンがありません"
+      });
+    }
+
+    // トークン情報のデバッグ出力（本番環境では省略可能）
+    const tokenLength = token.length;
+    const tokenPrefix = token.substring(0, 20);
+    const tokenSuffix = token.substring(tokenLength - 20);
+    console.log(`🔑 トークン情報: 長さ=${tokenLength}, 先頭=${tokenPrefix}..., 末尾=...${tokenSuffix}`);
+
+    // フェッチオプションの設定
     const fetchOptions = {
       method: 'POST', 
       headers: {
         'Content-Type': 'application/json',
-        // クライアントから受け取った認証ヘッダーを優先使用
-        'Authorization': req.headers.authorization 
-          ? `${req.headers.authorization}` 
-          : `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`, // フォールバックとしてサービスロールキーを使用
-        ...req.headers as HeadersInit
+        'Authorization': `Bearer ${token}`, // クライアントから受け取った認証トークンを使用
       }, 
       body: JSON.stringify(req.body),
-      // タイムアウトを設定（AbortControllerはフロントエンドでのみ利用可能なため、別の方法が必要）
     };
-
-    // リクエストヘッダーをログに記録
-    console.log(`🔑 認証ヘッダー確認:`, req.headers.authorization ? "クライアントから受信" : "サービスロールキーを使用");
 
     // リクエスト開始時間を記録
     const startTime = Date.now();
@@ -78,8 +96,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       contentLength: rsp.headers.get('content-length')
     });
     
-    // 元のステータスコードでクライアントに返す
-    return res.status(rsp.status).send(responseText);
+    // Edge Function からのエラーレスポンスをより詳細に処理
+    if (!rsp.ok) {
+      console.error(`❌ Edge Function エラーレスポンス: ${rsp.status}`, responseText);
+      
+      try {
+        // JSONパースを試みる
+        const errorData = JSON.parse(responseText);
+        return res.status(rsp.status).json({
+          ...errorData,
+          edgeFunctionUrl: fullUrl,
+          timestamp: new Date().toISOString()
+        });
+      } catch (parseError) {
+        // JSONパースに失敗した場合は生テキストを返す
+        return res.status(rsp.status).json({
+          error: "Edge Function エラー",
+          message: responseText || "不明なエラー",
+          status: rsp.status,
+          edgeFunctionUrl: fullUrl,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+    
+    // 成功時は元のレスポンスをそのまま返す
+    let parsedResponse;
+    try {
+      parsedResponse = JSON.parse(responseText);
+      return res.status(rsp.status).json(parsedResponse);
+    } catch (parseError) {
+      // JSONではない場合はテキストとして返す
+      return res.status(rsp.status).send(responseText);
+    }
   } catch (error) {
     console.error("❌ Edge Function呼び出しエラー:", error);
     // エラー情報をより詳細に返す
@@ -90,4 +139,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       timestamp: new Date().toISOString()
     });
   }
-} 
+}
