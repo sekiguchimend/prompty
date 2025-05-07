@@ -1,0 +1,51 @@
+# ファイル機能用途一覧
+
+## Stripe C to C決済関連
+
+### src/lib/stripe.ts
+- Stripeクライアントの初期化を行うファイル
+- 他のAPIから利用される共通モジュール
+
+### src/pages/api/stripe/create-express-account.ts
+- 売り手ユーザー用のStripe Express Accountを作成するAPI
+- ユーザーIDを受け取り、新規Stripeアカウントを作成
+- 作成したアカウントIDをprofilesテーブルに保存
+- フロントエンドからのPOSTリクエストで呼び出される
+
+### src/pages/api/stripe/create-account-link.ts
+- Stripe Expressアカウントのオンボーディングリンクを生成するAPI
+- Stripeアカウントで必要な情報を入力するためのURLを発行
+- フロントエンドからのPOSTリクエストで呼び出される
+
+### src/pages/api/stripe/create-payment-intent.ts
+- Direct Chargesモデルを使用した決済意図を作成するAPI
+- 売り手のStripeアカウントへ直接決済を行う仕組み
+- プラットフォーム手数料を設定して決済を行う
+- フロントエンドからのPOSTリクエストで呼び出される
+
+### src/pages/api/stripe/webhook.ts
+- Stripeからのイベント通知を受け取るためのエンドポイント
+- 支払い成功・失敗時にpaymentsテーブルの状態を更新
+- Stripeから直接呼び出される
+- Bodyパーシングを無効化し、署名検証を実施
+
+## フロントエンド実装
+
+### src/components/settings/StripeConnectSection.tsx
+- Stripeアカウント接続用コンポーネント
+- Express アカウント作成APIの呼び出し
+- アカウントリンク発行APIの呼び出し
+- Stripeダッシュボードへのリダイレクト処理
+- アカウント状態の表示
+
+### src/components/settings/PaymentTestForm.tsx
+- C to C決済のデモ用支払いフォーム
+- 金額入力と支払い処理のシミュレーション
+- 実際の実装では、Stripe.jsと連携して決済処理を行う
+- 決済状態の表示（成功・失敗）
+
+### src/components/settings/AccountSettings.tsx
+- ユーザーアカウント設定ページ
+- Stripe関連コンポーネントの統合
+- プロフィール情報からstripe_account_id情報の取得と管理
+- 決済設定セクションの表示 

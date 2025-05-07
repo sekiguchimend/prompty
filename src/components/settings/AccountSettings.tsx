@@ -5,6 +5,8 @@ import { ChevronRight, Loader2 } from 'lucide-react';
 import { useToast } from '../../hooks/use-toast';
 import { Skeleton } from '../../components/ui/skeleton';
 import { supabase } from '../../lib/supabaseClient';
+import StripeConnectSection from './StripeConnectSection';
+import PaymentTestForm from './PaymentTestForm';
 
 // アカウント設定のインターフェース
 interface AccountSettings {
@@ -23,6 +25,7 @@ interface AccountSettings {
   accept_tip_payments: boolean;
   allow_purchase_by_non_registered_users: boolean;
   restrict_ai_learning: boolean;
+  stripe_account_id?: string | null;
 }
 
 // デフォルト設定
@@ -41,7 +44,8 @@ const defaultSettings: AccountSettings = {
   use_mincho_font: false,
   accept_tip_payments: true,
   allow_purchase_by_non_registered_users: true,
-  restrict_ai_learning: false
+  restrict_ai_learning: false,
+  stripe_account_id: null
 };
 
 const AccountSettingsComponent: React.FC = () => {
@@ -104,13 +108,33 @@ const AccountSettingsComponent: React.FC = () => {
         if (settingsError && settingsError.code !== 'PGRST116') { // 'PGRST116'は結果が見つからないエラー
           throw settingsError;
         }
+
+        // Stripe アカウント情報を取得
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('stripe_account_id')
+          .eq('id', currentUser.id)
+          .single();
+
+        if (profileError && profileError.code !== 'PGRST116') {
+          throw profileError;
+        }
+        
+        let mergedSettings = defaultSettings;
         
         if (settingsData && settingsData.account_settings) {
-          setSettings(settingsData.account_settings);
-        } else {
-          // デフォルト設定
-          setSettings(defaultSettings);
+          mergedSettings = {
+            ...mergedSettings,
+            ...settingsData.account_settings
+          };
         }
+        
+        // Stripe アカウント情報を追加
+        if (profileData && profileData.stripe_account_id) {
+          mergedSettings.stripe_account_id = profileData.stripe_account_id;
+        }
+        
+        setSettings(mergedSettings);
       } catch (error) {
         console.error('設定の取得に失敗しました:', error);
         toast({
@@ -434,6 +458,27 @@ const AccountSettingsComponent: React.FC = () => {
               />
             </div>
           </div>
+        </div>
+        
+        {/* Stripe決済設定セクション */}
+        <div className="border-t border-gray-200 pt-6">
+          <h2 className="text-sm font-medium text-gray-700 mb-4">決済設定</h2>
+          
+          {currentUser && (
+            <>
+              <StripeConnectSection 
+                userId={currentUser.id} 
+                stripeAccountId={settings.stripe_account_id} 
+              />
+              
+              {settings.stripe_account_id && (
+                <PaymentTestForm 
+                  receiverId={currentUser.id}
+                  stripeAccountId={settings.stripe_account_id}
+                />
+              )}
+            </>
+          )}
         </div>
         
         {/* 記事設定 */}

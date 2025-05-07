@@ -1,0 +1,37 @@
+# Stripe C to C決済実装チェックリスト
+
+## 環境準備
+- [x] 必要なライブラリをインストール (stripe, raw-body等)
+- [ ] 環境変数ファイル (.env.local) を設定
+  - [ ] STRIPE_SECRET_KEY (秘密鍵を設定)
+  - [ ] NEXT_PUBLIC_URL (アプリケーションのURL)
+  - [ ] STRIPE_WEBHOOK_SECRET (Webhookの検証用)
+
+## Supabaseテーブル設定
+- [ ] profilesテーブルにstripe_account_idカラムを追加
+- [ ] paymentsテーブルを作成
+
+## ライブラリ・クライアント設定
+- [x] Stripeクライアント初期化ファイル作成 (src/lib/stripe.ts)
+- [x] Supabaseクライアント設定ファイル確認/作成 (src/lib/supabase-admin.ts)
+
+## API実装
+- [x] Express アカウント作成API (src/pages/api/stripe/create-express-account.ts)
+- [x] Onboarding リンク発行API (src/pages/api/stripe/create-account-link.ts)
+- [x] Direct Charges: PaymentIntent 作成API (src/pages/api/stripe/create-payment-intent.ts) 
+- [x] Webhook処理用エンドポイント (src/pages/api/stripe/webhook.ts)
+
+## フロントエンド実装
+- [x] Stripeアカウント接続コンポーネント (src/components/settings/StripeConnectSection.tsx)
+- [x] 決済テストフォームコンポーネント (src/components/settings/PaymentTestForm.tsx)
+- [x] アカウント設定ページへの統合 (src/components/settings/AccountSettings.tsx)
+
+## エラーハンドリング改善
+- [x] APIエンドポイントの環境変数チェック追加
+- [x] Stripeエラーの詳細な分類と表示
+- [x] フロントエンドでのエラー表示改善
+
+## テスト
+- [ ] 環境変数の設定確認
+- [ ] 各APIエンドポイントのテスト
+- [ ] フロントエンド動作確認
