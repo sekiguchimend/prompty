@@ -14,6 +14,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'missing parameters' });
     }
 
+    // リクエスト情報をログに出力（デバッグ用）
+    console.log('決済リクエスト:', {
+      user_id: user_id.substring(0, 8) + '...',
+      prompt_id: prompt_id.substring(0, 8) + '...',
+      price,
+      currency,
+      stripe_price_id,
+      author_id: author_id.substring(0, 8) + '...'
+    });
+
     // 価格を整数として扱う（最小通貨単位）
     const priceAmount = typeof price === 'string' ? parseInt(price, 10) : price;
     
@@ -27,6 +37,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (selErr || !authorProfile?.stripe_account_id) {
       console.error('Supabase error or account not found:', selErr);
       return res.status(404).json({ error: 'account not found' });
+    }
+
+    // Stripe側で価格IDの存在確認
+    try {
+      // 直接価格情報を取得して存在確認
+      await stripe.prices.retrieve(stripe_price_id, {
+        stripeAccount: authorProfile.stripe_account_id
+      });
+      console.log(`価格ID確認成功: ${stripe_price_id}`);
+    } catch (priceError: any) {
+      console.error('価格ID検証エラー:', priceError);
+      
+      // DB情報を再確認
+      const { data: promptData } = await supabaseAdmin
+        .from('prompts')
+        .select('id, title, price, stripe_product_id, stripe_price_id')
+        .eq('id', prompt_id)
+        .single();
+        
+      return res.status(400).json({ 
+        error: '価格情報が見つかりません。Stripe連携に問題があります。',
+        message: priceError.message,
+        prompt_info: promptData ? {
+          id: promptData.id,
+          price: promptData.price,
+          stripe_price_id: promptData.stripe_price_id
+        } : 'no data'
+      });
     }
 
     // 3. Stripe重複防止のためのidempotencyKey設定
@@ -88,10 +126,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(200).json({ url: session.url });
   } catch (error: any) {
     console.error('Stripe checkout session creation error:', error);
-    res.status(500).json({ 
-      error: error.message,
-      type: error.type || 'unknown',
-      code: error.code || 'unknown'
-    });
+    
+    // エラー種類によって異なるレスポンスを返す
+    if (error.type === 'StripeInvalidRequestError') {
+      if (error.message.includes('No such price')) {
+        res.status(400).json({
+          error: '有効な価格IDが見つかりません。プロンプトのStripe連携を確認してください。',
+          type: error.type,
+          code: error.code
+        });
+      } else {
+        res.status(400).json({
+          error: 'Stripeリクエストエラー: ' + error.message,
+          type: error.type,
+          code: error.code
+        });
+      }
+    } else {
+      res.status(500).json({ 
+        error: error.message,
+        type: error.type || 'unknown',
+        code: error.code || 'unknown'
+      });
+    }
   }
 } 
