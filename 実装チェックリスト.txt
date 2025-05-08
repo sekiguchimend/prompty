@@ -232,6 +232,7 @@ supabase functions deploy handle_prompts_insert --no-verify-jwt
     - [x] payment_intent_dataブロックの完全削除によるエラー回避対応
     - [x] transfer_data.destinationを使用した正しい接続アカウント送金設定の実装
     - [x] 「No such price」エラー対応（価格ID検証とエラーハンドリング強化）
+    - [x] 価格ID不在時に自動的にStripe製品・価格を作成するフォールバック機能を実装
     - [ ] Stripe決済成功後にpaymentsテーブルに記録されることを確認
   - [ ] 7.4 購入済み記事の表示テスト
     - [ ] 購入済み記事の全文（prompt_content含む）が表示されることを確認

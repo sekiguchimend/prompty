@@ -9,8 +9,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { user_id, prompt_id, price, currency = 'jpy', stripe_price_id, author_id } = req.body;
-    if (!user_id || !prompt_id || !price || !stripe_price_id || !author_id) {
+    const { user_id, prompt_id, price, currency = 'jpy', stripe_price_id, author_id, title } = req.body;
+    if (!user_id || !prompt_id || !price) {
       return res.status(400).json({ error: 'missing parameters' });
     }
 
@@ -20,51 +20,108 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       prompt_id: prompt_id.substring(0, 8) + '...',
       price,
       currency,
-      stripe_price_id,
-      author_id: author_id.substring(0, 8) + '...'
+      stripe_price_id: stripe_price_id || 'なし',
+      author_id: author_id?.substring(0, 8) + '...'
     });
 
     // 価格を整数として扱う（最小通貨単位）
     const priceAmount = typeof price === 'string' ? parseInt(price, 10) : price;
     
+    // プロンプト情報を取得（Stripe連携情報確認と不足情報補完のため）
+    const { data: promptData, error: promptError } = await supabaseAdmin
+      .from('prompts')
+      .select('id, title, price, author_id, stripe_product_id, stripe_price_id')
+      .eq('id', prompt_id)
+      .single();
+    
+    if (promptError || !promptData) {
+      console.error('プロンプト情報取得エラー:', promptError);
+      return res.status(404).json({ error: 'prompt not found' });
+    }
+    
+    // 不足情報を補完
+    const promptTitle = title || promptData.title;
+    const promptAuthorId = author_id || promptData.author_id;
+    let promptPriceId = stripe_price_id || promptData.stripe_price_id;
+    
     // 売り手のStripeアカウントIDを取得
     const { data: authorProfile, error: selErr } = await supabaseAdmin
       .from('profiles')
       .select('stripe_account_id')
-      .eq('id', author_id)
+      .eq('id', promptAuthorId)
       .single();
 
     if (selErr || !authorProfile?.stripe_account_id) {
       console.error('Supabase error or account not found:', selErr);
-      return res.status(404).json({ error: 'account not found' });
+      return res.status(404).json({ error: 'author stripe account not found' });
     }
 
+    let priceValidated = false;
+    
     // Stripe側で価格IDの存在確認
-    try {
-      // 直接価格情報を取得して存在確認
-      await stripe.prices.retrieve(stripe_price_id, {
-        stripeAccount: authorProfile.stripe_account_id
-      });
-      console.log(`価格ID確認成功: ${stripe_price_id}`);
-    } catch (priceError: any) {
-      console.error('価格ID検証エラー:', priceError);
+    if (promptPriceId) {
+      try {
+        // 直接価格情報を取得して存在確認
+        await stripe.prices.retrieve(promptPriceId, {
+          stripeAccount: authorProfile.stripe_account_id
+        });
+        console.log(`価格ID確認成功: ${promptPriceId}`);
+        priceValidated = true;
+      } catch (priceError: any) {
+        console.error('価格ID検証エラー:', priceError);
+        // 価格IDが無効な場合は新規作成するため、エラーをスローしない
+        priceValidated = false;
+      }
+    }
+    
+    // 価格IDが無効または存在しない場合は、その場でStripe製品・価格を作成
+    if (!priceValidated) {
+      console.log('有効な価格IDが見つからないため、Stripe製品・価格を新規作成します');
       
-      // DB情報を再確認
-      const { data: promptData } = await supabaseAdmin
-        .from('prompts')
-        .select('id, title, price, stripe_product_id, stripe_price_id')
-        .eq('id', prompt_id)
-        .single();
+      try {
+        // Stripe製品作成
+        const product = await stripe.products.create({
+          name: promptTitle,
+          metadata: { prompt_id: prompt_id },
+          default_price_data: {
+            unit_amount: priceAmount,
+            currency: currency,
+          },
+        }, { 
+          stripeAccount: authorProfile.stripe_account_id,
+          idempotencyKey: `product_${prompt_id}`
+        });
         
-      return res.status(400).json({ 
-        error: '価格情報が見つかりません。Stripe連携に問題があります。',
-        message: priceError.message,
-        prompt_info: promptData ? {
-          id: promptData.id,
-          price: promptData.price,
-          stripe_price_id: promptData.stripe_price_id
-        } : 'no data'
-      });
+        // 製品IDから価格IDを取得
+        promptPriceId = typeof product.default_price === 'string' 
+          ? product.default_price 
+          : product.default_price?.id;
+          
+        if (!promptPriceId) {
+          throw new Error('価格IDの取得に失敗しました');
+        }
+        
+        console.log('Stripe製品・価格作成成功:', {
+          product_id: product.id,
+          price_id: promptPriceId
+        });
+        
+        // promptsテーブルを更新
+        await supabaseAdmin.from('prompts')
+          .update({
+            stripe_product_id: product.id,
+            stripe_price_id: promptPriceId
+          })
+          .eq('id', prompt_id);
+          
+        priceValidated = true;
+      } catch (createError: any) {
+        console.error('Stripe製品・価格作成エラー:', createError);
+        return res.status(500).json({ 
+          error: 'Stripe製品・価格の作成に失敗しました',
+          message: createError.message
+        });
+      }
     }
 
     // 3. Stripe重複防止のためのidempotencyKey設定
@@ -80,7 +137,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       payment_method_types: ['card'],
       line_items: [
         {
-          price: stripe_price_id,
+          price: promptPriceId,
           quantity: 1,
         },
       ],
@@ -90,7 +147,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       metadata: {
         user_id,
         prompt_id,
-        author_id,
+        author_id: promptAuthorId,
       },
       payment_intent_data: {
         // on_behalf_ofの代わりにtransfer_dataを使用
