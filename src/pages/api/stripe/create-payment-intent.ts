@@ -33,7 +33,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const idempotencyKey = `${prompt_id}:${user_id}`;
     console.log(`Creating checkout session with idempotencyKey: ${idempotencyKey}`);
 
-    // Stripe Checkoutセッション作成
+    // アプリケーションの手数料（10%）
+    const applicationFee = Math.floor(priceAmount * 0.1);
+    const sellerAmount = priceAmount - applicationFee;
+
+    // Stripe Checkoutセッション作成 - 連携アカウントへの送金設定
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -45,19 +49,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       mode: 'payment',
       success_url: `${process.env.NEXT_PUBLIC_URL}/prompts/${prompt_id}?success=1`,
       cancel_url: `${process.env.NEXT_PUBLIC_URL}/prompts/${prompt_id}?canceled=1`,
-      customer_email: undefined, // 必要なら追加
       metadata: {
         user_id,
         prompt_id,
         author_id,
       },
       payment_intent_data: {
-        on_behalf_of: authorProfile.stripe_account_id,
-        application_fee_amount: Math.floor(priceAmount * 0.1), // 10% fee
+        // on_behalf_ofの代わりにtransfer_dataを使用
+        transfer_data: {
+          destination: authorProfile.stripe_account_id,
+        },
+        application_fee_amount: applicationFee, // 10% fee
       },
     }, {
-      stripeAccount: authorProfile.stripe_account_id,
-      idempotencyKey: idempotencyKey // 重複防止キー
+      // ここではstripeAccountを指定しない
+      idempotencyKey: idempotencyKey
     });
 
     // paymentsテーブルに仮レコードを保存（status=pending）
@@ -70,7 +76,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         currency,
         status: 'pending',
         checkout_session_id: session.id,
-        payment_intent_id: session.payment_intent as string, // payment_intent_idを保存
+        payment_intent_id: session.payment_intent as string,
       });
       
     if (insertError) {
@@ -78,6 +84,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // エラーがあってもセッションURLは返す（決済自体は進行可能）
     }
 
+    console.log('Checkout session created successfully:', session.id);
     res.status(200).json({ url: session.url });
   } catch (error: any) {
     console.error('Stripe checkout session creation error:', error);

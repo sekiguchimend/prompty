@@ -228,8 +228,10 @@ supabase functions deploy handle_prompts_insert --no-verify-jwt
     - [ ] 未ログイン時に購入ボタンを押すとログイン案内が表示されることを確認
     - [ ] 購入ダイアログ内の金額・タイトル・著者情報が正確に表示されることを確認
     - [ ] "購入する"ボタンクリックでStripe Checkoutに遷移することを確認
+    - [x] Stripe決済処理時の「on_behalf_of」エラー対応（同一アカウントへの設定を回避）
+    - [x] payment_intent_dataブロックの完全削除によるエラー回避対応
+    - [x] transfer_data.destinationを使用した正しい接続アカウント送金設定の実装
     - [ ] Stripe決済成功後にpaymentsテーブルに記録されることを確認
-    - [ ] Webhook処理が正しく動作し、statusが"paid"になることを確認
   - [ ] 7.4 購入済み記事の表示テスト
     - [ ] 購入済み記事の全文（prompt_content含む）が表示されることを確認
     - [ ] "このプロンプトは購入済みです"表示があることを確認
