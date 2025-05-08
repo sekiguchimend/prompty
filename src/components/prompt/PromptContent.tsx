@@ -4,12 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Check, Lock, FileText, Info } from 'lucide-react';
 import { Badge } from '../../components/ui/badge';
 import { ExternalLink } from 'lucide-react';
-import PurchaseDialog from './PurchaseDialog'; // Import the PurchaseDialog component
+import PurchaseDialog from './PurchaseDialog';
 import Image from 'next/image';
 import { trackView } from '../../lib/analytics';
 import ViewCounter from '../ViewCounter';
+import { supabase } from '../../lib/supabaseClient';
+import { isContentFree, shouldShowFullContent, normalizeContentText, isContentPremium } from '../../utils/content-helpers';
+import { checkPurchaseStatus } from '../../utils/purchase-helpers';
 
-// WindowオブジェクトにカスタムプロパティのTypeを追加
+// Windowオブジェクトにカスタムプロパティのタイプを追加
 declare global {
   interface Window {
     _trackedPromptIds: Record<string, boolean>;
@@ -32,8 +35,10 @@ interface PromptContentProps {
     publishedAt?: string;
   };
   content: string | string[];
+  premiumContent?: string;
   isPaid?: boolean;
   isPreview?: boolean;
+  isPremium?: boolean;
   price?: number;
   systemImageUrl?: string;
   systemUrl?: string;
@@ -45,45 +50,73 @@ const PromptContent: React.FC<PromptContentProps> = ({
   title,
   author,
   content,
+  premiumContent = '',
   isPaid = false,
-  isPreview = true,
+  isPreview = false,
+  isPremium = false,
   price = 0,
   systemImageUrl,
   systemUrl,
   description = ''
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isPurchased, setIsPurchased] = useState(false);
   const router = useRouter();
   
   // プロンプトIDを取得
   const promptId = router.query.id as string;
+
+  // ユーザー情報の取得
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) setCurrentUser(session.user);
+    };
+    fetchUser();
+  }, []);
+
+  // 購入済み判定ロジック
+  useEffect(() => {
+    const checkPurchased = async () => {
+      if (!currentUser || !promptId) return;
+      
+      try {
+        // 新しいヘルパー関数を使用して購入状態を確認
+        const isPurchased = await checkPurchaseStatus(currentUser.id, promptId);
+        setIsPurchased(isPurchased || isPaid); // 親コンポーネントからのpropsも考慮
+      } catch (e) {
+        console.error('購入確認エラー:', e);
+        setIsPurchased(isPaid); // エラー時は親コンポーネントの値を使用
+      }
+    };
+    
+    checkPurchased();
+  }, [currentUser, promptId, isPaid]);
   
   // トラッキングが完了したかを追跡するref
   const trackingCompletedRef = useRef(false);
 
-  // ビュートラッキング - 厳格なバージョン
+  // ビュートラッキング
   useEffect(() => {
     if (!promptId) return;
     
-    // 1. すでにこのコンポーネントのライフサイクルでトラッキングが完了している場合はスキップ
+    // 既にこのコンポーネントでトラッキングが完了している場合はスキップ
     if (trackingCompletedRef.current) {
-      console.log('このコンポーネントのレンダリングサイクルで既に追跡済み');
       return;
     }
     
-    // 2. windowのグローバル変数でこのIDが追跡済みかチェック
+    // windowのグローバル変数でこのIDが追跡済みかチェック
     if (typeof window !== 'undefined' && window._trackedPromptIds && window._trackedPromptIds[promptId]) {
-      console.log('ブラウザセッションで既に追跡済み:', promptId);
       trackingCompletedRef.current = true;
       return;
     }
     
-    // 3. ローカルストレージでこのIDが追跡済みかチェック
+    // ローカルストレージでこのIDが追跡済みかチェック
     const trackingKey = `tracked_${promptId}`;
     const hasTracked = localStorage.getItem(trackingKey);
     
     if (hasTracked) {
-      console.log('ローカルストレージで既に追跡済み:', promptId);
       // グローバル変数にも記録
       if (typeof window !== 'undefined') {
         window._trackedPromptIds[promptId] = true;
@@ -92,8 +125,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
       return;
     }
     
-    // 4. ここまで来たら新規閲覧なのでトラッキング実行
-    console.log('新規閲覧としてトラッキング開始:', promptId);
+    // 新規閲覧なのでトラッキング実行
     trackView(promptId).then(success => {
       if (success) {
         // 全ての記録先に保存
@@ -102,28 +134,33 @@ const PromptContent: React.FC<PromptContentProps> = ({
           window._trackedPromptIds[promptId] = true;
         }
         trackingCompletedRef.current = true;
-        console.log('トラッキング完了:', promptId);
       }
     });
     
-    // 念のため、ページを離れる時にもrefをリセット
     return () => {
       trackingCompletedRef.current = false;
     };
   }, [promptId]);
 
   // コンテンツが配列の場合は結合して文字列にする
-  const contentText = Array.isArray(content) ? content.join('\n') : content;
+  const contentText = normalizeContentText(content);
   
-  // Calculate the character count
-  const characterCount = Array.isArray(content) 
-    ? content.join('').length 
-    : contentText.length;
+  // 文字数カウント - 無料部分と有料部分の文字数を合計
+  const basicCharCount = typeof content === 'string' 
+    ? content.length 
+    : Array.isArray(content) 
+      ? content.join('').length 
+      : 0;
+  
+  const premiumCharCount = premiumContent?.length || 0;
+  const characterCount = basicCharCount + premiumCharCount;
 
+  // 購入ダイアログを開く
   const handlePurchase = () => {
-    setIsDialogOpen(true); // Open the dialog instead of redirecting
+    setIsDialogOpen(true);
   };
 
+  // 購入ダイアログを閉じる
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
   };
@@ -141,7 +178,45 @@ const PromptContent: React.FC<PromptContentProps> = ({
       return url;
     }
   };
- 
+
+  // 無料コンテンツかどうかの判定
+  const isFreeContent = isContentFree({ price, is_free: price === 0 });
+  
+  // 有料コンテンツかどうかの判定（複合条件）
+  // 1. isContentPremium関数の判定
+  // 2. 親コンポーネントからの明示的なisPremiumフラグ
+  // 3. price > 0という基本条件
+  // 4. premiumContentが存在し、かつprice > 0の場合
+  const isPremiumByHelper = isContentPremium({ price, is_free: price === 0, stripe_product_id: '', stripe_price_id: '' });
+  const isPremiumContent = isPremiumByHelper || isPremium || (price > 0 && premiumContent && premiumContent.length > 0);
+  
+  // 全文表示するかのフラグ
+  const showAllContent = shouldShowFullContent({ price, is_free: price === 0 }, isPurchased || isPaid);
+  
+  // 表示コンテンツの準備
+  // 常に無料部分は表示
+  const basicDisplayContent = contentText;
+  
+  // 有料部分は条件付きで表示
+  // 有料部分のプレビューを表示するかどうか
+  // 1. 有料コンテンツである
+  // 2. 全文表示条件を満たさない（未購入状態）
+  // 3. 有料部分のコンテンツが存在する
+  const shouldShowPremiumPreview = (isPremiumContent || price > 0) && !showAllContent && !isPurchased && !isPaid && premiumContent?.length > 0;
+  
+  console.log('コンテンツ判定:', {
+    isPurchased, 
+    isPaid,
+    isFreeContent, 
+    isPremiumContent, 
+    isPremiumByHelper,
+    isPremium, 
+    price, 
+    showAllContent,
+    shouldShowPremiumPreview,
+    hasPremiumContent: Boolean(premiumContent && premiumContent.length > 0)
+  });
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="flex flex-col gap-6">
@@ -195,7 +270,6 @@ const PromptContent: React.FC<PromptContentProps> = ({
             </div>
           </div>
         </div>
-
         {/* メイン画像（あれば表示） */}
         {imageUrl && (
           <div className="rounded-md overflow-hidden aspect-video mb-2 relative">
@@ -242,64 +316,71 @@ const PromptContent: React.FC<PromptContentProps> = ({
         )}
         {/* Content section */}
         <div className="relative prose max-w-none">
-          {isPreview ? (
-            <div className="relative">
-            <div className="mb-2">
-                <div dangerouslySetInnerHTML={{ __html: contentText.slice(0, 500) }} />
-              </div> 
-              {/* + '...'  */}
-              <div className="space-y-4">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white"></div>
+          {/* 無料部分は常に表示 */}
+          <div dangerouslySetInnerHTML={{ __html: basicDisplayContent }} />
+          
+          {/* 有料部分 - 条件付きで表示 */}
+          {premiumContent && (
+            <>
+              {showAllContent ? (
+                /* 購入済みまたは無料の場合は全文表示 */
+                <div className="mt-6">
+                  <div dangerouslySetInnerHTML={{ __html: premiumContent }} />
                 </div>
+              ) : shouldShowPremiumPreview ? (
+                /* 有料で未購入の場合はプレビューと購入案内 */
+                <div className="relative">
+                  <div className="space-y-4">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white"></div>
+                    </div>
 
-                <div className="flex flex-col items-center justify-center py-2 relative">
-                  {/* 「ここから先は」テキストを修正 - 点線の中に配置 */}
-                  <div className="text-center w-full my-6 flex items-center justify-center">
-                    <div className="border-t border-dashed border-gray-300 w-1/4"></div>
-                    <p className="text-gray-700 font-bold mx-4">ここから先は</p>
-                    <div className="border-t border-dashed border-gray-300 w-1/4"></div>
-                  </div>
-                  <Badge variant="outline" className="mb-1 rounded-sm">プレミアムコンテンツ</Badge>
-                  <div className="space-y-2 py-2">
-                  </div>
+                    <div className="flex flex-col items-center justify-center py-2 relative">
+                      {/* 「ここから先は」テキストを点線の中に配置 */}
+                      <div className="text-center w-full my-6 flex items-center justify-center">
+                        <div className="border-t border-dashed border-gray-300 w-1/4"></div>
+                        <p className="text-gray-700 font-bold mx-4">ここから先は</p>
+                        <div className="border-t border-dashed border-gray-300 w-1/4"></div>
+                      </div>
+                      <Badge variant="outline" className="mb-1 rounded-sm">プレミアムコンテンツ</Badge>
+                      <div className="space-y-2 py-2"></div>
 
-                  <div className="flex flex-col items-center justify-center py-2 relative w-full max-w-md">
-                    {/* Updated purchase section to match the image */}
-                    <div className="text-center mb-1 w-full">
-                      <h3 className="text-xl font-medium text-gray-800 mb-4">モデルとプロンプトをみませんか?</h3>
-                      <p className="text-gray-600 mb-3">{characterCount}字</p>
-                      <p className="text-4xl font-bold mb-4">¥ {price.toLocaleString()}</p>
-                      
-                      {/* Added information items with icons */}
-                      <div className="space-y-4 mb-6">
-                        <div className="flex items-center text-left text-sm text-gray-700">
-                          <FileText className="h-5 w-5 mr-2 text-gray-500 flex-shrink-0" />
-                          <span>使用されたモデルについての詳細な情報</span>
-                        </div>
-                        <div className="flex items-center text-left text-sm text-gray-700">
-                          <Info className="h-5 w-5 mr-2 text-gray-500 flex-shrink-0" />
-                          <span>実際に使用されたプロンプトの全文</span>
+                      <div className="flex flex-col items-center justify-center py-2 relative w-full max-w-md">
+                        {/* 購入セクション */}
+                        <div className="text-center mb-1 w-full">
+                          <h3 className="text-xl font-medium text-gray-800 mb-4">モデルとプロンプトをみませんか?</h3>
+                          <p className="text-gray-600 mb-3">{premiumCharCount}字</p>
+                          <p className="text-4xl font-bold mb-4">¥ {price.toLocaleString()}</p>
+                          
+                          {/* 情報アイテム */}
+                          <div className="space-y-4 mb-6">
+                            <div className="flex items-center text-left text-sm text-gray-700">
+                              <FileText className="h-5 w-5 mr-2 text-gray-500 flex-shrink-0" />
+                              <span>使用されたモデルについての詳細な情報</span>
+                            </div>
+                            <div className="flex items-center text-left text-sm text-gray-700">
+                              <Info className="h-5 w-5 mr-2 text-gray-500 flex-shrink-0" />
+                              <span>実際に使用されたプロンプトの全文</span>
+                            </div>
+                          </div>
+                          
+                          {/* 購入ボタン */}
+                          <Button
+                            className="w-full bg-gray-800 text-white hover:bg-gray-700 rounded-md py-3 text-lg font-medium mt-2"
+                            onClick={handlePurchase}
+                          >
+                            購入手続きへ
+                          </Button>
                         </div>
                       </div>
-                      
-                      {/* Full-width purchase button */}
-                      <Button
-                        className="w-full bg-gray-800 text-white hover:bg-gray-700 rounded-md py-3 text-lg font-medium mt-2"
-                        onClick={handlePurchase}
-                      >
-                        購入手続きへ
-                      </Button>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          ) : (
-            <div dangerouslySetInnerHTML={{ __html: contentText }} />
+              ) : null}
+            </>
           )}
 
-          {isPaid && (
+          {isPurchased && (
             <div className="flex items-center mt-6 p-4 border border-gray-200 rounded-sm bg-gray-50">
               <Check className="h-5 w-5 text-gray-600 mr-2" />
               <p className="text-sm font-medium text-gray-700">このプロンプトは購入済みです</p>
@@ -308,14 +389,23 @@ const PromptContent: React.FC<PromptContentProps> = ({
         </div>
       </div>
       
-      {/* Add PurchaseDialog component here */}
+      {/* Purchase Dialog */}
       <PurchaseDialog 
         isOpen={isDialogOpen}
         onClose={handleCloseDialog}
         prompt={{
+          id: promptId,
           title,
-          author,
+          author: {
+            ...author,
+            userId: '',
+            stripe_price_id: ''
+          },
           price
+        }}
+        onPurchaseSuccess={() => {
+          setIsPurchased(true);
+          setIsDialogOpen(false);
         }}
       />
     </div>

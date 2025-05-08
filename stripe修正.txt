@@ -1,0 +1,47 @@
+【Stripe × Supabase C→C 決済 実装・修正ポイント集】
+2025‑05‑08 版
+──────────────────────────────
+
+1. **price 型を整数に統一**
+
+   * prompts.price は最小通貨単位（JPY=1円）で `int4` に変更。
+
+2. **Edge Function 引数の取り扱い**
+
+   * `const promptId = id ?? record?.id;` へ修正。
+
+3. **Stripe 重複防止**
+
+   * `idempotencyKey` を
+
+     * `handle_prompts_insert` : `prompt.id`
+     * `create_checkout_session` : `${prompt.id}:${auth.uid()}`
+       に指定。
+
+4. **未連携アカウントのエラー格納**
+
+   * カラムを分離：`stripe_error_code` (`NO_ACCOUNT` 等) / `stripe_error_msg` (詳細)。
+
+5. **例外ログ**
+
+   * `catch (e) { console.error(e); … }` を追加してデバッグ容易化。
+
+6. **RLS 強化**
+
+   * UPDATE 用 `prompts_update_policy` を追加し、後から有料化する抜け道を塞ぐ。
+
+7. **purchases 冪等化**
+
+   * `payment_intent_id` に UNIQUE INDEX。（Webhook 多重送信対策）
+
+8. **VIEW に購入フラグ追加**
+
+   * `v_prompts_secure` で `is_purchased` 論理列を付与し UI が簡潔に。
+
+9. **投稿→同期の確実化**
+
+   * Postgres トリガー + `supabase.functions.invoke()` で挿入直後に Edge Function を自動実行。
+
+10. **環境変数確認**
+
+    * `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `SITE_URL`, `SUPABASE_SERVICE_ROLE_KEY` を .env に設定。

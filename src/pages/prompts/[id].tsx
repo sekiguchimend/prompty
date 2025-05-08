@@ -14,6 +14,12 @@ import { PostItem } from '../../data/posts';
 import { supabase } from '../../lib/supabaseClient';
 import { useRouter } from 'next/router';
 import { recordPromptView } from '../../lib/recently-viewed-service';
+import PurchaseDialog from '../../components/prompt/PurchaseDialog';
+import { Badge } from '../../components/ui/badge';
+import { Button } from '../../components/ui/button';
+import { FileText, Info } from 'lucide-react';
+import { isContentFree, isContentPremium, normalizeContentText } from '../../utils/content-helpers';
+import { checkPurchaseStatus } from '../../utils/purchase-helpers';
 
 // PromptItemの型定義 - エクスポートする
 export interface PromptItem {
@@ -36,6 +42,10 @@ export interface PromptItem {
 interface ExtendedPostItem extends PostItem {
   site_url?: string;
   description?: string;
+  prompt_content?: string;
+  is_free?: boolean;
+  stripe_product_id?: string;
+  stripe_price_id?: string;
 }
 
 // サーバーサイドレンダリングに変更
@@ -76,13 +86,17 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
       title,
       thumbnail_url,
       content,
+      prompt_content,
       created_at,
       price,
       author_id,
       view_count,
       profiles:profiles(id, username, display_name, avatar_url, bio),
       site_url,
-      description
+      description,
+      is_free,
+      stripe_product_id,
+      stripe_price_id
     `)
     .eq('id', formattedId)
     .single();
@@ -101,13 +115,17 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
             title,
             thumbnail_url,
             content,
+            prompt_content,
             created_at,
             price,
             author_id,
             view_count,
             profiles:profiles(id, username, display_name, avatar_url, bio),
             site_url,
-            description
+            description,
+            is_free,
+            stripe_product_id,
+            stripe_price_id
           `)
           .eq('numeric_id', numericId) // 数値ID用のカラムがある場合（例: numeric_id）
           .single();
@@ -177,8 +195,9 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
         }
       } else {
         // テーブルが存在しない場合など、エラーの場合は直接カウントアップ
-        if (viewError.code === '42P01') { // リレーションが存在しない
-          console.log("analytics_viewsテーブルが存在しません");
+        console.log("analytics_viewsテーブルエラー:", viewError.code, viewError.message);
+        if (viewError.code === '42P01' || viewError.message.includes('does not exist')) { // リレーションが存在しない
+          console.log("analytics_viewsテーブルが存在しないか、カラムに問題があります");
           shouldUpdateViewCount = true;
         } else {
           console.error("ビュー履歴チェックエラー:", viewError);
@@ -314,10 +333,14 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
     title: safeGetString(promptData.title),
     thumbnailUrl: safeGetString(promptData.thumbnail_url, '/images/default-thumbnail.svg'),
     content: Array.isArray(promptData.content) ? promptData.content : [],
+    prompt_content: safeGetString(promptData.prompt_content, ''),
     price: safeGetNumber(promptData.price),
     likeCount: safeGetNumber(likeCount),
     postedAt: new Date(safeGetString(promptData.created_at)).toLocaleDateString('ja-JP'),
     description: safeGetString(promptData.description, ''),
+    is_free: promptData.is_free === true,
+    stripe_product_id: safeGetString(promptData.stripe_product_id),
+    stripe_price_id: safeGetString(promptData.stripe_price_id),
     user: {
       userId: safeGetString(promptData.author_id),
       name: profileData.display_name,
@@ -363,7 +386,36 @@ const PromptDetail = ({
   const router = useRouter();  
   const [prompt, setPrompt] = useState<ExtendedPostItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  
+  const [isPaid, setIsPaid] = useState<boolean>(false);
+  const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // ユーザー取得
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) setCurrentUser(session.user);
+    };
+    fetchUser();
+  }, []);
+
+  // 購入済み判定
+  useEffect(() => {
+    const checkPaid = async () => {
+      if (!currentUser || !postData?.id) return;
+      
+      try {
+        // 新しいヘルパー関数を使用して購入状態を確認
+        const isPurchased = await checkPurchaseStatus(currentUser.id, postData.id);
+        setIsPaid(isPurchased);
+      } catch (e) {
+        console.error("購入確認処理エラー:", e);
+        setIsPaid(false);
+      }
+    };
+    checkPaid();
+  }, [currentUser, postData?.id]);
+
   // 404処理
   if (router.isFallback) {
     return (
@@ -461,6 +513,21 @@ const PromptDetail = ({
     }
   }, [prompt, isLoading]);
 
+  // 有料・無料判定
+  console.log('price:', postData.price, 'is_free:', postData.is_free);
+  // ヘルパー関数を使用して有料・無料判定を行う
+  const isFree = isContentFree(postData);
+  const isPremium = isContentPremium(postData);
+  console.log('isFree:', isFree, 'isPremium:', isPremium, 'price type:', typeof postData.price);
+  console.log('prompt_content:', Boolean(postData.prompt_content), 'content:', Boolean(postData.content?.length));
+
+  // 有料記事のコンテンツ制御準備
+  // contentは常に表示される部分（無料部分）
+  // prompt_contentは有料部分で、購入済み/無料記事の場合のみ表示される
+  const basicContent = normalizeContentText(postData.content);
+  const premiumContent = postData.prompt_content || '';
+
+  // 表示切替
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
@@ -487,27 +554,20 @@ const PromptDetail = ({
             
             {/* Main content (centered) */}
             <div className="flex-1 max-w-3xl mx-auto">
+              {/* 本文部分 */}
               <PromptContent
                 imageUrl={promptData.thumbnailUrl}
                 title={promptData.title}
-                content={promptData.content || []}
+                content={basicContent}
+                premiumContent={premiumContent}
                 author={promptData.authorForContent}
-                price={promptData.price || 0}
+                price={Number(postData.price || 0)}
                 systemImageUrl={promptData.systemImageUrl}
                 systemUrl={postData.site_url || ''}
                 description={postData.description}
-              />
-              
-              {/* Purchase section */}
-              <PurchaseSection
-                wordCount={promptData.wordCount || 0}
-                price={promptData.price || 0}
-                tags={promptData.tags || []}
-                reviewers={promptData.reviewers || []}
-                reviewCount={promptData.reviewCount || 0}
-                likes={promptData.likeCount}
-                author={promptData.authorForPurchase}
-                socialLinks={promptData.socialLinks || []}
+                isPaid={isPaid}
+                isPreview={!isFree && isPremium && !isPaid}
+                isPremium={isPremium}
               />
             </div>
             
