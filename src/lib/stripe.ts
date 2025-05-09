@@ -2,11 +2,11 @@ import Stripe from 'stripe';
 
 // 環境変数チェック
 if (!process.env.STRIPE_SECRET_KEY) {
-  console.error('STRIPE_SECRET_KEYが設定されていません。.env.localファイルを確認してください。');
+  console.error('⚠️ STRIPE_SECRET_KEY が設定されていません。');
 }
 
-// Stripeクライアントを初期化
+// ここには必ず「プラットフォーム」のキーを入れる
 export const stripe = new Stripe(
-  process.env.STRIPE_SECRET_KEY || '', // デフォルト値として空文字を設定
+  process.env.STRIPE_SECRET_KEY!,
   { apiVersion: '2025-04-30.basil' }
 ); 

@@ -132,34 +132,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const applicationFee = Math.floor(priceAmount * 0.1);
     const sellerAmount = priceAmount - applicationFee;
 
-    // Stripe Checkoutセッション作成 - 連携アカウントへの送金設定
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price: promptPriceId,
-          quantity: 1,
+    // Stripe Checkoutセッション作成 - プラットフォームから接続アカウントへ送金する設定
+    const session = await stripe.checkout.sessions.create(
+      {
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: promptPriceId,
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        success_url: `${process.env.NEXT_PUBLIC_URL}/prompts/${prompt_id}?success=1`,
+        cancel_url: `${process.env.NEXT_PUBLIC_URL}/prompts/${prompt_id}?canceled=1`,
+        metadata: {
+          user_id,
+          prompt_id,
+          author_id: promptAuthorId,
         },
-      ],
-      mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_URL}/prompts/${prompt_id}?success=1`,
-      cancel_url: `${process.env.NEXT_PUBLIC_URL}/prompts/${prompt_id}?canceled=1`,
-      metadata: {
-        user_id,
-        prompt_id,
-        author_id: promptAuthorId,
-      },
-      payment_intent_data: {
-        transfer_data: {
-          destination: authorProfile.stripe_account_id,
+        payment_intent_data: {
+          transfer_data: { destination: authorProfile.stripe_account_id },
+          application_fee_amount: applicationFee,
         },
-        application_fee_amount: applicationFee,
       },
-    }, {
-      // 接続アカウント側の Price を正しく参照するため stripeAccount を追加
-      stripeAccount: authorProfile.stripe_account_id,
-      idempotencyKey: idempotencyKey
-    });
+      {
+        // プラットフォームのコンテキストで作成するため、stripeAccountは不要
+        idempotencyKey: idempotencyKey
+      }
+    );
 
     // paymentsテーブルに仮レコードを保存（status=pending）
     const { error: insertError } = await supabaseAdmin

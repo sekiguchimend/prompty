@@ -234,6 +234,8 @@ supabase functions deploy handle_prompts_insert --no-verify-jwt
     - [x] 「No such price」エラー対応（価格ID検証とエラーハンドリング強化）
     - [x] 価格ID不在時に自動的にStripe製品・価格を作成するフォールバック機能を実装
     - [x] Stripe Checkout Session作成時にオプションにstripeAccountを追加して接続アカウント側の価格IDを正しく参照できるよう修正
+    - [x] Stripeクライアント初期化部分の修正（プラットフォームのキーだけを使用）
+    - [x] Checkout Session作成方法の変更（プラットフォームのコンテキストでセッションを作成し、transfer_dataで接続アカウントに送金するパターンに修正）
     - [ ] Stripe決済成功後にpaymentsテーブルに記録されることを確認
   - [ ] 7.4 購入済み記事の表示テスト
     - [ ] 購入済み記事の全文（prompt_content含む）が表示されることを確認
