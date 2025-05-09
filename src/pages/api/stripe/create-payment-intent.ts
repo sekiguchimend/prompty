@@ -138,7 +138,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         payment_method_types: ['card'],
         line_items: [
           {
-            price: promptPriceId,
+            // 接続アカウント側のpriceIdは使用せず、単価と数量を直接指定する
+            price_data: {
+              currency: currency,
+              unit_amount: priceAmount,
+              product_data: {
+                name: promptTitle,
+                metadata: { prompt_id: prompt_id }
+              }
+            },
             quantity: 1,
           },
         ],
