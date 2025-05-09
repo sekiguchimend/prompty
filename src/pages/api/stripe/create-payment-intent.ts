@@ -150,14 +150,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         author_id: promptAuthorId,
       },
       payment_intent_data: {
-        // on_behalf_ofの代わりにtransfer_dataを使用
         transfer_data: {
           destination: authorProfile.stripe_account_id,
         },
-        application_fee_amount: applicationFee, // 10% fee
+        application_fee_amount: applicationFee,
       },
     }, {
-      // ここではstripeAccountを指定しない
+      // 接続アカウント側の Price を正しく参照するため stripeAccount を追加
+      stripeAccount: authorProfile.stripe_account_id,
       idempotencyKey: idempotencyKey
     });
 
