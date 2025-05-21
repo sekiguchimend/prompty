@@ -343,7 +343,7 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
       
       // 確認と投稿
       case 8:
-        return (
+  return (
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
             <h2 className="text-xl font-bold mb-6">ステップ 8: 確認と投稿</h2>
             
@@ -363,7 +363,7 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
                     <dt className="text-sm font-medium text-gray-500">説明</dt>
                     <dd className="text-black whitespace-pre-line">{projectSettings.projectDescription}</dd>
                   </div>
-                  <div>
+    <div>
                     <dt className="text-sm font-medium text-gray-500">価格設定</dt>
                     <dd className="text-black">
                       {projectSettings.pricingType === 'free'
@@ -403,9 +403,9 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
                   </>
                 )}
               </Button>
-            </div>
-          </div>
-        );
+      </div>
+    </div>
+  );
       
       default:
         return <div>不明なステップです</div>;

@@ -1,12 +1,14 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Clock } from 'lucide-react';
+import { Clock, FileText } from 'lucide-react';
 
 // プロンプト履歴の型定義
 export interface Prompt {
   id: number;
   prompt_title: string;
   prompt_content: string;
+  yaml_content?: string;
+  file_content?: string;
   createdAt: Date;
 }
 
@@ -21,6 +23,21 @@ const PromptHistory: React.FC<PromptHistoryProps> = ({ prompts, onEditPrompt }) 
     return date.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
   };
 
+  // YAMLファイルをダウンロード
+  const handleDownloadYaml = (yaml_content: string, promptId: number) => {
+    if (!yaml_content) return;
+    
+    const blob = new Blob([yaml_content], { type: 'text/yaml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `prompt_${promptId}.yaml`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   if (prompts.length === 0) {
     return null;
   }
@@ -33,7 +50,7 @@ const PromptHistory: React.FC<PromptHistoryProps> = ({ prompts, onEditPrompt }) 
           <div key={`prompt-${prompt.id}-${index}`} className="relative">
             {/* 左側のタイムライン */}
             <div className="absolute left-2 sm:left-4 top-0 bottom-0 flex flex-col items-center">
-              <div className="flex items-center justify-center h-8 w-8 rounded-full bg-black text-white font-medium shadow-sm z-10">
+              <div className="flex items-center justify-center h-8 w-8 rounded-full bg-indigo-600 text-white font-medium shadow-sm z-10">
                 {prompt.id}
               </div>
               {index < prompts.length - 1 && (
@@ -53,7 +70,19 @@ const PromptHistory: React.FC<PromptHistoryProps> = ({ prompts, onEditPrompt }) 
               
               <p className="text-sm text-gray-700 whitespace-pre-wrap">{prompt.prompt_content}</p>
               
-              <div className="flex justify-end mt-2">
+              <div className="flex justify-between mt-2">
+                {prompt.yaml_content && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center"
+                    onClick={() => handleDownloadYaml(prompt.yaml_content!, prompt.id)}
+                  >
+                    <FileText className="h-3 w-3 mr-1" />
+                    YAMLファイルを保存
+                  </Button>
+                )}
+                
                 <Button 
                   variant="ghost" 
                   size="sm"

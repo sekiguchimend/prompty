@@ -441,7 +441,9 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
       const newPrompt: Prompt = {
         id: nextId,
         prompt_title: data.prompt_title || `プロンプト #${nextId}`, // 自動生成タイトル
-        prompt_content: data.prompt_content,
+        prompt_content: data.yaml_content || data.goal, // YAMLコンテンツか目標を使用
+        yaml_content: data.yaml_content, // YAMLコンテンツを保存
+        file_content: data.file_content, // ファイルコンテンツを保存
         createdAt: new Date()
       };
       
@@ -461,7 +463,9 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
       const newPrompt: Prompt = {
         id: uniqueId,
         prompt_title: data.prompt_title || `プロンプト #${uniqueId}`, // 自動生成タイトル
-        prompt_content: data.prompt_content,
+        prompt_content: data.yaml_content || data.goal, // YAMLコンテンツか目標を使用
+        yaml_content: data.yaml_content, // YAMLコンテンツを保存
+        file_content: data.file_content, // ファイルコンテンツを保存
         createdAt: new Date()
       };
       
@@ -490,7 +494,7 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
     window.dispatchEvent(new CustomEvent('edit-prompt', { 
       detail: { 
         id: nextNumber, 
-        content: prompt.prompt_content 
+        data: prompt.yaml_content ? prompt : prompt.prompt_content
       } 
     }));
     

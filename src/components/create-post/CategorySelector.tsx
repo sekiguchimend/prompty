@@ -154,7 +154,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
         name="categoryId"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-gray-700">カテゴリ</FormLabel>
+            {/* <FormLabel className="text-gray-700">カテゴリ</FormLabel> */}
             <div className="flex gap-2 items-center">
               <div className="flex-1">
                 <Select

@@ -11,6 +11,8 @@ import CategorySelector from './CategorySelector';
 import ModelSelector, { AI_MODELS } from './ModelSelector';
 import PricingSelector from './PricingSelector';
 import { useToast } from "../../components/ui/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Separator } from "../../components/ui/separator";
 
 // フォームのスキーマ定義
 const projectSchema = z.object({
@@ -78,8 +80,6 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
     
     reader.onload = (event) => {
       const result = event.target?.result as string;
-      console.log('サムネイル読み込み完了:', result.substring(0, 50) + '...');
-      console.log('サムネイルデータ長さ:', result.length);
       setThumbnailPreview(result);
       projectForm.setValue("thumbnail", result);
       
@@ -101,7 +101,6 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
 
   // サムネイル画像をクリア
   const clearThumbnail = () => {
-    console.log('サムネイル画像をクリアします');
     setThumbnailPreview(null);
     projectForm.setValue("thumbnail", "");
     
@@ -179,113 +178,141 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
   }, [projectForm.watch]);
 
   return (
-    <div className="bg-white rounded-lg">
-      <Form {...projectForm}>
-        <form>
-          <div className="p-6">
-            <div className="md:flex gap-8">
-              {/* サムネイル画像アップロードエリア */}
-              <ThumbnailUploader
-                thumbnailPreview={thumbnailPreview}
-                onThumbnailChange={handleThumbnailChange}
-                onThumbnailClear={clearThumbnail}
-              />
+    <Card className="w-full shadow-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-xl font-semibold text-gray-800">プロジェクト設定</CardTitle>
+      </CardHeader>
+      
+      <Separator />
+      
+      <CardContent className="pt-6">
+        <Form {...projectForm}>
+          <form className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+              {/* サムネイル画像アップロードエリア - 左側 */}
+              <div className="md:col-span-4">
+                <div className="space-y-6">
+                  <div className="bg-gray-50 p-5 rounded-lg">
+                    <FormLabel className="block text-gray-700 mb-3 font-medium">プロジェクトイメージ</FormLabel>
+                    <ThumbnailUploader
+                      thumbnailPreview={thumbnailPreview}
+                      onThumbnailChange={handleThumbnailChange}
+                      onThumbnailClear={clearThumbnail}
+                    />
+                  </div>
+                </div>
+              </div>
               
-              {/* プロジェクト情報入力フォーム */}
-              <div className="flex-1 space-y-4">
-                <div className="flex flex-col md:flex-row gap-4">
+              {/* プロジェクト情報入力フォーム - 右側 */}
+              <div className="md:col-span-8 space-y-6">
+                {/* タイトルとAIモデル */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium text-gray-700">基本情報</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                    <FormField
+                      control={projectForm.control}
+                      name="projectTitle"
+                      render={({ field }) => (
+                        <FormItem className="md:col-span-8">
+                          <FormLabel className="text-sm font-normal text-gray-600">プロジェクトタイトル</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="プロジェクトタイトル"
+                              className="border-gray-300"
+                              {...field}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div className="md:col-span-4">
+                      <ModelSelector
+                        control={projectForm.control}
+                        isCustomModel={isCustomModel}
+                        onModelChange={handleAiModelChange}
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                {/* カテゴリ選択フィールド */}
+                <div className="space-y-4">
+                
+                  <CategorySelector
+                    control={projectForm.control}
+                    categories={categories}
+                    isLoading={isLoadingCategories}
+                    onRefresh={refreshCategories}
+                  />
+                </div>
+                
+                {/* 価格設定フィールド */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium text-gray-700">価格設定</h3>
+                  <PricingSelector
+                    control={projectForm.control}
+                    pricingType={projectForm.watch("pricingType")}
+                    onPricingTypeChange={handlePricingTypeChange}
+                  />
+                </div>
+                
+                {/* 詳細情報 */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium text-gray-700">詳細情報</h3>
+                  
                   <FormField
                     control={projectForm.control}
-                    name="projectTitle"
+                    name="projectUrl"
                     render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel className="text-gray-700">プロジェクトタイトル</FormLabel>
+                      <FormItem>
+                        <FormLabel className="text-sm font-normal text-gray-600">プロジェクトURL（任意）</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="プロジェクトタイトル"
-                            className="border-gray-300"
+                          <div className="flex items-center border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-blue-400 focus-within:border-blue-400">
+                            <div className="flex items-center justify-center border-r border-gray-300 h-10 w-10 bg-gray-50 text-gray-400">
+                              <LinkIcon className="h-4 w-4" />
+                            </div>
+                            <Input
+                              placeholder="https://example.com"
+                              className="border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                              {...field}
+                            />
+                          </div>
+                        </FormControl>
+                        {projectForm.formState.errors.projectUrl && (
+                          <p className="text-xs text-red-600 mt-1">
+                            {projectForm.formState.errors.projectUrl.message}
+                          </p>
+                        )}
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={projectForm.control}
+                    name="projectDescription"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-normal text-gray-600">プロジェクト概要</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="このプロジェクトの目的や概要を入力してください"
+                            className="h-32 border-gray-300 resize-none"
                             {...field}
                           />
                         </FormControl>
                       </FormItem>
                     )}
                   />
-                  
-                  <div className="w-full md:w-48">
-                    <ModelSelector
-                      control={projectForm.control}
-                      isCustomModel={isCustomModel}
-                      onModelChange={handleAiModelChange}
-                    />
-                  </div>
                 </div>
-                
-                {/* カテゴリ選択フィールド */}
-                <CategorySelector
-                  control={projectForm.control}
-                  categories={categories}
-                  isLoading={isLoadingCategories}
-                  onRefresh={refreshCategories}
-                />
-                
-                {/* 価格設定フィールド */}
-                <PricingSelector
-                  control={projectForm.control}
-                  pricingType={projectForm.watch("pricingType")}
-                  onPricingTypeChange={handlePricingTypeChange}
-                />
-                
-                {/* URLフィールド */}
-                <FormField
-                  control={projectForm.control}
-                  name="projectUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-700">プロジェクトURL（任意）</FormLabel>
-                      <FormControl>
-                        <div className="flex items-center border border-gray-300 rounded-md">
-                          <div className="flex items-center justify-center border-r border-gray-300 h-10 w-10 bg-gray-50 text-gray-400">
-                            <LinkIcon className="h-4 w-4" />
-                          </div>
-                          <Input
-                            placeholder="https://example.com"
-                            className="border-0 rounded-none focus:ring-0"
-                            {...field}
-                          />
-                        </div>
-                      </FormControl>
-                      {projectForm.formState.errors.projectUrl && (
-                        <p className="text-xs text-red-600 mt-1">
-                          {projectForm.formState.errors.projectUrl.message}
-                        </p>
-                      )}
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={projectForm.control}
-                  name="projectDescription"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-700">プロジェクト概要</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="このプロジェクトの目的や概要を入力してください"
-                          className="h-20 border-gray-300 resize-none"
-                          {...field}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
               </div>
             </div>
-          </div>
-        </form>
-      </Form>
-    </div>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 };
 
-export default ProjectSettingsForm; 
+export default ProjectSettingsForm;
