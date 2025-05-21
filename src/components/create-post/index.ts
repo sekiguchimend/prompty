@@ -9,6 +9,13 @@ export { default as CategorySelector } from './CategorySelector';
 export { default as ModelSelector } from './ModelSelector';
 export { default as PricingSelector } from './PricingSelector';
 
+// 復元したコンポーネントをエクスポート
+export { default as PostModeSelector } from './PostModeSelector';
+export { default as StepNavigation } from './StepNavigation';
+export { default as StandardForm } from './StandardForm';
+export { default as StepContentRenderer } from './StepContentRenderer';
+export { default as StepBasedForm } from './StepBasedForm';
+
 // 型定義もエクスポート
 export type { ProjectFormValues } from './ProjectSettingsForm';
 export type { PromptFormValues } from './PromptForm';

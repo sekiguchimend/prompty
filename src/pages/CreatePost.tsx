@@ -14,7 +14,10 @@ import {
   PROMPT_EXAMPLES,
   type ProjectFormValues,
   type PromptFormValues,
-  type Prompt
+  type Prompt,
+  PostModeSelector,
+  StepBasedForm,
+  StandardForm
 } from '../components/create-post';
 import { useToast } from "../components/ui/use-toast";
 import { useAuth } from "../lib/auth-context";
@@ -121,6 +124,14 @@ const CreatePost = () => {
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  
+  // 投稿モード選択のための状態を追加
+  type PostMode = 'selection' | 'standard' | 'step';
+  const [postMode, setPostMode] = useState<PostMode>('selection');
+  // ステップベースのフォーム用の状態を追加
+  const [currentStep, setCurrentStep] = useState(1);
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const TOTAL_STEPS = 8; // 全ステップ数（プロジェクト情報の各項目、プロンプト入力、確認と投稿）
   
   // カテゴリ一覧を取得
   const fetchCategories = async () => {
@@ -1001,99 +1012,200 @@ const submitProject = async () => {
     return model ? model.label : modelValue;
   };
 
+  // 投稿モード選択ハンドラー
+  const handleSelectPostMode = (mode: 'standard' | 'step') => {
+    console.log(`選択されたモード: ${mode}`);
+    setPostMode(mode);
+  };
+
+  // ステップを完了としてマークする
+  const markStepAsCompleted = (step: number) => {
+    setCompletedSteps(prev => {
+      const newSet = new Set(prev);
+      newSet.add(step);
+      return newSet;
+    });
+  };
+
+  // 次のステップに進む
+  const goToNextStep = () => {
+    if (currentStep < TOTAL_STEPS) {
+      setCurrentStep(prev => prev + 1);
+    }
+  };
+
+  // 前のステップに戻る
+  const goToPreviousStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(prev => prev - 1);
+    }
+  };
+
+  // historyの表示・非表示を切り替える
+  const toggleHistory = () => {
+    setShowHistory(!showHistory);
+  };
+
+  // ボタンクリック時のハンドラー
+  const handleBackButtonClick = () => {
+    // 投稿モード選択画面の場合はブラウザの「戻る」ボタンと同じ挙動
+    if (postMode === 'selection') {
+      router.back();
+    } else {
+      // それ以外の場合は投稿モード選択画面に戻る
+      setPostMode('selection');
+    }
+  };
+
+  // ボタンのラベルを取得
+  const getBackButtonLabel = () => {
+    return postMode === 'selection' ? '戻る' : '投稿モード選択に戻る';
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
       
       <main className="flex-1 container max-w-4xl mx-auto px-4 py-8 mt-10">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-          <button 
-            onClick={() => router.back()}
-            className="text-gray-500 hover:text-black flex items-center"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" /> 戻る
-          </button>
-          
-          <div className="flex flex-wrap gap-2">
-            <PromptGuideDialog onApplyExample={applyPromptExample} />
-            
-            {prompts.length > 0 && (
-              <Button 
-                variant="outline" 
-                onClick={() => setShowHistory(!showHistory)}
-                className="border-gray-300 text-black text-sm"
-              >
-                {showHistory ? "履歴を隠す" : "履歴を表示"}
-              </Button>
-            )}
-          </div>
-        </div>
-        
-        {/* 認証状態表示 */}
-        {isAnonymousSubmission && (
-          <div className="w-full max-w-3xl mb-6 p-4 bg-red-50 border border-red-200 rounded-md shadow-sm">
-            <p className="text-red-800">
-              現在ログインしていません。プロンプトの投稿にはログインが必要です。
-              <a href="/Login" className="underline text-blue-600 font-bold ml-1">ログイン</a>して投稿してください。
-            </p>
-          </div>
-        )}
-        
-        {/* プロジェクト設定フォーム */}
-        {!isAnonymousSubmission && (
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-8 overflow-hidden">
-            <ProjectSettingsForm
-              onSave={handleProjectSave}
-              defaultValues={projectSettings}
-              categories={categories}
-              isLoadingCategories={isLoadingCategories}
-              onRefreshCategories={fetchCategories}
-            />
-          </div>
-        )}
-        
-        {/* プロンプト履歴 */}
-        {!isAnonymousSubmission && showHistory && prompts.length > 0 && (
-          <div className="mb-8">
-            <PromptHistory
-              prompts={prompts}
-              onEditPrompt={handleEditPrompt}
-            />
-          </div>
-        )}
-        
-        {/* プロンプト入力フォーム */}
-        {!isAnonymousSubmission && (
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-8 overflow-hidden">
-            <PromptForm
-              onSubmit={handlePromptSubmit}
-              initialPromptNumber={promptNumber}
-              aiModel={projectSettings.aiModel}
-              modelLabel={getModelLabel(projectSettings.aiModel)}
-            />
-          </div>
-        )}
-        
-        {/* プロジェクト投稿ボタン */}
-        <div className="mt-8 flex justify-end">
-          <Button 
-            onClick={submitProject}
-            className="bg-black hover:bg-gray-800 text-white px-6 py-2"
-            disabled={isAnonymousSubmission || prompts.length === 0 || isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                送信中...
-              </>
-            ) : (
-              <>
-                <Send className="h-4 w-4 mr-2" />
-                {isAnonymousSubmission ? "ログインが必要です" : "プロジェクトを投稿"}
-              </>
-            )}
-          </Button>
-        </div>
+        {/* 投稿モード選択か、入力フォームかを表示 */}
+        {(() => {
+          // 投稿モードに応じて表示を切り替え
+          switch (postMode) {
+            case 'selection':
+              return (
+                <>
+                  <PostModeSelector onSelectMode={handleSelectPostMode} />
+                </>
+              );
+            case 'standard':
+            case 'step':
+              return (
+                <>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+                    <button 
+                      onClick={handleBackButtonClick}
+                      className="text-gray-500 hover:text-black flex items-center"
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-1" /> 
+                      {getBackButtonLabel()}
+                    </button>
+                    
+                    {postMode === 'standard' && (
+                      <div className="flex flex-wrap gap-2">
+                        <PromptGuideDialog onApplyExample={applyPromptExample} />
+                        
+                        {prompts.length > 0 && (
+                          <Button 
+                            variant="outline" 
+                            onClick={toggleHistory}
+                            className="border-gray-300 text-black text-sm"
+                          >
+                            {showHistory ? "履歴を隠す" : "履歴を表示"}
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* 認証状態表示 */}
+                  {isAnonymousSubmission && (
+                    <div className="w-full max-w-3xl mb-6 p-4 bg-red-50 border border-red-200 rounded-md shadow-sm">
+                      <p className="text-red-800">
+                        現在ログインしていません。プロンプトの投稿にはログインが必要です。
+                        <a href="/Login" className="underline text-blue-600 font-bold ml-1">ログイン</a>して投稿してください。
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* 投稿フォーム - モードに応じて表示を切り替え */}
+                  {!isAnonymousSubmission && (
+                    <>
+                      {postMode === 'standard' ? (
+                        // 通常投稿モード - 既存のUIコンポーネントを表示
+                        <>
+                          {/* プロジェクト設定フォーム */}
+                          <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-8 overflow-hidden">
+                            <ProjectSettingsForm
+                              onSave={handleProjectSave}
+                              defaultValues={projectSettings}
+                              categories={categories}
+                              isLoadingCategories={isLoadingCategories}
+                              onRefreshCategories={fetchCategories}
+                            />
+                          </div>
+                          
+                          {/* プロンプト履歴 */}
+                          {showHistory && prompts.length > 0 && (
+                            <div className="mb-8">
+                              <PromptHistory
+                                prompts={prompts}
+                                onEditPrompt={handleEditPrompt}
+                              />
+                            </div>
+                          )}
+                          
+                          {/* プロンプト入力フォーム */}
+                          <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-8 overflow-hidden">
+                            <PromptForm
+                              onSubmit={handlePromptSubmit}
+                              initialPromptNumber={promptNumber}
+                              aiModel={projectSettings.aiModel}
+                              modelLabel={getModelLabel(projectSettings.aiModel)}
+                            />
+                          </div>
+                          
+                          {/* プロジェクト投稿ボタン */}
+                          <div className="mt-8 flex justify-end">
+                            <Button 
+                              onClick={submitProject}
+                              className="bg-black hover:bg-gray-800 text-white px-6 py-2"
+                              disabled={prompts.length === 0 || isSubmitting}
+                            >
+                              {isSubmitting ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  送信中...
+                                </>
+                              ) : (
+                                <>
+                                  <Send className="h-4 w-4 mr-2" />
+                                  プロジェクトを投稿
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </>
+                      ) : (
+                        // ステップ投稿モード - StepBasedFormコンポーネントを使用
+                        <StepBasedForm
+                          currentStep={currentStep}
+                          totalSteps={TOTAL_STEPS}
+                          completedSteps={completedSteps}
+                          projectSettings={projectSettings}
+                          setProjectSettings={setProjectSettings}
+                          categories={categories}
+                          isLoadingCategories={isLoadingCategories}
+                          onRefreshCategories={fetchCategories}
+                          prompts={prompts}
+                          handlePromptSubmit={handlePromptSubmit}
+                          handleEditPrompt={handleEditPrompt}
+                          promptNumber={promptNumber}
+                          getModelLabel={getModelLabel}
+                          markStepAsCompleted={markStepAsCompleted}
+                          goToNextStep={goToNextStep}
+                          goToPreviousStep={goToPreviousStep}
+                          submitProject={submitProject}
+                          isSubmitting={isSubmitting}
+                        />
+                      )}
+                    </>
+                  )}
+                </>
+              );
+            default:
+              return <div>不明なモード: {postMode}</div>;
+          }
+        })()}
       </main>
       
       <Footer />
