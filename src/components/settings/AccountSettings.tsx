@@ -273,76 +273,8 @@ const AccountSettingsComponent: React.FC = () => {
       
       <div className="space-y-6">
         {/* クリエイター名 */}
-        <div className="border-b border-gray-200 pb-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">クリエイター名</label>
-              <div className="mt-1 text-sm">{accountInfo.creatorName}</div>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <span className="mr-1">変更</span>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
         
-        {/* note ID */}
-        <div className="border-b border-gray-200 pb-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">prompty ID</label>
-              <div className="mt-1 text-sm">{accountInfo.noteId}</div>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <span className="mr-1">変更</span>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-        
-        {/* メールアドレス */}
-        <div className="border-b border-gray-200 pb-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">メールアドレス</label>
-              <div className="mt-1 text-sm">{accountInfo.email}</div>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <span className="mr-1">変更</span>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-        
-        {/* パスワード */}
-        <div className="border-b border-gray-200 pb-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">パスワード</label>
-              <div className="mt-1 text-sm">********</div>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <span className="mr-1">変更</span>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+       
         
         {/* 法人・個人としてnoteを利用する */}
         <div className="border-b border-gray-200 pb-6">

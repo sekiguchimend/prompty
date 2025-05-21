@@ -20,6 +20,31 @@ import { supabase } from '../../lib/supabaseClient';
 import { LoadingSpinner } from '../../components/ui/loading-spinner';
 import ReportDialog from '../../components/common/ReportDialog';
 
+// ユーザー情報の型定義
+interface AuthorInfo {
+  name: string;
+  avatarUrl: string;
+  bio: string;
+  website: string;
+  userId: string;
+  stripe_price_id?: string;
+}
+
+// ソーシャルリンクの型定義
+interface SocialLink {
+  icon: string;
+  url: string;
+}
+
+// プロンプト詳細の型定義
+interface PromptDetails {
+  id?: string;
+  title: string;
+  author: AuthorInfo;
+  price: number;
+}
+
+// コンポーネントのProps型定義
 interface PurchaseSectionProps {
   wordCount: number;
   price: number;
@@ -27,17 +52,23 @@ interface PurchaseSectionProps {
   reviewers: string[];
   reviewCount: number;
   likes: number;
-  author: {
-    name: string;
-    avatarUrl: string;
-    bio: string;
-    website: string;
-    userId: string;
+  author: AuthorInfo | null;
+  socialLinks: SocialLink[];
+}
+
+// ユーザー型定義
+interface User {
+  id: string;
+  email?: string;
+  avatar_url?: string;
+  username?: string;
+  display_name?: string;
+  user_metadata?: {
+    avatar_url?: string;
+    username?: string;
+    full_name?: string;
+    name?: string;
   };
-  socialLinks: {
-    icon: string;
-    url: string;
-  }[];
 }
 
 // コメントの型定義
@@ -98,7 +129,7 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
   const [commentCount, setCommentCount] = useState(0);
   const [newComment, setNewComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [promptId, setPromptId] = useState<string>("");
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [isCommentsLoading, setIsCommentsLoading] = useState(false);
@@ -121,7 +152,7 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
     const fetchUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        setCurrentUser(session.user);
+        setCurrentUser(session.user as User);
         
         // ユーザープロフィール情報も取得
         const { data: profileData } = await supabase
@@ -137,7 +168,7 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
             avatar_url: profileData.avatar_url || session.user.user_metadata?.avatar_url,
             username: profileData.username || session.user.user_metadata?.username,
             display_name: profileData.display_name || session.user.user_metadata?.full_name
-          });
+          } as User);
         }
       }
     };
@@ -160,9 +191,9 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
                 avatar_url: profileData.avatar_url || session.user.user_metadata?.avatar_url,
                 username: profileData.username || session.user.user_metadata?.username,
                 display_name: profileData.display_name || session.user.user_metadata?.full_name
-              });
+              } as User);
             } else {
-              setCurrentUser(session.user);
+              setCurrentUser(session.user as User);
             }
           });
       } else {
@@ -516,6 +547,8 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
   }, [promptId]);
 
   const handleFollowClick = async () => {
+    if (!author) return; // 著者情報がなければ処理を中断
+
     const success = await toggleFollow();
     
     if (success) {
@@ -834,54 +867,114 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
         </div>
       )}
       
-      {/* Author profile - Smaller version - 位置を下に移動 */}
+      {/* Author profile - 著者プロフィール部分を強化 */}
       <div className="border-t border-gray-200 pt-6 mb-8">
         <div className="flex flex-col">
-          <div className="flex items-start space-x-3 mb-4">
-            <div className="w-12 h-12 rounded-md overflow-hidden flex-shrink-0">
+          <div className="flex items-start space-x-4 mb-6">
+            <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200 shadow-sm">
               <img 
-                src={author.avatarUrl} 
-                alt={author.name} 
+                src={author?.avatarUrl || '/images/default-avatar.svg'} 
+                alt={author?.name || 'ユーザー'} 
                 className="w-full h-full object-cover"
               />
             </div>
-            <div>
-              <h4 className="text-sm font-medium">{author.name}</h4>
-              <p className="text-xs text-gray-600 mt-1">
-                <span>📚新刊『発信をお金にかえる勇気』予約開始！！</span>
-              </p>
-              <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                著者、コンサルタント/『発信する勇気』（きずな出版）/ コンテンツビジネススクール主宰 / 公式メルマガ→
-                <a href={author.website} className="text-gray-700 hover:underline" title={author.website}>
-                  {formatWebsiteUrl(author.website)}
-                </a>
-              </p>
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-gray-900">{author?.name || 'ユーザー不明'}</h3>
               
-              <div className="flex space-x-2 mt-2">
-                {socialLinks.map((link, index) => (
-                  <a key={index} href={link.url} className="text-gray-500 hover:text-gray-700">
-                    <div className="w-5 h-5 flex items-center justify-center rounded-sm bg-gray-200">
-                      <span className="text-xs">{link.icon.charAt(0).toUpperCase()}</span>
+              {/* 著者のバイオ情報 */}
+              {author?.bio && (
+                <p className="text-sm text-gray-600 mt-1 mb-2 line-clamp-3">
+                  {author.bio}
+                </p>
+              )}
+              
+              {/* ウェブサイトとソーシャルリンク */}
+              <div className="flex items-center flex-wrap gap-3 mt-2">
+                {author?.website && (
+                  <a 
+                    href={author.website}
+                    target="_blank"
+                    rel="noopener noreferrer" 
+                    className="inline-flex items-center text-xs text-gray-500 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="2" y1="12" x2="22" y2="12"></line>
+                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                    </svg>
+                    {formatWebsiteUrl(author.website)}
+                  </a>
+                )}
+                
+                {socialLinks?.length > 0 && socialLinks.map((link, index) => (
+                  <a 
+                    key={index} 
+                    href={link?.url} 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center text-xs text-gray-500 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full transition-colors"
+                  >
+                    <div className="w-3.5 h-3.5 flex items-center justify-center mr-1.5">
+                      <span>{link?.icon?.charAt(0).toUpperCase()}</span>
                     </div>
+                    {link?.icon || 'リンク'}
                   </a>
                 ))}
               </div>
             </div>
           </div>
           
-          <Button 
-            className={`${
-              isFollowing 
-                ? 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100' 
-                : 'bg-gray-700 text-white hover:bg-gray-600'
-            } rounded-sm text-xs py-1 px-5 h-auto transition-all duration-200 ${
-              isAnimating ? 'scale-95' : ''
-            } w-auto mx-auto block ${isFollowLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
-            onClick={handleFollowClick}
-            disabled={isFollowLoading}
-          >
-            {isFollowing ? 'フォロー中' : 'フォロー'}
-          </Button>
+          {/* フォローボタン */}
+          <div className="flex justify-center">
+            <Button 
+              className={`${
+                isFollowing 
+                  ? 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100' 
+                  : 'bg-gray-800 text-white hover:bg-gray-700'
+              } rounded-md text-sm py-2 px-6 h-auto transition-all duration-200 ${
+                isAnimating ? 'scale-95' : ''
+              } ${isFollowLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+              onClick={handleFollowClick}
+              disabled={isFollowLoading || !author}
+            >
+              {isFollowing ? (
+                <span className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 6L9 17l-5-5"/>
+                  </svg>
+                  フォロー中
+                </span>
+              ) : (
+                <span className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="8.5" cy="7" r="4"/>
+                    <line x1="20" y1="8" x2="20" y2="14"/>
+                    <line x1="23" y1="11" x2="17" y2="11"/>
+                  </svg>
+                  フォローする
+                </span>
+              )}
+            </Button>
+          </div>
+          
+          {/* 投稿者の統計情報 */}
+          {author?.userId && (
+            <div className="flex justify-center gap-6 mt-4 pt-4 border-t border-gray-100">
+              <div className="text-center">
+                <p className="text-lg font-bold text-gray-900">{likes || 0}</p>
+                <p className="text-xs text-gray-500">いいね</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-bold text-gray-900">{commentCount || 0}</p>
+                <p className="text-xs text-gray-500">コメント</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-bold text-gray-900">{wordCount || 0}</p>
+                <p className="text-xs text-gray-500">文字数</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       
@@ -889,9 +982,15 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
         isOpen={isPurchaseDialogOpen}
         onClose={() => setIsPurchaseDialogOpen(false)}
         prompt={{
-          title: author.name,
-          author,
-          price
+          id: promptId,
+          title: author?.name || 'コンテンツタイトル',
+          author: {
+            name: author?.name || 'ユーザー不明',
+            avatarUrl: author?.avatarUrl || '/images/default-avatar.svg',
+            userId: author?.userId || '',
+            stripe_price_id: author?.stripe_price_id
+          },
+          price: price
         }}
       />
 

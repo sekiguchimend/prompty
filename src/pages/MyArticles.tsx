@@ -89,11 +89,12 @@ const MyArticles = () => {
 
   // 記事の操作ハンドラー
   const handleEditArticle = (id: string) => {
-    router.push(`/edit-prompt/${id}`);
     toast({
       title: "編集",
       description: `記事ID: ${id} を編集します`,
     });
+    // router.pushの代わりにwindow.locationを使用して確実に遷移させる
+    window.location.href = `/edit-prompt/${id}`;
   };
 
   const handleDeleteArticle = async (id: string) => {
@@ -360,97 +361,84 @@ const MyArticles = () => {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'myArticles':
-        // 自分の記事タブの内容をSupabaseから取得したデータで表示
         return (
-            <div className="articles-container">
-              {selectedArticles.length > 0 && (
-                <ArticleActionsMenu
-                  selectedCount={selectedArticles.length}
-                  onDelete={handleBulkDelete}
-                  onDuplicate={handleBulkDuplicate}
-                  onPublish={handleBulkPublish}
-                  onUnpublish={handleBulkUnpublish}
-                  onArchive={handleBulkArchive}
-                />
-              )}
-              
-              <div className="articles-header">
-                <h2>{myArticles.length} 記事</h2>
-                <div className="filter-controls">
-                  <div className="status-dropdown">
-                    <button>公開ステータス <span>▼</span></button>
-                  </div>
-                  <div className="period-dropdown">
-                    <button>期間 <span>▼</span></button>
-                  </div>
-                  <div className="magazine-dropdown">
-                    <button>マガジン <span>▼</span></button>
-                  </div>
-                </div>
+          <div className="space-y-4">
+            {loading ? (
+              <div className="text-center py-10">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-800"></div>
+                <p className="mt-2 text-gray-600">記事を読み込み中...</p>
               </div>
-              
-              <div className="articles-list">
-                {loading ? (
-                  <p className="text-center py-6">読み込み中...</p>
-                ) : error ? (
-                  <p className="text-center py-6 text-red-500">{error}</p>
-                ) : myArticles.length > 0 ? (
-                  myArticles.map((article) => (
-                    <div 
-                      key={article.id} 
-                      className="article-item cursor-pointer hover:bg-gray-50 transition-colors"
-                      onClick={() => article.published && navigateToArticle(article.id)}
-                    >
-                      <input 
-                        type="checkbox" 
+            ) : error ? (
+              <div className="text-center py-10 text-red-500">{error}</div>
+            ) : myArticles.length === 0 ? (
+              <div className="text-center py-10">
+                <p className="text-gray-600">まだ記事がありません</p>
+                <button 
+                  onClick={() => window.location.href = '/CreatePost'}
+                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                >
+                  新しい記事を作成
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4">
+                {myArticles.map((article) => (
+                  <div 
+                    key={article.id} 
+                    className="bg-white rounded-lg shadow p-4 border border-gray-200 flex items-start gap-4"
+                  >
+                    <div className="flex-shrink-0">
+                      <input
+                        type="checkbox"
                         checked={selectedArticles.includes(article.id)}
-                        onChange={(e) => {
-                          e.stopPropagation(); // クリックイベントの伝播を防止
-                          handleCheckboxChange(article.id);
-                        }}
+                        onChange={() => handleCheckboxChange(article.id)}
+                        className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
-                      <div className="article-content">
-                        <h3>{article.title}</h3>
-                        {article.description && <p>{article.description}</p>}
-                        <div className="article-meta">
-                          <span className={article.published ? "published-indicator" : "draft-indicator"}>
-                            {article.published ? '公開中' : '下書き'}
-                          </span>
-                          <span className="date">{formatDate(article.created_at)}</span>
-                        </div>
+                    </div>
+                    <div 
+                      className="flex-grow cursor-pointer"
+                      onClick={() => navigateToArticle(article.id)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium">{article.title}</h3>
+                        {article.published ? (
+                          <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">公開中</span>
+                        ) : (
+                          <span className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded-full">非公開</span>
+                        )}
                       </div>
-                      {article.thumbnail_url && (
-                        <div className="article-thumbnail">
-                          <img src={article.thumbnail_url} alt={article.title} />
-                        </div>
-                      )}
+                      <p className="text-sm text-gray-500 mt-1">
+                        作成: {formatDate(article.created_at)} | 更新: {formatDate(article.updated_at || article.created_at)}
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditArticle(article.id);
+                        }}
+                        className="text-blue-600 hover:text-blue-800 px-3 py-1 rounded border border-blue-600 hover:bg-blue-50 text-sm transition-colors"
+                      >
+                        編集
+                      </button>
                       <div onClick={(e) => e.stopPropagation()}>
-                        <ArticleDropdownMenu 
-                          articleId={article.id}
+                        <ArticleDropdownMenu
+                          articleId={article.id} 
                           isPublished={article.published}
-                          onEdit={handleEditArticle}
-                          onDelete={handleDeleteArticle}
-                          onDuplicate={handleDuplicateArticle}
-                          onTogglePublish={handleTogglePublishArticle}
-                          onArchive={handleArchiveArticle}
+                          onEdit={() => handleEditArticle(article.id)}
+                          onDelete={() => handleDeleteArticle(article.id)}
+                          onDuplicate={() => handleDuplicateArticle(article.id)}
+                          onTogglePublish={() => handleTogglePublishArticle(article.id)}
+                          onArchive={() => handleArchiveArticle(article.id)}
                         />
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="empty-state p-6 text-center">
-                    <p className="text-gray-500">表示する記事がありません</p>
-                    <button 
-                      onClick={() => router.push('/CreatePost')}
-                      className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                    >
-                      新しい記事を作成
-                    </button>
                   </div>
-                )}
+                ))}
               </div>
-            </div>
-          );
+            )}
+          </div>
+        );
       case 'likedArticles':
         return <LikedArticles />;
       case 'purchasedArticles':
@@ -460,7 +448,7 @@ const MyArticles = () => {
       case 'recentlyViewedArticles':
         return <RecentlyViewedArticles />;
       default:
-        return <div>タブを選択してください</div>;
+        return null;
     }
   };
 

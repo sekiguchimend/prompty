@@ -11,7 +11,7 @@ import ViewCounter from '../ViewCounter';
 import { supabase } from '../../lib/supabaseClient';
 import { isContentFree, shouldShowFullContent, normalizeContentText, isContentPremium } from '../../utils/content-helpers';
 import { checkPurchaseStatus } from '../../utils/purchase-helpers';
-
+import PurchaseSection from './PurchaseSection';
 // Windowオブジェクトにカスタムプロパティのタイプを追加
 declare global {
   interface Window {
@@ -193,15 +193,24 @@ const PromptContent: React.FC<PromptContentProps> = ({
   // 全文表示するかのフラグ
   const showAllContent = shouldShowFullContent({ price, is_free: price === 0 }, isPurchased || isPaid);
   
-  // 表示コンテンツの準備
-  // 常に無料部分は表示
-  const basicDisplayContent = contentText;
+  // 最初の3行のみ表示するための処理
+  const extractFirstThreeLines = (text: string): string => {
+    if (!text) return '';
+    const lines = text.split('\n');
+    if (lines.length <= 3) return text;
+    return lines.slice(0, 3).join('\n');
+  };
   
-  // 有料部分は条件付きで表示
-  // 有料部分のプレビューを表示するかどうか
-  // 1. 有料コンテンツである
-  // 2. 全文表示条件を満たさない（未購入状態）
-  // 3. 有料部分のコンテンツが存在する
+  // 表示コンテンツの準備
+  // プレミアムでない場合またはすでに購入済みの場合は全文表示
+  let basicDisplayContent;
+  if (isPremiumContent && !showAllContent) {
+    basicDisplayContent = `<div>${extractFirstThreeLines(contentText)}</div>`;
+  } else {
+    basicDisplayContent = contentText;
+  }
+  
+  // 有料部分を表示するかどうか
   const shouldShowPremiumPreview = (isPremiumContent || price > 0) && !showAllContent && !isPurchased && !isPaid && premiumContent?.length > 0;
   
   console.log('コンテンツ判定:', {
@@ -314,6 +323,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
             <span>システムを見る: {formatSystemUrl(systemUrl)}</span>
           </a>
         )}
+        
         {/* Content section */}
         <div className="relative prose max-w-none">
           {/* 無料部分は常に表示 */}
@@ -388,7 +398,13 @@ const PromptContent: React.FC<PromptContentProps> = ({
           )}
         </div>
       </div>
-      
+      <PurchaseSection
+        wordCount={characterCount}
+        price={price}
+        tags={[]}
+        reviewers={[]}
+        reviewCount={0}
+      />
       {/* Purchase Dialog */}
       <PurchaseDialog 
         isOpen={isDialogOpen}

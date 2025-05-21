@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Edit } from 'lucide-react';
 import { Separator } from '../../components/ui/separator';
 import PopularArticles from '../../components/PopularArticles';
 import AuthorSidebar from '../../components/prompt/AuthorSidebar';
@@ -20,6 +20,7 @@ import { Button } from '../../components/ui/button';
 import { FileText, Info } from 'lucide-react';
 import { isContentFree, isContentPremium, normalizeContentText } from '../../utils/content-helpers';
 import { checkPurchaseStatus } from '../../utils/purchase-helpers';
+import Comments from '../../components/Comments/Comments';
 
 // PromptItemの型定義 - エクスポートする
 export interface PromptItem {
@@ -389,15 +390,20 @@ const PromptDetail = ({
   const [isPaid, setIsPaid] = useState<boolean>(false);
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isAuthor, setIsAuthor] = useState(false);
 
   // ユーザー取得
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) setCurrentUser(session.user);
+      if (session) {
+        setCurrentUser(session.user);
+        // 現在のユーザーが投稿者と同じかどうかチェック
+        setIsAuthor(session.user.id === postData.user.userId);
+      }
     };
     fetchUser();
-  }, []);
+  }, [postData.user.userId]);
 
   // 購入済み判定
   useEffect(() => {
@@ -534,11 +540,20 @@ const PromptDetail = ({
       
       <main className="flex-1 bg-white">
         <div className="container px-4 md:px-6 py-6 max-w-7xl mx-auto">
-          {/* Back link */}
-          <Link href="/" className="inline-flex items-center text-gray-500 mb-6 mt-10 md:mt-0">
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            <span className="text-sm">戻る</span>
-          </Link>
+          {/* Back link and Edit link */}
+          <div className="flex justify-between items-center mb-6">
+            <Link href="/" className="text-gray-600 hover:text-gray-900 flex items-center">
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              <span>戻る</span>
+            </Link>
+            
+            {isAuthor && (
+              <Link href={`/edit-prompt/${postData.id}`} className="inline-flex items-center bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-md text-sm transition-colors">
+                <Edit className="h-4 w-4 mr-1.5" />
+                編集する
+              </Link>
+            )}
+          </div>
           
           <div className="flex flex-col md:flex-row">
             {/* Left sidebar - Author info (smaller) */}
@@ -576,6 +591,7 @@ const PromptDetail = ({
           </div>
         </div>
         
+      
         {/* Popular Articles Section */}
         <Separator className="my-12" />
         {popularArticles.length > 0 ? (

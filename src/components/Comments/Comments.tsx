@@ -531,7 +531,9 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
       {/* 報告ダイアログ */}
       <ReportDialog
         open={isReportDialogOpen}
-        onOpenChange={closeReportDialog}
+        onOpenChange={(open: boolean) => {
+          if (!open) closeReportDialog();
+        }}
         selectedPostId={selectedCommentId || ''}
         promptId={promptId}
         targetType="comment"

@@ -16,6 +16,7 @@ interface PromptData {
 }
 
 interface ViewedPromptData {
+  id: string;
   prompt_id: string;
   viewed_at: string;
   prompts: PromptData;
@@ -52,7 +53,6 @@ export const recordPromptView = async (promptId: string) => {
       
       return { success: true };
     } else {
-      // 既存の履歴がない場合は新規作成
       const { error } = await supabase
         .from('recently_viewed_prompts')
         .insert({
@@ -120,7 +120,7 @@ export const getRecentlyViewedPrompts = async (limit: number = 5) => {
       user: {
         name: item.prompts.profiles?.display_name || '匿名',
         account_name: item.prompts.profiles?.username,
-        avatarUrl: item.prompts.profiles?.avatar_url || '/images/default-avatar.png'
+        avatarUrl: item.prompts.profiles?.avatar_url || '/images/default-avatar.svg'
       }
     }));
 

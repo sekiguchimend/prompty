@@ -13,9 +13,10 @@ import { PROMPT_EXAMPLES } from './PromptGuide';
 
 interface PromptGuideDialogProps {
   onApplyExample: (example: typeof PROMPT_EXAMPLES[0]) => void;
+  children?: React.ReactNode;
 }
 
-const PromptGuideDialog: React.FC<PromptGuideDialogProps> = ({ onApplyExample }) => {
+const PromptGuideDialog: React.FC<PromptGuideDialogProps> = ({ onApplyExample, children }) => {
   const [open, setOpen] = React.useState(false);
 
   const handleApplyExample = (example: typeof PROMPT_EXAMPLES[0]) => {
@@ -26,13 +27,15 @@ const PromptGuideDialog: React.FC<PromptGuideDialogProps> = ({ onApplyExample })
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button 
-          variant="outline" 
-          className="border-gray-300 text-black text-sm"
-        >
-          <HelpCircle className="h-4 w-4 mr-2" />
-          ガイド
-        </Button>
+        {children || (
+          <Button 
+            variant="outline" 
+            className="border-gray-300 text-black text-sm"
+          >
+            <HelpCircle className="h-4 w-4 mr-2" />
+            ガイド
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
