@@ -32,7 +32,10 @@ export async function checkPurchaseStatus(
     }
 
     // paymentsテーブルがない、または他のエラーの場合はpurchasesテーブルも確認
-    if (paymentError?.code === '42P01' || paymentError?.message?.includes('does not exist') || !paymentData) {
+    if (paymentError?.code === '42P01' || 
+        (typeof paymentError === 'object' && paymentError !== null && 'message' in paymentError && 
+        typeof paymentError.message === 'string' && paymentError.message.includes('does not exist')) || 
+        !paymentData) {
       // まずbuyer_idでチェック
       const { data: purchaseData, error: purchaseError } = await supabase
         .from('purchases')
@@ -77,10 +80,10 @@ export async function checkPurchaseStatus(
       
       if (purchaseError || purchaseErrorAlt || purchaseErrorNoStatus) {
         console.log('purchasesテーブル確認中のエラー:', 
-          purchaseError?.message || purchaseErrorAlt?.message || purchaseErrorNoStatus?.message || '不明なエラー');
+          JSON.stringify(purchaseError || purchaseErrorAlt || purchaseErrorNoStatus) || '不明なエラー');
       }
     } else if (paymentError) {
-      console.log('paymentsテーブル確認中のエラー:', paymentError.message || '不明なエラー');
+      console.log('paymentsテーブル確認中のエラー:', JSON.stringify(paymentError) || '不明なエラー');
     }
 
     // どのテーブルでも購入が確認できなかった場合

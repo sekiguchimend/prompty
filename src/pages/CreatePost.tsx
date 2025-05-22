@@ -32,6 +32,10 @@ interface Category {
   description: string | null;
   icon: string | null;
   parent_id: string | null;
+  prompt_title: string;
+  prompt_content: string;
+  yaml_content: string;
+  file_content: string;
 }
 
 // Supabase接続情報をチェックする関数（開発中のみ使用）
@@ -440,8 +444,8 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
       // 新しいプロンプトを追加
       const newPrompt: Prompt = {
         id: nextId,
-        prompt_title: data.prompt_title || `プロンプト #${nextId}`, // 自動生成タイトル
-        prompt_content: data.yaml_content || data.goal, // YAMLコンテンツか目標を使用
+        prompt_title: data.title || `プロンプト #${nextId}`, // 自動生成タイトル
+        prompt_content: data.yaml_content || data.fullPrompt, // YAMLコンテンツかプロンプト本文を使用
         yaml_content: data.yaml_content, // YAMLコンテンツを保存
         file_content: data.file_content, // ファイルコンテンツを保存
         createdAt: new Date()
@@ -462,8 +466,8 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
       // 新しいプロンプトを追加
       const newPrompt: Prompt = {
         id: uniqueId,
-        prompt_title: data.prompt_title || `プロンプト #${uniqueId}`, // 自動生成タイトル
-        prompt_content: data.yaml_content || data.goal, // YAMLコンテンツか目標を使用
+        prompt_title: data.title || `プロンプト #${uniqueId}`, // 自動生成タイトル
+        prompt_content: data.yaml_content || data.fullPrompt, // YAMLコンテンツかプロンプト本文を使用
         yaml_content: data.yaml_content, // YAMLコンテンツを保存
         file_content: data.file_content, // ファイルコンテンツを保存
         createdAt: new Date()

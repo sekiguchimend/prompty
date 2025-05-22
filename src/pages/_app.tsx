@@ -7,7 +7,7 @@ import { useRouter } from 'next/router';
 import { initializeSupabaseSession, validateSession } from '../lib/supabaseClient';
 import { Toaster } from '../components/ui/toaster';
 import Head from 'next/head';
-
+import "../styles/NotePage.css"
 // セッション検証のデバウンス状態管理
 let isValidating = false;
 let lastValidationTime = 0;

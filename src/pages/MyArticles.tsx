@@ -8,7 +8,6 @@ import BookmarkedArticles from '../components/myArticle/BookmarkedArticles';
 import RecentlyViewedArticles from '../components/myArticle/RecentlyViewedArticles';
 import ArticleDropdownMenu from '../components/ArticleDropdownMenu';
 import ArticleActionsMenu from '../components/ArticleActionsMenu';
-import '../styles/NotePage.css';
 import Header from '../components/Header';
 import { toast } from '../components/ui/use-toast';
 import { createClient } from '@supabase/supabase-js';

@@ -1,7 +1,6 @@
 // components/SidebarTabs.jsx
 import React from 'react';
 import { useRouter } from 'next/router';
-import '../../styles/NotePage.css';
 import { 
   FileText, 
   ThumbsUp, 
