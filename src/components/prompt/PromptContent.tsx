@@ -408,6 +408,15 @@ const PromptContent: React.FC<PromptContentProps> = ({
         tags={[]}
         reviewers={[]}
         reviewCount={0}
+        likes={0}
+        author={{
+          name: author.name,
+          avatarUrl: author.avatarUrl,
+          bio: author.bio || '',
+          website: '',
+          userId: ''
+        }}
+        socialLinks={[]}
       />
       {/* Purchase Dialog */}
       <PurchaseDialog 
