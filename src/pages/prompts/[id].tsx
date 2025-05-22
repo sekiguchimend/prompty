@@ -21,6 +21,7 @@ import { FileText, Info } from 'lucide-react';
 import { isContentFree, isContentPremium, normalizeContentText } from '../../utils/content-helpers';
 import { checkPurchaseStatus } from '../../utils/purchase-helpers';
 import Comments from '../../components/Comments/Comments';
+import { toast } from '../../components/ui/use-toast';
 
 // PromptItemの型定義 - エクスポートする
 export interface PromptItem {
@@ -404,6 +405,73 @@ const PromptDetail = ({
     };
     fetchUser();
   }, [postData.user.userId]);
+
+  // URL検証とStripe決済完了後の処理
+  useEffect(() => {
+    const checkStripeSuccess = async () => {
+      const success = router.query.success === '1';
+      
+      // Stripeから成功してリダイレクトされた場合
+      if (success && currentUser && postData?.id) {
+        try {
+          console.log('Stripe決済成功後の処理を実行します');
+          
+          // まず購入状態を確認
+          const isPurchased = await checkPurchaseStatus(currentUser.id, postData.id);
+          
+          // まだ購入レコードがない場合は作成
+          if (!isPurchased) {
+            console.log('購入レコードがないため作成します');
+            
+            // purchases テーブルに直接購入レコードを追加
+            const { error: purchaseError } = await supabase
+              .from('purchases')
+              .insert({
+                buyer_id: currentUser.id,
+                prompt_id: postData.id,
+                status: 'completed',
+                amount: postData.price || 0,
+                currency: 'jpy',
+                created_at: new Date().toISOString()
+              });
+              
+            if (purchaseError) {
+              console.error('購入レコード作成エラー:', purchaseError);
+              toast({
+                title: '注意',
+                description: '購入処理に問題が発生しました。しばらくしてからページを再読み込みしてください。',
+                variant: 'destructive'
+              });
+            } else {
+              console.log('購入レコードを作成しました:', postData.id);
+              setIsPaid(true);
+              toast({
+                title: '購入完了',
+                description: 'コンテンツの購入が完了しました。全文をご覧いただけます。',
+                variant: 'default'
+              });
+              
+              // URLからクエリパラメータを削除
+              router.replace(`/prompts/${postData.id}`, undefined, { shallow: true });
+            }
+          } else {
+            // 既に購入済みの場合
+            setIsPaid(true);
+            console.log('すでに購入済みです');
+            
+            // URLからクエリパラメータを削除
+            router.replace(`/prompts/${postData.id}`, undefined, { shallow: true });
+          }
+        } catch (e) {
+          console.error('Stripe決済後の処理エラー:', e);
+        }
+      }
+    };
+    
+    if (router.isReady) {
+      checkStripeSuccess();
+    }
+  }, [router.isReady, router.query, currentUser, postData?.id]);
 
   // 購入済み判定
   useEffect(() => {

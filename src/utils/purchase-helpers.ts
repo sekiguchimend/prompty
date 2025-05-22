@@ -14,6 +14,8 @@ export async function checkPurchaseStatus(
   if (!userId || !promptId) return false;
 
   try {
+    console.log(`購入状態をチェック - ユーザー: ${userId.substring(0, 8)}... プロンプト: ${promptId.substring(0, 8)}...`);
+    
     // まずpaymentsテーブルをチェック
     const { data: paymentData, error: paymentError } = await supabase
       .from('payments')
@@ -25,11 +27,13 @@ export async function checkPurchaseStatus(
 
     // paymentsテーブルで購入が確認できた場合
     if (paymentData && !paymentError) {
+      console.log('購入済み: paymentsテーブルで確認');
       return true;
     }
 
     // paymentsテーブルがない、または他のエラーの場合はpurchasesテーブルも確認
     if (paymentError?.code === '42P01' || paymentError?.message?.includes('does not exist') || !paymentData) {
+      // まずbuyer_idでチェック
       const { data: purchaseData, error: purchaseError } = await supabase
         .from('purchases')
         .select('id')
@@ -40,11 +44,47 @@ export async function checkPurchaseStatus(
 
       // purchasesテーブルで購入が確認できた場合
       if (purchaseData && !purchaseError) {
+        console.log('購入済み: purchasesテーブル(buyer_id)で確認');
         return true;
       }
+      
+      // もしbuyer_idで見つからなければ、user_idでも確認（古いレコード対応）
+      const { data: purchaseDataAlt, error: purchaseErrorAlt } = await supabase
+        .from('purchases')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('prompt_id', promptId)
+        .eq('status', 'completed')
+        .maybeSingle();
+        
+      if (purchaseDataAlt && !purchaseErrorAlt) {
+        console.log('購入済み: purchasesテーブル(user_id)で確認');
+        return true;
+      }
+      
+      // どちらのフィールドでも見つからない場合、statusなしでも確認（直接購入の場合）
+      const { data: purchaseDataNoStatus, error: purchaseErrorNoStatus } = await supabase
+        .from('purchases')
+        .select('id')
+        .or(`buyer_id.eq.${userId},user_id.eq.${userId}`)
+        .eq('prompt_id', promptId)
+        .maybeSingle();
+        
+      if (purchaseDataNoStatus && !purchaseErrorNoStatus) {
+        console.log('購入済み: purchasesテーブル(status指定なし)で確認');
+        return true;
+      }
+      
+      if (purchaseError || purchaseErrorAlt || purchaseErrorNoStatus) {
+        console.log('purchasesテーブル確認中のエラー:', 
+          purchaseError?.message || purchaseErrorAlt?.message || purchaseErrorNoStatus?.message || '不明なエラー');
+      }
+    } else if (paymentError) {
+      console.log('paymentsテーブル確認中のエラー:', paymentError.message || '不明なエラー');
     }
 
-    // どちらのテーブルでも購入が確認できなかった場合
+    // どのテーブルでも購入が確認できなかった場合
+    console.log('購入なし: このコンテンツは未購入です');
     return false;
   } catch (e) {
     console.error('購入状態確認エラー:', e);

@@ -210,8 +210,11 @@ const PromptContent: React.FC<PromptContentProps> = ({
     basicDisplayContent = contentText;
   }
   
+  // 購入済み状態の統合 - 複数の条件をまとめる
+  const hasFullAccess = isPurchased || isPaid || showAllContent || isFreeContent || !isPremiumContent;
+  
   // 有料部分を表示するかどうか
-  const shouldShowPremiumPreview = (isPremiumContent || price > 0) && !showAllContent && !isPurchased && !isPaid && premiumContent?.length > 0;
+  const shouldShowPremiumPreview = (isPremiumContent || price > 0) && !hasFullAccess && premiumContent?.length > 0;
   
   console.log('コンテンツ判定:', {
     isPurchased, 
@@ -222,6 +225,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
     isPremium, 
     price, 
     showAllContent,
+    hasFullAccess,
     shouldShowPremiumPreview,
     hasPremiumContent: Boolean(premiumContent && premiumContent.length > 0)
   });
@@ -269,7 +273,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
               {promptId && <ViewCounter promptId={promptId} className="mr-3" />}
               
               {/* 価格表示 - モバイルでも表示 */}
-              {price > 0 && (
+              {price > 0 && !hasFullAccess && (
                 <div className="text-right" onClick={handlePurchase}>
                   <p className="text-sm font-normal text-gray-600 border border-gray-500 bg-white rounded px-2 py-0.5 inline-block">
                     ¥{price.toLocaleString()}
@@ -332,7 +336,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
           {/* 有料部分 - 条件付きで表示 */}
           {premiumContent && (
             <>
-              {showAllContent ? (
+              {hasFullAccess ? (
                 /* 購入済みまたは無料の場合は全文表示 */
                 <div className="mt-6">
                   <div dangerouslySetInnerHTML={{ __html: premiumContent }} />
@@ -390,7 +394,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
             </>
           )}
 
-          {isPurchased && (
+          {(isPurchased || isPaid) && (
             <div className="flex items-center mt-6 p-4 border border-gray-200 rounded-sm bg-gray-50">
               <Check className="h-5 w-5 text-gray-600 mr-2" />
               <p className="text-sm font-medium text-gray-700">このプロンプトは購入済みです</p>

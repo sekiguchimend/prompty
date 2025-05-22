@@ -121,14 +121,48 @@ const PurchaseDialog: React.FC<PurchaseDialogProps> = ({ isOpen, onClose, prompt
         // Stripeの決済ページへリダイレクト
         window.location.href = data.url;
       } else if (data.success) {
-        // 直接成功した場合
+        // 直接成功した場合（テスト環境など）
+        try {
+          // purchases テーブルに直接購入レコードを追加
+          const { error: purchaseError } = await supabase
+            .from('purchases')
+            .insert({
+              buyer_id: session.user.id,
+              prompt_id: prompt.id,
+              status: 'completed',
+              amount: prompt.price,
+              currency: 'jpy',
+              created_at: new Date().toISOString()
+            });
+          
+          if (purchaseError) {
+            console.error('購入レコード作成エラー:', purchaseError);
+            // エラーは通知するがフローは続行
+            toast({
+              title: '注意',
+              description: '購入は完了しましたが、記録に問題が発生しました。再読み込みしてください。',
+              variant: 'default'
+            });
+          } else {
+            console.log('購入レコードを作成しました:', prompt.id);
+          }
+        } catch (purchaseErr) {
+          console.error('購入記録処理エラー:', purchaseErr);
+        }
+
         toast({
           title: '購入完了',
           description: 'コンテンツの購入が完了しました',
           variant: 'default'
         });
+        
         if (onPurchaseSuccess) onPurchaseSuccess();
         onClose();
+        
+        // 購入完了後、ページをリロードして購入状態を反映（success=1パラメータを追加）
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('success', '1');
+        window.location.href = currentUrl.toString();
       } else {
         throw new Error('決済処理に失敗しました');
       }
