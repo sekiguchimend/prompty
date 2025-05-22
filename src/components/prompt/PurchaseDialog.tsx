@@ -131,7 +131,6 @@ const PurchaseDialog: React.FC<PurchaseDialogProps> = ({ isOpen, onClose, prompt
               prompt_id: prompt.id,
               status: 'completed',
               amount: prompt.price,
-              currency: 'jpy',
               created_at: new Date().toISOString()
             });
           
