@@ -647,6 +647,7 @@ const PromptDetail = ({
                 isPaid={isPaid}
                 isPreview={!isFree && isPremium && !isPaid}
                 isPremium={isPremium}
+                reviewCount={postData.likeCount || 0}
               />
             </div>
             

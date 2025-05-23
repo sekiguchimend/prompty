@@ -43,6 +43,7 @@ interface PromptContentProps {
   systemImageUrl?: string;
   systemUrl?: string;
   description?: string;
+  reviewCount?: number;
 }
 
 const PromptContent: React.FC<PromptContentProps> = ({
@@ -57,7 +58,8 @@ const PromptContent: React.FC<PromptContentProps> = ({
   price = 0,
   systemImageUrl,
   systemUrl,
-  description = ''
+  description = '',
+  reviewCount = 0
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -193,19 +195,19 @@ const PromptContent: React.FC<PromptContentProps> = ({
   // 全文表示するかのフラグ
   const showAllContent = shouldShowFullContent({ price, is_free: price === 0 }, isPurchased || isPaid);
   
-  // 最初の3行のみ表示するための処理
-  const extractFirstThreeLines = (text: string): string => {
+  // 最初の2行のみ表示するための処理（3行から2行に変更）
+  const extractFirstTwoLines = (text: string): string => {
     if (!text) return '';
     const lines = text.split('\n');
-    if (lines.length <= 3) return text;
-    return lines.slice(0, 3).join('\n');
+    if (lines.length <= 2) return text;
+    return lines.slice(0, 2).join('\n');
   };
   
   // 表示コンテンツの準備
   // プレミアムでない場合またはすでに購入済みの場合は全文表示
   let basicDisplayContent;
   if (isPremiumContent && !showAllContent) {
-    basicDisplayContent = `<div>${extractFirstThreeLines(contentText)}</div>`;
+    basicDisplayContent = `<div>${extractFirstTwoLines(contentText)}</div>`;
   } else {
     basicDisplayContent = contentText;
   }
@@ -344,48 +346,66 @@ const PromptContent: React.FC<PromptContentProps> = ({
               ) : shouldShowPremiumPreview ? (
                 /* 有料で未購入の場合はプレビューと購入案内 */
                 <div className="relative">
-                  <div className="space-y-4">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white"></div>
+                  {/* プレビューコンテンツの最初の2行を表示 */}
+                  <div className="relative mb-8">
+                    <div 
+                      className="text-gray-600 leading-relaxed"
+                      dangerouslySetInnerHTML={{ 
+                        __html: extractFirstTwoLines(premiumContent) 
+                      }} 
+                    />
+                    {/* グラデーション効果を改善 */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/30 to-white pointer-events-none"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white via-white/90 to-transparent pointer-events-none"></div>
+                  </div>
+
+                  <div className="flex flex-col items-center justify-center py-2 relative">
+                    {/* 「ここから先は」テキストを点線の中に配置 */}
+                    <div className="text-center w-full my-6 flex items-center justify-center">
+                      <div className="border-t border-dashed border-gray-300 w-1/4"></div>
+                      <p className="text-gray-700 font-bold mx-4 bg-white px-2">ここから先は</p>
+                      <div className="border-t border-dashed border-gray-300 w-1/4"></div>
                     </div>
+                    <Badge variant="outline" className="mb-1 rounded-sm border-gray-400 text-gray-600">
+                      セール中
+                    </Badge>
+                    <div className="space-y-2 py-2"></div>
 
-                    <div className="flex flex-col items-center justify-center py-2 relative">
-                      {/* 「ここから先は」テキストを点線の中に配置 */}
-                      <div className="text-center w-full my-6 flex items-center justify-center">
-                        <div className="border-t border-dashed border-gray-300 w-1/4"></div>
-                        <p className="text-gray-700 font-bold mx-4">ここから先は</p>
-                        <div className="border-t border-dashed border-gray-300 w-1/4"></div>
-                      </div>
-                      <Badge variant="outline" className="mb-1 rounded-sm">プレミアムコンテンツ</Badge>
-                      <div className="space-y-2 py-2"></div>
-
-                      <div className="flex flex-col items-center justify-center py-2 relative w-full max-w-md">
-                        {/* 購入セクション */}
-                        <div className="text-center mb-1 w-full">
-                          <h3 className="text-xl font-medium text-gray-800 mb-4">モデルとプロンプトをみませんか?</h3>
-                          <p className="text-gray-600 mb-3">{premiumCharCount}字</p>
-                          <p className="text-4xl font-bold mb-4">¥ {price.toLocaleString()}</p>
-                          
-                          {/* 情報アイテム */}
-                          <div className="space-y-4 mb-6">
-                            <div className="flex items-center text-left text-sm text-gray-700">
-                              <FileText className="h-5 w-5 mr-2 text-gray-500 flex-shrink-0" />
-                              <span>使用されたモデルについての詳細な情報</span>
-                            </div>
-                            <div className="flex items-center text-left text-sm text-gray-700">
-                              <Info className="h-5 w-5 mr-2 text-gray-500 flex-shrink-0" />
-                              <span>実際に使用されたプロンプトの全文</span>
-                            </div>
+                    <div className="flex flex-col items-center justify-center py-2 relative w-full max-w-md">
+                      {/* 購入セクション */}
+                      <div className="text-center mb-1 w-full">
+                        <h3 className="text-xl font-medium text-gray-800 mb-2">{title}</h3>
+                        <p className="text-sm text-gray-600 mb-4">のヒントが詰まっています。</p>
+                        
+                        {/* 文字数の表示（動的） */}
+                        <div className="flex items-center justify-center space-x-4 mb-4">
+                          <div className="text-sm text-gray-600">
+                            {premiumCharCount}字
                           </div>
-                          
-                          {/* 購入ボタン */}
-                          <Button
-                            className="w-full bg-gray-800 text-white hover:bg-gray-700 rounded-md py-3 text-lg font-medium mt-2"
-                            onClick={handlePurchase}
-                          >
-                            購入手続きへ
-                          </Button>
                         </div>
+                        
+                        {/* 価格表示エリア */}
+                        <div className="flex items-center justify-center space-x-3 mb-6">
+                          <span className="text-3xl font-bold text-red-600">¥{price.toLocaleString()}</span>
+                        </div>
+                        
+                        {/* 購入ボタン */}
+                        <Button
+                          className="w-full bg-gray-900 text-white hover:bg-gray-800 rounded-sm py-3 text-lg font-medium shadow-sm transition-colors"
+                          onClick={handlePurchase}
+                        >
+                          購入手続きへ
+                        </Button>
+                        
+                        {/* 評価情報 - 動的表示 */}
+                        {reviewCount > 0 && (
+                          <div className="flex items-center justify-center mt-4 space-x-2">
+                            <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
+                              <Check className="h-4 w-4 text-green-600" />
+                            </div>
+                            <span className="text-sm text-gray-600">{reviewCount}人が高評価</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
