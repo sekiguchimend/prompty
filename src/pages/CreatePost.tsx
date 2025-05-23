@@ -443,7 +443,7 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
       // 新しいプロンプトを追加
       const newPrompt: Prompt = {
         id: nextId,
-        prompt_title: data.prompt_title || `プロンプト #${nextId}`, // 自動生成タイトル
+        prompt_title: `プロンプト #${nextId}`, // 自動生成タイトル
         prompt_content: data.yaml_content || data.fullPrompt, // YAMLコンテンツかプロンプト本文を使用
         yaml_content: data.yaml_content, // YAMLコンテンツを保存
         file_content: data.file_content, // ファイルコンテンツを保存
@@ -465,7 +465,7 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
       // 新しいプロンプトを追加
       const newPrompt: Prompt = {
         id: uniqueId,
-        prompt_title: data.title || `プロンプト #${uniqueId}`, // 自動生成タイトル
+        prompt_title: `プロンプト #${uniqueId}`, // 自動生成タイトル
         prompt_content: data.yaml_content || data.fullPrompt, // YAMLコンテンツかプロンプト本文を使用
         yaml_content: data.yaml_content, // YAMLコンテンツを保存
         file_content: data.file_content, // ファイルコンテンツを保存
