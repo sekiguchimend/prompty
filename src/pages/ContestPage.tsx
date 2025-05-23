@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
 import { ChevronRight } from 'lucide-react';
@@ -134,8 +133,6 @@ const ContestPage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      <Header />
-      
       <main className="flex-1 pt-12 md:pt-12">
         <div className="container mx-auto px-4 py-6 max-w-6xl">
           {/* タブナビゲーション */}

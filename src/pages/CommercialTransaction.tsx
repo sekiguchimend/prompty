@@ -1,6 +1,4 @@
-
 import React from 'react';
-import Header from '../components/Header';
 import Footer from '../components/Footer';
 // import { Helmet } from 'react-helmet';
 
@@ -10,7 +8,6 @@ const CommercialTransaction: React.FC = () => {
       {/* <Helmet>
         <title>特定商取引法に基づく表示 | prompty</title>
       </Helmet> */}
-      <Header />
       <main className="flex-1 py-12">
         <div className="container max-w-3xl mx-auto px-4">
           <h1 className="text-3xl font-bold mb-8">特定商取引法に基づく表示</h1>

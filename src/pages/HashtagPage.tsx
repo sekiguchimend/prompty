@@ -1,6 +1,5 @@
 import React from 'react';
-import { useParams } from 'next/navigation';
-import Header from '../components/Header';
+import { useRouter } from 'next/router';
 import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
 import { Facebook, Twitter, Bookmark, Share2 } from 'lucide-react';
@@ -107,9 +106,9 @@ const hashtagInfo: Record<string, HashtagData> = {
 };
 
 const HashtagPage: React.FC = () => {
-  const params = useParams<{ tag: string }>();
-  const tag = params?.tag as string;
-  const decodedTag = tag ? decodeURIComponent(tag) : '';
+  const router = useRouter();
+  const { tag } = router.query;
+  const decodedTag = tag ? decodeURIComponent(tag as string) : '';
   
   // ハッシュタグ情報を取得（存在しない場合はデフォルト値）
   const hashtagData = hashtagInfo[decodedTag] || {
@@ -120,8 +119,6 @@ const HashtagPage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
-      
       <main className="flex-1 pt-28 md:pt-16">
         {/* ハッシュタグのヒーローセクション */}
         <div className={`${hashtagData.backgroundColor} text-white`}>

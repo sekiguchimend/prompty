@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { ChevronLeft, Edit } from 'lucide-react';
 import { Separator } from '../../components/ui/separator';
@@ -12,6 +11,7 @@ import Link from 'next/link';
 import { GetServerSideProps } from 'next';
 import { PostItem } from '../../data/posts';
 import { supabase } from '../../lib/supabaseClient';
+import { supabaseAdmin } from '../../lib/supabaseAdminClient';
 import { useRouter } from 'next/router';
 import { recordPromptView } from '../../lib/recently-viewed-service';
 import PurchaseDialog from '../../components/prompt/PurchaseDialog';
@@ -80,8 +80,8 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
     }
   }
   
-  // Supabaseからプロンプトデータを取得 - IDで検索
-  let { data: promptData, error } = await supabase
+  // Supabaseからプロンプトデータを取得 - IDで検索（サーバーサイド用クライアント使用）
+  let { data: promptData, error } = await supabaseAdmin
     .from('prompts')
     .select(`
       id,
@@ -110,7 +110,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
       const numericId = parseInt(id, 10);
       if (!isNaN(numericId)) {
         // 数値IDで検索を試みる
-        const { data: altData, error: altError } = await supabase
+        const { data: altData, error: altError } = await supabaseAdmin
           .from('prompts')
           .select(`
             id,
@@ -168,7 +168,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
     
     try {
       // analytics_viewsテーブルがあるか確認
-      const { data: viewData, error: viewError } = await supabase
+      const { data: viewData, error: viewError } = await supabaseAdmin
         .from('analytics_views')
         .select('id')
         .eq('prompt_id', formattedId)
@@ -182,7 +182,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
           shouldUpdateViewCount = true;
           
           // analytics_viewsテーブルに記録
-          await supabase
+          await supabaseAdmin
             .from('analytics_views')
             .insert([{
               prompt_id: formattedId,
@@ -215,7 +215,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
     if (shouldUpdateViewCount) {
       const currentViewCount = typeof promptData.view_count === 'number' ? promptData.view_count : 0;
       
-      await supabase
+      await supabaseAdmin
         .from('prompts')
         .update({ view_count: currentViewCount + 1 })
         .eq('id', formattedId)
@@ -259,7 +259,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
   }
   
   // いいね数を取得
-  const { count: likeCount, error: likeError } = await supabase
+  const { count: likeCount, error: likeError } = await supabaseAdmin
     .from('likes')
     .select('*', { count: 'exact', head: true })
     .eq('prompt_id', formattedId);
@@ -289,7 +289,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
   
   // プロフィールデータが取得できない場合、著者IDで直接取得を試みる
   if (!authorProfile && promptData.author_id) {
-    const { data: directProfile, error: profileError } = await supabase
+    const { data: directProfile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('id, username, display_name, avatar_url, bio')
       .eq('id', promptData.author_id)
@@ -494,7 +494,6 @@ const PromptDetail = ({
   if (router.isFallback) {
     return (
       <div className="flex min-h-screen flex-col">
-        <Header />
         <main className="flex-1 bg-white mt-14 md:mt-10 flex items-center justify-center">
           <p>読み込み中...</p>
         </main>
@@ -508,7 +507,6 @@ const PromptDetail = ({
     console.error("postDataが見つかりません");
     return (
       <div className="flex min-h-screen flex-col">
-        <Header />
         <main className="flex-1 bg-white mt-14 md:mt-10 flex items-center justify-center">
           <p>プロンプト情報を読み込めませんでした</p>
         </main>
@@ -604,8 +602,6 @@ const PromptDetail = ({
   // 表示切替
   return (
     <div className="flex min-h-screen flex-col">
-      <Header />
-      
       <main className="flex-1 bg-white">
         <div className="container px-4 md:px-6 py-6 max-w-7xl mx-auto">
           {/* Back link and Edit link */}

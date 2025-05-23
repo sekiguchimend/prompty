@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import Header from '../components/Header';
 import Footer from '../components/Footer';
 
 import { useToast } from '../components/ui/use-toast';
@@ -439,7 +438,6 @@ const UserProfilePage: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
-        <Header />
         <main className="pt-16 flex items-center justify-center min-h-screen">
           <p>読み込み中...</p>
         </main>
@@ -450,7 +448,6 @@ const UserProfilePage: React.FC = () => {
   if (!profileData) {
     return (
       <div className="min-h-screen bg-white">
-        <Header />
         <main className="pt-16 flex flex-col items-center justify-center min-h-screen">
           <p className="text-lg mb-4">プロフィール情報が見つかりません</p>
           <button onClick={() => router.push('/settings?tab=profile')} className="px-4 py-2 bg-blue-500 text-white rounded-md">
@@ -463,8 +460,6 @@ const UserProfilePage: React.FC = () => {
   
   return (
     <div className="min-h-screen bg-white">
-      <Header />
-      
       <main className={`pt-16 ${isMobile ? 'pt-20' : ''}`}>
         {/* Profile header */}
         <ProfileHeader 

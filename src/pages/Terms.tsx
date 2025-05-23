@@ -1,7 +1,7 @@
 import React from 'react';
-import Header from '../components/Header';
 import Footer from '../components/Footer';
 import Head from 'next/head';
+import { ChevronLeft } from 'lucide-react';
 
 const Terms: React.FC = () => {
   return (
@@ -9,7 +9,6 @@ const Terms: React.FC = () => {
       <Head>
         <title>ご利用規約 | prompty</title>
       </Head>
-      <Header />
       <main className="flex-1 py-12">
         <div className="container max-w-3xl mx-auto px-4">
           <h1 className="text-3xl font-bold mb-8">ご利用規約</h1>

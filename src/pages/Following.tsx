@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { ChevronRight, Heart, MoreVertical, Bookmark, UserPlus, Loader2, ChevronDown } from 'lucide-react';
-import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { PostItem, getTodayForYouPosts } from '../data/posts';
 import { 
@@ -666,8 +665,6 @@ const Following: React.FC = () => {
         <link rel="shortcut icon" href="https://prompty-zeta.vercel.app/favicon.ico" type="image/x-icon" />
         <link rel="apple-touch-icon" href="https://prompty-zeta.vercel.app/favicon.ico" />
       </Head>
-      
-      <Header />
       
       <main className="flex-1 pb-12 mt-20 md:mt-16">
         <div className="container mx-auto px-4">

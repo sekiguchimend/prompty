@@ -5,8 +5,8 @@ import { supabase } from '../lib/supabaseClient';
 import { useToast } from '../components/ui/use-toast';
 import { Button } from '../components/ui/button';
 import { useInView } from 'react-intersection-observer';
-import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 
 // ページあたりのユーザー数を定義
 const USERS_PER_PAGE = 20;
@@ -391,8 +391,6 @@ const FollowingUsers: React.FC = () => {
   
   return (
     <>
-      <Header />
-      
       <main className="flex-1 pb-12 mt-20 md:mt-16">
         <div className="container mx-auto px-4">
           <div className="mt-4">

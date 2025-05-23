@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
-import  Header  from '../components/Header';
 import Footer from '../components/Footer';
 const Premium = () => {
   return (
@@ -29,8 +28,7 @@ const Premium = () => {
       </div>
 
       {/* ヘッダー */}
-     <Header />
-
+      
       {/* メインコンテンツ */}
       <main className="container mx-auto px-4 py-8 max-w-3xl text-center">
         <h1 className="text-lg mb-3 text-gray-800">

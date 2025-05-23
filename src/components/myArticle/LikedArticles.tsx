@@ -79,51 +79,27 @@ const LikedArticles = () => {
                 id,
                 display_name,
                 avatar_url
-              )
+              ),
+              likes(count)
             `)
             .in('id', promptIds)
             .eq('published', true);
 
           if (articlesError) throw articlesError;
 
-          // いいね数を取得
-          const likedArticlesWithCounts = await Promise.all(
-            articlesData.map(async (article: any) => {
-              const { count, error: countError } = await supabase
-                .from('likes')
-                .select('id', { count: 'exact' })
-                .eq('prompt_id', article.id);
-
-              if (countError) {
-                console.error('いいね数取得エラー:', countError);
-                return {
-                  id: article.id,
-                  title: article.title,
-                  author: {
-                    id: article.profiles.id,
-                    display_name: article.profiles.display_name,
-                    avatar_url: article.profiles.avatar_url
-                  },
-                  published_at: article.created_at,
-                  like_count: 0,
-                  thumbnail_url: article.thumbnail_url
-                };
-              }
-
-              return {
-                id: article.id,
-                title: article.title,
-                author: {
-                  id: article.profiles.id,
-                  display_name: article.profiles.display_name,
-                  avatar_url: article.profiles.avatar_url
-                },
-                published_at: article.created_at,
-                like_count: count || 0,
-                thumbnail_url: article.thumbnail_url
-              };
-            })
-          );
+          // いいね数を一括取得したデータから利用
+          const likedArticlesWithCounts = articlesData.map((article: any) => ({
+            id: article.id,
+            title: article.title,
+            author: {
+              id: article.profiles.id,
+              display_name: article.profiles.display_name,
+              avatar_url: article.profiles.avatar_url
+            },
+            published_at: article.created_at,
+            like_count: Array.isArray(article.likes) && article.likes.length > 0 ? (article.likes[0].count as number) || 0 : 0,
+            thumbnail_url: article.thumbnail_url
+          }));
 
           setLikedArticles(likedArticlesWithCounts);
         } else {

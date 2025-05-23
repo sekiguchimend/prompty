@@ -35,11 +35,17 @@ export const trackView = async (promptId: string): Promise<boolean> => {
       .from('analytics_views')
       .select('id')
       .eq('prompt_id', promptId)
-      .eq('user_id', visitorId)
+      .eq('visitor_id', visitorId)
       .maybeSingle();
     
     if (selectError) {
       console.error('ビュー確認エラー:', selectError);
+      // テーブルが存在しない場合はスキップして処理を続行
+      if (selectError.code === '42P01' || selectError.message?.includes('does not exist')) {
+        console.log('analytics_viewsテーブルが存在しません - ビュートラッキングをスキップ');
+        trackedPromptIds.add(promptId);
+        return true;
+      }
       return false;
     }
     
@@ -58,7 +64,7 @@ export const trackView = async (promptId: string): Promise<boolean> => {
         .from('analytics_views')
         .insert({
           prompt_id: promptId,
-          user_id: visitorId
+          visitor_id: visitorId
         });
       
       if (insertError) {
@@ -66,6 +72,13 @@ export const trackView = async (promptId: string): Promise<boolean> => {
         if (insertError.code === '23505') {
           console.log('既に閲覧済みです（重複エラー） - view_count更新はスキップ');
           // セットに追加してこのセッションでは再度処理しないようにする
+          trackedPromptIds.add(promptId);
+          return true;
+        }
+        
+        // テーブルが存在しない場合はスキップ
+        if (insertError.code === '42P01' || insertError.message?.includes('does not exist')) {
+          console.log('analytics_viewsテーブルが存在しません - ビュートラッキングをスキップ');
           trackedPromptIds.add(promptId);
           return true;
         }
@@ -158,7 +171,7 @@ export const getViewCount = async (promptId: string): Promise<number> => {
       const promptViewCount = Number(promptDataAny.view_count || 0);
       console.log('promptsテーブルからのビュー数:', promptViewCount);
       
-      // 2. analytics_views テーブルからカウントを取得
+      // 2. analytics_views テーブルからカウントを取得（テーブルが存在する場合のみ）
       const { count: analyticsCount, error: analyticsError } = await supabase
         .from('analytics_views')
         .select('id', { count: 'exact', head: true })
@@ -172,9 +185,14 @@ export const getViewCount = async (promptId: string): Promise<number> => {
         const finalCount = Math.max(promptViewCount, analyticsCountNumber);
         console.log('採用するビュー数:', finalCount);
         return finalCount;
+      } else if (analyticsError.code === '42P01' || analyticsError.message?.includes('does not exist')) {
+        // analytics_viewsテーブルが存在しない場合はpromptsテーブルの値を使用
+        console.log('analytics_viewsテーブルが存在しません - promptsテーブルの値を使用');
+        return promptViewCount;
       }
       
-      // analytics_viewsの取得に失敗した場合はpromptのカウントを使用
+      // その他のエラーでもpromptsテーブルの値を使用
+      console.error('analytics_viewsアクセスエラー:', analyticsError);
       return promptViewCount;
     }
     

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { HelpCircle, Send, Loader2, ArrowLeft } from 'lucide-react';
-import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useRouter } from 'next/router';
 // まとめてインポート
@@ -444,7 +443,7 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
       // 新しいプロンプトを追加
       const newPrompt: Prompt = {
         id: nextId,
-        prompt_title: data.title || `プロンプト #${nextId}`, // 自動生成タイトル
+        prompt_title: data.prompt_title || `プロンプト #${nextId}`, // 自動生成タイトル
         prompt_content: data.yaml_content || data.fullPrompt, // YAMLコンテンツかプロンプト本文を使用
         yaml_content: data.yaml_content, // YAMLコンテンツを保存
         file_content: data.file_content, // ファイルコンテンツを保存
@@ -1072,8 +1071,6 @@ const submitProject = async () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Header />
-      
       <main className="flex-1 container max-w-4xl mx-auto px-4 py-8 mt-10">
         {/* 投稿モード選択か、入力フォームかを表示 */}
         {(() => {
@@ -1132,7 +1129,7 @@ const submitProject = async () => {
                         // 通常投稿モード - 既存のUIコンポーネントを表示
                         <>
                           {/* プロジェクト設定フォーム */}
-                          <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-8 overflow-hidden">
+                          <div className="mb-8">
                             <ProjectSettingsForm
                               onSave={handleProjectSave}
                               defaultValues={projectSettings}
@@ -1153,7 +1150,7 @@ const submitProject = async () => {
                           )}
                           
                           {/* プロンプト入力フォーム */}
-                          <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-8 overflow-hidden">
+                          <div className="mb-8">
                             <PromptForm
                               onSubmit={handlePromptSubmit}
                               initialPromptNumber={promptNumber}
@@ -1163,24 +1160,105 @@ const submitProject = async () => {
                           </div>
                           
                           {/* プロジェクト投稿ボタン */}
-                          <div className="mt-8 flex justify-end">
-                            <Button 
-                              onClick={submitProject}
-                              className="bg-black hover:bg-gray-800 text-white px-6 py-2"
-                              disabled={prompts.length === 0 || isSubmitting}
-                            >
-                              {isSubmitting ? (
-                                <>
-                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                  送信中...
-                                </>
-                              ) : (
-                                <>
-                                  <Send className="h-4 w-4 mr-2" />
-                                  プロジェクトを投稿
-                                </>
+                          <div className="mt-8">
+                            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                              {/* 投稿前の最終確認セクション */}
+                              <div className="mb-6">
+                                <div className="flex items-center space-x-3 mb-4">
+                                  <Send className="h-6 w-6 text-green-600" />
+                                  <div>
+                                    <h3 className="text-xl font-bold text-gray-900">プロジェクト投稿準備完了</h3>
+                                    <p className="text-sm text-gray-600 mt-1">すべての設定が完了しました。いよいよ投稿しましょう！</p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* 投稿前チェックリスト */}
+                              <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 mb-6">
+                                <h4 className="text-base font-semibold text-gray-900 mb-3">投稿前チェック</h4>
+                                <div className="space-y-2">
+                                  <div className="flex items-center">
+                                    <div className={`h-4 w-4 rounded-full mr-3 flex items-center justify-center text-xs ${projectSettings.projectTitle ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+                                      ✓
+                                    </div>
+                                    <span className={`text-sm ${projectSettings.projectTitle ? 'text-gray-900' : 'text-gray-500'}`}>
+                                      プロジェクトタイトル: {projectSettings.projectTitle || '未設定'}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center">
+                                    <div className={`h-4 w-4 rounded-full mr-3 flex items-center justify-center text-xs ${prompts.length > 0 ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+                                      ✓
+                                    </div>
+                                    <span className={`text-sm ${prompts.length > 0 ? 'text-gray-900' : 'text-gray-500'}`}>
+                                      プロンプト数: {prompts.length} 件
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center">
+                                    <div className={`h-4 w-4 rounded-full mr-3 flex items-center justify-center text-xs ${projectSettings.aiModel ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+                                      ✓
+                                    </div>
+                                    <span className={`text-sm ${projectSettings.aiModel ? 'text-gray-900' : 'text-gray-500'}`}>
+                                      AIモデル: {getModelLabel(projectSettings.aiModel) || '未設定'}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* 投稿ボタン */}
+                              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                                <div className="text-sm text-gray-600">
+                                  <p className="mb-1">
+                                    <span className="font-medium">料金設定:</span> {projectSettings.pricingType === 'free' ? '無料' : `¥${projectSettings.price}`}
+                                  </p>
+                                  <p>
+                                    <span className="font-medium">公開範囲:</span> 一般公開
+                                  </p>
+                                </div>
+                                
+                                <Button 
+                                  onClick={submitProject}
+                                  className={`${
+                                    prompts.length === 0 || isSubmitting 
+                                      ? 'bg-gray-400 cursor-not-allowed' 
+                                      : 'bg-green-600 hover:bg-green-700 hover:shadow-lg'
+                                  } text-white px-8 py-3 rounded-lg shadow-md transition-all duration-200 font-semibold`}
+                                  disabled={prompts.length === 0 || isSubmitting}
+                                  size="lg"
+                                >
+                                  {isSubmitting ? (
+                                    <>
+                                      <Loader2 className="h-5 w-5 mr-3 animate-spin" />
+                                      投稿中...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Send className="h-5 w-5 mr-3" />
+                                      プロジェクトを投稿
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
+
+                              {/* 注意事項 */}
+                              {(prompts.length === 0 || !projectSettings.projectTitle) && (
+                                <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                  <div className="flex items-start">
+                                    <div className="flex-shrink-0">
+                                      <svg className="h-4 w-4 text-amber-600" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                      </svg>
+                                    </div>
+                                    <div className="ml-3">
+                                      <p className="text-sm text-amber-800">
+                                        <span className="font-medium">投稿するには以下が必要です:</span>
+                                        {!projectSettings.projectTitle && <span className="block">• プロジェクトタイトルの入力</span>}
+                                        {prompts.length === 0 && <span className="block">• 最低1つのプロンプトの追加</span>}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
                               )}
-                            </Button>
+                            </div>
                           </div>
                         </>
                       ) : (

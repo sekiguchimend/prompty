@@ -3,8 +3,9 @@ import { supabase } from '../lib/supabaseClient';
 import { NewContact } from '../lib/schema';
 import Head from 'next/head';
 import Footer from '../components/Footer';
-import Header from '../components/Header';
-import Sidebar from '../components/Sidebar';
+import { useRouter } from 'next/router';
+import { ChevronLeft, Send, Check } from 'lucide-react';
+import { Button } from '../components/ui/button';
 
 // お問い合わせフォームのデータ型
 type FormData = Omit<NewContact, 'is_read'>;
@@ -146,9 +147,6 @@ export default function ContactPage() {
       </Head>
       
       <div className="flex min-h-screen flex-col">
-        <Header />
-        <Sidebar />
-        
         <div className="flex-1 md:ml-[240px] bg-gray-50 py-12">
           <div className="container mx-auto px-4 max-w-3xl">
             <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">

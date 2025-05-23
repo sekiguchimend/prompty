@@ -1,13 +1,16 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Mail, Github } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 import Image from 'next/image';
 import { supabase } from '../../lib/supabase/client';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Alert, AlertDescription } from '../components/ui/alert';
 
 // モーダルコンポーネント - noteスタイル
 const Modal = ({ isOpen, onClose, children }: { isOpen: boolean, onClose: () => void, children: React.ReactNode }) => {

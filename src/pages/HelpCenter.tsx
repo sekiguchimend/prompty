@@ -1,9 +1,9 @@
 import React from 'react';
-import Header from '../components/Header';
 import Footer from '../components/Footer';
 import HelpHero from '../components/help/HelpHero';
 import HelpCategoryGrid from '../components/help/HelpCategoryGrid';
 import Head from 'next/head';
+import { ChevronLeft, Search, MessageCircle, Book, Settings, Shield, CreditCard } from 'lucide-react';
 
 const HelpCenter: React.FC = () => {
   return (
@@ -12,7 +12,6 @@ const HelpCenter: React.FC = () => {
         <title>ヘルプセンター | prompty</title>
         <meta name="description" content="Promptyのヘルプセンターへようこそ。よくある質問、ガイド、サポート情報をご覧いただけます。" />
       </Head>
-      <Header />
       <main className="flex-1">
         <HelpHero />
         <HelpCategoryGrid />

@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Lock, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { useRouter } from 'next/router';
+import { Lock, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../lib/auth-context';
 import Image from 'next/image';
 import { supabase } from '../../lib/supabase/client';

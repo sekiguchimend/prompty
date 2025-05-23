@@ -85,19 +85,15 @@ const HomePage: React.FC = () => {
       else {
         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
         
-        // 30日未満なら「〇日前」
         if (diffDays < 30) {
           postedAt = `${diffDays}日前`;
         } 
-        // 月単位の差分
         else {
           const diffMonths = Math.floor(diffDays / 30);
           
-          // 12ヶ月未満なら「〇ヶ月前」
           if (diffMonths < 12) {
             postedAt = `${diffMonths}ヶ月前`;
           }
-          // それ以上なら「〇年前」
           else {
             const diffYears = Math.floor(diffDays / 365);
             postedAt = `${diffYears}年前`;
@@ -120,25 +116,20 @@ const HomePage: React.FC = () => {
     };
   };
 
-  // カテゴリー名に対応するリンク先URLを取得する関数
   const getCategoryUrl = (categoryName: string, categorySlug: string): string => {
-    // 特別なカテゴリーの場合はそのスラッグを使用
     if (Object.keys(SPECIAL_CATEGORIES).includes(categoryName)) {
       const specialSlug = SPECIAL_CATEGORIES[categoryName];
       return `/category/${specialSlug}`;
     }
-    // 通常のカテゴリーの場合はカテゴリーのスラッグを使用
     return `/category/${categorySlug}`;
   };
 
-  // データを一度に取得するuseEffect
   useEffect(() => {
     const fetchAllData = async () => {
       try {
         setIsLoading(true);
-        setError(null); // エラー状態をリセット
+        setError(null); 
         
-        // 特集記事と人気記事を取得
         const featuredAndPopularResponse = await fetch(`/api/prompts/featured-and-popular?limit=${getDisplayCount + 2}`);
         
         if (!featuredAndPopularResponse.ok) {
@@ -148,14 +139,12 @@ const HomePage: React.FC = () => {
         
         const featuredAndPopularData = await featuredAndPopularResponse.json();
         
-        // データを整形
         const formattedFeaturedPrompts = featuredAndPopularData.featuredPrompts.map(transformToPromptItem);
         const formattedPopularPrompts = featuredAndPopularData.popularPrompts.map(transformToPromptItem);
         
         setProcessingFeaturedPrompts(formattedFeaturedPrompts);
         setProcessingPopularPosts(formattedPopularPrompts);
         
-        // カテゴリー別記事を取得
         const categoryResponse = await fetch('/api/prompts/by-category');
         
         if (!categoryResponse.ok) {
@@ -165,13 +154,11 @@ const HomePage: React.FC = () => {
         
         const categoryData = await categoryResponse.json();
         
-        // 特別カテゴリーのデータを整形
         const specialCategories = categoryData.specialCategories.map((item: any) => ({
           category: item.category,
           prompts: item.prompts.map(transformToPromptItem)
         }));
         
-        // 通常カテゴリーのデータを整形
         const regularCategories = categoryData.regularCategories.map((item: any) => ({
           category: item.category,
           prompts: item.prompts.map(transformToPromptItem)
@@ -191,7 +178,6 @@ const HomePage: React.FC = () => {
     fetchAllData();
   }, [getDisplayCount]);
 
-  // ローディング状態をチェック
   if (isLoading) {
     return (
       <div className="flex min-h-screen flex-col">
@@ -234,7 +220,6 @@ const HomePage: React.FC = () => {
                 </button>
               </div>
             )}
-                 {/* Popular posts section */}
                  <PromptSection 
               title="人気の記事" 
               prompts={processingPopularPosts}
@@ -246,12 +231,7 @@ const HomePage: React.FC = () => {
               moreLinkUrl="/Popular"
               isFeatureSection={true}
             />
-            {/* Featured prompts section */}
            
-
-     
-
-            {/* 特別カテゴリーのセクション */}
             {specialCategoryContents.map((categoryContent) => (
               <PromptSection 
                 key={categoryContent.category.id}
@@ -266,7 +246,6 @@ const HomePage: React.FC = () => {
               />
             ))}
 
-            {/* カテゴリー「生成AI」がない場合のフォールバック表示（手動で追加） */}
             {specialCategoryContents.filter(cat => 
               cat.category.name === '生成AI' ||
               cat.category.slug === 'generative-ai'
@@ -286,7 +265,6 @@ const HomePage: React.FC = () => {
               </div>
             )}
 
-            {/* その他のカテゴリーごとのセクション */}
             {categoryContents.map((categoryContent) => (
               <PromptSection 
                 key={categoryContent.category.id}
@@ -309,5 +287,4 @@ const HomePage: React.FC = () => {
   );
 };
 
-// メモ化してコンポーネントの不要な再レンダリングを防止
 export default HomePage;

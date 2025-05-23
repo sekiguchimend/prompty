@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import Header from '../components/Header';
+import { useRouter } from 'next/router';
 import Footer from '../components/Footer';
 import PromptGrid from '../components/PromptGrid';
 import { featuredPrompts, aiGeneratedPrompts } from '../data/mockPrompts';
@@ -23,9 +22,8 @@ type SortOption = 'relevance' | 'title_asc' | 'title_desc' | 'latest' | 'oldest'
 type FilterType = 'all' | 'title' | 'author' | 'tag';
 
 const Search = () => {
-  const searchParams = useSearchParams();
   const router = useRouter();
-  const query = searchParams?.get('q') || '';
+  const query = (router.query.q as string) || '';
   const [searchInput, setSearchInput] = useState(query);
   const [isLoading, setIsLoading] = useState(true);
   const [results, setResults] = useState<PromptItem[]>([]);
@@ -177,7 +175,7 @@ const Search = () => {
 
   useEffect(() => {
     // searchParamsからクエリを取得
-    const searchQuery = searchParams?.get('q') || '';
+    const searchQuery = query;
     setSearchInput(searchQuery);
     
     // 少し遅延させて検索実行
@@ -186,7 +184,7 @@ const Search = () => {
     }, 300);
     
     return () => clearTimeout(timer);
-  }, [searchParams]); // queryではなくsearchParamsの変更を監視
+  }, [query]); // queryではなくsearchParamsの変更を監視
   
   // 検索結果の並び替えとフィルタリングを適用
   useEffect(() => {
@@ -238,7 +236,7 @@ const Search = () => {
     }
     
     setFilteredResults(sorted);
-  }, [results, sortOption, filterType, query, searchParams]); // searchParamsの変更も監視
+  }, [results, sortOption, filterType, query]); // searchParamsの変更も監視
 
   // データ変換用ヘルパー関数
   const transformPromptsData = (promptsData: any[]): PromptItem[] => {
@@ -289,7 +287,7 @@ const Search = () => {
       const searchUrl = `/search?q=${encodeURIComponent(searchInput.trim())}`;
       
       // 現在のURLと同じ検索クエリの場合、executeSearchを直接呼び出し
-      if (searchParams?.get('q') === searchInput.trim()) {
+      if (query === searchInput.trim()) {
         executeSearch(searchInput.trim());
       } else {
         router.push(searchUrl);
@@ -327,8 +325,6 @@ const Search = () => {
 
   return (
     <div className="min-h-screen bg-prompty-background">
-      <Header />
-      
       <main className="container max-w-7xl mx-auto px-4 py-8 pt-20">
         <h1 className="text-3xl font-bold mb-4">検索</h1>
         

@@ -79,51 +79,27 @@ const BookmarkedArticles = () => {
                 id,
                 display_name,
                 avatar_url
-              )
+              ),
+              bookmarks(count)
             `)
             .in('id', promptIds)
             .eq('published', true);
 
           if (articlesError) throw articlesError;
 
-          // ブックマーク数を取得
-          const bookmarkedArticlesWithCounts = await Promise.all(
-            articlesData.map(async (article: any) => {
-              const { count, error: countError } = await supabase
-                .from('bookmarks')
-                .select('id', { count: 'exact' })
-                .eq('prompt_id', article.id);
-
-              if (countError) {
-                console.error('ブックマーク数取得エラー:', countError);
-                return {
-                  id: article.id,
-                  title: article.title,
-                  author: {
-                    id: article.profiles.id,
-                    display_name: article.profiles.display_name,
-                    avatar_url: article.profiles.avatar_url
-                  },
-                  published_at: article.created_at,
-                  bookmark_count: 0,
-                  thumbnail_url: article.thumbnail_url
-                };
-              }
-
-              return {
-                id: article.id,
-                title: article.title,
-                author: {
-                  id: article.profiles.id,
-                  display_name: article.profiles.display_name,
-                  avatar_url: article.profiles.avatar_url
-                },
-                published_at: article.created_at,
-                bookmark_count: count || 0,
-                thumbnail_url: article.thumbnail_url
-              };
-            })
-          );
+          // ブックマーク数を一括取得したデータから利用
+          const bookmarkedArticlesWithCounts = articlesData.map((article: any) => ({
+            id: article.id,
+            title: article.title,
+            author: {
+              id: article.profiles.id,
+              display_name: article.profiles.display_name,
+              avatar_url: article.profiles.avatar_url
+            },
+            published_at: article.created_at,
+            bookmark_count: Array.isArray(article.bookmarks) && article.bookmarks.length > 0 ? (article.bookmarks[0].count as number) || 0 : 0,
+            thumbnail_url: article.thumbnail_url
+          }));
 
           setBookmarkedArticles(bookmarkedArticlesWithCounts);
         } else {

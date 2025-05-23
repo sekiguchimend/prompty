@@ -3,7 +3,6 @@ import { Heart, Bookmark, BookmarkPlus, MoreVertical } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '../hooks/use-toast';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { PromptItem } from '../pages/prompts/[id]';
 import { likePrompt, unlikePrompt } from '../lib/like-service';
 import { bookmarkPrompt, unbookmarkPrompt } from '../lib/bookmark-service';
@@ -159,7 +158,6 @@ const PromptCard: React.FC<PromptCardProps> = ({
   isBookmarked = false,
   onHide,
 }) => {
-  const router = useRouter();
   const [liked, setLiked] = useState(isLiked);
   const [bookmarked, setBookmarked] = useState(isBookmarked);
   const [currentLikeCount, setCurrentLikeCount] = useState(likeCount);

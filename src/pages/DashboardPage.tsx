@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, Eye, MessageSquare, Heart, HelpCircle, Menu, X, Award, DollarSign, CreditCard, Clock, AlertCircle, ChevronRight } from 'lucide-react';
-import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
@@ -670,7 +669,6 @@ const DashboardPage: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       {/* ヘッダー */}
-      <Header />
       
       <main className="flex-1 pt-16 pb-16">
         <div className="containermx-auto px-4 sm:px-6 lg:px-8">

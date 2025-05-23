@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { supabase } from '../lib/supabaseClient';
 import Head from 'next/head';
+import { useToast } from '../components/ui/use-toast';
 
 interface Category {
   id: string;
@@ -102,8 +102,6 @@ const DebugCategoriesPage: React.FC = () => {
       <Head>
         <title>カテゴリーデバッグ | Prompty</title>
       </Head>
-      
-      <Header />
       
       <main className="flex-1 container mx-auto px-4 py-8 mt-8">
         <h1 className="text-2xl font-bold mb-6">カテゴリーデバッグ</h1>

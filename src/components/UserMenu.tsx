@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { X, LayoutDashboard, FilePen, Heart, Image, Book, Settings, LogOut, Users, Bookmark } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 import { useAuth } from '../lib/auth-context';
 import { supabase } from '../lib/supabaseClient';
 

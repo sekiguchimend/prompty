@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Header from '../components/Header';
 import Footer from '../components/Footer';
 import Sidebar from '../components/Sidebar';
 import PromptGrid from '../components/PromptGrid';
@@ -29,7 +28,6 @@ const AIGenerated: React.FC = () => {
       <Helmet>
         <title>生成AI | prompty</title>
       </Helmet>
-      <Header />
       <Sidebar />
       <div className="flex flex-col flex-1 md:ml-[240px]">
 

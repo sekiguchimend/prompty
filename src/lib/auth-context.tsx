@@ -3,7 +3,7 @@
 // lib/auth-context.tsx
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '../../lib/supabase/client';
+import { supabase } from './supabaseClient';
 
 // 認証コンテキストの型定義
 interface AuthContextType {
@@ -22,20 +22,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastRefreshed, setLastRefreshed] = useState<number>(0);
+  const [isMounted, setIsMounted] = useState(false);
+  
+  // マウント状態を管理
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   
   // 初期化時のセッション取得処理
   useEffect(() => {
+    // マウントされていない場合は何もしない
+    if (!isMounted) return;
+    
     const initializeAuth = async () => {
       try {
+        console.log('🚀 認証コンテキスト初期化開始...');
         // Supabaseから最新のセッション情報を取得
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('セッション取得エラー:', error);
+          console.error('❌ セッション取得エラー:', error);
           throw error;
         }
         
         if (data.session) {
+          console.log('✅ 既存セッション発見:', data.session.user.email);
           setSession(data.session);
           setUser(data.session.user);
           
@@ -45,52 +56,83 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           
           // 有効期限が10分以内の場合はリフレッシュ
           if (expiresAt <= now + 600000) {
-            console.log('セッションの期限が近いためリフレッシュ...');
+            console.log('⏰ セッションの期限が近いためリフレッシュ...');
             const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
             
             if (!refreshError && refreshData.session) {
               setSession(refreshData.session);
               setUser(refreshData.session.user);
               setLastRefreshed(Date.now());
+              console.log('🔄 セッションリフレッシュ完了');
             }
           }
         } else {
           // セッションがない場合
+          console.log('🔓 セッションなし - 未ログイン状態');
           setSession(null);
           setUser(null);
         }
       } catch (error) {
-        console.error('認証初期化エラー:', error);
+        console.error('❌ 認証初期化エラー:', error);
         // 認証エラー時はリセット
         setSession(null);
         setUser(null);
       } finally {
         setIsLoading(false);
+        console.log('✅ 認証コンテキスト初期化完了');
       }
     };
+    
+    // URLハッシュ変更を検知して認証状態を再チェック
+    const handleHashChange = () => {
+      console.log('🔄 URLハッシュ変更検知 - 認証状態を再チェック');
+      if (typeof window !== 'undefined' && window.location.hash.includes('access_token') || window.location.hash.includes('refresh_token')) {
+        console.log('🔑 認証トークンを含むハッシュを検知');
+        // 少し待ってから認証状態を再取得
+        setTimeout(async () => {
+          const { data } = await supabase.auth.getSession();
+          if (data.session) {
+            console.log('✅ ハッシュ変更後の認証成功:', data.session.user.email);
+            setSession(data.session);
+            setUser(data.session.user);
+            setIsLoading(false);
+          }
+        }, 100);
+      }
+    };
+
+    // ハッシュ変更イベントを監視（クライアントサイドのみ）
+    if (typeof window !== 'undefined') {
+      window.addEventListener('hashchange', handleHashChange);
+    }
     
     // 認証状態の変更を監視
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event: string, newSession: Session | null) => {
-        console.log('認証状態変更イベント:', event);
+        console.log('🔑 認証状態変更イベント:', event, newSession ? '有効' : '無効');
         
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           setSession(newSession);
           setUser(newSession?.user || null);
+          setIsLoading(false);
           
           if (event === 'TOKEN_REFRESHED') {
             setLastRefreshed(Date.now());
           }
+          console.log('✅ ログイン/トークン更新:', newSession?.user?.email);
         }
         
         if (event === 'SIGNED_OUT') {
           setSession(null);
           setUser(null);
+          setIsLoading(false);
+          console.log('🔴 ログアウト完了');
         }
         
         if (event === 'USER_UPDATED') {
           setSession(newSession);
           setUser(newSession?.user || null);
+          console.log('👤 ユーザー情報更新:', newSession?.user?.email);
         }
       }
     );
@@ -125,8 +167,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       authListener?.subscription.unsubscribe();
       clearInterval(refreshInterval);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('hashchange', handleHashChange);
+      }
     };
-  }, []);
+  }, [isMounted]);
   
   // サインアウト処理
   const signOut = async () => {

@@ -1,9 +1,9 @@
 "use client";
 
 import React from 'react';
-import { ChevronDown, Twitter, Instagram, Facebook } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { ChevronDown, Twitter, Instagram, Facebook } from 'lucide-react';
+import { useRouter } from 'next/router';
 
 // 人気のタグリスト
 const popularTags = [

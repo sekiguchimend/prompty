@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import Sidebar from '../../components/Sidebar';
 import { supabase } from '../../lib/supabaseClient';
@@ -100,8 +99,6 @@ const CategoryIndexPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex min-h-screen flex-col">
-        <Header />
-        <Sidebar />
         <div className="flex-1 md:ml-[240px]">
           <Breadcrumb />
           <main className="pb-12 pt-2">
@@ -127,9 +124,6 @@ const CategoryIndexPage: React.FC = () => {
         <title>カテゴリー一覧 - Prompty</title>
         <meta name="description" content="Promptyの記事カテゴリー一覧です。様々なトピックの記事を見つけることができます。" />
       </Head>
-      
-      <Header />
-      <Sidebar />
       
       <div className="flex-1 md:ml-[240px]">
         <Breadcrumb />

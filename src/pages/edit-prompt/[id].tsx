@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { GetServerSideProps } from 'next';
-import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { Button } from '../../components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel } from "../../components/ui/form";
@@ -179,7 +178,6 @@ const EditPromptPage: React.FC<EditPromptPageProps> = ({ promptData }) => {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Header />
       <main className="flex-1 bg-white pt-16 md:pt-10">
         <div className="container mx-auto px-4 py-8 max-w-4xl">
           <div className="mb-6">

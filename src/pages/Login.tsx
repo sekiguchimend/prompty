@@ -2,12 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 import { Mail, Lock, AlertCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../lib/auth-context';
 import Image from 'next/image';
-import { supabase } from '../../lib/supabase/client';
+import { supabase } from '../lib/supabaseClient';
 // Manually implement or mock the missing components
 const Input = ({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) => (
   <input className={`border rounded px-3 py-2 w-full ${className}`} {...props} />
@@ -126,11 +126,12 @@ const Login = () => {
     setError(null);
     
     try {
+      console.log('🔄 ソーシャルログイン開始:', provider);
       // クライアントサイドからSupabaseに直接接続
       const { data, error: signInError } = await supabase.auth.signInWithOAuth({
         provider: provider.toLowerCase() as any,
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
       
@@ -138,6 +139,7 @@ const Login = () => {
         throw new Error(signInError.message || `${provider}でのログインに失敗しました`);
       }
 
+      console.log('🔄 認証URLにリダイレクト中...');
       // リダイレクトURLがある場合はそこに遷移
       if (data?.url) {
         window.location.href = data.url;

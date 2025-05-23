@@ -154,10 +154,10 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
       if (session) {
         setCurrentUser(session.user as User);
         
-        // ユーザープロフィール情報も取得
+        // ユーザープロフィール情報も取得（必要なカラムのみ）
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('*')
+          .select('id, username, display_name, avatar_url')
           .eq('id', session.user.id)
           .single();
           
@@ -178,10 +178,10 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
     // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
-        // セッション変更時にもプロフィール情報を取得
+        // セッション変更時にもプロフィール情報を取得（必要なカラムのみ）
         supabase
           .from('profiles')
-          .select('*')
+          .select('id, username, display_name, avatar_url')
           .eq('id', session.user.id)
           .single()
           .then(({ data: profileData }) => {
@@ -421,7 +421,7 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
       const { data, error } = await supabase
         .from('comments')
         .select(`
-          *,
+          id, user_id, content, created_at,
           user:profiles(id, username, display_name, avatar_url)
         `)
         .eq('prompt_id', promptId)
@@ -480,52 +480,8 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
             filter: `prompt_id=eq.${promptId}`
           },
           (payload) => {
-            // ペイロードの種類に応じて異なる処理を行う
-            if (payload.eventType === 'INSERT') {
-              // 新しいコメントが追加された場合
-              const newComment = payload.new as CommentType;
-              
-              // ユーザー情報を取得
-              supabase
-                .from('profiles')
-                .select('id, username, display_name, avatar_url')
-                .eq('id', newComment.user_id)
-                .single()
-                .then(({ data: userData, error: userError }) => {
-                  if (!userError && userData) {
-                    // 既存のコメントに新しいコメントを追加
-                    setComments(prevComments => {
-                      // 既に同じIDのコメントがあれば追加しない
-                      if (prevComments.some(comment => comment.id === newComment.id)) {
-                        return prevComments;
-                      }
-                      
-                      // 新しいコメントにユーザー情報を追加
-                      const commentWithUser: CommentType = {
-                        ...newComment,
-                        user: userData
-                      } as CommentType;
-                      
-                      // 新しいコメントを先頭に追加
-                      return [commentWithUser, ...prevComments];
-                    });
-                    
-                    // コメント数も更新
-                    setCommentCount(prev => prev + 1);
-                  } else {
-                    // ユーザー情報が取得できない場合は全体を再取得
-                    fetchComments(promptId);
-                  }
-                });
-            } else if (payload.eventType === 'DELETE') {
-              // コメントが削除された場合
-              const deletedComment = payload.old as CommentType;
-              setComments(prevComments => 
-                prevComments.filter(comment => comment.id !== deletedComment.id)
-              );
-              setCommentCount(prev => Math.max(0, prev - 1));
-            } else if (payload.eventType === 'UPDATE') {
-              // コメントが更新された場合
+            // リアルタイム更新の最適化：必要な場合のみ再取得
+            if (payload.eventType === 'INSERT' || payload.eventType === 'DELETE' || payload.eventType === 'UPDATE') {
               fetchComments(promptId);
             }
           }
@@ -638,7 +594,7 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
       // フォームをクリア
       setNewComment('');
       
-      // 実際のコメントをデータベースに保存
+      // 実際のコメントをデータベースに保存（必要なカラムのみ取得）
       const { error, data } = await supabase
         .from('comments')
         .insert({
@@ -646,7 +602,7 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
           user_id: currentUser.id,
           content: tempComment.content,
         })
-        .select();
+        .select('id, user_id, content, created_at');
       
       if (error) {
         console.error("コメント投稿エラー:", error);

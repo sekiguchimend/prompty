@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, Bookmark, MoreVertical } from 'lucide-react';
+import { Heart, Bookmark, BookmarkPlus, MoreVertical } from 'lucide-react';
 import Link from 'next/link';
-import { useToast } from './ui/use-toast';
+import { useToast } from '../hooks/use-toast';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 import { createClient } from '@supabase/supabase-js';
 import { useUser } from '../hooks/useUser';
 import { bookmarkPrompt, unbookmarkPrompt, checkIfBookmarked } from '../lib/bookmark-service';

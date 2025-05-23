@@ -6,7 +6,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/router';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from './ui/use-toast';
 import NotificationDropdown from './NotificationDropdown';
@@ -107,8 +107,8 @@ const isAdminUser = (email: string | undefined) => {
 
 const Header = () => {
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const pathname = router.pathname;
+  const queryParams = router.query;
   const { toast } = useToast();
   // useAuthフックを使用してログイン状態を取得
   const { user, isLoading, signOut } = useAuth();
@@ -155,7 +155,7 @@ const Header = () => {
       const searchUrl = `/Search?q=${encodeURIComponent(searchQuery.trim())}`;
       
       // 現在のURLと同じ検索クエリの場合、強制的にページをリロード
-      if (pathname === '/Search' && searchParams?.get('q') === searchQuery.trim()) {
+      if (pathname === '/Search' && queryParams?.q === searchQuery.trim()) {
         // 同じクエリで検索ページを再読み込み
         window.location.href = searchUrl;
       } else {

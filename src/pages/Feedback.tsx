@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
+import { useRouter } from 'next/router';
 import { Textarea } from '../components/ui/textarea';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { useToast } from '../components/ui/use-toast';
-import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { supabase } from '../lib/supabaseClient';
 import {
@@ -124,8 +124,6 @@ const Feedback = () => {
   if (isSubmitted) {
     return (
       <div className="flex flex-col min-h-screen">
-        <Header />
-        
         <main className="flex-1 container max-w-3xl mx-auto px-4 py-12 flex items-center justify-center">
           <MotionDiv 
             className="bg-white rounded-lg shadow-sm border border-gray-100 p-8 text-center w-full"
@@ -190,8 +188,6 @@ const Feedback = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
-      
       <main className="flex-1 container max-w-3xl mx-auto px-4 py-12">
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 md:p-8">
           <h1 className="text-2xl font-bold mb-2">フィードバック</h1>

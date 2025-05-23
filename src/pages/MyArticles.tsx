@@ -1,6 +1,8 @@
 // MyArticles.tsx - メインページコンポーネント
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
+import Footer from '../components/Footer';
 import SidebarTabs from '../components/myArticle/SidebarTabs';
 import LikedArticles from '../components/myArticle/LikedArticles';
 import PurchasedArticles from '../components/myArticle/PurchasedArticles';
@@ -8,7 +10,6 @@ import BookmarkedArticles from '../components/myArticle/BookmarkedArticles';
 import RecentlyViewedArticles from '../components/myArticle/RecentlyViewedArticles';
 import ArticleDropdownMenu from '../components/ArticleDropdownMenu';
 import ArticleActionsMenu from '../components/ArticleActionsMenu';
-import Header from '../components/Header';
 import { toast } from '../components/ui/use-toast';
 import { createClient } from '@supabase/supabase-js';
 import { useAuth } from '../lib/auth-context';
@@ -453,8 +454,6 @@ const MyArticles = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
-      
       <div className="note-page flex-1 pt-16">
         <div className="note-page-container">
           {/* 左サイドバー - タブメニュー */}

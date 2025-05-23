@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import Sidebar from '../../components/Sidebar';
 import PromptGrid from '../../components/PromptGrid';
@@ -144,8 +143,6 @@ const CategoryPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex min-h-screen flex-col">
-        <Header />
-        <Sidebar />
         <div className="flex-1 md:ml-[240px]">
           <Breadcrumb />
           <main className="pb-12 pt-2">
@@ -171,9 +168,6 @@ const CategoryPage: React.FC = () => {
         <title>{categoryName ? `${categoryName} - Prompty` : 'カテゴリー - Prompty'}</title>
         <meta name="description" content={categoryDescription || `${categoryName}に関する記事一覧`} />
       </Head>
-      
-      <Header />
-      <Sidebar />
       
       <div className="flex-1 md:ml-[240px]">
         <Breadcrumb />

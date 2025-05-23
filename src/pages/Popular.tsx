@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Header from '../components/Header';
 import Footer from '../components/Footer';
 import Sidebar from '../components/Sidebar';
 import PromptGrid from '../components/PromptGrid';
@@ -58,7 +57,6 @@ const Popular: React.FC = () => {
         <meta name="description" content="Promptyで人気の記事一覧です。多くのユーザーに読まれている人気の記事をチェックできます。" />
       </Head>
       
-      <Header />
       <Sidebar />
       
       <div className="flex-1 md:ml-[240px]">

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Header from '../components/Header';
 import Footer from '../components/Footer';
 import Sidebar from '../components/Sidebar';
 import PromptGrid from '../components/PromptGrid';
@@ -115,7 +114,6 @@ const Featured: React.FC = () => {
         <meta name="description" content="Promptyの特集記事一覧です。厳選された特集記事をお楽しみいただけます。" />
       </Head>
       
-      <Header />
       <Sidebar />
       <div className="flex-1 md:ml-[240px]">
         <Breadcrumb />

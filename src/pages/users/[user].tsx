@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { Button } from '../../components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
@@ -274,8 +273,6 @@ const UserPage: React.FC = () => {
   
   return (
     <div className="min-h-screen bg-white">
-      <Header />
-      
       <main className={`pt-16 ${isMobile ? 'pt-20' : ''}`}>
         {/* プロフィールヘッダー */}
         <div className="border-b border-gray-200">

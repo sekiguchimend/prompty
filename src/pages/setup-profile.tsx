@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import Image from 'next/image';
+
 export default function SetupProfile() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
