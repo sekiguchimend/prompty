@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { Button } from '@/components/ui/button';
 import { Check, Lock, FileText, Info } from 'lucide-react';
@@ -7,11 +7,14 @@ import { ExternalLink } from 'lucide-react';
 import PurchaseDialog from './PurchaseDialog';
 import Image from 'next/image';
 import { trackView } from '../../lib/analytics';
-import ViewCounter from '../ViewCounter';
 import { supabase } from '../../lib/supabaseClient';
 import { isContentFree, shouldShowFullContent, normalizeContentText, isContentPremium } from '../../utils/content-helpers';
 import { checkPurchaseStatus } from '../../utils/purchase-helpers';
-import PurchaseSection from './PurchaseSection';
+
+// 重いコンポーネントを遅延読み込み（Code Splitting）
+const PurchaseSection = lazy(() => import('./PurchaseSection'));
+const ViewCounter = lazy(() => import('../ViewCounter'));
+
 // Windowオブジェクトにカスタムプロパティのタイプを追加
 declare global {
   interface Window {
@@ -46,6 +49,12 @@ interface PromptContentProps {
   reviewCount?: number;
 }
 
+// パフォーマンス最適化されたPromptContentコンポーネント
+// - React.memo: 不要なリレンダリングを防止
+// - useMemo: 重い計算処理のメモ化
+// - useCallback: 関数の再生成を防止
+// - lazy + Suspense: コード分割による初期読み込み最適化
+// - 画像最適化: Next.js Image、blur placeholder、lazy loading
 const PromptContent: React.FC<PromptContentProps> = ({
   imageUrl,
   title,
@@ -144,31 +153,18 @@ const PromptContent: React.FC<PromptContentProps> = ({
     };
   }, [promptId]);
 
-  // コンテンツが配列の場合は結合して文字列にする
-  const contentText = normalizeContentText(content);
-  
-  // 文字数カウント - 無料部分と有料部分の文字数を合計
-  const basicCharCount = typeof content === 'string' 
-    ? content.length 
-    : Array.isArray(content) 
-      ? content.join('').length 
-      : 0;
-  
-  const premiumCharCount = premiumContent?.length || 0;
-  const characterCount = basicCharCount + premiumCharCount;
-
-  // 購入ダイアログを開く
-  const handlePurchase = () => {
+  // 購入ダイアログを開く - useCallbackで最適化
+  const handlePurchase = useCallback(() => {
     setIsDialogOpen(true);
-  };
+  }, []);
 
-  // 購入ダイアログを閉じる
-  const handleCloseDialog = () => {
+  // 購入ダイアログを閉じる - useCallbackで最適化
+  const handleCloseDialog = useCallback(() => {
     setIsDialogOpen(false);
-  };
+  }, []);
   
-  // URLを表示用に加工する関数
-  const formatSystemUrl = (url: string) => {
+  // URLを表示用に加工する関数 - useCallbackで最適化
+  const formatSystemUrl = useCallback((url: string) => {
     if (!url) return '';
     
     try {
@@ -179,54 +175,84 @@ const PromptContent: React.FC<PromptContentProps> = ({
       // 無効なURLの場合はそのまま返す
       return url;
     }
-  };
+  }, []);
 
-  // 無料コンテンツかどうかの判定
-  const isFreeContent = isContentFree({ price, is_free: price === 0 });
-  
-  // 有料コンテンツかどうかの判定（複合条件）
-  // 1. isContentPremium関数の判定
-  // 2. 親コンポーネントからの明示的なisPremiumフラグ
-  // 3. price > 0という基本条件
-  // 4. premiumContentが存在し、かつprice > 0の場合
-  const isPremiumByHelper = isContentPremium({ price, is_free: price === 0, stripe_product_id: '', stripe_price_id: '' });
-  const isPremiumContent = isPremiumByHelper || isPremium || (price > 0 && premiumContent && premiumContent.length > 0);
-  
-  // 全文表示するかのフラグ
-  const showAllContent = shouldShowFullContent({ price, is_free: price === 0 }, isPurchased || isPaid);
-  
-  // 最初の2行のみ表示するための処理（3行から2行に変更）
-  const extractFirstTwoLines = (text: string): string => {
-    if (!text) return '';
-    const lines = text.split('\n');
-    if (lines.length <= 2) return text;
-    return lines.slice(0, 2).join('\n');
-  };
-  
-  // 表示コンテンツの準備
-  // プレミアムでない場合またはすでに購入済みの場合は全文表示
-  let basicDisplayContent;
-  if (isPremiumContent && !showAllContent) {
-    basicDisplayContent = `<div>${extractFirstTwoLines(contentText)}</div>`;
-  } else {
-    basicDisplayContent = contentText;
-  }
-  
-  // 購入済み状態の統合 - 複数の条件をまとめる
-  const hasFullAccess = isPurchased || isPaid || showAllContent || isFreeContent || !isPremiumContent;
+  // 計算の重い処理をuseMemoで最適化
+  const contentCalculations = useMemo(() => {
+    // コンテンツが配列の場合は結合して文字列にする
+    const contentText = normalizeContentText(content);
+    
+    // 文字数カウント - 無料部分と有料部分の文字数を合計
+    const basicCharCount = typeof content === 'string' 
+      ? content.length 
+      : Array.isArray(content) 
+        ? content.join('').length 
+        : 0;
+    
+    const premiumCharCount = premiumContent?.length || 0;
+    const characterCount = basicCharCount + premiumCharCount;
+
+    // 無料コンテンツかどうかの判定
+    const isFreeContent = isContentFree({ price, is_free: price === 0 });
+    
+    // 有料コンテンツかどうかの判定
+    const isPremiumByHelper = isContentPremium({ price, is_free: price === 0, stripe_product_id: '', stripe_price_id: '' });
+    const isPremiumContent = isPremiumByHelper || isPremium || (price > 0 && premiumContent && premiumContent.length > 0);
+    
+    // 全文表示するかのフラグ
+    const showAllContent = shouldShowFullContent({ price, is_free: price === 0 }, isPurchased || isPaid);
+
+    return {
+      contentText,
+      characterCount,
+      premiumCharCount,
+      isFreeContent,
+      isPremiumContent,
+      showAllContent
+    };
+  }, [content, premiumContent, price, isPremium, isPurchased, isPaid]);
+
+  // プレビュー表示処理をuseMemoで最適化
+  const displayContent = useMemo(() => {
+    // 最初の30文字程度のみ表示するための処理
+    const extractLimitedPreview = (text: string): string => {
+      if (!text) return '';
+      // HTMLタグを除去してプレーンテキストにする
+      const plainText = text.replace(/<[^>]*>/g, '');
+      // 最初の30文字のみ取得
+      if (plainText.length <= 30) return plainText;
+      return plainText.substring(0, 30) + '...';
+    };
+    
+    // 表示コンテンツの準備
+    let basicDisplayContent;
+    if (contentCalculations.isPremiumContent && !contentCalculations.showAllContent) {
+      basicDisplayContent = `<div>${extractLimitedPreview(contentCalculations.contentText)}</div>`;
+    } else {
+      basicDisplayContent = contentCalculations.contentText;
+    }
+
+    return { basicDisplayContent, extractLimitedPreview };
+  }, [contentCalculations]);
+
+  // 購入済み状態の統合
+  const hasFullAccess = useMemo(() => {
+    return isPurchased || isPaid || contentCalculations.showAllContent || contentCalculations.isFreeContent || !contentCalculations.isPremiumContent;
+  }, [isPurchased, isPaid, contentCalculations]);
   
   // 有料部分を表示するかどうか
-  const shouldShowPremiumPreview = (isPremiumContent || price > 0) && !hasFullAccess && premiumContent?.length > 0;
-  
+  const shouldShowPremiumPreview = useMemo(() => {
+    return (contentCalculations.isPremiumContent || price > 0) && !hasFullAccess && premiumContent?.length > 0;
+  }, [contentCalculations.isPremiumContent, price, hasFullAccess, premiumContent]);
+
   console.log('コンテンツ判定:', {
     isPurchased, 
     isPaid,
-    isFreeContent, 
-    isPremiumContent, 
-    isPremiumByHelper,
+    isFreeContent: contentCalculations.isFreeContent, 
+    isPremiumContent: contentCalculations.isPremiumContent, 
     isPremium, 
     price, 
-    showAllContent,
+    showAllContent: contentCalculations.showAllContent,
     hasFullAccess,
     shouldShowPremiumPreview,
     hasPremiumContent: Boolean(premiumContent && premiumContent.length > 0)
@@ -241,13 +267,17 @@ const PromptContent: React.FC<PromptContentProps> = ({
 
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-full overflow-hidden">
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
                 {author.avatarUrl && (
                   author.avatarUrl.startsWith('http') ? (
                     <img 
                       src={author.avatarUrl} 
                       alt={author.name} 
                       className="w-full h-full object-cover"
+                      loading="lazy"
+                      decoding="async"
+                      width="40"
+                      height="40"
                     />
                   ) : (
                     <Image 
@@ -255,7 +285,9 @@ const PromptContent: React.FC<PromptContentProps> = ({
                       alt={author.name}
                       width={40}
                       height={40}
-                      priority={true} 
+                      priority={false}
+                      placeholder="blur"
+                      blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
                       className="w-full h-full object-cover"
                     />
                   )
@@ -272,7 +304,11 @@ const PromptContent: React.FC<PromptContentProps> = ({
             {/* 閲覧数とコンテンツ価格の表示 */}
             <div className="flex items-center space-x-3">
               {/* 閲覧数表示 */}
-              {promptId && <ViewCounter promptId={promptId} className="mr-3" />}
+              {promptId && (
+                <Suspense fallback={<div className="w-16 h-6 bg-gray-200 rounded animate-pulse"></div>}>
+                  <ViewCounter promptId={promptId} className="mr-3" />
+                </Suspense>
+              )}
               
               {/* 価格表示 - モバイルでも表示 */}
               {price > 0 && !hasFullAccess && (
@@ -287,22 +323,39 @@ const PromptContent: React.FC<PromptContentProps> = ({
         </div>
         {/* メイン画像（あれば表示） */}
         {imageUrl && (
-          <div className="rounded-md overflow-hidden aspect-video mb-2 relative">
-           
-           {imageUrl.startsWith('http') ? (
+          <div className="rounded-md overflow-hidden aspect-video mb-2 relative bg-gray-100">
+            {imageUrl.startsWith('http') ? (
               <img 
                 src={imageUrl} 
                 alt={title} 
                 className="w-full h-full object-cover"
+                loading="lazy"
+                decoding="async"
+                onLoad={(e) => {
+                  e.currentTarget.style.opacity = '1';
+                }}
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+                style={{
+                  aspectRatio: '16/9',
+                  opacity: 0,
+                  transition: 'opacity 0.3s ease-in-out'
+                }}
               />
             ) : (
               <Image 
                 src={`/${imageUrl}`}
                 alt={title}
-                width={800}
-                height={450}
-                priority={true} 
-                className="w-full h-full object-cover"
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 800px"
+                priority={false}
+                placeholder="blur"
+                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+                className="object-cover"
+                onLoad={() => {
+                  // 画像読み込み完了時の処理
+                }}
               />
             )}
           </div>
@@ -331,9 +384,12 @@ const PromptContent: React.FC<PromptContentProps> = ({
         )}
         
         {/* Content section */}
-        <div className="relative prose max-w-none">
+        <div className="relative max-w-none">
           {/* 無料部分は常に表示 */}
-          <div dangerouslySetInnerHTML={{ __html: basicDisplayContent }} />
+          <div 
+            className="text-lg leading-loose font-noto font-normal text-gray-800"
+            dangerouslySetInnerHTML={{ __html: displayContent.basicDisplayContent }} 
+          />
           
           {/* 有料部分 - 条件付きで表示 */}
           {premiumContent && (
@@ -341,7 +397,10 @@ const PromptContent: React.FC<PromptContentProps> = ({
               {hasFullAccess ? (
                 /* 購入済みまたは無料の場合は全文表示 */
                 <div className="mt-6">
-                  <div dangerouslySetInnerHTML={{ __html: premiumContent }} />
+                  <div 
+                    className="text-lg leading-loose font-noto font-normal text-gray-800"
+                    dangerouslySetInnerHTML={{ __html: premiumContent }} 
+                  />
                 </div>
               ) : shouldShowPremiumPreview ? (
                 /* 有料で未購入の場合はプレビューと購入案内 */
@@ -349,9 +408,9 @@ const PromptContent: React.FC<PromptContentProps> = ({
                   {/* プレビューコンテンツの最初の2行を表示 */}
                   <div className="relative mb-8">
                     <div 
-                      className="text-gray-600 leading-relaxed"
+                      className="text-lg leading-loose font-noto font-normal text-gray-600"
                       dangerouslySetInnerHTML={{ 
-                        __html: extractFirstTwoLines(premiumContent) 
+                        __html: displayContent.extractLimitedPreview(premiumContent) 
                       }} 
                     />
                     {/* グラデーション効果を改善 */}
@@ -380,7 +439,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
                         {/* 文字数の表示（動的） */}
                         <div className="flex items-center justify-center space-x-4 mb-4">
                           <div className="text-sm text-gray-600">
-                            {premiumCharCount}字
+                            {contentCalculations.premiumCharCount}字
                           </div>
                         </div>
                         
@@ -422,22 +481,30 @@ const PromptContent: React.FC<PromptContentProps> = ({
           )}
         </div>
       </div>
-      <PurchaseSection
-        wordCount={characterCount}
-        price={price}
-        tags={[]}
-        reviewers={[]}
-        reviewCount={0}
-        likes={0}
-        author={{
-          name: author.name,
-          avatarUrl: author.avatarUrl,
-          bio: author.bio || '',
-          website: '',
-          userId: ''
-        }}
-        socialLinks={[]}
-      />
+      <Suspense fallback={
+        <div className="bg-gray-50 rounded-lg p-6 animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+        </div>
+      }>
+        <PurchaseSection
+          wordCount={contentCalculations.characterCount}
+          price={price}
+          tags={[]}
+          reviewers={[]}
+          reviewCount={0}
+          likes={0}
+          author={{
+            name: author.name,
+            avatarUrl: author.avatarUrl,
+            bio: author.bio || '',
+            website: '',
+            userId: ''
+          }}
+          socialLinks={[]}
+        />
+      </Suspense>
       {/* Purchase Dialog */}
       <PurchaseDialog 
         isOpen={isDialogOpen}
@@ -461,4 +528,4 @@ const PromptContent: React.FC<PromptContentProps> = ({
   );
 };
 
-export default PromptContent;
+export default React.memo(PromptContent);

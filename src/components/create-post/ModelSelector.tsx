@@ -34,8 +34,11 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
           <FormItem className="w-full">
             <FormLabel className="text-gray-700">使用AIモデル</FormLabel>
             <Select
-              onValueChange={onModelChange}
-              defaultValue={field.value}
+              value={field.value}
+              onValueChange={(value) => {
+                field.onChange(value);
+                onModelChange(value);
+              }}
             >
               <SelectTrigger className="border-gray-300 bg-white">
                 <SelectValue placeholder="AIモデル選択" />

@@ -158,11 +158,11 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
             <div className="flex gap-2 items-center">
               <div className="flex-1">
                 <Select
+                  value={field.value || ""}
                   onValueChange={(value) => {
                     console.log('カテゴリー選択:', value);
                     field.onChange(value);
                   }}
-                  defaultValue={field.value || undefined}
                   disabled={isLoading}
                 >
                   <SelectTrigger className="border-gray-300 bg-white">

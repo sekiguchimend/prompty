@@ -25,8 +25,11 @@ const PricingSelector: React.FC<PricingSelectorProps> = ({
             <FormLabel className="text-gray-700">公開タイプ</FormLabel>
             <FormControl>
               <RadioGroup
-                defaultValue={field.value}
-                onValueChange={onPricingTypeChange}
+                value={field.value}
+                onValueChange={(value) => {
+                  field.onChange(value);
+                  onPricingTypeChange(value);
+                }}
                 className="flex flex-col space-y-2"
               >
                 <div className="flex items-center space-x-2">

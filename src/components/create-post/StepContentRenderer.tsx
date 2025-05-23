@@ -144,7 +144,6 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
                         <FormControl>
                           <Input
                             {...field}
-                            defaultValue={projectSettings.projectTitle}
                             placeholder="例: ChatGPTを活用した営業メール作成ツール"
                             className="border-gray-300 focus:border-gray-500 focus:ring-gray-500"
                           />
