@@ -217,7 +217,7 @@ const HomePage: React.FC = memo(() => {
         <Header />
         <Sidebar />
         <div className="flex-1 md:ml-[240px]">
-          <main className="pb-12 pt-0">
+          <main className="pb-12 pt-20 md:pt-24">
             <div className="container px-4 sm:px-6 md:px-8">
               <div className="animate-pulse">
                 <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
@@ -240,7 +240,7 @@ const HomePage: React.FC = memo(() => {
       <Sidebar />
       
       <div className="flex-1 md:ml-[240px]">
-        <main className="pb-12 pt-0">
+        <main className="pb-12 pt-20 md:pt-24">
           <div className="container px-4 sm:px-6 md:px-8">
             {error && (
               <div className="bg-red-50 border border-red-200 p-4 rounded-md mb-6">

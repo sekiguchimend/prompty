@@ -441,9 +441,6 @@ const Header = () => {
         </div>
       </header>
 
-      <div className="pt-20 md:pt-16">
-      </div>
-
       {user && (
         <UserMenu 
           isOpen={userMenuOpen} 
