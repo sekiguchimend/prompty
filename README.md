@@ -339,4 +339,5 @@ CREATE POLICY prompts_insert_policy
 
 エラーが発生した場合は、ブラウザのコンソールログとサーバーログを確認してください。
 #   p r o m p t y 2  
+ #   p r o m p t y 2  
  
