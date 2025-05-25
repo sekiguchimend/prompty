@@ -1,0 +1,202 @@
+Supabase + Stripe + Next.js
+「prompts テーブル」で有料投稿チェック & 同期 Product/Price 生成
+（Direct Charges モデル・Stripe アカウント必須ルール版） 2025‑05‑07 改訂 2
+───────────────────────────────────────────────────────────────────────────────
+
+0. 前提
+既存テーブル：public.profiles（stripe_account_id あり）
+
+既存テーブル：public.prompts（下記カラム構成）
+
+列名	型	補足
+id	uuid	PK (gen_random_uuid())
+author_id	uuid	FK → profiles.id
+title / description / content / thumbnail_url		
+category_id	uuid	
+price	numeric	¥なら最低通貨単位 (例:100=¥100)
+is_free / is_featured / is_premium / is_ai_generate	bool	
+view_count	int4 DEFAULT 0	
+created_at / updated_at	timestamptz DEFAULT now()	
+site_url / prompt_conte / like_count		
+
+───────────────────────────────────────────────────────────────────────────────
+
+スキーマ拡張：Stripe 連携カラム
+───────────────────────────────────────────────────────────────────────────────
+
+sql
+コピーする
+編集する
+ALTER TABLE public.prompts
+  ADD COLUMN IF NOT EXISTS stripe_product_id TEXT,
+  ADD COLUMN IF NOT EXISTS stripe_price_id   TEXT,
+  ADD COLUMN IF NOT EXISTS stripe_error      TEXT;
+Product + Price を 1 API で作るため stripe_product_id も保持
+
+無料／有料判定は is_free と price の組合せで従来どおり
+
+───────────────────────────────────────────────────────────────────────────────
+2. RLS ポリシー：有料投稿は Stripe アカウント必須
+───────────────────────────────────────────────────────────────────────────────
+
+sql
+コピーする
+編集する
+ALTER TABLE public.prompts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY prompts_insert_policy
+  ON public.prompts
+  FOR INSERT
+  USING (
+    (
+      NEW.is_free = TRUE
+      OR NEW.price IS NULL
+      OR NEW.price = 0
+    )
+    OR EXISTS (
+      SELECT 1 FROM public.profiles p
+      WHERE p.id = auth.uid()
+        AND p.stripe_account_id IS NOT NULL
+    )
+  );
+───────────────────────────────────────────────────────────────────────────────
+3. DB 通知トリガー：prompts_inserted チャネル
+───────────────────────────────────────────────────────────────────────────────
+
+（変更なし）
+
+───────────────────────────────────────────────────────────────────────────────
+4. Edge Function (Deno) – Product＋Price を 1 リクエストで生成
+───────────────────────────────────────────────────────────────────────────────
+supabase/functions/handle_prompts_insert/index.ts
+
+ts
+コピーする
+編集する
+import { serve } from 'https://deno.land/std/http/server.ts'
+import { createClient } from '@supabase/supabase-js'
+import Stripe from 'stripe'
+
+const stripe  = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, { apiVersion: '2024-06-20' })
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+)
+
+serve(async (req) => {
+  const { record } = await req.json()            // { id: <uuid> }
+  const { data: prompt } = await supabase
+    .from('prompts')
+    .select('id, title, is_free, price, currency:currency, author_id')
+    .eq('id', record.id)
+    .single()
+
+  if (!prompt || prompt.is_free || !prompt.price) {
+    return new Response('free', { status: 200 })
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('stripe_account_id')
+    .eq('id', prompt.author_id)
+    .single()
+
+  if (!profile?.stripe_account_id) {
+    await supabase.from('prompts')
+      .update({ stripe_error: 'NO_STRIPE_ACCOUNT' })
+      .eq('id', prompt.id)
+    return new Response('no account', { status: 422 })
+  }
+
+  try {
+    /* ★ ここが核心：Product と Price を 1 API でまとめて生成 ★ */
+    const product = await stripe.products.create(
+      {
+        name: prompt.title,
+        metadata: { prompt_id: prompt.id },
+        default_price_data: {
+          unit_amount: prompt.price,
+          currency: prompt.currency ?? 'jpy',
+        },
+      },
+      { stripeAccount: profile.stripe_account_id },
+    )
+
+    // Product の default_price がそのまま Price ID
+    const priceId =
+      typeof product.default_price === 'string'
+        ? product.default_price
+        : (product.default_price as Stripe.Price).id
+
+    // 記事行の更新まで **同じ関数内で完結**（記事保存“までまとめて実行”）
+    await supabase.from('prompts')
+      .update({
+        stripe_product_id: product.id,
+        stripe_price_id:  priceId,
+        stripe_error:     null,
+      })
+      .eq('id', prompt.id)
+
+  } catch (e) {
+    await supabase.from('prompts')
+      .update({ stripe_error: (e as Error).message })
+      .eq('id', prompt.id)
+  }
+
+  return new Response('ok', { status: 200 })
+})
+default_price_data を使うことで Stripe への呼び出しは 1 回
+
+DB 行の更新まで同じ関数で行うので追加 API 不要
+
+───────────────────────────────────────────────────────────────────────────────
+5. Next.js フェッチラッパー – 固定 URL を隠す
+───────────────────────────────────────────────────────────────────────────────
+/pages/api/proxy/stripe-sync.ts
+
+ts
+コピーする
+編集する
+// Edge Function URL を直接クライアントに晒さない
+import type { NextApiRequest, NextApiResponse } from 'next'
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const rsp = await fetch(
+    `${process.env.SUPABASE_FUNC_URL}/handle_prompts_insert`,
+    { method: 'POST', headers: req.headers, body: req.body }
+  )
+  res.status(rsp.status).end(await rsp.text())
+}
+クライアント側は fetch('/api/proxy/stripe-sync', …) だけで済む。
+（＝「URL 固定は Next.js 経由 fetch で隠す」）
+
+───────────────────────────────────────────────────────────────────────────────
+6. Checkout Session API（変更なしだが stripe_price_id 取得箇所のみ要確認）
+───────────────────────────────────────────────────────────────────────────────
+
+ts
+コピーする
+編集する
+// prompt.stripe_price_id は Edge Function で埋まる
+───────────────────────────────────────────────────────────────────────────────
+7. Webhook – /api/webhook（前版どおり）
+───────────────────────────────────────────────────────────────────────────────
+
+───────────────────────────────────────────────────────────────────────────────
+8. まとめ & 注意点
+───────────────────────────────────────────────────────────────────────────────
+
+Product + Price を 1 API（default_price_data）
+
+Edge Function 内で記事行の更新まで完結＝「記事保存までまとめて実行」
+
+Supabase 関数 URL は Next.js API でプロキシして公開しない
+
+既存 UI は投稿後、fetch('/api/proxy/stripe-sync', { body:{ id } }) を fire-and-forget
+
+価格・無料判定列 (price, is_free) はそのまま
+
+新規カラム：stripe_product_id, stripe_price_id, stripe_error
+
+これで 最速パス（Edge Function）を維持したまま、
+1 リクエスト生成・記事保存一括処理・URL 秘匿が実現できます。

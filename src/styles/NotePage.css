@@ -1,0 +1,564 @@
+/* NotePage.css */
+
+.note-page {
+    width: 100%;
+    min-height: 100vh;
+    background-color: #f7f7f7;
+  }
+  
+  .note-page-container {
+    display: flex;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  /* 左サイドバー */
+  .note-sidebar {
+    width: 200px;
+    padding-right: 20px;
+  }
+  
+  .note-sidebar h2 {
+    font-size: 18px;
+    margin-bottom: 20px;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  /* サイドバータブ */
+  .sidebar-tabs ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .sidebar-tabs li {
+    padding: 12px 0;
+    margin-bottom: 5px;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    padding-left: 10px;
+    color: #555;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .sidebar-tabs li .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #777;
+  }
+  
+  .sidebar-tabs li:hover {
+    color: #222;
+  }
+  
+  .sidebar-tabs li:hover .icon {
+    color: #444;
+  }
+  
+  .sidebar-tabs li.active {
+    border-left-color: #2cb696;
+    font-weight: bold;
+    color: #222;
+  }
+  
+  .sidebar-tabs li.active .icon {
+    color: #2cb696;
+  }
+  
+  /* 中央コンテンツエリア */
+  .note-content {
+    flex: 1;
+    padding: 0 20px;
+    min-width: 0; /* flexboxでの縮小を防ぐ */
+  }
+  
+  .note-content-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+  }
+  
+  .import-export-buttons {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .import-export-buttons button {
+    padding: 8px 15px;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+  }
+  
+  .import-export-buttons button:hover {
+    background-color: #f5f5f5;
+  }
+  
+  /* 記事リスト */
+  .articles-container {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+  }
+  
+  .articles-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .articles-header h2 {
+    font-size: 16px;
+    font-weight: normal;
+    color: #333;
+  }
+  
+  .filter-controls {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .filter-controls button {
+    padding: 5px 10px;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .filter-controls button:hover {
+    background-color: #f5f5f5;
+  }
+  
+  .articles-list {
+    padding: 0;
+  }
+  
+  .article-item {
+    display: flex;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    align-items: center;
+    position: relative;
+  }
+  
+  .article-item:last-child {
+    border-bottom: none;
+  }
+  
+  .article-item input[type="checkbox"] {
+    margin-right: 15px;
+  }
+  
+  .article-content {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .article-content h3 {
+    font-size: 15px;
+    margin: 0 0 5px;
+    color: #333;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .article-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: #777;
+  }
+  
+  .draft-indicator {
+    display: flex;
+    align-items: center;
+    color: #777;
+  }
+  
+  .draft-indicator::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #aaa;
+    border-radius: 50%;
+    margin-right: 5px;
+  }
+  
+  .published-indicator {
+    display: flex;
+    align-items: center;
+    color: #2cb696;
+  }
+  
+  .published-indicator::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #2cb696;
+    border-radius: 50%;
+    margin-right: 5px;
+  }
+  
+  .article-thumbnail {
+    width: 60px;
+    height: 60px;
+    margin-left: 15px;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  
+  .article-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .more-options {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #777;
+    cursor: pointer;
+    padding: 5px;
+    margin-left: 10px;
+  }
+  
+  /* 右サイドバー */
+  .note-right-sidebar {
+    width: 250px;
+    padding-left: 20px;
+  }
+  
+  .publish-timing-banner {
+    background: linear-gradient(135deg, #2cb696 0%, #4aa8d8 50%, #f9d423 100%);
+    border-radius: 8px;
+    padding: 15px;
+    color: white;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .timing-content {
+    z-index: 1;
+  }
+  
+  .timing-content h3 {
+    font-size: 18px;
+    margin: 0;
+    font-weight: bold;
+  }
+  
+  .timing-content p {
+    font-size: 14px;
+    margin: 5px 0 0;
+  }
+  
+  .timing-calendar {
+    background-color: black;
+    color: white;
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    margin-top: 10px;
+    display: inline-block;
+    align-self: flex-end;
+  }
+  
+  .creation-hints {
+    background-color: white;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+  
+  .creation-hints h3 {
+    font-size: 16px;
+    margin: 0 0 15px;
+    color: #333;
+  }
+  
+  .hint-section {
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+  }
+  
+  .hint-section h4 {
+    font-size: 14px;
+    margin: 0 0 10px;
+    color: #333;
+  }
+  
+  .hint-section p {
+    font-size: 13px;
+    margin: 0 0 15px;
+    color: #666;
+    line-height: 1.5;
+  }
+  
+  .hint-button {
+    background: none;
+    border: none;
+    color: #2cb696;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 0;
+    text-decoration: underline;
+  }
+  
+  /* レスポンシブ対応 */
+  @media (max-width: 900px) {
+    .note-page-container {
+      flex-direction: column;
+      padding: 10px;
+    }
+    
+    .note-sidebar {
+      width: 100%;
+      padding-right: 0;
+      margin-bottom: 20px;
+    }
+    
+    .note-right-sidebar {
+      width: 100%;
+      padding-left: 0;
+      margin-top: 20px;
+    }
+    
+    .sidebar-tabs ul {
+      display: flex;
+      overflow-x: auto;
+      white-space: nowrap;
+      padding: 8px 12px;
+      margin: 0;
+      background: white;
+      border-radius: 8px;
+      gap: 8px;
+    }
+    
+    .sidebar-tabs li {
+      padding: 8px 16px;
+      border-left: none;
+      border-bottom: none;
+      background: #f8f9fa;
+      border-radius: 20px;
+      font-size: 13px;
+      color: #666;
+      min-width: fit-content;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    
+    .sidebar-tabs li.active {
+      background: #007AFF;
+      color: white;
+      border-left-color: transparent;
+      border-bottom-color: transparent;
+    }
+
+    .sidebar-tabs li .icon {
+      margin-right: 0;
+    }
+
+    /* フィルターコントロールのスマホ対応 */
+    .articles-header {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 16px 20px;
+      gap: 12px;
+    }
+
+    .articles-header h2 {
+      margin-bottom: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .filter-controls {
+      width: 100%;
+      display: flex;
+      gap: 8px;
+    }
+
+    .filter-controls button {
+      font-size: 13px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      flex: 1;
+    }
+
+    /* 記事アイテムのスマホ対応 */
+    .article-item {
+      padding: 16px 20px;
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .article-content {
+      width: 100%;
+      order: 1;
+      margin-bottom: 12px;
+    }
+
+    .article-content h3 {
+      white-space: normal;
+      font-size: 16px;
+      line-height: 1.4;
+      margin-bottom: 8px;
+      color: #1a1a1a;
+      font-weight: 500;
+    }
+
+    .article-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 8px;
+      font-size: 13px;
+      color: #666;
+    }
+
+    .article-stats {
+      display: flex;
+      gap: 16px;
+      margin-top: 8px;
+    }
+
+    .article-stats > div {
+      font-size: 12px;
+      color: #888;
+    }
+
+    .article-thumbnail {
+      order: 2;
+      margin: 0;
+      width: 100%;
+      height: 120px;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .more-options {
+      order: 3;
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      padding: 8px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(4px);
+    }
+
+    /* 一括操作メニューのスマホ対応 */
+    .article-actions-menu {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.15);
+      z-index: 10;
+      padding: 16px;
+      border-radius: 20px 20px 0 0;
+    }
+
+    /* 空の状態のスマホ対応 */
+    .empty-state {
+      padding: 40px 20px !important;
+      text-align: center;
+    }
+
+    .empty-state p {
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+
+    .empty-state button {
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 8px;
+    }
+  }
+
+  /* スマートフォンの小さな画面用 */
+  @media (max-width: 480px) {
+    .note-page-container {
+      padding: 8px;
+    }
+
+    .sidebar-tabs ul {
+      padding: 6px 8px;
+      gap: 6px;
+    }
+
+    .sidebar-tabs li {
+      padding: 6px 12px;
+      font-size: 12px;
+      gap: 4px;
+    }
+
+    .sidebar-tabs li .icon {
+      width: 14px;
+      height: 14px;
+    }
+
+    .articles-header {
+      padding: 12px 16px;
+    }
+
+    .articles-header h2 {
+      font-size: 16px;
+    }
+
+    .article-item {
+      padding: 12px 16px;
+    }
+
+    .article-content h3 {
+      font-size: 15px;
+    }
+
+    .article-meta {
+      font-size: 12px;
+    }
+
+    .article-stats > div {
+      font-size: 11px;
+    }
+
+    .more-options {
+      top: 12px;
+      right: 12px;
+      padding: 6px;
+    }
+  }

@@ -1,0 +1,40 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Cursor関連のファイル/フォルダ（機密情報保護のため）
+.cursor
+.cursor-*
+cursor-*
+.vscode-cursor
+.vscode/.cursor
+.cursorsettings
+.cursordatastore
+cursorsettings.json
+cursor_history
+.cursor-server
+
+node_modules
+dist
+dist-ssr
+*.local
+.env
+.env.local
+.next
+package-lock.json
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
