@@ -338,3 +338,5 @@ CREATE POLICY prompts_insert_policy
 4. promptsテーブルのstripe_product_id, stripe_price_idフィールドに値が入っているか確認
 
 エラーが発生した場合は、ブラウザのコンソールログとサーバーログを確認してください。
+#   p r o m p t y 2  
+ 
