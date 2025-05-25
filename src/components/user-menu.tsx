@@ -35,6 +35,19 @@ const UserMenu: React.FC<UserMenuProps> = React.memo(({
   const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   
+  // ページ遷移開始時にメニューを閉じる
+  useEffect(() => {
+    const handleRouteChangeStart = () => {
+      onClose();
+    };
+
+    router.events.on('routeChangeStart', handleRouteChangeStart);
+
+    return () => {
+      router.events.off('routeChangeStart', handleRouteChangeStart);
+    };
+  }, [router.events, onClose]);
+
   // ユーザープロフィールを取得 - useCallbackで最適化
   const fetchUserProfile = useCallback(async () => {
     if (!user) return;
@@ -130,7 +143,6 @@ const UserMenu: React.FC<UserMenuProps> = React.memo(({
                 <Link 
                   href="/profile"
                   className="text-sm text-gray-500 hover:text-gray-700 cursor-pointer text-left"
-                  onClick={handleClose}
                 >
                   クリエイターページ
                 </Link>
@@ -139,7 +151,7 @@ const UserMenu: React.FC<UserMenuProps> = React.memo(({
           </div>
           
           {/* クリエイターダッシュボードリンク */}
-          <Link href="/dashboard" className="block w-full px-4 py-3 border-b hover:bg-gray-50 text-left" onClick={handleClose}>
+          <Link href="/dashboard" className="block w-full px-4 py-3 border-b hover:bg-gray-50 text-left">
             <div className="flex items-center">
               <div className="flex flex-shrink-0 items-center justify-center bg-gray-50 rounded-lg w-12 h-12 mr-3">
                 <LayoutDashboard className="h-6 w-6 text-gray-700" />
@@ -163,34 +175,34 @@ const UserMenu: React.FC<UserMenuProps> = React.memo(({
           
           {/* メニューナビゲーション */}
           <nav className="py-2">
-            <Link href="/my-articles" className="flex w-full items-center text-sm px-4 py-2 hover:bg-gray-50" onClick={handleClose}>
+            <Link href="/my-articles" className="flex w-full items-center text-sm px-4 py-2 hover:bg-gray-50">
               <FilePen className="h-4 w-4 mr-3 text-gray-500" />
               自分のコンテンツ
             </Link>
             
-            <Link href="/my-articles?tab=purchasedArticles" className="flex w-full items-center text-sm px-4 py-2 hover:bg-gray-50" onClick={handleClose}>
+            <Link href="/my-articles?tab=purchasedArticles" className="flex w-full items-center text-sm px-4 py-2 hover:bg-gray-50">
               <span className="h-4 w-4 mr-3 flex items-center justify-center text-amber-800">¥</span>
               <span className="text-amber-800">購入したコンテンツ</span>
             </Link>
             
-            <Link href="/my-articles?tab=likedArticles" className="flex w-full items-center text-sm px-4 py-2 hover:bg-gray-50" onClick={handleClose}>
+            <Link href="/my-articles?tab=likedArticles" className="flex w-full items-center text-sm px-4 py-2 hover:bg-gray-50">
               <Heart className="h-4 w-4 mr-3 text-gray-500" />
               イイねしたコンテンツ
             </Link>
             
-            <Link href="/my-articles?tab=bookmarkedArticles" className="flex w-full items-center text-sm px-4 py-2 hover:bg-gray-50" onClick={handleClose}>
+            <Link href="/my-articles?tab=bookmarkedArticles" className="flex w-full items-center text-sm px-4 py-2 hover:bg-gray-50">
               <Bookmark className="h-4 w-4 mr-3 text-gray-500" />
               ブックマークしたコンテンツ
             </Link>
             
             {followingUsersLink && (
-              <Link href={followingUsersLink} className="flex w-full items-center text-sm px-4 py-2 hover:bg-gray-50" onClick={handleClose}>
+              <Link href={followingUsersLink} className="flex w-full items-center text-sm px-4 py-2 hover:bg-gray-50">
                 <Users className="h-4 w-4 mr-3 text-gray-500" />
                 フォロー中ユーザー
               </Link>
             )}
             
-            <Link href="/settings" className="flex w-full items-center text-sm px-4 py-2 hover:bg-gray-50" onClick={handleClose}>
+            <Link href="/settings" className="flex w-full items-center text-sm px-4 py-2 hover:bg-gray-50">
               <Settings className="h-4 w-4 mr-3 text-gray-500" />
               設定
             </Link>
@@ -207,7 +219,7 @@ const UserMenu: React.FC<UserMenuProps> = React.memo(({
           </nav>
           
           <div className="p-4 border-t">
-            <Link href="/premium" className="block mb-3" onClick={handleClose}>
+            <Link href="/premium" className="block mb-3">
               <div className="bg-gray-50 rounded-md p-3 flex justify-center items-center">
                 <span className="text-xs font-medium">月額サブスクをつくれる<br/>メンバーシップ</span>
                 <div className="h-12 w-16 ml-2 flex items-center justify-center">
@@ -220,16 +232,16 @@ const UserMenu: React.FC<UserMenuProps> = React.memo(({
               </div>
             </Link>
             
-            <Link href="/premium" className="block" onClick={handleClose}>
+            <Link href="/premium" className="block">
               <div className="border border-gray-200 rounded-md p-3 text-center">
                 <span className="text-xs font-medium">promptyプレミアムサービス</span>
               </div>
             </Link>
             
             <div className="flex justify-center mt-3 text-xs text-gray-500">
-              <Link href="/terms" className="mx-2" onClick={handleClose}>prompty活用術</Link>
+              <Link href="/terms" className="mx-2">prompty活用術</Link>
               <span className="mx-1">/</span>
-              <Link href="/help-center" onClick={handleClose}>ヘルプセンター</Link>
+              <Link href="/help-center">ヘルプセンター</Link>
             </div>
           </div>
         </div>
@@ -253,7 +265,6 @@ const UserMenu: React.FC<UserMenuProps> = React.memo(({
             <Link 
               href="/profile"
               className="text-sm text-gray-500 hover:text-gray-700 cursor-pointer text-left"
-              onClick={handleClose}
             >
               クリエイターページ
             </Link>
@@ -269,7 +280,7 @@ const UserMenu: React.FC<UserMenuProps> = React.memo(({
       </div>
       
       {/* クリエイターダッシュボードリンク */}
-      <Link href="/dashboard" className="block w-full px-4 py-3 border-b hover:bg-gray-50 text-left" onClick={handleClose}>
+      <Link href="/dashboard" className="block w-full px-4 py-3 border-b hover:bg-gray-50 text-left">
         <div className="flex items-center">
           <div className="flex flex-shrink-0 items-center justify-center bg-gray-50 rounded-lg w-12 h-12 mr-3">
             <LayoutDashboard className="h-6 w-6 text-gray-700" />
@@ -293,34 +304,34 @@ const UserMenu: React.FC<UserMenuProps> = React.memo(({
       
       {/* メニューナビゲーション */}
       <nav className="p-4 space-y-4">
-        <Link href="/my-articles" className="flex w-full items-center text-base py-2 border-b border-gray-100 pb-4" onClick={handleClose}>
+        <Link href="/my-articles" className="flex w-full items-center text-base py-2 border-b border-gray-100 pb-4">
           <FilePen className="h-5 w-5 mr-3 text-gray-500" />
           自分の記事
         </Link>
         
-        <Link href="/my-articles?tab=purchasedArticles" className="flex w-full items-center text-base py-2 border-b border-gray-100 pb-4" onClick={handleClose}>
+        <Link href="/my-articles?tab=purchasedArticles" className="flex w-full items-center text-base py-2 border-b border-gray-100 pb-4">
           <span className="h-5 w-5 mr-3 flex items-center justify-center text-amber-800">¥</span>
           <span className="text-amber-800">購入した記事</span>
         </Link>
         
-        <Link href="/my-articles?tab=likedArticles" className="flex w-full items-center text-base py-2 border-b border-gray-100 pb-4" onClick={handleClose}>
+        <Link href="/my-articles?tab=likedArticles" className="flex w-full items-center text-base py-2 border-b border-gray-100 pb-4">
           <Heart className="h-5 w-5 mr-3 text-gray-500" />
           イイねしたコンテンツ
         </Link>
         
-        <Link href="/my-articles?tab=bookmarkedArticles" className="flex w-full items-center text-base py-2 border-b border-gray-100 pb-4" onClick={handleClose}>
+        <Link href="/my-articles?tab=bookmarkedArticles" className="flex w-full items-center text-base py-2 border-b border-gray-100 pb-4">
           <Bookmark className="h-5 w-5 mr-3 text-gray-500" />
           ブックマークしたコンテンツ
         </Link>
         
         {followingUsersLink && (
-          <Link href={followingUsersLink} className="flex w-full items-center text-base py-2 border-b border-gray-100 pb-4" onClick={handleClose}>
+          <Link href={followingUsersLink} className="flex w-full items-center text-base py-2 border-b border-gray-100 pb-4">
             <Users className="h-5 w-5 mr-3 text-gray-500" />
             フォロー中ユーザー
           </Link>
         )}
         
-        <Link href="/settings" className="flex w-full items-center text-base py-2 border-b border-gray-100 pb-4" onClick={handleClose}>
+        <Link href="/settings" className="flex w-full items-center text-base py-2 border-b border-gray-100 pb-4">
           <Settings className="h-5 w-5 mr-3 text-gray-500" />
           設定
         </Link>
@@ -335,7 +346,7 @@ const UserMenu: React.FC<UserMenuProps> = React.memo(({
       </nav>
       
       <div className="border-t border-gray-100 bg-white mt-4">
-        <Link href="/premium" className="block p-4" onClick={handleClose}>
+        <Link href="/premium" className="block p-4">
           <div className="bg-gray-50 rounded-md p-3 flex justify-center items-center">
             <span className="text-sm font-medium">月額サブスクをつくれる<br/>メンバーシップ</span>
             <div className="h-16 w-20 ml-2 flex items-center justify-center">
@@ -348,16 +359,16 @@ const UserMenu: React.FC<UserMenuProps> = React.memo(({
           </div>
         </Link>
         
-        <Link href="/premium" className="block p-4 pt-0" onClick={handleClose}>
+        <Link href="/premium" className="block p-4 pt-0">
           <div className="bg-white border border-gray-200 rounded-md p-3 text-center">
             <span className="text-sm font-medium">promptyプレミアムサービス</span>
           </div>
         </Link>
         
         <div className="flex justify-center mt-3 text-xs text-gray-500">
-          <Link href="/terms" onClick={handleClose}>prompty活用術</Link>
+          <Link href="/terms">prompty活用術</Link>
           <span className="mx-1">/</span>
-          <Link href="/help-center" onClick={handleClose}>ヘルプセンター</Link>
+          <Link href="/help-center">ヘルプセンター</Link>
         </div>
       </div>
     </div>

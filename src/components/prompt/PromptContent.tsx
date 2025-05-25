@@ -10,9 +10,10 @@ import { supabase } from '../../lib/supabaseClient';
 import { isContentFree, shouldShowFullContent, normalizeContentText, isContentPremium } from '../../utils/content-helpers';
 import { checkPurchaseStatus } from '../../utils/purchase-helpers';
 import { UnifiedAvatar } from '../index';
+import PurchaseSection from './PurchaseSection';
+import { useAuth } from '../../lib/auth-context';
 
 // 重いコンポーネントを遅延読み込み（Code Splitting）
-const PurchaseSection = lazy(() => import('./PurchaseSection'));
 const ViewCounter = lazy(() => import('../view-counter'));
 
 // Windowオブジェクトにカスタムプロパティのタイプを追加
@@ -50,6 +51,74 @@ interface PromptContentProps {
   canDownloadYaml?: boolean;
   onDownloadYaml?: () => void;
 }
+
+// 複数プロンプト解析用の型定義
+interface ParsedPrompt {
+  id: number;
+  title: string;
+  content: string;
+}
+
+// プロンプト解析関数
+const parseMultiplePrompts = (content: string): ParsedPrompt[] => {
+  if (!content) return [];
+  
+  const trimmedContent = content.trim();
+  
+  // 保存時の形式「プロンプト1:」「プロンプト2:」に対応
+  const promptPattern = /プロンプト(\d+):\s*/gi;
+  const matches = [];
+  let match;
+  
+  // 全てのマッチを収集
+  while ((match = promptPattern.exec(trimmedContent)) !== null) {
+    matches.push({
+      index: match.index,
+      number: parseInt(match[1]),
+      matchLength: match[0].length
+    });
+  }
+  
+  // マッチが2つ以上ある場合は複数プロンプトとして処理
+  if (matches.length >= 2) {
+    const prompts: ParsedPrompt[] = [];
+    
+    for (let i = 0; i < matches.length; i++) {
+      const currentMatch = matches[i];
+      const nextMatch = matches[i + 1];
+      
+      // 現在のマッチから次のマッチまで（または最後まで）の内容を取得
+      const startIndex = currentMatch.index + currentMatch.matchLength;
+      const endIndex = nextMatch ? nextMatch.index : trimmedContent.length;
+      
+      let promptContent = trimmedContent.substring(startIndex, endIndex).trim();
+      
+      // 区切り文字（---）を除去
+      promptContent = promptContent.replace(/^---+\s*/, '').replace(/\s*---+$/, '').trim();
+      
+      if (promptContent.length > 0) {
+        prompts.push({
+          id: currentMatch.number,
+          title: `プロンプト #${currentMatch.number}`,
+          content: promptContent
+        });
+      }
+    }
+    
+    return prompts.length > 0 ? prompts : [{
+      id: 1,
+      title: 'プロンプト',
+      content: trimmedContent
+    }];
+  }
+  
+  // マッチしない場合は単一プロンプトとして扱う
+  return [{
+    id: 1,
+    title: 'プロンプト',
+    content: trimmedContent
+  }];
+};
 
 // パフォーマンス最適化されたPromptContentコンポーネント
 // - React.memo: 不要なリレンダリングを防止
@@ -303,6 +372,54 @@ const PromptContent: React.FC<PromptContentProps> = ({
     hasPremiumContent: Boolean(premiumContent && premiumContent.length > 0)
   });
 
+  // プロンプト解析（メモ化）
+  const parsedPrompts = useMemo(() => {
+    if (!premiumContent) return [];
+    return parseMultiplePrompts(premiumContent);
+  }, [premiumContent]);
+
+  // 複数プロンプトがあるかどうか
+  const hasMultiplePrompts = parsedPrompts.length > 1;
+
+  // 個別プロンプトのYAMLダウンロード関数
+  const downloadIndividualYaml = (prompt: ParsedPrompt) => {
+    const yamlContent = `---\nprompt: |\n  ${prompt.content.split('\n').join('\n  ')}\n---`;
+    const blob = new Blob([yamlContent], { type: 'text/yaml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_').substring(0, 30)}_prompt_${prompt.id}.yaml`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // 全プロンプトまとめてダウンロード関数
+  const downloadAllPromptsYaml = () => {
+    if (parsedPrompts.length === 1) {
+      // 単一プロンプトの場合は通常のダウンロード
+      onDownloadYaml();
+      return;
+    }
+    
+    // 複数プロンプトの場合
+    const yamlContent = parsedPrompts.map((prompt, index) => 
+      `prompt_${index + 1}: |\n  ${prompt.content.split('\n').join('\n  ')}`
+    ).join('\n\n');
+    
+    const fullYaml = `---\n${yamlContent}\n---`;
+    const blob = new Blob([fullYaml], { type: 'text/yaml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_').substring(0, 30)}_prompts.yaml`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="flex flex-col gap-6">
@@ -423,7 +540,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
                 </div>
               </div>
               <button
-                onClick={onDownloadYaml}
+                onClick={downloadAllPromptsYaml}
                 className="flex items-center space-x-1.5 bg-white hover:bg-green-50 border border-green-300 text-green-700 px-3 py-1.5 rounded-md text-sm font-medium transition-colors shadow-sm hover:shadow-md"
               >
                 <Download className="h-3.5 w-3.5" />
@@ -435,91 +552,145 @@ const PromptContent: React.FC<PromptContentProps> = ({
         
         {/* Content section */}
         <div className="relative max-w-none">
-          {/* 無料部分は常に表示 */}
-          <div 
-            className="text-lg leading-loose font-noto font-normal text-gray-800"
-            dangerouslySetInnerHTML={{ __html: displayContent.basicDisplayContent }} 
-          />
-          
-          {/* 有料部分 - 条件付きで表示 */}
-          {premiumContent && (
-            <>
-              {hasFullAccess ? (
-                /* 購入済みまたは無料の場合は全文表示 */
-                <div className="mt-6">
-                  <div 
-                    className="text-lg leading-loose font-noto font-normal text-gray-800"
-                    dangerouslySetInnerHTML={{ __html: formatContentWithLineBreaks(premiumContent) }} 
-                  />
-                </div>
-              ) : shouldShowPremiumPreview ? (
-                /* 有料で未購入の場合はプレビューと購入案内 */
-                <div className="relative">
-                  {/* プレビューコンテンツの最初の2行を表示 */}
-                  <div className="relative mb-8">
-                    <div 
-                      className="text-lg leading-loose font-noto font-normal text-gray-600"
-                      dangerouslySetInnerHTML={{ 
-                        __html: displayContent.extractLimitedPreview(premiumContent, 50) 
-                      }} 
-                    />
-                    {/* グラデーション効果を改善 */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/30 to-white pointer-events-none"></div>
-                    <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white via-white/90 to-transparent pointer-events-none"></div>
-                    </div>
-
-                    <div className="flex flex-col items-center justify-center py-2 relative">
-                      {/* 「ここから先は」テキストを点線の中に配置 */}
-                      <div className="text-center w-full my-6 flex items-center justify-center">
-                        <div className="border-t border-dashed border-gray-300 w-1/4"></div>
-                      <p className="text-gray-700 font-bold mx-4 bg-white px-2">ここから先は</p>
-                        <div className="border-t border-dashed border-gray-300 w-1/4"></div>
-                      </div>
-                    <Badge variant="outline" className="mb-1 rounded-sm border-gray-400 text-gray-600">
-                      セール中
-                    </Badge>
-                      <div className="space-y-2 py-2"></div>
-
-                      <div className="flex flex-col items-center justify-center py-2 relative w-full max-w-md">
-                        {/* 購入セクション */}
-                        <div className="text-center mb-1 w-full">
-                        <h3 className="text-xl font-medium text-gray-800 mb-2">{title}</h3>
-                        <p className="text-sm text-gray-600 mb-4">のヒントが詰まっています。</p>
-                          
-                        {/* 文字数の表示（動的） */}
-                        <div className="flex items-center justify-center space-x-4 mb-4">
-                          <div className="text-sm text-gray-600">
-                            {contentCalculations.premiumCharCount}字
-                          </div>
-                            </div>
-                        
-                        {/* 価格表示エリア */}
-                        <div className="flex items-center justify-center space-x-3 mb-6">
-                          <span className="text-3xl font-bold text-red-600">¥{price.toLocaleString()}</span>
-                          </div>
-                          
-                          {/* 購入ボタン */}
-                          <Button
-                          className="w-full bg-gray-900 text-white hover:bg-gray-800 rounded-sm py-3 text-lg font-medium shadow-sm transition-colors"
-                            onClick={handlePurchase}
-                          >
-                            購入手続きへ
-                          </Button>
-                        
-                        {/* 評価情報 - 動的表示 */}
-                        {reviewCount > 0 && (
-                          <div className="flex items-center justify-center mt-4 space-x-2">
-                            <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
-                              <Check className="h-4 w-4 text-green-600" />
-                            </div>
-                            <span className="text-sm text-gray-600">{reviewCount}人が高評価</span>
-                        </div>
-                        )}
-                      </div>
-                    </div>
+          {/* 複数プロンプト表示セクション */}
+          {hasFullAccess && hasMultiplePrompts && (
+            <div className="space-y-6 mb-8">
+              
+              
+              {parsedPrompts.map((prompt, index) => (
+                <div key={prompt.id} className="mb-8">
+                  {/* プロンプト番号ヘッダー - シンプルに */}
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-bold text-gray-900 flex items-center">
+                      <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-sm font-medium mr-3">
+                        #{prompt.id}
+                      </span>
+                      プロンプト {prompt.id}
+                    </h3>
+                    
+                    {/* 個別プロンプトYAMLダウンロード - 小さく */}
+                    {canDownloadYaml && (
+                      <Button
+                        onClick={() => downloadIndividualYaml(prompt)}
+                        size="sm"
+                        variant="outline"
+                        className="px-2 py-1 text-xs border-gray-300 text-gray-600 hover:bg-gray-50"
+                      >
+                        <Download className="h-3 w-3 mr-1" />
+                        YAML
+                      </Button>
+                    )}
                   </div>
+                  
+                  {/* プロンプト内容 - 記事形式 */}
+                  <div className="prose prose-lg max-w-none">
+                    <div 
+                      className="text-lg leading-loose font-noto font-normal text-gray-800"
+                      dangerouslySetInnerHTML={{ 
+                        __html: formatContentWithLineBreaks(prompt.content) 
+                      }}
+                    />
+                  </div>
+                  
+                  {/* 2個目以降は区切り線を追加 */}
+                  {index < parsedPrompts.length - 1 && (
+                    <hr className="mt-8 border-gray-200" />
+                  )}
                 </div>
-              ) : null}
+              ))}
+            </div>
+          )}
+
+          {/* 単一プロンプトまたは複数プロンプトがない場合の通常表示 */}
+          {(!hasMultiplePrompts || !hasFullAccess) && (
+            <>
+              {/* 無料部分は常に表示 */}
+              <div 
+                className="text-lg leading-loose font-noto font-normal text-gray-800"
+                dangerouslySetInnerHTML={{ __html: displayContent.basicDisplayContent }} 
+              />
+              
+              {/* 有料部分 - 条件付きで表示 */}
+              {premiumContent && (
+                <>
+                  {hasFullAccess ? (
+                    /* 購入済みまたは無料の場合は全文表示 */
+                    <div className="mt-6">
+                      <div 
+                        className="text-lg leading-loose font-noto font-normal text-gray-800"
+                        dangerouslySetInnerHTML={{ __html: formatContentWithLineBreaks(premiumContent) }} 
+                      />
+                    </div>
+                  ) : shouldShowPremiumPreview ? (
+                    /* 有料で未購入の場合はプレビューと購入案内 */
+                    <div className="relative">
+                      {/* プレビューコンテンツの最初の2行を表示 */}
+                      <div className="relative mb-8">
+                        <div 
+                          className="text-lg leading-loose font-noto font-normal text-gray-600"
+                          dangerouslySetInnerHTML={{ 
+                            __html: displayContent.extractLimitedPreview(premiumContent, 50) 
+                          }} 
+                        />
+                        {/* グラデーション効果を改善 */}
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/30 to-white pointer-events-none"></div>
+                        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white via-white/90 to-transparent pointer-events-none"></div>
+                        </div>
+
+                        <div className="flex flex-col items-center justify-center py-2 relative">
+                          {/* 「ここから先は」テキストを点線の中に配置 */}
+                          <div className="text-center w-full my-6 flex items-center justify-center">
+                            <div className="border-t border-dashed border-gray-300 w-1/4"></div>
+                          <p className="text-gray-700 font-bold mx-4 bg-white px-2">ここから先は</p>
+                            <div className="border-t border-dashed border-gray-300 w-1/4"></div>
+                          </div>
+                        <Badge variant="outline" className="mb-1 rounded-sm border-gray-400 text-gray-600">
+                          セール中
+                        </Badge>
+                          <div className="space-y-2 py-2"></div>
+
+                          <div className="flex flex-col items-center justify-center py-2 relative w-full max-w-md">
+                            {/* 購入セクション */}
+                            <div className="text-center mb-1 w-full">
+                            <h3 className="text-xl font-medium text-gray-800 mb-2">{title}</h3>
+                            <p className="text-sm text-gray-600 mb-4">のヒントが詰まっています。</p>
+                              
+                            {/* 文字数の表示（動的） */}
+                            <div className="flex items-center justify-center space-x-4 mb-4">
+                              <div className="text-sm text-gray-600">
+                                {contentCalculations.premiumCharCount}字
+                              </div>
+                                </div>
+                            
+                            {/* 価格表示エリア */}
+                            <div className="flex items-center justify-center space-x-3 mb-6">
+                              <span className="text-3xl font-bold text-red-600">¥{price.toLocaleString()}</span>
+                              </div>
+                              
+                              {/* 購入ボタン */}
+                              <Button
+                              className="w-full bg-gray-900 text-white hover:bg-gray-800 rounded-sm py-3 text-lg font-medium shadow-sm transition-colors"
+                                onClick={handlePurchase}
+                              >
+                                購入手続きへ
+                              </Button>
+                            
+                            {/* 評価情報 - 動的表示 */}
+                            {reviewCount > 0 && (
+                              <div className="flex items-center justify-center mt-4 space-x-2">
+                                <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
+                                  <Check className="h-4 w-4 text-green-600" />
+                                </div>
+                                <span className="text-sm text-gray-600">{reviewCount}人が高評価</span>
+                            </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+                </>
+              )}
             </>
           )}
 

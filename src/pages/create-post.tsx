@@ -774,7 +774,11 @@ const submitProject = async () => {
       author_id: finalAuthorId, // 必ず最新のauthorIdを使う
       site_url: projectSettings.projectUrl || null, // プロジェクトURLを送信
       prompt_title: prompts[0].prompt_title, // 最初のプロンプトのタイトル
-      prompt_content: prompts[0].prompt_content // 最初のプロンプトの内容
+      prompt_content: prompts.length === 1 
+        ? prompts[0].prompt_content // 単一プロンプトの場合
+        : prompts.map((prompt, index) => 
+            `プロンプト${index + 1}:\n${prompt.prompt_content}`
+          ).join('\n\n---\n\n') // 複数プロンプトの場合は番号付きで結合
     };
 
     // データベース制約のチェック

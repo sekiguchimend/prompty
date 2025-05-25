@@ -263,10 +263,10 @@ const PromptDetail = ({
     
     const fetchUser = async () => {
       try {
-      const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         if (mounted && session) {
-        setCurrentUser(session.user);
-        setIsAuthor(session.user.id === postData.user.userId);
+          setCurrentUser(session.user);
+          setIsAuthor(session.user.id === postData.user.userId);
         }
       } catch (error) {
         console.error('ユーザー取得エラー:', error);
@@ -543,7 +543,7 @@ prompt: |
                 isPreview={!isFree && isPremium && !isPaid}
                 isPremium={isPremium}
                 reviewCount={postData.likeCount || 0}
-                canDownloadYaml={isFree || isPaid || isAuthor}
+                canDownloadYaml={!!(isFree || isPaid || isAuthor)}
                 onDownloadYaml={() => handleDownloadYaml(postData)}
               />
             </div>
