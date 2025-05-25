@@ -103,7 +103,7 @@ const Footer: React.FC = () => {
               </div>
             ))}
           </div>
-          
+          //a
           <div className="mt-8 pt-6 border-t border-gray-200 flex justify-between items-center max-w-5xl mx-auto">
             <div className="text-sm text-gray-500">
               <p>© {currentYear} Prompty, Inc.</p>
