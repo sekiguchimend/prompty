@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Footer from '../../components/footer';
-import { ChevronLeft, Edit } from 'lucide-react';
+import { ChevronLeft, Edit, Download } from 'lucide-react';
 import { Separator } from '../../components/ui/separator';
 import PopularArticles from '../../components/popular-articles';
 import AuthorSidebar from '../../components/prompt/AuthorSidebar';
@@ -465,6 +465,32 @@ const PromptDetail = ({
     }
   }, [postData?.id]);
 
+  // YAMLダウンロード機能を追加
+  const generateYamlContent = (postData: ExtendedPostItem) => {
+    // プロンプト本文のみ（AIが再現するのに必要な唯一の情報）
+    const yaml = `---
+prompt: |
+  ${postData.prompt_content?.split('\n').join('\n  ') || ''}
+---`;
+    
+    return yaml;
+  };
+
+  const handleDownloadYaml = (postData: ExtendedPostItem) => {
+    const yamlContent = generateYamlContent(postData);
+    const blob = new Blob([yamlContent], { type: 'text/yaml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    // タイトルを安全なファイル名に変換
+    const safeTitle = postData.title.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_').substring(0, 50);
+    a.download = `${safeTitle}_prompt.yaml`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   // 表示切替
   return (
     <div className="flex min-h-screen flex-col">
@@ -477,12 +503,15 @@ const PromptDetail = ({
               <span>戻る</span>
             </Link>
             
-            {isAuthor && (
-              <Link href={`/edit-prompt/${postData.id}`} className="inline-flex items-center bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-md text-sm transition-colors">
-                <Edit className="h-4 w-4 mr-1.5" />
-                編集する
-              </Link>
-            )}
+            <div className="flex items-center gap-2">
+              {/* 編集ボタン - 作者のみ表示 */}
+              {isAuthor && (
+                <Link href={`/edit-prompt/${postData.id}`} className="inline-flex items-center bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-md text-sm transition-colors">
+                  <Edit className="h-4 w-4 mr-1.5" />
+                  編集する
+                </Link>
+              )}
+            </div>
           </div>
           
           <div className="flex flex-col md:flex-row">
@@ -514,6 +543,8 @@ const PromptDetail = ({
                 isPreview={!isFree && isPremium && !isPaid}
                 isPremium={isPremium}
                 reviewCount={postData.likeCount || 0}
+                canDownloadYaml={isFree || isPaid || isAuthor}
+                onDownloadYaml={() => handleDownloadYaml(postData)}
               />
             </div>
             

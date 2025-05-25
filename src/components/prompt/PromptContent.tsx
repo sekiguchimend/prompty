@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, lazy, Suspense, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { Button } from '../ui/button';
-import { Check, Lock, FileText, Info, Eye, ExternalLink } from 'lucide-react';
+import { Check, Lock, FileText, Info, Eye, ExternalLink, Download } from 'lucide-react';
 import { Badge } from '../../components/ui/badge';
 import PurchaseDialog from './PurchaseDialog';
 import Image from 'next/image';
@@ -47,6 +47,8 @@ interface PromptContentProps {
   systemUrl?: string;
   description?: string;
   reviewCount?: number;
+  canDownloadYaml?: boolean;
+  onDownloadYaml?: () => void;
 }
 
 // パフォーマンス最適化されたPromptContentコンポーネント
@@ -68,7 +70,9 @@ const PromptContent: React.FC<PromptContentProps> = ({
   systemImageUrl,
   systemUrl,
   description = '',
-  reviewCount = 0
+  reviewCount = 0,
+  canDownloadYaml = false,
+  onDownloadYaml = () => {}
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -401,6 +405,32 @@ const PromptContent: React.FC<PromptContentProps> = ({
             <ExternalLink className="w-4 h-4" />
             <span>システムを見る: {formatSystemUrl(systemUrl)}</span>
           </a>
+        )}
+        
+        {/* YAMLダウンロードセクション - プロンプト表示の真上 */}
+        {canDownloadYaml && premiumContent && (
+          <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-3 mb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-start space-x-3">
+                <div className="p-1.5 bg-green-100 rounded-md">
+                  <FileText className="h-4 w-4 text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium text-gray-900 mb-1">YAML形式でダウンロード</h4>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    プロンプト内容をYAML形式で保存。AIに投げるだけで同じプロンプトを再現できます。
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={onDownloadYaml}
+                className="flex items-center space-x-1.5 bg-white hover:bg-green-50 border border-green-300 text-green-700 px-3 py-1.5 rounded-md text-sm font-medium transition-colors shadow-sm hover:shadow-md"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>YAML</span>
+              </button>
+            </div>
+          </div>
         )}
         
         {/* Content section */}

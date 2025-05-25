@@ -31,10 +31,6 @@ interface Category {
   description: string | null;
   icon: string | null;
   parent_id: string | null;
-  prompt_title: string;
-  prompt_content: string;
-  yaml_content: string;
-  file_content: string;
 }
 
 // Supabase接続情報をチェックする関数（開発中のみ使用）
@@ -444,9 +440,7 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
       const newPrompt: Prompt = {
         id: nextId,
         prompt_title: `プロンプト #${nextId}`, // 自動生成タイトル
-        prompt_content: data.yaml_content || data.fullPrompt, // YAMLコンテンツかプロンプト本文を使用
-        yaml_content: data.yaml_content, // YAMLコンテンツを保存
-        file_content: data.file_content, // ファイルコンテンツを保存
+        prompt_content: data.fullPrompt, // プロンプト本文を使用
         createdAt: new Date()
       };
       
@@ -466,9 +460,7 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
       const newPrompt: Prompt = {
         id: uniqueId,
         prompt_title: `プロンプト #${uniqueId}`, // 自動生成タイトル
-        prompt_content: data.yaml_content || data.fullPrompt, // YAMLコンテンツかプロンプト本文を使用
-        yaml_content: data.yaml_content, // YAMLコンテンツを保存
-        file_content: data.file_content, // ファイルコンテンツを保存
+        prompt_content: data.fullPrompt, // プロンプト本文を使用
         createdAt: new Date()
       };
       
@@ -497,7 +489,7 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
     window.dispatchEvent(new CustomEvent('edit-prompt', { 
       detail: { 
         id: nextNumber, 
-        data: prompt.yaml_content ? prompt : prompt.prompt_content
+        data: prompt.prompt_content
       } 
     }));
     
