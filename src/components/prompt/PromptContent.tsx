@@ -37,6 +37,7 @@ interface PromptContentProps {
     avatarUrl: string;
     bio?: string;
     publishedAt?: string;
+    userId?: string;
   };
   content: string | string[];
   premiumContent?: string;
@@ -282,14 +283,26 @@ const PromptContent: React.FC<PromptContentProps> = ({
     // コンテンツが配列の場合は結合して文字列にする
     const contentText = normalizeContentText(content);
     
-    // 文字数カウント - 無料部分と有料部分の文字数を合計
-    const basicCharCount = typeof content === 'string' 
-      ? content.length 
-      : Array.isArray(content) 
-        ? content.join('').length 
-        : 0;
+    // HTMLタグを除去して実際の文字数をカウントする関数
+    const getActualCharCount = (text: string): number => {
+      if (!text) return 0;
+      
+      // HTMLタグを除去
+      const plainText = text.replace(/<[^>]*>/g, '');
+      
+      // 改行文字や余分な空白を正規化
+      const normalizedText = plainText
+        .replace(/\r\n/g, '\n')  // Windows改行を統一
+        .replace(/\r/g, '\n')    // Mac改行を統一
+        .replace(/\n+/g, '\n')   // 連続改行を単一改行に
+        .trim();                 // 前後の空白を除去
+      
+      return normalizedText.length;
+    };
     
-    const premiumCharCount = premiumContent?.length || 0;
+    // 文字数カウント - HTMLタグを除去した実際の文字数
+    const basicCharCount = getActualCharCount(contentText);
+    const premiumCharCount = getActualCharCount(premiumContent || '');
     const characterCount = basicCharCount + premiumCharCount;
 
   // 無料コンテンツかどうかの判定
@@ -721,7 +734,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
           avatarUrl: author.avatarUrl,
           bio: author.bio || '',
           website: '',
-          userId: ''
+          userId: author.userId || ''
         }}
         socialLinks={[]}
       />
@@ -735,7 +748,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
           title,
           author: {
             ...author,
-            userId: '',
+            userId: author.userId || '',
             stripe_price_id: ''
           },
           price

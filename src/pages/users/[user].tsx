@@ -275,7 +275,7 @@ const UserPage: React.FC = () => {
   
   return (
     <div className="min-h-screen bg-white">
-      <main className={`pt-16 ${isMobile ? 'pt-20' : ''}`}>
+      <main className="header-spacing">
         {/* プロフィールヘッダー */}
         <div className="border-b border-gray-200">
           <div className="container mx-auto px-4 max-w-4xl py-4 md:py-6">

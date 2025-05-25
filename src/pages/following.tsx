@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { ChevronRight, Heart, MoreVertical, Bookmark, UserPlus, Loader2, ChevronDown } from 'lucide-react';
+import { ChevronRight, Heart, MoreVertical, Bookmark, UserPlus, Loader2, ChevronDown, Home } from 'lucide-react';
 import Footer from '../components/footer';
 import { PostItem, getTodayForYouPosts } from '../data/posts';
 import { 
@@ -647,6 +647,20 @@ const Following: React.FC = () => {
     document.title = "フォロー中 | Prompty";
   }, []);
   
+  // ブレッドクラムコンポーネント
+  const Breadcrumb = () => (
+    <div className="bg-gray-50 py-3 px-4 sm:px-6 md:px-8 border-b sticky top-0 z-10 md:static md:z-auto header-spacing md:mt-0">
+      <div className="container mx-auto flex items-center text-sm text-gray-600 overflow-x-auto whitespace-nowrap">
+        <Link href="/" className="flex items-center hover:text-gray-900 flex-shrink-0">
+          <Home size={14} className="mr-1" />
+          ホーム
+        </Link>
+        <ChevronRight size={14} className="mx-2 flex-shrink-0" />
+        <span className="font-medium text-gray-900 flex-shrink-0">フォロー中</span>
+      </div>
+    </div>
+  );
+  
   return (
     <div className="min-h-screen bg-prompty-background">
       <Head>
@@ -657,8 +671,9 @@ const Following: React.FC = () => {
         <link rel="apple-touch-icon" href="https://prompty-zeta.vercel.app/favicon.ico" />
       </Head>
       
-      <main className="flex-1 pb-12 mt-20 md:mt-16">
+      <main className="flex-1 pb-12">
         <div className="container mx-auto px-4">
+          <Breadcrumb />
           {/* フォロー中のコンテンツ */}
           <div className="mt-4">
             <div className="pb-3 px-4 flex items-center">

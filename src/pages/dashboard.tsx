@@ -672,7 +672,7 @@ const DashboardPage: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-gray-100">
       {/* ヘッダー */}
       
-      <main className="flex-1 pt-16 pb-16">
+      <main className="flex-1 header-spacing pb-16">
         <div className="containermx-auto px-4 sm:px-6 lg:px-8">
   {/* モバイルメニューボタン */}
   {!isDesktop && (
