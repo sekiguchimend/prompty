@@ -36,10 +36,6 @@ interface Category {
   description: string | null;
   icon: string | null;
   parent_id: string | null;
-  prompt_title: string;
-  prompt_content: string;
-  yaml_content: string;
-  file_content: string;
 }
 
 // プロンプト編集用のスキーマ
@@ -192,8 +188,6 @@ const EditPromptPage: React.FC<EditPromptPageProps> = ({ promptData, categories 
       id: 1,
       prompt_title: promptData.prompt_title || '',
       prompt_content: promptData.prompt_content || '',
-      yaml_content: '',
-      file_content: '',
       createdAt: new Date(promptData.created_at),
     }
   ]);
@@ -245,8 +239,6 @@ const EditPromptPage: React.FC<EditPromptPageProps> = ({ promptData, categories 
       id: promptNumber,
       prompt_title: `プロンプト ${promptNumber}`,
       prompt_content: promptData.fullPrompt,
-      yaml_content: promptData.yaml_content || '',
-      file_content: promptData.file_content || '',
       createdAt: new Date(),
     };
     
