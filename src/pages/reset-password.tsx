@@ -7,7 +7,7 @@ import { useRouter } from 'next/router';
 import { Lock, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../lib/auth-context';
 import Image from 'next/image';
-import { supabase } from '../../lib/supabase/client';
+import { supabase } from '../lib/supabaseClient';
 
 // Manually implement or mock the missing components
 const Input = ({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) => (
