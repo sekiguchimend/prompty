@@ -1,0 +1,59 @@
+name: Health Check for prompty-ai.com
+
+on:
+  schedule:
+    # 毎時0分に実行
+    - cron: '0 * * * *'
+  workflow_dispatch: # 手動実行も可能
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check prompty-ai.com Health
+      run: |
+        echo "ヘルスチェック対象: https://prompty-ai.com"
+        
+        # HTTPSでヘルスチェック
+        response=$(curl -s -o /dev/null -w "%{http_code}" https://prompty-ai.com 2>/dev/null || echo "000")
+        
+        if [ "$response" = "200" ]; then
+          echo "✅ prompty-ai.com は正常に動作しています (HTTP: $response)"
+        else
+          echo "❌ prompty-ai.com に問題があります (HTTP: $response)"
+          exit 1
+        fi
+        
+    - name: Check EC2 Server Status
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_KEY }}
+        port: 22
+        script: |
+          # PM2プロセスの状態確認
+          pm2 status prompty
+          
+          # メモリ使用量確認
+          echo "=== メモリ使用量 ==="
+          free -h
+          
+          # ディスク使用量確認
+          echo "=== ディスク使用量 ==="
+          df -h
+          
+          # ログの最新エラーチェック
+          echo "=== 最新のエラーログ ==="
+          tail -n 10 /home/ec2-user/logs/prompty-error.log || echo "エラーログなし"
+          
+          # SSL証明書の確認
+          echo "=== SSL証明書の確認 ==="
+          echo | openssl s_client -servername prompty-ai.com -connect prompty-ai.com:443 2>/dev/null | openssl x509 -noout -dates 2>/dev/null || echo "SSL証明書なし"
+          
+    - name: Notify if unhealthy
+      if: failure()
+      run: |
+        echo "🚨 prompty-ai.com のヘルスチェックが失敗しました！"
+        echo "サイトまたはEC2サーバーに問題があります。" 

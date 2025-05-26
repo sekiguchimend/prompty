@@ -4,7 +4,6 @@ export default function Document() {
   return (
     <Html lang="ja">
       <Head>
-        {/* フォント事前読み込み - LCP改善 */}
         <link
           rel="preconnect"
           href="https://fonts.googleapis.com"
