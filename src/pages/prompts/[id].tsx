@@ -504,7 +504,7 @@ prompt: |
       <main className="flex-1 bg-white">
         <div className="container px-4 md:px-6 py-6 max-w-7xl mx-auto">
           {/* Back link and Edit link */}
-          <div className="flex justify-between items-center mb-2 md:mb-6 article-detail-spacing">
+          <div className="flex justify-between items-center mb-2 md:mb-6">
             <Link href="/" className="text-gray-600 hover:text-gray-900 flex items-center">
               <ChevronLeft className="h-4 w-4 mr-1" />
               <span>戻る</span>

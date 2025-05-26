@@ -571,6 +571,90 @@ const submitProject = async () => {
     return;
   }
 
+  // 有料記事の場合、Stripeアカウント設定をチェック
+  if (projectSettings.pricingType === "paid") {
+    try {
+      toast({
+        title: "確認中",
+        description: "Stripeアカウント設定を確認中...",
+        variant: "default",
+      });
+
+      // 現在のユーザーのプロフィール情報を取得
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('stripe_account_id')
+        .eq('id', user?.id)
+        .single();
+
+      if (profileError || !profile?.stripe_account_id) {
+        toast({
+          title: "Stripeアカウントが必要です",
+          description: "有料記事を投稿するには、まずStripeアカウントを設定してください。設定ページに移動しますか？",
+          variant: "destructive",
+        });
+
+        const goToSettings = window.confirm(
+          "有料記事を投稿するには、Stripeアカウントの設定が必要です。\n設定ページに移動しますか？"
+        );
+
+        if (goToSettings) {
+          router.push('/settings?tab=stripe');
+        }
+        return;
+      }
+
+      // Stripeアカウントの状態を確認
+      try {
+        const accountResponse = await fetch('/api/stripe/check-account-status', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({ accountId: profile.stripe_account_id }),
+        });
+
+        if (!accountResponse.ok) {
+          throw new Error('アカウント状態の確認に失敗しました');
+        }
+
+        const accountData = await accountResponse.json();
+        
+        if (accountData.status !== 'complete') {
+          toast({
+            title: "Stripeアカウント設定が未完了です",
+            description: "有料記事を投稿するには、Stripeアカウントの設定を完了してください。",
+            variant: "destructive",
+          });
+
+          const completeSetup = window.confirm(
+            "Stripeアカウントの設定が未完了です。\n設定を完了しますか？"
+          );
+
+          if (completeSetup) {
+            router.push('/settings?tab=stripe');
+          }
+          return;
+        }
+
+        console.log('Stripeアカウント確認完了:', profile.stripe_account_id);
+      } catch (accountCheckError) {
+        console.warn('Stripeアカウント状態確認エラー:', accountCheckError);
+        // アカウント状態確認に失敗しても、アカウントIDがあれば投稿を続行
+        console.log('アカウント状態確認に失敗しましたが、投稿を続行します');
+      }
+    } catch (stripeCheckError) {
+      console.error('Stripeアカウントチェックエラー:', stripeCheckError);
+      toast({
+        title: "エラー",
+        description: "Stripeアカウントの確認中にエラーが発生しました。",
+        variant: "destructive",
+      });
+      return;
+    }
+  }
+
   // 既に処理中なら何もしない（二重実行防止）
   if (isSubmitting) {
     console.log('既に投稿処理中です。処理をスキップします。');

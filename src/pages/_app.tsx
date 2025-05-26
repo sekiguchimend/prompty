@@ -51,7 +51,9 @@ function MyApp({ Component, pageProps }: AppProps) {
       </Head>
       <AuthProvider>
         <Header />
-        <Component {...pageProps} />
+        <div className="header-spacing">
+          <Component {...pageProps} />
+        </div>
         <Toaster />
       </AuthProvider>
     </>

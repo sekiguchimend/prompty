@@ -275,7 +275,7 @@ const UserPage: React.FC = () => {
   
   return (
     <div className="min-h-screen bg-white">
-      <main className="header-spacing">
+      <main className="">
         {/* プロフィールヘッダー */}
         <div className="border-b border-gray-200">
           <div className="container mx-auto px-4 max-w-4xl py-4 md:py-6">

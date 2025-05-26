@@ -111,8 +111,8 @@ const ResetPassword = () => {
 
   return (
     <div className="flex min-h-screen bg-prompty-background">
-      <div className="w-full flex flex-col items-center justify-start p-0 pt-0 mt-10 md:justify-center md:p-8 md:mt-[-80px]">
-        <Link href="/" className="mb-0 mt-2 md:mb-4">
+      <div className="w-full flex flex-col items-center justify-start p-4 pt-20 md:justify-center md:p-8 md:pt-8">
+        <Link href="/" className="mb-6 md:mb-4">
           <div className="flex items-center">
             <Image 
               src="https://qrxrulntwojimhhhnwqk.supabase.co/storage/v1/object/public/prompt-thumbnails/prompty_logo(1).png" 

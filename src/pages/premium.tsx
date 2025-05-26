@@ -5,7 +5,7 @@ import { Check } from 'lucide-react';
 import Footer from '../components/footer';
 const Premium = () => {
   return (
-    <div className="min-h-screen bg-white relative overflow-hidden header-spacing">
+    <div className="min-h-screen bg-white relative overflow-hidden">
       {/* 背景イラスト（透かし） */}
       <div className="absolute inset-0 w-full h-full overflow-hidden opacity-5 pointer-events-none">
         <div className="relative w-full h-full">

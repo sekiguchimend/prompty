@@ -147,7 +147,7 @@ const SettingsPage: React.FC = () => {
   
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      <main className="flex-1 header-spacing">
+      <main className="flex-1">
         <div className="container mx-auto px-4 py-6 max-w-6xl">
           {/* モバイルヘッダー */}
           <div className="flex items-center justify-between md:hidden mb-4">

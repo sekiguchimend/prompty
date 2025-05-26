@@ -3,6 +3,8 @@ import { FormControl, FormField, FormItem, FormLabel } from "../../components/ui
 import { Input } from "../../components/ui/input";
 import { RadioGroup, RadioGroupItem } from "../../components/ui/radio-group";
 import { Label } from "../../components/ui/label";
+import { AlertTriangle, ExternalLink } from "lucide-react";
+import Link from "next/link";
 
 interface PricingSelectorProps {
   control: any;
@@ -45,6 +47,30 @@ const PricingSelector: React.FC<PricingSelectorProps> = ({
           </FormItem>
         )}
       />
+
+      {/* 有料選択時の警告メッセージ */}
+      {pricingType === "paid" && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+          <div className="flex items-start space-x-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <h4 className="text-sm font-medium text-amber-800 mb-1">
+                Stripeアカウントの設定が必要です
+              </h4>
+              <p className="text-sm text-amber-700 mb-3">
+                有料記事を投稿するには、事前にStripeアカウントを設定し、決済機能を有効にする必要があります。
+              </p>
+              <Link 
+                href="/settings?tab=stripe" 
+                className="inline-flex items-center text-sm text-amber-800 hover:text-amber-900 font-medium underline"
+              >
+                <ExternalLink className="h-4 w-4 mr-1" />
+                Stripe設定ページへ
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 価格設定（有料の場合のみ表示） */}
       {pricingType === "paid" && (
