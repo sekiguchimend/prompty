@@ -1,8 +1,8 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { formatDate, truncateText } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { formatDate, truncateText } from '../../lib/utils';
+import { Button } from '../../src/components/ui/button';
 import { UnifiedAvatar } from '../../src/components/index';
 
 interface PromptCardProps {
