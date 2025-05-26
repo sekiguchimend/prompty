@@ -181,7 +181,7 @@ const Sidebar = () => {
           
           <div className="text-xs text-gray-500 space-y-1 px-1">
             <Link href="/help-center" className="block hover:underline">promptyの使い方</Link>
-            <Link href="/company" className="block hover:underline">運営会社</Link>
+            <Link href="https://queue-tech.jp/" className="block hover:underline">運営会社</Link>
             <Link href="/terms" className="block hover:underline">
               <span className="mr-2">利用規約</span>
               <span>プライバシー</span>

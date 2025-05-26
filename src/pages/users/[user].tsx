@@ -15,6 +15,7 @@ import { useToast } from '../../components/ui/use-toast';
 import { useAuth } from '../../lib/auth-context';
 import { UnifiedAvatar } from '../../components/index';
 import { supabase } from '../../lib/supabaseClient';
+import FollowModal from '../../components/modals/FollowModal';
 
 // ユーザーデータの型定義
 interface UserData {
@@ -55,6 +56,11 @@ const UserPage: React.FC = () => {
   const [userPosts, setUserPosts] = useState<PostData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // フォローモーダルの状態
+  const [followModalOpen, setFollowModalOpen] = useState(false);
+  const [followModalType, setFollowModalType] = useState<'followers' | 'following'>('followers');
+  const [followModalTitle, setFollowModalTitle] = useState('');
   
   // 画面サイズを検出
   useEffect(() => {
@@ -297,6 +303,48 @@ const UserPage: React.FC = () => {
     });
   };
   
+  // フォロワー一覧を開く
+  const openFollowersModal = () => {
+    setFollowModalType('followers');
+    setFollowModalTitle(`${userData?.display_name}のフォロワー`);
+    setFollowModalOpen(true);
+  };
+
+  // フォロー一覧を開く
+  const openFollowingModal = () => {
+    setFollowModalType('following');
+    setFollowModalTitle(`${userData?.display_name}がフォロー中`);
+    setFollowModalOpen(true);
+  };
+  
+  // フォロー状態変更時のコールバック
+  const handleFollowChange = async () => {
+    if (!userParam) return;
+    
+    try {
+      // フォロワー数を再取得
+      const { count: followersCount } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('following_id', userParam);
+
+      // フォロー数を再取得
+      const { count: followingCount } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('follower_id', userParam);
+
+      // ユーザーデータを更新
+      setUserData(prev => prev ? {
+        ...prev,
+        followersCount: followersCount || 0,
+        followingCount: followingCount || 0
+      } : null);
+    } catch (error) {
+      console.error('フォロー数更新エラー:', error);
+    }
+  };
+  
   // 投稿カードをレンダリング
   const renderPostCard = (post: PostData) => (
     <Link href={`/prompts/${post.id}`} key={post.id} className="block">
@@ -508,14 +556,20 @@ const UserPage: React.FC = () => {
                     <span className="font-bold">{userPosts.length}</span>
                     <span className="ml-1 text-gray-500">投稿</span>
                   </div>
-                  <div className="flex items-center">
+                  <button 
+                    className="flex items-center hover:underline cursor-pointer"
+                    onClick={openFollowingModal}
+                  >
                     <span className="font-bold">{userData.followingCount}</span>
                     <span className="ml-1 text-gray-500">フォロー</span>
-                  </div>
-                  <div className="flex items-center">
+                  </button>
+                  <button 
+                    className="flex items-center hover:underline cursor-pointer"
+                    onClick={openFollowersModal}
+                  >
                     <span className="font-bold">{userData.followersCount}</span>
                     <span className="ml-1 text-gray-500">フォロワー</span>
-                  </div>
+                  </button>
                 </div>
               </div>
             </div>
@@ -584,6 +638,18 @@ const UserPage: React.FC = () => {
           </div>
         </div>
       </main>
+      
+      {/* フォローモーダル */}
+      {userData && (
+        <FollowModal
+          isOpen={followModalOpen}
+          onClose={() => setFollowModalOpen(false)}
+          userId={userData.id}
+          type={followModalType}
+          title={followModalTitle}
+          onFollowChange={handleFollowChange}
+        />
+      )}
       
       <Footer />
     </div>
