@@ -83,27 +83,27 @@
 
 /* ヘッダーとコンテンツの間隔調整 */
 .header-spacing {
-  /* スマホ: ヘッダー(64px) + タブ(48px) + 余白(35px) = 147px */
-  padding-top: 147px;
+  /* スマホ: ヘッダー(64px) + タブ(48px) + 余白(8px) = 120px */
+  padding-top: 120px;
 }
 
 @media (min-width: 768px) {
   .header-spacing {
-    /* PC: ヘッダー(64px) + 余白(35px) = 99px */
-    padding-top: 99px;
+    /* PC: ヘッダー(64px) + 余白(16px) = 80px */
+    padding-top: 80px;
   }
 }
 
 /* 記事詳細ページ用の間隔調整 */
 .article-detail-spacing {
-  /* スマホ: ヘッダー(64px) + タブ(48px) + 余白(43px) = 155px */
-  margin-top: 155px;
+  /* スマホ: ヘッダー(64px) + タブ(48px) + 余白(16px) = 128px */
+  margin-top: 128px;
 }
 
 @media (min-width: 768px) {
   .article-detail-spacing {
-    /* PC: ヘッダー(64px) + 余白(35px) = 99px */
-    margin-top: 99px;
+    /* PC: ヘッダー(64px) + 余白(16px) = 80px */
+    margin-top: 80px;
   }
 }
 

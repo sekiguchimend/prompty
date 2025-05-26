@@ -45,7 +45,6 @@ const fetchFollowingPostsData = async (
       .eq('follower_id', userId);
       
     if (followsError) {
-      console.error('フォロー中ユーザー取得エラー:', followsError);
       return { posts: [], hasMore: false };
     }
     
@@ -81,7 +80,6 @@ const fetchFollowingPostsData = async (
     const { data: postsData, error: postsError } = await query;
     
     if (postsError) {
-      console.error('フォロー中投稿取得エラー:', postsError);
       return { posts: [], hasMore: false };
     }
     
@@ -109,7 +107,6 @@ const fetchFollowingPostsData = async (
       .in('prompt_id', postIds);
       
     if (likesError) {
-      console.error('いいね取得エラー:', likesError);
     }
     
     // いいね情報をマッピング
@@ -159,7 +156,6 @@ const fetchFollowingPostsData = async (
       nextCursor
     };
   } catch (error) {
-    console.error('フォロー中の投稿取得エラー:', error);
     return { posts: [], hasMore: false };
   }
 };
@@ -204,7 +200,6 @@ const Following: React.FC = () => {
           }
         }
       } catch (error) {
-        console.error('ユーザー取得エラー:', error);
         if (isActive) {
           setIsLoading(false);
         }
@@ -249,7 +244,6 @@ const Following: React.FC = () => {
           setIsLoading(false);
         }
       } catch (error) {
-        console.error('投稿取得エラー:', error);
         if (isActive) {
           setIsLoading(false);
         }
@@ -286,7 +280,6 @@ const Following: React.FC = () => {
       setHasMore(result.hasMore);
       setCursor(result.nextCursor);
     } catch (error) {
-      console.error('追加の投稿取得エラー:', error);
     } finally {
       setIsLoadingMore(false);
     }
@@ -340,7 +333,6 @@ const Following: React.FC = () => {
           });
       }
     } catch (error) {
-      console.error('いいね処理エラー:', error);
       // エラー時は元の状態に戻す処理も実装できる
     }
     
@@ -380,7 +372,6 @@ const Following: React.FC = () => {
         localStorage.setItem('hiddenPosts', JSON.stringify(hiddenPosts));
       }
     } catch (error) {
-      console.error('非表示設定の保存に失敗しました', error);
     }
     
     toast({

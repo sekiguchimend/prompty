@@ -105,7 +105,6 @@ const fetchFollowingUsersData = async (
       nextCursor
     };
   } catch (error) {
-    console.error('フォロー中ユーザー取得エラー:', error);
     return { users: [], hasMore: false };
   }
 };
@@ -145,7 +144,6 @@ const FollowingUsers: React.FC = () => {
           }
         }
       } catch (error) {
-        console.error('ユーザー取得エラー:', error);
         if (isActive) {
           setIsLoading(false);
         }
@@ -190,7 +188,6 @@ const FollowingUsers: React.FC = () => {
           setIsLoading(false);
         }
       } catch (error) {
-        console.error('フォロー中ユーザー取得エラー:', error);
         if (isActive) {
           setIsLoading(false);
         }
@@ -313,7 +310,6 @@ const FollowingUsers: React.FC = () => {
     </div>
   ), []);
   
-  // ローディング表示をメモ化
   const LoadingState = useMemo(() => (
     <div className="flex justify-center py-12">
       <div className="animate-pulse flex space-x-4">

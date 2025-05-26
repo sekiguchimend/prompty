@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Footer from '../../components/footer';
 import { Button } from '../../components/ui/button';
-import { ChevronRight, Heart, MessageSquare, Eye, MoreHorizontal, BookOpen, BellOff, ShieldAlert, Ban } from 'lucide-react';
+import { Heart, MessageSquare, Eye, MoreHorizontal, BookOpen, BellOff, ShieldAlert, Ban } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { 
   DropdownMenu,
@@ -14,12 +14,13 @@ import {
 import { useToast } from '../../components/ui/use-toast';
 import { useAuth } from '../../lib/auth-context';
 import { UnifiedAvatar } from '../../components/index';
+import { supabase } from '../../lib/supabaseClient';
 
 // ユーザーデータの型定義
 interface UserData {
   id: string;
-  name: string;
-  displayName: string;
+  display_name: string;
+  account_name: string;
   bio: string;
   avatarUrl: string;
   followersCount: number;
@@ -36,14 +37,9 @@ interface PostData {
   views: number;
   likes: number;
   comments: number;
-}
-
-// マガジンデータの型定義
-interface MagazineData {
-  id: string;
-  title: string;
-  coverUrl: string;
-  articlesCount: number;
+  description?: string;
+  price: number;
+  isFree: boolean;
 }
 
 const UserPage: React.FC = () => {
@@ -55,10 +51,13 @@ const UserPage: React.FC = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [userPosts, setUserPosts] = useState<PostData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   // 画面サイズを検出
   useEffect(() => {
-    // クライアントサイドでのみwindowオブジェクトにアクセス
     if (typeof window !== 'undefined') {
       setWindowWidth(window.innerWidth);
     
@@ -71,144 +70,222 @@ const UserPage: React.FC = () => {
     }
   }, []);
   
-  // URLが変更されたときにデータをリセット
+  // ユーザーデータを取得
   useEffect(() => {
-    if (userParam) {
-      console.log('User parameter:', userParam);
+    const fetchUserData = async () => {
+      if (!userParam) return;
       
-      // ログインユーザーのプロフィールかどうかを判定
-      if (user) {
-        // 実際のアプリでは、userParamとuser.idなどを比較する
-        // この例では単純に比較していますが、実際には適切なIDやユーザー名を比較する必要があります
-        setIsOwnProfile(userParam === user.id || userParam === user.email?.split('@')[0]);
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        // ユーザー情報を取得
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userParam)
+          .single();
+
+        if (profileError) {
+          setError('ユーザーが見つかりませんでした');
+          return;
+        }
+
+        // フォロワー数を取得
+        const { count: followersCount } = await supabase
+          .from('follows')
+          .select('*', { count: 'exact', head: true })
+          .eq('following_id', userParam);
+
+        // フォロー数を取得
+        const { count: followingCount } = await supabase
+          .from('follows')
+          .select('*', { count: 'exact', head: true })
+          .eq('follower_id', userParam);
+
+        // 現在のユーザーがこのユーザーをフォローしているかチェック
+        let isFollowed = false;
+        if (user) {
+          const { data: followData } = await supabase
+            .from('follows')
+            .select('id')
+            .eq('follower_id', user.id)
+            .eq('following_id', userParam)
+            .single();
+          
+          isFollowed = !!followData;
+        }
+
+        setUserData({
+          id: profileData.id,
+          display_name: profileData.display_name || profileData.name || 'ユーザー',
+          account_name: profileData.account_name || '',
+          bio: profileData.bio || '',
+          avatarUrl: profileData.avatar_url || '/images/default-avatar.png',
+          followersCount: followersCount || 0,
+          followingCount: followingCount || 0,
+          isFollowed
+        });
+
+        setIsFollowing(isFollowed);
+
+        // ログインユーザーのプロフィールかどうかを判定
+        if (user) {
+          setIsOwnProfile(userParam === user.id);
+        }
+
+        // ユーザーの投稿を取得
+        const { data: postsData, error: postsError } = await supabase
+          .from('prompts')
+          .select(`
+            id,
+            title,
+            thumbnail_url,
+            created_at,
+            description,
+            price,
+            is_free,
+            published,
+            view_count,
+            like_count
+          `)
+          .eq('author_id', userParam)
+          .eq('published', true)
+          .order('created_at', { ascending: false })
+          .limit(50);
+
+        if (postsError) {
+        } else {
+          const formattedPosts: PostData[] = postsData.map(post => ({
+            id: post.id,
+            title: post.title,
+            thumbnailUrl: post.thumbnail_url,
+            publishedAt: formatDate(post.created_at),
+            views: post.view_count || 0,
+            likes: post.like_count || 0,
+            comments: 0, // コメント数は別途取得が必要な場合は実装
+            description: post.description,
+            price: post.price || 0,
+            isFree: post.is_free || post.price === 0
+          }));
+
+          setUserPosts(formattedPosts);
+        }
+
+      } catch (error) {
+        setError('データの取得に失敗しました');
+      } finally {
+        setIsLoading(false);
       }
-    }
+    };
+
+    fetchUserData();
   }, [userParam, user]);
+
+  // 日付フォーマット関数
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return '1日前';
+    if (diffDays < 7) return `${diffDays}日前`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)}週間前`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)}ヶ月前`;
+    return `${Math.floor(diffDays / 365)}年前`;
+  };
   
   // 画面サイズに基づくブレイクポイント
   const isMobile = windowWidth < 640;
   const isTablet = windowWidth >= 640 && windowWidth < 1024;
   
-  // サンプルユーザーデータ（実際はAPIから取得）
-  const userData: UserData = {
-    id: userParam as string || '1',
-    name: 'ユーザー名',
-    displayName: userParam as string || 'ユーザー表示名',
-    bio: '自己紹介文\nここには実際のユーザーの自己紹介文が表示されます。',
-    avatarUrl: 'https://source.unsplash.com/random/300x300?face',
-    followersCount: 946, 
-    followingCount: 973,
-    isFollowed: false
-  };
-  
-  // 新着投稿データ
-  const recentPosts: PostData[] = [
-    {
-      id: '1',
-      title: '【サンプル】最近の投稿タイトル1',
-      thumbnailUrl: 'https://source.unsplash.com/random/300x200?book',
-      publishedAt: '11時間前',
-      views: 120,
-      likes: 8,
-      comments: 0
-    },
-    {
-      id: '2',
-      title: '【サンプル】最近の投稿タイトル2',
-      thumbnailUrl: 'https://source.unsplash.com/random/300x200?school',
-      publishedAt: '1日前',
-      views: 243,
-      likes: 40,
-      comments: 5
-    },
-    {
-      id: '3',
-      title: '【サンプル】最近の投稿タイトル3',
-      thumbnailUrl: 'https://source.unsplash.com/random/300x200?makeup',
-      publishedAt: '2日前',
-      views: 189,
-      likes: 17,
-      comments: 3
-    }
-  ];
-  
-  // 人気投稿データ
-  const popularPosts: PostData[] = [
-    {
-      id: '4',
-      title: '【サンプル】人気の投稿タイトル1',
-      thumbnailUrl: 'https://source.unsplash.com/random/300x200?teacher',
-      publishedAt: '3日前',
-      views: 1210,
-      likes: 122,
-      comments: 18
-    },
-    {
-      id: '5',
-      title: '【サンプル】人気の投稿タイトル2',
-      thumbnailUrl: 'https://source.unsplash.com/random/300x200?conversation',
-      publishedAt: '4日前',
-      views: 856,
-      likes: 95,
-      comments: 12
-    },
-    {
-      id: '6',
-      title: '【サンプル】人気の投稿タイトル3',
-      thumbnailUrl: 'https://source.unsplash.com/random/300x200?coffee',
-      publishedAt: '5日前',
-      views: 778,
-      likes: 89,
-      comments: 14
-    }
-  ];
-  
-  // サンプルマガジンデータ（実際はAPIから取得）
-  const magazines: MagazineData[] = [
-    {
-      id: '1',
-      title: 'サンプルマガジン1',
-      coverUrl: 'https://source.unsplash.com/random/300x200?english',
-      articlesCount: 77
-    },
-    {
-      id: '2',
-      title: 'サンプルマガジン2',
-      coverUrl: 'https://source.unsplash.com/random/300x200?child',
-      articlesCount: 189
-    }
-  ];
-
   // フォロー状態を切り替える
-  const toggleFollow = () => {
-    setIsFollowing(!isFollowing);
-    
-    toast({
-      title: isFollowing ? "フォローを解除しました" : "フォローしました",
-      description: isFollowing 
-        ? `${userData.name}さんのフォローを解除しました` 
-        : `${userData.name}さんをフォローしました。新しい投稿があるとタイムラインに表示されます`,
-    });
+  const toggleFollow = async () => {
+    if (!user || !userData) {
+      toast({
+        title: "ログインが必要です",
+        description: "フォローするにはログインしてください",
+      });
+      return;
+    }
+
+    try {
+      if (isFollowing) {
+        // フォロー解除
+        const { error } = await supabase
+          .from('follows')
+          .delete()
+          .eq('follower_id', user.id)
+          .eq('following_id', userData.id);
+
+        if (error) throw error;
+
+        setIsFollowing(false);
+        setUserData(prev => prev ? {
+          ...prev,
+          followersCount: prev.followersCount - 1
+        } : null);
+
+        toast({
+          title: "フォローを解除しました",
+          description: `${userData.display_name}さんのフォローを解除しました`,
+        });
+      } else {
+        // フォロー追加
+        const { error } = await supabase
+          .from('follows')
+          .insert({
+            follower_id: user.id,
+            following_id: userData.id
+          });
+
+        if (error) throw error;
+
+        setIsFollowing(true);
+        setUserData(prev => prev ? {
+          ...prev,
+          followersCount: prev.followersCount + 1
+        } : null);
+
+        toast({
+          title: "フォローしました",
+          description: `${userData.display_name}さんをフォローしました。新しい投稿があるとタイムラインに表示されます`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "エラーが発生しました",
+        description: "フォロー処理に失敗しました。もう一度お試しください。",
+      });
+    }
   };
   
   // アクティブなタブに基づいて投稿を表示
   const getActivePosts = () => {
-    return activeTab === '新着' ? recentPosts : popularPosts;
+    // 人気順の場合は閲覧数でソート
+    if (activeTab === '人気') {
+      return [...userPosts].sort((a, b) => b.views - a.views);
+    }
+    // 新着順の場合はそのまま（既にcreated_atの降順で取得済み）
+    return userPosts;
   };
   
   // ユーザーをブロックする
   const handleBlockUser = () => {
+    if (!userData) return;
     toast({
       title: "ユーザーをブロックしました",
-      description: `${userData.name}さんをブロックしました。このユーザーからの投稿は表示されなくなります。`,
+      description: `${userData.display_name}さんをブロックしました。このユーザーからの投稿は表示されなくなります。`,
     });
   };
 
   // ユーザーをミュートする
   const handleMuteUser = () => {
+    if (!userData) return;
     toast({
       title: "ユーザーをミュートしました",
-      description: `${userData.name}さんをミュートしました。このユーザーからの通知は届かなくなります。`,
+      description: `${userData.display_name}さんをミュートしました。このユーザーからの通知は届かなくなります。`,
     });
   };
 
@@ -222,56 +299,128 @@ const UserPage: React.FC = () => {
   
   // 投稿カードをレンダリング
   const renderPostCard = (post: PostData) => (
-    <article key={post.id} className="mb-6 pb-6 border-b border-gray-100">
-      <div className="flex flex-col md:flex-row gap-4">
-        {post.thumbnailUrl && (
-          <div className="md:w-40 h-40 md:h-28 rounded-md overflow-hidden flex-shrink-0 bg-gray-100">
-            <img 
-              src={post.thumbnailUrl} 
-              alt={post.title} 
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}
-        
-        <div className="flex-1">
-          <Link href={`/posts/${post.id}`} className="block">
-            <h2 className="text-base md:text-lg font-bold text-gray-800 hover:text-gray-600 mb-2 md:mb-3 line-clamp-2">
-              {post.title}
-            </h2>
-          </Link>
-          
-          <div className="flex items-center text-xs md:text-sm text-gray-500 mb-2 md:mb-3">
-            <div className="flex items-center mr-4">
-              <UnifiedAvatar
-                src={userData.avatarUrl}
-                displayName={userData.name}
-                size="xs"
-                className="mr-1.5"
+    <Link href={`/prompts/${post.id}`} key={post.id} className="block">
+      <article className="mb-6 pb-6 border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200 rounded-lg p-4 -m-4 cursor-pointer">
+        <div className="flex flex-col md:flex-row gap-4">
+          {post.thumbnailUrl && (
+            <div className="md:w-40 h-40 md:h-28 rounded-md overflow-hidden flex-shrink-0 bg-gray-100">
+              <img 
+                src={post.thumbnailUrl} 
+                alt={post.title} 
+                className="w-full h-full object-cover"
               />
-              <span>{userData.name}</span>
             </div>
-            <span>{post.publishedAt}</span>
-          </div>
+          )}
           
-          <div className="flex items-center gap-4 text-gray-500 text-xs md:text-sm">
-            <div className="flex items-center">
-              <Eye className="h-3.5 w-3.5 md:h-4 md:w-4 mr-1" />
-              <span>{post.views}</span>
+          <div className="flex-1">
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex-1">
+                <h2 className="text-base md:text-lg font-bold text-gray-800 hover:text-gray-600 mb-2 md:mb-3 line-clamp-2">
+                  {post.title}
+                </h2>
+              </div>
+              
+              {/* 価格表示 */}
+              {post.price > 0 && !post.isFree && (
+                <div className="ml-4 flex-shrink-0">
+                  <span className="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded">
+                    ¥{post.price.toLocaleString()}
+                  </span>
+                </div>
+              )}
+              {post.isFree && (
+                <div className="ml-4 flex-shrink-0">
+                  <span className="inline-block bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded">
+                    無料
+                  </span>
+                </div>
+              )}
             </div>
-            <div className="flex items-center">
-              <Heart className="h-3.5 w-3.5 md:h-4 md:w-4 mr-1" />
-              <span>{post.likes}</span>
+            
+            {post.description && (
+              <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                {post.description}
+              </p>
+            )}
+            
+            <div className="flex items-center text-xs md:text-sm text-gray-500 mb-2 md:mb-3">
+              <div className="flex items-center mr-4">
+                <UnifiedAvatar
+                  src={userData?.avatarUrl || '/images/default-avatar.png'}
+                  displayName={userData?.display_name || 'ユーザー'}
+                  size="xs"
+                  className="mr-1.5"
+                />
+                <span>{userData?.display_name || 'ユーザー'}</span>
+              </div>
+              <span>{post.publishedAt}</span>
             </div>
-            <div className="flex items-center">
-              <MessageSquare className="h-3.5 w-3.5 md:h-4 md:w-4 mr-1" />
-              <span>{post.comments}</span>
+            
+            <div className="flex items-center gap-4 text-gray-500 text-xs md:text-sm">
+              <div className="flex items-center">
+                <Eye className="h-3.5 w-3.5 md:h-4 md:w-4 mr-1" />
+                <span>{post.views.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center">
+                <Heart className="h-3.5 w-3.5 md:h-4 md:w-4 mr-1" />
+                <span>{post.likes.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center">
+                <MessageSquare className="h-3.5 w-3.5 md:h-4 md:w-4 mr-1" />
+                <span>{post.comments}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </article>
+      </article>
+    </Link>
   );
+  
+  // ローディング状態
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <main className="">
+          <div className="container mx-auto px-4 max-w-4xl py-8">
+            <div className="animate-pulse">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="h-20 w-20 bg-gray-200 rounded-full"></div>
+                <div className="flex-1">
+                  <div className="h-6 bg-gray-200 rounded w-1/3 mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                </div>
+              </div>
+              <div className="space-y-4">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-32 bg-gray-200 rounded"></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // エラー状態
+  if (error || !userData) {
+    return (
+      <div className="min-h-screen bg-white">
+        <main className="">
+          <div className="container mx-auto px-4 max-w-4xl py-8">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-gray-800 mb-4">
+                {error || 'ユーザーが見つかりませんでした'}
+              </h1>
+              <Button onClick={() => router.push('/')}>
+                ホームに戻る
+              </Button>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen bg-white">
@@ -284,7 +433,7 @@ const UserPage: React.FC = () => {
               <div className="flex-shrink-0 mx-auto md:mx-0">
                 <UnifiedAvatar
                   src={userData.avatarUrl}
-                  displayName={userData.name}
+                  displayName={userData.display_name}
                   size="xl"
                   className="h-20 w-20 md:h-24 md:w-24 rounded-full border border-gray-200"
                 />
@@ -294,7 +443,10 @@ const UserPage: React.FC = () => {
               <div className="flex-1 text-center md:text-left">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
-                    <h1 className="text-xl font-bold">{userData.displayName}</h1>
+                    <h1 className="text-xl font-bold">{userData.display_name}</h1>
+                    {userData.account_name && (
+                      <p className="text-gray-500 text-sm">@{userData.account_name}</p>
+                    )}
                     <p className="text-gray-500 text-sm">
                       {isFollowing ? 'フォローしています' : ''}
                     </p>
@@ -353,6 +505,10 @@ const UserPage: React.FC = () => {
                 {/* フォロー情報 */}
                 <div className="flex justify-center md:justify-start space-x-6 text-sm">
                   <div className="flex items-center">
+                    <span className="font-bold">{userPosts.length}</span>
+                    <span className="ml-1 text-gray-500">投稿</span>
+                  </div>
+                  <div className="flex items-center">
                     <span className="font-bold">{userData.followingCount}</span>
                     <span className="ml-1 text-gray-500">フォロー</span>
                   </div>
@@ -380,13 +536,13 @@ const UserPage: React.FC = () => {
                   value="新着"
                   className="px-5 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent text-sm font-medium text-gray-500 data-[state=active]:text-black"
                 >
-                  新着
+                  新着 ({userPosts.length})
                 </TabsTrigger>
                 <TabsTrigger 
                   value="人気"
                   className="px-5 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent text-sm font-medium text-gray-500 data-[state=active]:text-black"
                 >
-                  人気
+                  人気 ({getActivePosts().length})
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -398,44 +554,32 @@ const UserPage: React.FC = () => {
           <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
             {/* メインコンテンツ - 投稿一覧 */}
             <div className="flex-1">
-              {getActivePosts().map(renderPostCard)}
-            </div>
-            
-            {/* サイドバー */}
-            <div className="w-full lg:w-64 xl:w-72 flex-shrink-0 order-first lg:order-last">
-              {/* マガジンセクション */}
-              <div className="mb-6 md:mb-8 bg-white p-4 rounded-md border border-gray-100 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold">マガジン</h2>
-                  <Link href={`/users/${userParam}/magazines`} className="flex items-center text-gray-500 text-sm">
-                    すべて見る
-                    <ChevronRight className="h-4 w-4 ml-1" />
-                  </Link>
+              {getActivePosts().length > 0 ? (
+                getActivePosts().map(renderPostCard)
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-gray-400 mb-4">
+                    <BookOpen className="h-12 w-12 mx-auto" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    まだ投稿がありません
+                  </h3>
+                  <p className="text-gray-500">
+                    {isOwnProfile 
+                      ? '最初の投稿を作成してみましょう' 
+                      : 'このユーザーはまだ投稿していません'
+                    }
+                  </p>
+                  {isOwnProfile && (
+                    <Button 
+                      className="mt-4"
+                      onClick={() => router.push('/create')}
+                    >
+                      投稿を作成
+                    </Button>
+                  )}
                 </div>
-                
-                <div className="space-y-4">
-                  {magazines.map((magazine) => (
-                    <Link href={`/magazines/${magazine.id}`} key={magazine.id} className="block">
-                      <div className="flex items-start">
-                        <div className="w-16 h-16 bg-gray-100 rounded-md overflow-hidden mr-3 flex-shrink-0">
-                          <img 
-                            src={magazine.coverUrl} 
-                            alt={magazine.title} 
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div>
-                          <h3 className="font-medium text-gray-900">{magazine.title}</h3>
-                          <div className="flex items-center text-sm text-gray-500 mt-1">
-                            <BookOpen className="h-3.5 w-3.5 mr-1" />
-                            <span>{magazine.articlesCount} 本</span>
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

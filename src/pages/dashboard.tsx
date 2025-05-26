@@ -150,7 +150,6 @@ const DashboardPage: React.FC = () => {
       setLastUpdated(new Date());
       
     } catch (error) {
-      console.error('データ取得エラー:', error);
       toast({
         title: "データ取得エラー",
         description: "ダッシュボード情報の取得に失敗しました。",

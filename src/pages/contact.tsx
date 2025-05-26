@@ -93,7 +93,6 @@ export default function ContactPage() {
       
       // 通常のインサートが失敗したら、RPCを使用
       if (error) {
-        console.log('通常の挿入が失敗しました。RPCを使用します。', error);
         const { data: rpcData, error: rpcError } = await supabase.rpc('insert_contact', {
           p_name: formData.name,
           p_email: formData.email,
@@ -104,7 +103,6 @@ export default function ContactPage() {
         // RPCも失敗した場合はエラーをスロー
         if (rpcError) throw rpcError;
         
-        console.log('RPC経由での送信に成功しました:', rpcData);
       }
       
       // フォームをリセット
@@ -120,7 +118,6 @@ export default function ContactPage() {
         message: 'お問い合わせありがとうございます。内容を確認次第、ご連絡いたします。'
       });
     } catch (error: any) {
-      console.error('問い合わせ送信エラー:', error);
       
       let errorMessage = '送信に失敗しました。お手数ですが、しばらくしてから再度お試しください。';
       

@@ -187,14 +187,18 @@ const AuthorSidebar: React.FC<AuthorSidebarProps> = ({ author, tags, website }) 
       <div className="flex flex-col items-start">
         {/* Author profile section */}
         <div className="flex items-center mb-2">
-          <UnifiedAvatar
-            src={author.avatarUrl}
-            displayName={author.name}
-            size="md"
-            className="mr-2"
-          />
+          <Link href={`/users/${author.userId}`}>
+            <UnifiedAvatar
+              src={author.avatarUrl}
+              displayName={author.name}
+              size="md"
+              className="mr-2 cursor-pointer"
+            />
+          </Link>
           <div>
-            <h3 className="text-sm font-medium">{author.name}</h3>
+            <Link href={`/users/${author.userId}`}>
+              <h3 className="text-sm font-medium hover:text-gray-900 cursor-pointer">{author.name}</h3>
+            </Link>
             <p className="text-xs text-gray-500">{author.bio}</p>
           </div>
         </div>

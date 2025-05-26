@@ -193,11 +193,9 @@ const CreatePost = () => {
     
     // サムネイル画像があれば処理 - thumbnailFileが既に設定されている場合は処理しない
     if (data.thumbnail && data.thumbnail.startsWith('data:') && !thumbnailFile) {
-      console.log('サムネイル画像を検出、Fileオブジェクトに変換します');
       // サムネイル処理を実行
       handleThumbnailChange(data.thumbnail);
     } else if (data.thumbnail) {
-      console.log('サムネイル画像はすでに処理済みかBase64形式ではありません');
     } else {
       // サムネイルがない場合は明示的にnullをセット
       setThumbnailFile(null);
@@ -208,18 +206,15 @@ const CreatePost = () => {
   const handleThumbnailChange = (thumbnailDataUrl: string) => {
     try {
       if (!thumbnailDataUrl || !thumbnailDataUrl.startsWith('data:')) {
-        console.warn('無効なサムネイルデータ');
         setThumbnailFile(null);
         return;
       }
       
       // 既に同じデータが処理されている場合はスキップ
       if (thumbnailFile && projectSettings.thumbnail === thumbnailDataUrl) {
-        console.log('同一サムネイルデータが既に処理済みのためスキップします');
         return;
       }
       
-      console.log('サムネイルデータ処理開始');
       
       // ファイル名を生成（タイムスタンプを含める）
       const timestamp = Date.now();
@@ -228,18 +223,11 @@ const CreatePost = () => {
       // データURLをFileオブジェクトに変換
       const file = dataURLtoFile(thumbnailDataUrl, filename);
       
-      console.log('サムネイルファイル作成完了:', {
-        name: file.name,
-        size: file.size,
-        type: file.type
-      });
       
       // 状態を直接更新
       setThumbnailFile(file);
-      console.log('thumbnailFileを更新しました');
       
     } catch (error) {
-      console.error('サムネイル処理エラー:', error);
       setThumbnailFile(null);
     }
   };
@@ -249,14 +237,12 @@ const CreatePost = () => {
     try {
       // データURLの形式を確認
       if (!dataurl.startsWith('data:')) {
-        console.error('無効なデータURL形式');
         throw new Error('無効なデータURL形式');
       }
       
       // データURLをヘッダーとデータ部分に分割
       const parts = dataurl.split(';base64,');
       if (parts.length !== 2) {
-        console.error('無効なBase64データURL形式');
         throw new Error('無効なBase64データURL形式');
       }
       
@@ -271,17 +257,11 @@ const CreatePost = () => {
       
       // MIMEタイプが画像でない場合は強制的に画像形式に変更
       if (!mimeType.startsWith('image/')) {
-        console.warn(`非画像MIMEタイプ "${mimeType}" を検出、"image/png" に変更します`);
         mimeType = 'image/png';
       } else if (!supportedImageTypes.includes(mimeType)) {
-        console.warn(`未サポートの画像形式 "${mimeType}" を検出、サポートされている形式に変更します`);
         mimeType = 'image/png'; // サポートされていない画像形式の場合もpngをデフォルトに
       }
       
-      console.log('画像データURL処理:', {
-        mimeType: mimeType,
-        filenameSuggested: filename
-      });
       
       try {
         // Base64デコード
@@ -308,19 +288,13 @@ const CreatePost = () => {
         const blob = new Blob([uint8Array], { type: mimeType });
         const file = new File([blob], finalFilename, { type: mimeType });
         
-        console.log('データURLからファイル変換成功:', {
-          name: file.name,
-          type: file.type,
-          size: file.size
-        });
+  
         
         return file;
       } catch (e) {
-        console.error('Base64デコードエラー:', e);
         throw new Error('Base64デコードに失敗しました');
       }
     } catch (error) {
-      console.error('dataURLtoFile 変換エラー:', error);
       // エラー時はダミーの空画像を返す
       const emptyBlob = new Blob([], { type: 'image/png' });
       return new File([emptyBlob], filename, { type: 'image/png' });
@@ -331,12 +305,10 @@ const CreatePost = () => {
   // ストレージにサムネイル画像をアップロード
 const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
   if (!file) {
-    console.error('サムネイルアップロード: ファイルがnullです');
     return null;
   }
   
   try {
-    console.log('サムネイルアップロード処理開始:', file.name);
     
     // 最新の認証セッションを取得
     const { data: { session: currentSession } } = await supabase.auth.getSession();
@@ -346,12 +318,7 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
     if (currentSession?.access_token) {
       authToken = currentSession.access_token;
       const tokenLength = authToken.length;
-      console.log('認証トークン情報:', {
-        長さ: tokenLength,
-        先頭: authToken.substring(0, 10) + '...',
-        末尾: '...' + authToken.substring(tokenLength - 10),
-        ドット数: authToken.split('.').length - 1
-      });
+     
     } else {
       console.warn('認証トークンがありません - 匿名アップロードを試みます');
     }
@@ -367,9 +334,7 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
     }
     
     // API経由でアップロード
-    console.log('サーバーサイドAPIを使用してアップロード開始', {
-      認証ヘッダー: authToken ? '設定済み' : 'なし'
-    });
+  
     
     const response = await fetch('/api/thumbnail/upload', {
       method: 'POST',
@@ -390,7 +355,6 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
       throw new Error('公開URLの取得に失敗しました');
     }
     
-    console.log('サムネイルアップロード成功:', result.publicUrl);
     
     // URLが実際に有効かチェック
     try {
@@ -405,15 +369,11 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
         setTimeout(() => reject(new Error('画像URLの検証がタイムアウトしました')), 5000);
       });
       
-      console.log('画像URL検証成功');
     } catch (imageError) {
-      console.warn('画像URL検証に失敗しましたが、処理を続行します:', imageError);
-      // 検証に失敗しても続行する
     }
     
     return result.publicUrl;
   } catch (error) {
-    console.error('サムネイルアップロードエラー:', error);
     toast({
       title: "サムネイルエラー",
       description: "画像のアップロードに失敗しました。",
@@ -425,7 +385,6 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
 
   // プロンプトの追加
   const handlePromptSubmit = (data: PromptFormValues) => {
-    console.log("Prompt submitted:", data);
     
     // 常に一意のIDを生成（既存のIDとの重複を避ける）
     const uniqueId = data.promptNumber;
@@ -434,7 +393,6 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
     if (prompts.some(p => p.id === uniqueId)) {
       // 既存IDがある場合は最大ID+1を使用
       const nextId = Math.max(...prompts.map(p => p.id), 0) + 1;
-      console.log(`ID ${uniqueId} は既に存在します。代わりに ${nextId} を使用します。`);
       
       // 新しいプロンプトを追加
       const newPrompt: Prompt = {
@@ -638,14 +596,9 @@ const submitProject = async () => {
           return;
         }
 
-        console.log('Stripeアカウント確認完了:', profile.stripe_account_id);
       } catch (accountCheckError) {
-        console.warn('Stripeアカウント状態確認エラー:', accountCheckError);
-        // アカウント状態確認に失敗しても、アカウントIDがあれば投稿を続行
-        console.log('アカウント状態確認に失敗しましたが、投稿を続行します');
       }
     } catch (stripeCheckError) {
-      console.error('Stripeアカウントチェックエラー:', stripeCheckError);
       toast({
         title: "エラー",
         description: "Stripeアカウントの確認中にエラーが発生しました。",
@@ -657,15 +610,10 @@ const submitProject = async () => {
 
   // 既に処理中なら何もしない（二重実行防止）
   if (isSubmitting) {
-    console.log('既に投稿処理中です。処理をスキップします。');
     return;
   }
 
-  console.log('投稿処理を開始します:', {
-    thumbnail: projectSettings.thumbnail ? `存在します(${projectSettings.thumbnail.length}文字)` : 'なし',
-    thumbnailFile: thumbnailFile ? `存在します(${thumbnailFile.name})` : 'なし',
-    prompts: prompts.length 
-  });
+  
   
   if (prompts.length === 0) {
     toast({
@@ -695,42 +643,32 @@ const submitProject = async () => {
       
       // thumbnailFileがなければ、dataURLから一度だけ生成
       if (!imageFile && projectSettings.thumbnail && projectSettings.thumbnail.startsWith('data:')) {
-        console.log('thumbnailFileがないため、dataURLから直接生成します');
         const timestamp = Date.now();
         const filename = `thumbnail-${timestamp}`;
         // undefined対策（文字列であることを保証）
         const dataUrl = projectSettings.thumbnail || '';
         imageFile = dataURLtoFile(dataUrl, filename);
         
-        console.log('thumbnailFile生成完了:', {
-          name: imageFile.name,
-          type: imageFile.type,
-          size: imageFile.size
-        });
+       
       }
       
       // 画像ファイルがあればアップロード
       if (imageFile) {
-        console.log('画像ファイルをアップロードします:', imageFile.name);
         thumbnailUrl = await uploadThumbnailToStorage(imageFile);
         
         // アップロード結果を確認
         if (thumbnailUrl) {
-          console.log('画像アップロード成功:', thumbnailUrl);
           
           // サムネイルURLの有効性を再確認
           try {
             const urlCheckResponse = await fetch(thumbnailUrl, { method: 'HEAD' });
             if (!urlCheckResponse.ok) {
-              console.warn('最終的なサムネイルURL確認エラー:', 
-                urlCheckResponse.status, urlCheckResponse.statusText);
+             
               
               // Content-Typeを確認
               const contentTypeHeader = urlCheckResponse.headers.get('content-type');
-              console.log('応答のContent-Type:', contentTypeHeader);
               
               if (contentTypeHeader?.includes('application/json')) {
-                console.error('画像が正しく保存されていません。JSONが返されています。');
                 
                 // ユーザーに確認
                 const retryUpload = window.confirm(
@@ -740,7 +678,6 @@ const submitProject = async () => {
                 if (retryUpload) {
                   // 再試行（新しいAPIエンドポイントを使って再アップロード）
                   if (imageFile) {
-                    console.log('再アップロード試行中...');
                     
                     // FormDataを使用して再アップロード
                     const formData = new FormData();
@@ -750,10 +687,6 @@ const submitProject = async () => {
                     const { data: { session: retrySession } } = await supabase.auth.getSession();
                     const retryAuthToken = retrySession?.access_token;
 
-                    // 再試行時に送信する認証トークンをログに出力
-                    console.log('再試行時に送信する認証トークン:', retryAuthToken ? retryAuthToken.substring(0, 10) + '...' : 'トークンなし');
-
-                    // API経由でアップロード
                     const retryResponse = await fetch('/api/thumbnail/upload', {
                       method: 'POST',
                       headers: {
@@ -764,7 +697,6 @@ const submitProject = async () => {
                     });
                     
                     if (!retryResponse.ok) {
-                      console.error('再アップロードAPI応答エラー:', await retryResponse.text());
                       const skipThumbnail = window.confirm(
                         '再アップロードも失敗しました。サムネイルなしで投稿を続けますか？'
                       );
@@ -778,9 +710,7 @@ const submitProject = async () => {
                       const retryResult = await retryResponse.json();
                       if (retryResult.publicUrl) {
                         thumbnailUrl = retryResult.publicUrl;
-                        console.log('再アップロード成功:', thumbnailUrl);
                       } else {
-                        console.error('再アップロード応答に公開URLがありません');
                         thumbnailUrl = null;
                       }
                     }
@@ -792,11 +722,9 @@ const submitProject = async () => {
               }
             }
           } catch (urlCheckError) {
-            console.warn('サムネイルURL接続エラー:', urlCheckError);
             // エラーがあっても処理を続行
           }
         } else {
-          console.error('画像アップロード失敗');
           const continueWithoutThumbnail = window.confirm(
             'サムネイル画像のアップロードに失敗しました。サムネイルなしで投稿を続けますか？'
           );
@@ -807,10 +735,8 @@ const submitProject = async () => {
           }
         }
       } else {
-        console.log('有効な画像ファイルがないため、アップロードをスキップします');
       }
     } else {
-      console.log('サムネイル画像がないため、アップロードをスキップします');
     }
 
     // 投稿直前に認証状態を再取得
@@ -886,13 +812,7 @@ const submitProject = async () => {
       return;
     }
 
-    console.log('[DEBUG] API送信データ:', {
-      ...requestBody,
-      prompt_title_length: requestBody.prompt_title.length,
-      prompt_content_length: requestBody.prompt_content.length,
-      prompt_content_preview: requestBody.prompt_content.substring(0, 50) + '...',
-      category_id: requestBody.category_id || 'カテゴリー未選択'
-    });
+    
     
     const mainPromptResponse = await fetch('/api/prompts/create', {
       method: 'POST',
@@ -900,30 +820,24 @@ const submitProject = async () => {
       body: JSON.stringify(requestBody),
     });
     
-    console.log('レスポンスステータス:', mainPromptResponse.status);
     
     const responseText = await mainPromptResponse.text();
-    console.log('レスポンステキスト:', responseText);
     
     let responseData;
     try {
       responseData = JSON.parse(responseText);
     } catch (parseError) {
-      console.error('JSONパースエラー:', parseError);
       throw new Error(`サーバーからの応答の解析に失敗しました: ${responseText}`);
     }
     
     if (!mainPromptResponse.ok || !responseData.success) {
       const errorMessage = responseData.message || responseData.error || 'プロンプト保存中にエラーが発生しました';
-      console.error('APIエラー:', responseData);
       throw new Error(errorMessage);
     }
     
     const promptId = responseData.data?.id || responseData.promptId;
-    console.log('保存されたプロンプトID:', promptId);
     
     if (!promptId) {
-      console.warn('警告: プロンプトIDが返されませんでした');
     }
     
     // 複数のプロンプトを関連付けて保存（実装方法はバックエンドに依存）
@@ -940,9 +854,7 @@ const submitProject = async () => {
           description: "Stripe商品情報を生成中...",
           variant: "default",
         });
-        
-        console.log('Stripe連携処理開始:', promptId);
-        
+                
         // 最新の認証セッションを取得
         const { data: sessionData } = await supabase.auth.getSession();
         
@@ -950,12 +862,9 @@ const submitProject = async () => {
         let accessToken = null;
         if (sessionData?.session?.access_token) {
           accessToken = sessionData.session.access_token;
-          console.log('最新の認証トークンを取得しました:', accessToken.substring(0, 10) + '...');
         } else if (session?.access_token) {
           accessToken = session.access_token;
-          console.log('既存セッションから認証トークンを使用します:', accessToken.substring(0, 10) + '...');
         } else {
-          console.error('認証トークンがありません - Stripe連携ができません');
           throw new Error('認証情報が見つかりません。再ログインしてください。');
         }
 
@@ -970,27 +879,11 @@ const submitProject = async () => {
         });
         
         const responseText = await stripeResponse.text();
-        console.log(`Stripe連携レスポンス: ${stripeResponse.status}`, responseText);
         
-        // 詳細なレスポンス診断ログ
-        console.log('Stripe連携詳細診断:', {
-          status: stripeResponse.status,
-          statusText: stripeResponse.statusText,
-          headers: {
-            contentType: stripeResponse.headers.get('content-type'),
-            contentLength: stripeResponse.headers.get('content-length')
-          },
-          url: '/api/proxy/stripe-sync',
-          promptId: promptId
-        });
-        
+       
         if (!stripeResponse.ok) {
           // エラーの詳細を表示
-          console.error('Stripe連携エラー:', {
-            status: stripeResponse.status,
-            statusText: stripeResponse.statusText,
-            response: responseText
-          });
+         
           
           let errorMessage = "Stripe商品情報の生成に問題が発生しました";
           let errorDetails = "";
@@ -1015,9 +908,7 @@ const submitProject = async () => {
               errorDetails = responseText;
             }
           }
-          
-          console.error('Stripe連携エラー詳細:', errorMessage, errorDetails);
-          
+                    
           // 警告を表示するが、メイン処理は続行
           toast({
             title: "注意",
@@ -1026,18 +917,8 @@ const submitProject = async () => {
           });
           
           // 開発者向け詳細情報をコンソールに出力
-          console.log('開発者向けStripe連携エラー詳細:', {
-            message: errorMessage,
-            details: errorDetails,
-            timestamp: new Date().toISOString(),
-            env: {
-              nodeEnv: process.env.NODE_ENV,
-              hasFuncUrl: !!process.env.SUPABASE_FUNC_URL,
-              funcUrlLength: process.env.SUPABASE_FUNC_URL?.length || 0
-            }
-          });
+         
         } else {
-          console.log('Stripe連携成功:', responseText);
           toast({
             title: "成功",
             description: "Stripe商品情報が正常に生成されました",
@@ -1045,7 +926,6 @@ const submitProject = async () => {
           });
         }
       } catch (stripeError) {
-        console.error('Stripe連携例外:', stripeError);
         // エラー詳細を取得
         const errorMessage = stripeError instanceof Error ? stripeError.message : '不明なエラー';
         const errorStack = stripeError instanceof Error ? stripeError.stack : undefined;
@@ -1056,13 +936,7 @@ const submitProject = async () => {
           description: `Stripe連携処理でエラーが発生しました: ${errorMessage}（記事は投稿されました）`,
           variant: "destructive",
         });
-        
-        // 開発者向け詳細情報
-        console.error('Stripe連携例外詳細:', {
-          message: errorMessage,
-          stack: errorStack,
-          timestamp: new Date().toISOString()
-        });
+      
       }
     }
     
@@ -1073,10 +947,9 @@ const submitProject = async () => {
     });
     
     // 投稿成功後のリダイレクト
-    // router.push("/"); 
+    router.push("/");
     
   } catch (error) {
-    console.error("プロジェクト投稿エラー:", error);
     toast({
       title: "投稿エラー",
       description: error instanceof Error ? error.message : "サーバーエラーが発生しました",
@@ -1101,7 +974,6 @@ const submitProject = async () => {
 
   // 投稿モード選択ハンドラー
   const handleSelectPostMode = (mode: 'standard' | 'step') => {
-    console.log(`選択されたモード: ${mode}`);
     setPostMode(mode);
   };
 

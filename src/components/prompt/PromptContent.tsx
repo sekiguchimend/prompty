@@ -5,6 +5,7 @@ import { Check, Lock, FileText, Info, Eye, ExternalLink, Download } from 'lucide
 import { Badge } from '../../components/ui/badge';
 import PurchaseDialog from './PurchaseDialog';
 import Image from 'next/image';
+import Link from 'next/link';
 import { trackView } from '../../lib/analytics';
 import { supabase } from '../../lib/supabaseClient';
 import { isContentFree, shouldShowFullContent, normalizeContentText, isContentPremium } from '../../utils/content-helpers';
@@ -467,13 +468,17 @@ const PromptContent: React.FC<PromptContentProps> = ({
 
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <UnifiedAvatar
-                src={author.avatarUrl}
-                displayName={author.name}
-                size="md"
-              />
+              <Link href={`/users/${author.userId}`}>
+                <UnifiedAvatar
+                  src={author.avatarUrl}
+                  displayName={author.name}
+                  size="md"
+                />
+              </Link>
               <div>
-                <p className="text-sm font-medium text-gray-700">{author.name}</p>
+                <Link href={`/users/${author.userId}`}>
+                  <p className="text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">{author.name}</p>
+                </Link>
                 <p className="text-xs text-gray-500">
                   {author.publishedAt || 'プロンプトエンジニア'}
                 </p>
@@ -573,7 +578,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
                 <div className="flex-1">
                   <h4 className="text-sm font-medium text-gray-900 mb-1">YAML形式でダウンロード</h4>
                   <p className="text-xs text-gray-600 leading-relaxed">
-                    プロンプト内容をYAML形式で保存。AIに投げるだけで同じプロンプトを再現できます。
+                    プロンプト内容をYAML形式で保存。AIに投げるだけで同じようなサイト、アプリを再現できます。
                   </p>
                 </div>
               </div>
