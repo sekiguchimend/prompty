@@ -11,6 +11,27 @@ import "../styles/NotePage.css"
 import '../index.css';
 
 function MyApp({ Component, pageProps }: AppProps) {
+  const router = useRouter();
+
+  // プリロード警告を抑制するための設定
+  useEffect(() => {
+    // プリロードされたリソースの使用を促進
+    const handleRouteChangeComplete = () => {
+      // ページ遷移完了時にプリロードされた画像を強制的に使用
+      const preloadedImages = document.querySelectorAll('link[rel="preload"][as="image"]');
+      preloadedImages.forEach((link) => {
+        const img = new Image();
+        img.src = (link as HTMLLinkElement).href;
+      });
+    };
+
+    router.events.on('routeChangeComplete', handleRouteChangeComplete);
+    
+    return () => {
+      router.events.off('routeChangeComplete', handleRouteChangeComplete);
+    };
+  }, [router.events]);
+
   return (
     <>
       <Head>

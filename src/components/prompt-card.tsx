@@ -163,11 +163,6 @@ const PromptCard: React.FC<PromptCardProps> = ({
     setReportDialogOpen(true);
   };
   
-  // カードクリック時の処理（詳細ページへ遷移）
-  const handleCardClick = () => {
-    router.push(`/prompts/${promptId}`);
-  };
-  
   // クリックハンドラーをカード外に配置
   React.useEffect(() => {
     // ドロップダウンが開いている時のみクリックイベントを設定
@@ -180,27 +175,30 @@ const PromptCard: React.FC<PromptCardProps> = ({
   
   return (
     <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm min-h-[340px]">
-      <Link href={`/prompts/${promptId}`} className="block" onClick={handleCardClick}>
+      <Link href={`/prompts/${promptId}`} className="block" prefetch={false}>
         <div className="relative pb-[56.25%]">
           <Image 
             width={100}
             height={100}
             src={thumbnailUrl || '/placeholder.jpg'}
             alt={title} 
-            priority={true} // この行を追加
+            priority={false}
+            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
             className="absolute inset-0 h-full w-full object-cover"
           />
         </div>
       </Link>
       <div className="flex flex-col p-3">
         <div className="flex justify-between items-start mb-2">
-        <Link href={`/prompts/${promptId}`} className={`line-clamp-2 font-extrabold hover:text-prompty-primary flex-1 mr-2 ${notoSansJP.className}`}
-        style={{ 
-          fontWeight: 900, 
-          textShadow: '0.03em 0 0 currentColor', // テキストに微妙なシャドウを追加して太く見せる
-        }}
-      >
-  {title}
+        <Link href={`/prompts/${promptId}`} prefetch={false} passHref legacyBehavior>
+          <a className={`line-clamp-2 font-extrabold hover:text-prompty-primary flex-1 mr-2 ${notoSansJP.className}`}
+          style={{ 
+            fontWeight: 900, 
+            textShadow: '0.03em 0 0 currentColor', // テキストに微妙なシャドウを追加して太く見せる
+          }}
+        >
+    {title}
+  </a>
 </Link>
           
           {/* シンプルな三点メニュー実装 */}

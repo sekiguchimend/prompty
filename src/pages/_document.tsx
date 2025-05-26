@@ -14,10 +14,8 @@ export default function Document() {
           crossOrigin="anonymous"
         />
         <link
-          rel="preload"
           href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap"
-          as="style"
-          onLoad={() => {}}
+          rel="stylesheet"
         />
         <noscript>
           <link

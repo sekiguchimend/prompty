@@ -136,16 +136,23 @@ const getSafeImageUrl = (url: string): string => {
   const defaultImage = '/images/default-thumbnail.svg';
   
   // URLがない場合はデフォルト画像を返す
-  if (!url) return defaultImage;
+  if (!url || url.trim() === '') return defaultImage;
+  
+  // プロトコル相対URL（//で始まる）の場合はhttpsを追加
+  if (url.startsWith('//')) {
+    return `https:${url}`;
+  }
   
   // ローカルの画像の場合はそのまま返す
   if (url.startsWith('/')) return url;
   
-  // Supabaseの画像の場合は、そのまま返す（エラー回避のロジックを削除）
-  // 以前はSupabaseの画像を常にデフォルトに置き換えていたが、正しく表示できるようにする
+  // 完全なURLの場合はそのまま返す
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
   
-  // その他の画像URLはそのまま返す
-  return url;
+  // その他の場合はデフォルト画像を返す
+  return defaultImage;
 };
 
 // PromptCardコンポーネントをReact.memoで最適化
@@ -407,7 +414,7 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
         {/* カード左側：テキスト情報 */}
         <div className="flex-1 pr-3">
           <h3 className="text-base font-medium line-clamp-2 mb-1">
-            <Link href={`/prompts/${id}`} passHref legacyBehavior>
+            <Link href={`/prompts/${id}`} passHref legacyBehavior prefetch={false}>
               <a className="cursor-pointer hover:text-blue-600">{title}</a>
             </Link>
           </h3>
@@ -444,9 +451,9 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
                 alt={title}
                 fill
                 className="object-cover"
-                loading={isEarlyImage ? "eager" : "lazy"}
-                priority={isEarlyImage}
-                quality={isEarlyImage ? 90 : 75}
+                loading="lazy"
+                priority={false}
+                quality={75}
                 sizes="80px"
                 placeholder="blur"
                 blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGBkbHR4f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R7hLHk="
@@ -471,9 +478,9 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
                 alt={title}
                 fill
                 className="object-cover"
-                loading={isEarlyImage ? "eager" : "lazy"}
-                priority={isEarlyImage}
-                quality={isEarlyImage ? 90 : 75}
+                loading="lazy"
+                priority={false}
+                quality={75}
                 sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
                 placeholder="blur"
                 blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGBkbHR4f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R7hLHk="
@@ -485,7 +492,7 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
 
         <div className="flex flex-col p-2 flex-1">
           <div className="flex justify-between items-start mb-2">
-            <Link href={`/prompts/${id}`} passHref legacyBehavior>
+            <Link href={`/prompts/${id}`} passHref legacyBehavior prefetch={false}>
               <a className="flex-1 mr-2">
                 <div 
                   className={`line-clamp-2 text-gray-700 hover:text-prompty-primary h-12 overflow-hidden cursor-pointer ${notoSansJP.className}`} 

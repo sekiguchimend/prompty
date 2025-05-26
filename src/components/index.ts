@@ -56,8 +56,6 @@ export { default as FeedbackDropdown } from './feedback-dropdown';
 export { default as ViewCounter } from './view-counter';
 export { default as SectionHeader } from './section-header';
 export { default as PopularArticles } from './popular-articles';
-export { default as ArticleDropdownMenu } from './article-dropdown-menu';
-export { default as ArticleActionsMenu } from './article-actions-menu';
 export { default as HeaderAnnouncements } from './header-announcements';
 export { default as Announcements } from './announcements';
 

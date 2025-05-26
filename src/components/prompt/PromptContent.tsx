@@ -16,6 +16,31 @@ import { useAuth } from '../../lib/auth-context';
 // 重いコンポーネントを遅延読み込み（Code Splitting）
 const ViewCounter = lazy(() => import('../view-counter'));
 
+// 安全な画像URLを取得する関数
+const getSafeImageUrl = (url?: string): string => {
+  // デフォルト画像のURL
+  const defaultImage = '/images/default-thumbnail.svg';
+  
+  // URLがない場合はデフォルト画像を返す
+  if (!url || url.trim() === '') return defaultImage;
+  
+  // プロトコル相対URL（//で始まる）の場合はhttpsを追加
+  if (url.startsWith('//')) {
+    return `https:${url}`;
+  }
+  
+  // ローカルの画像の場合はそのまま返す
+  if (url.startsWith('/')) return url;
+  
+  // 完全なURLの場合はそのまま返す
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  
+  // その他の場合はデフォルト画像を返す
+  return defaultImage;
+};
+
 // Windowオブジェクトにカスタムプロパティのタイプを追加
 declare global {
   interface Window {
@@ -499,13 +524,13 @@ const PromptContent: React.FC<PromptContentProps> = ({
               />
             ) : (
               <Image 
-                src={`/${imageUrl}`}
+                src={getSafeImageUrl(imageUrl)}
                 alt={title}
                 fill
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 800px"
                 priority={false}
                 placeholder="blur"
-                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
                 className="object-cover"
                 onLoad={() => {
                   // 画像読み込み完了時の処理

@@ -31,6 +31,9 @@ const nextConfig = {
       },
     ],
     unoptimized: false,
+    minimumCacheTTL: 60,
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   assetPrefix: '',
   basePath: '',
@@ -45,6 +48,8 @@ const nextConfig = {
       '@radix-ui/react-dropdown-menu',
       '@radix-ui/react-dialog',
     ],
+    scrollRestoration: true,
+    largePageDataBytes: 128 * 1000, // 128KB
   },
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? {

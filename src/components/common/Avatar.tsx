@@ -54,6 +54,18 @@ export const Avatar: React.FC<AvatarProps> = ({
     setImageError(true);
   };
 
+  // サイズに応じたsizesプロパティを生成
+  const getSizes = (size: string) => {
+    switch (size) {
+      case 'xs': return '24px';
+      case 'sm': return '32px';
+      case 'md': return '40px';
+      case 'lg': return '48px';
+      case 'xl': return '64px';
+      default: return '40px';
+    }
+  };
+
   return (
     <div
       className={cn(
@@ -70,6 +82,7 @@ export const Avatar: React.FC<AvatarProps> = ({
           alt={alt}
           fill
           className="object-cover"
+          sizes={getSizes(size)}
           onError={handleImageError}
         />
       ) : (
