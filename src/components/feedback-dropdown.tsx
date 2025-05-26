@@ -71,7 +71,6 @@ const FeedbackDropdown: React.FC<FeedbackDropdownProps> = ({
       if (onDelete) {
         onDelete(feedbackId);
       } else {
-        // fallback delete implementation
         supabase
           .from('feedback')
           .delete()
