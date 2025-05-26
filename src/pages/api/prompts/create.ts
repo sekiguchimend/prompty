@@ -18,6 +18,7 @@ interface CreatePromptRequest {
   is_featured?: boolean;
   published?: boolean;
   site_url?: string;
+  preview_lines?: number | null;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -151,7 +152,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       is_ai_generated: promptData.is_ai_generated !== undefined ? promptData.is_ai_generated : false,
       is_featured: promptData.is_featured !== undefined ? promptData.is_featured : false,
       published: promptData.published !== undefined ? promptData.published : true,
-      site_url: promptData.site_url || null
+      site_url: promptData.site_url || null,
+      preview_lines: promptData.preview_lines || null
     };
     
     // カテゴリーIDのデバッグログ

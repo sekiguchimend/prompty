@@ -50,6 +50,7 @@ interface ExtendedPostItem extends PostItem {
   is_free?: boolean;
   stripe_product_id?: string;
   stripe_price_id?: string;
+  preview_lines?: number;
 }
 
 // サーバーサイドレンダリングの最適化
@@ -88,7 +89,8 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
       description,
       is_free,
       stripe_product_id,
-      stripe_price_id
+      stripe_price_id,
+      preview_lines
     `)
     .eq('id', formattedId)
     .single();
@@ -225,7 +227,8 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
         publishedAt: new Date(promptData.created_at).toLocaleDateString('ja-JP'),
         website: promptData.site_url || 'https://example.com'
     },
-      site_url: promptData.site_url || ''
+      site_url: promptData.site_url || '',
+      preview_lines: promptData.preview_lines || 0
     };
   
   return {
@@ -552,6 +555,7 @@ prompt: |
                 reviewCount={postData.likeCount || 0}
                 canDownloadYaml={!!(isFree || isPaid || isAuthor)}
                 onDownloadYaml={() => handleDownloadYaml(postData)}
+                previewLines={postData.preview_lines || 3}
               />
             </div>
             

@@ -140,7 +140,7 @@ const Register = () => {
   return (
     <div className="flex min-h-screen bg-prompty-background">
       {/* Left side - Welcome message */}
-      <div className="hidden md:flex md:w-1/2 flex-col justify-center p-12">
+      <div className="hidden md:flex md:w-1/2 flex-col justify-center p-14 pt-0">
         <h1 className="text-4xl font-bold mb-6">promptyにようこそ！</h1>
         
         <p className="text-lg mb-6">
@@ -158,7 +158,7 @@ const Register = () => {
 
       {/* Right side - Registration form */}
       <div className="w-full md:w-1/2 flex flex-col items-center justify-start p-0 pt-0 md:justify-center md:p-8">
-        <Link href="/" className="mb-2 mt-20 md:mb-8">
+        <Link href="/" className="mb-2 mt-10 md:mb-8">
           <div className="flex items-center mb-10">
             <Image 
               src="https://qrxrulntwojimhhhnwqk.supabase.co/storage/v1/object/public/prompt-thumbnails/prompty_logo(1).png" 
@@ -227,7 +227,7 @@ const Register = () => {
             
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
-                アカウントをお持ちの方は<Link href="/Login" className="text-prompty-primary hover:underline">こちら</Link>
+                アカウントをお持ちの方は<Link href="/login" className="text-prompty-primary hover:underline">こちら</Link>
               </p>
             </div>
           </CardContent>

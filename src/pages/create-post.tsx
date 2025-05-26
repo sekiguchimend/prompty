@@ -116,6 +116,7 @@ const CreatePost = () => {
     thumbnail: "",
     projectUrl: "",
     categoryId: null, // カテゴリIDを追加
+    previewLines: 3, // プレビュー行数を追加
   });
   const [isPublishing, setIsPublishing] = useState(false);
   const [authorId, setAuthorId] = useState<string | null>(null);
@@ -788,7 +789,8 @@ const submitProject = async () => {
         ? prompts[0].prompt_content // 単一プロンプトの場合
         : prompts.map((prompt, index) => 
             `プロンプト${index + 1}:\n${prompt.prompt_content}`
-          ).join('\n\n---\n\n') // 複数プロンプトの場合は番号付きで結合
+          ).join('\n\n---\n\n'), // 複数プロンプトの場合は番号付きで結合
+      preview_lines: projectSettings.pricingType === "paid" ? projectSettings.previewLines : null,
     };
 
     // データベース制約のチェック
@@ -1108,6 +1110,18 @@ const submitProject = async () => {
                               initialPromptNumber={promptNumber}
                               aiModel={projectSettings.aiModel}
                               modelLabel={getModelLabel(projectSettings.aiModel)}
+                              onInsertPreviewMarker={projectSettings.pricingType === 'paid' ? () => {
+                                // マーカー挿入時のフィードバック
+                                toast({
+                                  title: "プレビュー終了位置を表示",
+                                  description: "赤い線をドラッグして位置を調整できます",
+                                  variant: "default",
+                                });
+                              } : undefined}
+                              onPreviewLinesChange={(lines) => {
+                                setProjectSettings(prev => ({ ...prev, previewLines: lines }));
+                              }}
+                              initialPreviewLines={projectSettings.previewLines}
                             />
                           </div>
                           

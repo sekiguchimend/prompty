@@ -17,7 +17,7 @@ import { Button } from "../../components/ui/button";
 
 // フォームのスキーマ定義
 const projectSchema = z.object({
-  projectTitle: z.string().min(1, "プロジェクトタイトルを入力してください"),
+  projectTitle: z.string().min(5, "プロジェクトタイトルは5文字以上である必要があります"),
   aiModel: z.string().min(1, "AIモデルを選択してください"),
   customAiModel: z.string().optional(),
   pricingType: z.enum(["free", "paid"]),
@@ -26,6 +26,7 @@ const projectSchema = z.object({
   projectUrl: z.string().url("有効なURLを入力してください").optional().or(z.literal("")),
   thumbnail: z.string().optional(),
   categoryId: z.string().nullable().optional(),
+  previewLines: z.number().min(1).optional(),
 });
 
 // フォームの値の型
@@ -41,6 +42,7 @@ interface ProjectSettingsFormProps {
   categories?: { id: string; name: string; slug: string; description: string | null; icon: string | null; parent_id: string | null; }[];
   isLoadingCategories?: boolean;
   onRefreshCategories?: () => void;
+  onInsertPreviewMarker?: () => void;
 }
 
 const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({ 
@@ -55,10 +57,12 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
     projectUrl: "",
     thumbnail: "",
     categoryId: null,
+    previewLines: 1,
   },
   categories = [],
   isLoadingCategories = false,
-  onRefreshCategories
+  onRefreshCategories,
+  onInsertPreviewMarker
 }) => {
   const { toast } = useToast();
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(defaultValues.thumbnail || null);
@@ -383,6 +387,12 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
                     control={projectForm.control}
                     pricingType={projectForm.watch("pricingType")}
                     onPricingTypeChange={handlePricingTypeChange}
+                    onInsertPreviewMarker={onInsertPreviewMarker}
+                    previewLines={projectForm.watch("previewLines")}
+                    onPreviewLinesChange={(lines) => {
+                      projectForm.setValue("previewLines", lines);
+                      autoSaveChanges(projectForm.getValues());
+                    }}
                   />
                 </div>
               </CollapsibleContent>

@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { ChevronDown, ChevronUp, Hash, AlertCircle, Info, Save, Plus } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
+import { PreviewMarkerOverlay } from "./PreviewMarkerOverlay";
 
 // シンプル化したプロンプトフォームスキーマ
 const promptFormSchema = z.object({
@@ -22,15 +23,25 @@ interface PromptFormProps {
   initialPromptNumber: number;
   aiModel: string;
   modelLabel: string;
+  onInsertPreviewMarker?: () => void;
+  onPreviewLinesChange?: (lines: number) => void;
+  initialPreviewLines?: number;
 }
 
 const SimplifiedPromptForm: React.FC<PromptFormProps> = ({ 
   onSubmit, 
   initialPromptNumber, 
-  modelLabel
+  modelLabel,
+  onInsertPreviewMarker,
+  onPreviewLinesChange,
+  initialPreviewLines
 }) => {
   const [promptNumber, setPromptNumber] = useState(initialPromptNumber);
   const [showNumberTooltip, setShowNumberTooltip] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [displayContent, setDisplayContent] = useState(''); // 表示用コンテンツ
+  const [previewLines, setPreviewLines] = useState<number>(initialPreviewLines || 3);
+  const [showPreviewMarker, setShowPreviewMarker] = useState<boolean>(!!onInsertPreviewMarker);
   
   // アコーディオンの開閉状態
   const [openSections, setOpenSections] = useState({
@@ -60,6 +71,52 @@ const SimplifiedPromptForm: React.FC<PromptFormProps> = ({
     promptForm.setValue("promptNumber", promptNumber);
   }, [promptNumber]);
 
+  // マーカータグを非表示にする関数
+  const hideMarkerTags = (content: string) => {
+    return content.replace(/<!-- PREVIEW_END -->/g, '');
+  };
+
+  // 表示用コンテンツを更新する関数
+  const updateDisplayContent = (content: string) => {
+    setDisplayContent(hideMarkerTags(content));
+  };
+
+  // プレビュー行数変更のハンドラー
+  const handlePreviewLinesChange = (lines: number) => {
+    setPreviewLines(lines);
+    if (onPreviewLinesChange) {
+      onPreviewLinesChange(lines);
+    }
+  };
+
+  // コンテンツ変更のハンドラー（マーカータグ挿入時）
+  const handleContentChange = (newContent: string) => {
+    // フォームの値を更新
+    promptForm.setValue("fullPrompt", newContent);
+    // 表示用コンテンツも更新
+    updateDisplayContent(newContent);
+  };
+
+  // フォームの値が変更されたときの処理
+  useEffect(() => {
+    const subscription = promptForm.watch((value) => {
+      if (value.fullPrompt) {
+        updateDisplayContent(value.fullPrompt);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [promptForm.watch]);
+
+  // マーカー挿入機能
+  const handleInsertPreviewMarker = () => {
+    setShowPreviewMarker(!showPreviewMarker);
+    
+    // 親コンポーネントのコールバックを呼び出し
+    if (onInsertPreviewMarker) {
+      onInsertPreviewMarker();
+    }
+  };
+
   // 編集イベントをリッスン
   useEffect(() => {
     const handleEditPrompt = (event: CustomEvent) => {
@@ -72,6 +129,10 @@ const SimplifiedPromptForm: React.FC<PromptFormProps> = ({
           Object.keys(formData).forEach(key => {
             if (key in promptFormSchema.shape) {
               promptForm.setValue(key as keyof PromptFormValues, formData[key]);
+              // fullPromptの場合は表示コンテンツも更新
+              if (key === 'fullPrompt') {
+                updateDisplayContent(formData[key]);
+              }
             }
           });
         }
@@ -143,15 +204,65 @@ const SimplifiedPromptForm: React.FC<PromptFormProps> = ({
                           プロンプト内容 <span className="text-red-500">*</span>
                         </FormLabel>
                         <FormControl>
-                          <Textarea
-                            {...field}
-                            placeholder="例: あなたは経験豊富なマーケティング専門家です。以下の商品について、ターゲット顧客に響く魅力的なキャッチコピーを3つ提案してください..."
-                            className="min-h-[200px] border-gray-300 focus:border-blue-500 focus:ring-blue-500 resize-none"
-                          />
+                          <div className="relative">
+                            <Textarea
+                              value={displayContent}
+                              onChange={(e) => {
+                                const newValue = e.target.value;
+                                // 実際のフォーム値にはマーカーを保持
+                                const currentFormValue = promptForm.getValues("fullPrompt");
+                                const markers = (currentFormValue.match(/<!-- PREVIEW_END -->/g) || []);
+                                
+                                // 新しい値にマーカーを再挿入（簡単な実装）
+                                let updatedValue = newValue;
+                                if (markers.length > 0) {
+                                  // 最初のマーカーの位置を推定して再挿入
+                                  const markerPosition = Math.min(newValue.length, currentFormValue.indexOf('<!-- PREVIEW_END -->'));
+                                  if (markerPosition >= 0) {
+                                    updatedValue = newValue.substring(0, markerPosition) + '<!-- PREVIEW_END -->' + newValue.substring(markerPosition);
+                                  }
+                                }
+                                
+                                field.onChange(updatedValue);
+                                updateDisplayContent(updatedValue);
+                              }}
+                              ref={textareaRef}
+                              placeholder="例: あなたは経験豊富なマーケティング専門家です。以下の商品について、ターゲット顧客に響く魅力的なキャッチコピーを3つ提案してください..."
+                              className="min-h-[300px] border-gray-300 focus:border-blue-500 focus:ring-blue-500 resize-none relative z-10"
+                            />
+                            
+                            {/* プレビューマーカーの視覚的表示 - 有料記事の場合のみ */}
+                            {onInsertPreviewMarker && showPreviewMarker && (
+                              <PreviewMarkerOverlay 
+                                content={field.value} 
+                                textareaRef={textareaRef}
+                                onPreviewLinesChange={handlePreviewLinesChange}
+                                onContentChange={handleContentChange}
+                                initialPreviewLines={previewLines}
+                              />
+                            )}
+                            
+                            {/* マーカー挿入ボタン */}
+                            {onInsertPreviewMarker && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={handleInsertPreviewMarker}
+                                className="absolute top-2 right-2 flex items-center space-x-1 text-xs border-red-200 text-red-700 hover:bg-red-50 bg-white/90 backdrop-blur-sm z-30"
+                              >
+                                <div className="w-3 h-0.5 bg-red-500"></div>
+                                <span>{showPreviewMarker ? '赤線を隠す' : '赤線を表示'}</span>
+                              </Button>
+                            )}
+                          </div>
                         </FormControl>
                         <div className="text-sm text-gray-500 mt-2">
                           <p>• 具体的で分かりやすい指示を心がけてください</p>
                           <p>• 期待する出力形式も明記すると効果的です</p>
+                          {onInsertPreviewMarker && (
+                            <p>• 有料記事の場合は「プレビュー終了」ボタンで無料表示範囲を設定できます</p>
+                          )}
                         </div>
                       </FormItem>
                     )}

@@ -77,6 +77,7 @@ interface PromptContentProps {
   reviewCount?: number;
   canDownloadYaml?: boolean;
   onDownloadYaml?: () => void;
+  previewLines?: number;
 }
 
 // 複数プロンプト解析用の型定義
@@ -168,7 +169,8 @@ const PromptContent: React.FC<PromptContentProps> = ({
   description = '',
   reviewCount = 0,
   canDownloadYaml = false,
-  onDownloadYaml = () => {}
+  onDownloadYaml = () => {},
+  previewLines = 2
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -353,6 +355,43 @@ const PromptContent: React.FC<PromptContentProps> = ({
 
   // プレビュー表示処理をuseMemoで最適化
   const displayContent = useMemo(() => {
+    // 指定された行数でプレビューを表示するための処理（改行保持版）
+    const extractLimitedPreviewByLines = (text: string, lineLimit: number = 3): string => {
+      if (!text) return '';
+      
+      // プレビュー終了マーカーを探す（最初のもののみ使用）
+      const previewEndMarker = '<!-- PREVIEW_END -->';
+      const markerIndex = text.indexOf(previewEndMarker);
+      
+      if (markerIndex !== -1) {
+        // マーカーが見つかった場合、そこまでを表示（マーカー自体は除去）
+        const limitedText = text.substring(0, markerIndex);
+        
+        console.log('マーカーベースプレビュー:', {
+          markerFound: true,
+          markerPosition: markerIndex,
+          resultLength: limitedText.length,
+          resultPreview: limitedText.substring(0, 100) + '...'
+        });
+        
+        return formatContentWithLineBreaks(limitedText);
+      }
+      
+      // マーカーがない場合は行数ベースでカット
+      const lines = text.split('\n');
+      const limitedLines = lines.slice(0, lineLimit);
+      const limitedText = limitedLines.join('\n');
+      
+      console.log('行数ベースプレビュー:', {
+        markerFound: false,
+        totalLines: lines.length,
+        limitedToLines: lineLimit,
+        resultLength: limitedText.length
+      });
+      
+      return formatContentWithLineBreaks(limitedText);
+    };
+
     // 最初の100文字程度（約2文）を表示するための処理（改行保持版）
     const extractLimitedPreview = (text: string, charLimit: number = 100): string => {
     if (!text) return '';
@@ -385,7 +424,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
       basicDisplayContent = formatContentWithLineBreaks(contentCalculations.contentText);
   }
 
-    return { basicDisplayContent, extractLimitedPreview };
+    return { basicDisplayContent, extractLimitedPreview, extractLimitedPreviewByLines };
   }, [contentCalculations, formatContentWithLineBreaks]);
   
   // 購入済み状態の統合
@@ -672,12 +711,18 @@ const PromptContent: React.FC<PromptContentProps> = ({
                         <div 
                           className="text-lg leading-loose font-noto font-normal text-gray-600"
                           dangerouslySetInnerHTML={{ 
-                            __html: displayContent.extractLimitedPreview(premiumContent, 50) 
+                            __html: displayContent.extractLimitedPreviewByLines(premiumContent, previewLines) 
                           }} 
                         />
-                        {/* グラデーション効果を改善 */}
-                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/30 to-white pointer-events-none"></div>
-                        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white via-white/90 to-transparent pointer-events-none"></div>
+                        {/* 強化されたグラデーション効果 - 指定行数の位置で完全に隠す */}
+                        <div 
+                          className="absolute left-0 right-0 pointer-events-none"
+                          style={{
+                            bottom: 0,
+                            height: `${1.8 * 4}em`, // 4行分の高さに増加
+                            background: 'linear-gradient(to top, #ffffff 0%, #ffffff 25%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0.6) 75%, transparent 100%)'
+                          }}
+                        ></div>
                         </div>
 
                         <div className="flex flex-col items-center justify-center py-2 relative">

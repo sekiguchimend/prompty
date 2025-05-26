@@ -445,6 +445,10 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
               initialPromptNumber={promptNumber}
               aiModel={projectSettings.aiModel}
               modelLabel={getModelLabel(projectSettings.aiModel)}
+              onInsertPreviewMarker={projectSettings.pricingType === 'paid' ? () => {
+                // マーカー挿入時のフィードバック（ステップモード用）
+                console.log("プレビュー終了位置を挿入しました");
+              } : undefined}
             />
             </div>
           </div>

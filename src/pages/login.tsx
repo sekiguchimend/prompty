@@ -173,7 +173,7 @@ const Login = () => {
   return (
     <div className="flex min-h-screen bg-prompty-background">
       {/* Login form - centered */}
-      <div className="w-full flex flex-col items-center justify-start p-4 pt-20 md:justify-center md:p-8 md:pt-8">
+      <div className="w-full flex flex-col items-center justify-start p-4 pt-10 md:justify-center md:p-8 md:pt-8">
         <Link href="/" className="mb-6 md:mb-4">
           <div className="flex items-center">
             {/* <span className="text-3xl font-bold text-prompty-primary">p<span className="text-black">rompty</span></span>

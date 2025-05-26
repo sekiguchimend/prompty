@@ -3,19 +3,26 @@ import { FormControl, FormField, FormItem, FormLabel } from "../../components/ui
 import { Input } from "../../components/ui/input";
 import { RadioGroup, RadioGroupItem } from "../../components/ui/radio-group";
 import { Label } from "../../components/ui/label";
-import { AlertTriangle, ExternalLink } from "lucide-react";
+import { Button } from "../../components/ui/button";
+import { AlertTriangle, ExternalLink, Scissors } from "lucide-react";
 import Link from "next/link";
 
 interface PricingSelectorProps {
   control: any;
   pricingType: string;
   onPricingTypeChange: (value: string) => void;
+  onInsertPreviewMarker?: () => void;
+  previewLines?: number;
+  onPreviewLinesChange?: (lines: number) => void;
 }
 
 const PricingSelector: React.FC<PricingSelectorProps> = ({
   control,
   pricingType,
-  onPricingTypeChange
+  onPricingTypeChange,
+  onInsertPreviewMarker,
+  previewLines,
+  onPreviewLinesChange
 }) => {
   return (
     <>
@@ -74,25 +81,62 @@ const PricingSelector: React.FC<PricingSelectorProps> = ({
 
       {/* 価格設定（有料の場合のみ表示） */}
       {pricingType === "paid" && (
-        <FormField
-          control={control}
-          name="price"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-gray-700">価格（円）</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  min="1"
-                  placeholder="例: 300"
-                  className="border-gray-300"
-                  {...field}
-                  onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
+        <>
+          <FormField
+            control={control}
+            name="price"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-gray-700">価格（円）</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min="1"
+                    placeholder="例: 300"
+                    className="border-gray-300"
+                    {...field}
+                    onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          {/* プレビュー終了位置設定 */}
+          <div className="space-y-3">
+            <FormLabel className="text-gray-700 flex items-center">
+              <Scissors className="h-4 w-4 mr-2 text-red-600" />
+              プレビュー終了位置
+            </FormLabel>
+            <div className="text-sm text-gray-500">
+              プロンプト内容の赤い線をドラッグして、無料で表示する範囲を設定できます。
+              {previewLines && (
+                <span className="block mt-1 text-red-600 font-medium">
+                  現在の設定: {previewLines}行目まで無料表示
+                </span>
+              )}
+            </div>
+            
+            {/* マーカー挿入ボタン */}
+            {onInsertPreviewMarker && (
+              <div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onInsertPreviewMarker}
+                  className="flex items-center space-x-2 text-sm border-red-200 text-red-700 hover:bg-red-50"
+                >
+                  <Scissors className="h-4 w-4" />
+                  <span>プレビュー終了位置を表示</span>
+                </Button>
+                <p className="text-xs text-gray-500 mt-1">
+                  プロンプト内容に赤い線が表示され、ドラッグで位置を調整できます
+                </p>
+              </div>
+            )}
+          </div>
+        </>
       )}
     </>
   );
