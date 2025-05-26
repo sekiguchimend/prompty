@@ -42,6 +42,12 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
   }
 
   try {
+    // 環境変数チェック
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('SUPABASE_SERVICE_ROLE_KEY is not set');
+      return { notFound: true };
+    }
+
     const { data: promptData, error } = await supabaseAdmin
       .from('prompts')
       .select('*')

@@ -65,6 +65,12 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
   const formattedId = uuidPattern.test(id) ? id : `${id}-0000-0000-0000-000000000000`;
   
   try {
+    // 環境変数チェック
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('SUPABASE_SERVICE_ROLE_KEY is not set');
+      return { notFound: true };
+    }
+
     // 基本的なプロンプトデータのみ取得（最適化）
     const { data: promptData, error } = await supabaseAdmin
     .from('prompts')
