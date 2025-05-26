@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Loader2, Send, Type, Bot, DollarSign, FileText, Tag, Image, MessageSquare, CheckCircle2 } from 'lucide-react';
 import type { Prompt, ProjectFormValues, PromptFormValues } from '.';
 import ProjectSettingsForm from './ProjectSettingsForm';

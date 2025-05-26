@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Clock, FileText, Edit, History } from 'lucide-react';
 
 // プロンプト履歴の型定義

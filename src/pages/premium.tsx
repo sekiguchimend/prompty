@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { Button } from '../components/ui/button';
 import { Check } from 'lucide-react';
 import Footer from '../components/footer';
 const Premium = () => {
