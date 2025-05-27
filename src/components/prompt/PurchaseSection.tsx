@@ -490,14 +490,11 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
         .subscribe((status) => {
           if (status !== 'SUBSCRIBED') {
             console.warn('リアルタイム接続に問題が発生しました:', status);
-          } else {
-            console.log('コメントのリアルタイム更新を開始しました');
           }
         });
 
       // クリーンアップ関数
       return () => {
-        console.log('コメントのリアルタイム更新を停止します');
         supabase.removeChannel(channel);
       };
     }

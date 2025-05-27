@@ -14,7 +14,7 @@ export async function checkPurchaseStatus(
   if (!userId || !promptId) return false;
 
   try {
-    console.log(`購入状態をチェック - ユーザー: ${userId.substring(0, 8)}... プロンプト: ${promptId.substring(0, 8)}...`);
+
     
     // purchasesテーブルで購入状態を確認（buyer_idでチェック）
     const { data: purchaseData, error: purchaseError } = await supabase
@@ -27,7 +27,6 @@ export async function checkPurchaseStatus(
 
     // purchasesテーブルで購入が確認できた場合
     if (purchaseData && !purchaseError) {
-      console.log('購入済み: purchasesテーブル(buyer_id)で確認');
       return true;
     }
 
@@ -45,7 +44,6 @@ export async function checkPurchaseStatus(
       .maybeSingle();
       
     if (purchaseDataAlt && !purchaseErrorAlt) {
-      console.log('購入済み: purchasesテーブル(buyer_id、ステータス指定なし)で確認');
       return true;
     }
 
@@ -54,7 +52,6 @@ export async function checkPurchaseStatus(
       console.error('purchasesテーブル(buyer_id、ステータス指定なし)エラー:', purchaseErrorAlt);
     }
     
-    console.log('購入未確認');
     return false;
     
   } catch (e) {

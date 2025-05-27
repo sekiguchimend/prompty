@@ -17,9 +17,7 @@ const ViewCounter: React.FC<ViewCounterProps> = ({ promptId, className = '' }) =
     const fetchViewCount = async () => {
       setIsLoading(true);
       try {
-        console.log('閲覧数を取得中:', promptId);
         const count = await getViewCount(promptId);
-        console.log('取得した閲覧数:', count);
         setViewCount(count);
       } catch (error) {
         console.error('閲覧数の取得中にエラーが発生しました:', error);

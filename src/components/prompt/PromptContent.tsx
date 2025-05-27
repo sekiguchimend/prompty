@@ -367,12 +367,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
         // マーカーが見つかった場合、そこまでを表示（マーカー自体は除去）
         const limitedText = text.substring(0, markerIndex);
         
-        console.log('マーカーベースプレビュー:', {
-          markerFound: true,
-          markerPosition: markerIndex,
-          resultLength: limitedText.length,
-          resultPreview: limitedText.substring(0, 100) + '...'
-        });
+
         
         return formatContentWithLineBreaks(limitedText);
       }
@@ -382,12 +377,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
       const limitedLines = lines.slice(0, lineLimit);
       const limitedText = limitedLines.join('\n');
       
-      console.log('行数ベースプレビュー:', {
-        markerFound: false,
-        totalLines: lines.length,
-        limitedToLines: lineLimit,
-        resultLength: limitedText.length
-      });
+
       
       return formatContentWithLineBreaks(limitedText);
     };
@@ -437,18 +427,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
     return (contentCalculations.isPremiumContent || price > 0) && !hasFullAccess && premiumContent?.length > 0;
   }, [contentCalculations.isPremiumContent, price, hasFullAccess, premiumContent]);
   
-  console.log('コンテンツ判定:', {
-    isPurchased, 
-    isPaid,
-    isFreeContent: contentCalculations.isFreeContent, 
-    isPremiumContent: contentCalculations.isPremiumContent, 
-    isPremium, 
-    price, 
-    showAllContent: contentCalculations.showAllContent,
-    hasFullAccess,
-    shouldShowPremiumPreview,
-    hasPremiumContent: Boolean(premiumContent && premiumContent.length > 0)
-  });
+
 
   // プロンプト解析（メモ化）
   const parsedPrompts = useMemo(() => {

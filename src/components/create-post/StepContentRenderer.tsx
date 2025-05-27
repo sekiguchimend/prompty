@@ -121,7 +121,6 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">プロジェクトタイトル</h3>
-                  <p className="text-sm text-gray-600">投稿するプロンプトプロジェクトのタイトルを入力してください</p>
                 </div>
               </div>
               
@@ -181,7 +180,6 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">AIモデル選択</h3>
-                  <p className="text-sm text-gray-600">プロンプトで使用するAIモデルを選択してください</p>
                 </div>
               </div>
               
@@ -229,7 +227,6 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">価格設定</h3>
-                  <p className="text-sm text-gray-600">プロンプトの公開形式を選択してください</p>
                 </div>
               </div>
               
@@ -278,7 +275,6 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">プロジェクト説明</h3>
-                  <p className="text-sm text-gray-600">プロンプトプロジェクトの詳細な説明を入力してください</p>
                 </div>
               </div>
               
@@ -345,7 +341,6 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">カテゴリ選択</h3>
-                  <p className="text-sm text-gray-600">プロンプトに最適なカテゴリを選択してください</p>
                 </div>
               </div>
               
@@ -391,7 +386,6 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">サムネイル画像</h3>
-                  <p className="text-sm text-gray-600">プロンプトプロジェクトの印象的なサムネイル画像を設定してください</p>
                 </div>
               </div>
               
@@ -436,7 +430,6 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">プロンプト入力</h3>
-                  <p className="text-sm text-gray-600">実際に使用するプロンプトを入力してください</p>
                 </div>
               </div>
               
@@ -447,7 +440,6 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
               modelLabel={getModelLabel(projectSettings.aiModel)}
               onInsertPreviewMarker={projectSettings.pricingType === 'paid' ? () => {
                 // マーカー挿入時のフィードバック（ステップモード用）
-                console.log("プレビュー終了位置を挿入しました");
               } : undefined}
             />
             </div>
@@ -466,7 +458,6 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
                   </div>
                   <div>
                   <h3 className="text-lg font-semibold text-gray-900">確認と投稿</h3>
-                  <p className="text-sm text-gray-600">入力内容を確認して投稿してください</p>
                 </div>
               </div>
             </div>

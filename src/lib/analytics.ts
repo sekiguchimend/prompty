@@ -22,7 +22,6 @@ export const trackView = async (promptId: string): Promise<boolean> => {
   
   // 既にこのセッションでトラックしていたら処理しない（メモリ内チェック）
   if (trackedPromptIds.has(promptId)) {
-    console.log('このセッションで既にトラッキング済み:', promptId);
     return true;
   }
   
@@ -50,20 +49,16 @@ const tryTrackWithColumns = async (promptId: string, visitorId: string): Promise
   // 最初に visitor_id で試行（最新のスキーマ）
   const visitorIdSuccess = await tryUpsertWithColumn(promptId, visitorId, 'visitor_id');
   if (visitorIdSuccess) {
-    console.log('visitor_idカラムで閲覧記録が完了しました');
     return true;
   }
   
   // visitor_idが失敗した場合、user_id で試行（古いスキーマ）
-  console.log('visitor_idで失敗、user_idカラムで再試行...');
   const userIdSuccess = await tryUpsertWithColumn(promptId, visitorId, 'user_id');
   if (userIdSuccess) {
-    console.log('user_idカラムで閲覧記録が完了しました');
     return true;
   }
   
   // 両方とも失敗した場合はフォールバック処理を試行
-  console.log('upsertが失敗、フォールバック処理を開始...');
   return await handleFallbackTracking(promptId, visitorId);
 };
 
@@ -86,19 +81,16 @@ const tryUpsertWithColumn = async (promptId: string, visitorId: string, columnNa
     if (upsertError) {
       // テーブルが存在しない場合
       if (upsertError.code === '42P01' || upsertError.message?.includes('does not exist')) {
-        console.log('analytics_viewsテーブルが存在しません - ビュートラッキングをスキップ');
         return true; // スキップとして成功扱い
       }
       
       // カラムが存在しない場合
       if (upsertError.code === '42703' || upsertError.message?.includes('column') || upsertError.message?.includes('does not exist')) {
-        console.log(`${columnName}カラムが存在しません`);
         return false; // 他のカラム名を試行
       }
       
       // 409エラーの場合は成功として扱う
       if (upsertError.message?.includes('409') || upsertError.message?.includes('conflict')) {
-        console.log(`重複エラー(${columnName}) - 既に記録済みとして処理`);
         return true;
       }
       
@@ -122,7 +114,6 @@ const handleFallbackTracking = async (promptId: string, visitorId: string): Prom
   }
   
   // user_idでフォールバック処理を試行
-  console.log('visitor_idフォールバックが失敗、user_idで再試行...');
   const userIdSuccess = await tryFallbackWithColumn(promptId, visitorId, 'user_id');
   return userIdSuccess;
 };
@@ -141,7 +132,6 @@ const tryFallbackWithColumn = async (promptId: string, visitorId: string, column
     if (selectError) {
       // カラムが存在しない場合
       if (selectError.code === '42703' || selectError.message?.includes('column') || selectError.message?.includes('does not exist')) {
-        console.log(`フォールバック - ${columnName}カラムが存在しません`);
         return false;
       }
       
@@ -151,7 +141,6 @@ const tryFallbackWithColumn = async (promptId: string, visitorId: string, column
     
     // 既に記録がある場合は終了
     if (data) {
-      console.log(`フォールバック(${columnName}) - すでに閲覧済み`);
       return true;
     }
     
@@ -168,13 +157,11 @@ const tryFallbackWithColumn = async (promptId: string, visitorId: string, column
     if (insertError) {
       // 重複キーエラーの場合は成功として扱う
       if (insertError.code === '23505') {
-        console.log(`フォールバック(${columnName}) - 重複エラー（既に閲覧済み）`);
         return true;
       }
       
       // カラムが存在しない場合
       if (insertError.code === '42703') {
-        console.log(`フォールバック(${columnName}) - カラムが存在しません`);
         return false;
       }
       
@@ -182,7 +169,6 @@ const tryFallbackWithColumn = async (promptId: string, visitorId: string, column
       return false;
     }
     
-    console.log(`フォールバック(${columnName}) - 新しい閲覧を記録しました`);
     return true;
     
   } catch (err) {
@@ -196,7 +182,7 @@ export const getViewCount = async (promptId: string): Promise<number> => {
   if (!promptId) return 0;
   
   try {
-    console.log('ビュー数取得開始 - プロンプトID:', promptId);
+
     
     // 1. まずprompts テーブルから view_count を取得
     const { data: promptData, error: promptError } = await supabase
@@ -207,38 +193,30 @@ export const getViewCount = async (promptId: string): Promise<number> => {
     
     // view_countが取得できた場合
     if (!promptError && promptData) {
-      // デバッグ用
-      console.log('fetchしたpromptData:', promptData);
+
       
       // anyにキャストして型エラーを回避
       const promptDataAny = promptData as any;
       // 数値に変換して型安全性を確保
       const promptViewCount = Number(promptDataAny.view_count || 0);
-      console.log('promptsテーブルからのビュー数:', promptViewCount);
       
       // 2. analytics_views テーブルからカウントを取得（カラム名の違いに対応）
       const analyticsCount = await getAnalyticsViewCount(promptId);
       
       if (analyticsCount >= 0) {
-        console.log('analytics_viewsテーブルからのビュー数:', analyticsCount);
-        
         // 3. 両方のカウントを比較して大きい方を採用
         const finalCount = Math.max(promptViewCount, analyticsCount);
-        console.log('採用するビュー数:', finalCount);
         return finalCount;
       }
       
       // analytics_viewsの取得が失敗した場合はpromptsテーブルの値を使用
-      console.log('analytics_viewsテーブルへのアクセスに失敗 - promptsテーブルの値を使用');
       return promptViewCount;
     }
     
     // prompts テーブルからの取得に失敗した場合は analytics_views を使用
-    console.log('promptsテーブルからの取得に失敗、analytics_viewsを使用します');
     const analyticsCount = await getAnalyticsViewCount(promptId);
     
     if (analyticsCount >= 0) {
-      console.log('analytics_viewsからのビュー数:', analyticsCount);
       return analyticsCount;
     }
     
@@ -262,19 +240,15 @@ const getAnalyticsViewCount = async (promptId: string): Promise<number> => {
       .eq('prompt_id', promptId);
     
     if (!error) {
-      console.log('visitor_idスキーマでビュー数を取得しました');
       return Number(count || 0);
     }
     
     // テーブルが存在しない場合
     if (error.code === '42P01' || error.message?.includes('does not exist')) {
-      console.log('analytics_viewsテーブルが存在しません');
       return -1; // エラーを示すマーカー
     }
-    
-    console.log('visitor_idスキーマでエラー、user_idスキーマを試行中...');
   } catch (err) {
-    console.log('visitor_idスキーマで例外、user_idスキーマを試行中...');
+    // エラーの場合は次のスキーマを試行
   }
   
   // user_idカラムで試行（古いスキーマ対応）
@@ -294,7 +268,6 @@ const getAnalyticsViewCount = async (promptId: string): Promise<number> => {
         .eq('prompt_id', promptId);
       
       if (!countError) {
-        console.log('user_idスキーマでビュー数を取得しました');
         return Number(count || 0);
       }
       
@@ -302,7 +275,6 @@ const getAnalyticsViewCount = async (promptId: string): Promise<number> => {
       return -1;
     }
     
-    console.log('user_idカラムも存在しません');
     return -1;
   } catch (err) {
     console.error('user_idスキーマでエラー:', err);
