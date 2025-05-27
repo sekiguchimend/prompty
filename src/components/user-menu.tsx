@@ -157,7 +157,7 @@ const UserMenu: React.FC<UserMenuProps> = React.memo(({
                 <LayoutDashboard className="h-6 w-6 text-gray-700" />
               </div>
               <div>
-                <p className="text-base font-medium">クリエイターダッシュボード</p>
+                <p className="text-base font-medium">ダッシュボード</p>
                 <p className="text-xs text-gray-500">記事や分析を管理</p>
               </div>
             </div>

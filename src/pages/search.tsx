@@ -16,6 +16,7 @@ import {
 } from "../components/ui/dropdown-menu";
 import { supabase } from '../lib/supabaseClient';
 import { Badge } from '../components/ui/badge';
+import Head from 'next/head';
 
 // 検索オプションの型定義
 type SortOption = 'relevance' | 'title_asc' | 'title_desc' | 'latest' | 'oldest' | 'popular';
@@ -323,8 +324,77 @@ const Search = () => {
     }
   };
 
+  // SEO用のメタデータを生成
+  const generateSEOData = () => {
+    const title = query ? `「${query}」の検索結果 | Prompty` : '検索 | Prompty';
+    const description = query 
+      ? `「${query}」に関するAIプロンプトの検索結果です。${filteredResults.length}件のプロンプトが見つかりました。`
+      : 'AIプロンプトを検索できます。ChatGPT、MidJourney、Stable Diffusionなど各種AIツールのプロンプトを見つけましょう。';
+    const url = query ? `https://prompty-ai.com/search?q=${encodeURIComponent(query)}` : 'https://prompty-ai.com/search';
+    
+    return { title, description, url };
+  };
+
+  const seoData = generateSEOData();
+
   return (
-    <div className="min-h-screen bg-prompty-background">
+    <>
+      <Head>
+        <title>{seoData.title}</title>
+        <meta name="description" content={seoData.description} />
+        <meta name="keywords" content={`検索,AIプロンプト,${query ? query + ',' : ''}ChatGPT,MidJourney,Stable Diffusion,プロンプト検索`} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={seoData.url} />
+        <meta property="og:title" content={seoData.title} />
+        <meta property="og:description" content={seoData.description} />
+        <meta property="og:image" content="https://prompty-ai.com/images/prompty_logo.jpg" />
+        <meta property="og:site_name" content="Prompty" />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content={seoData.url} />
+        <meta name="twitter:title" content={seoData.title} />
+        <meta name="twitter:description" content={seoData.description} />
+        <meta name="twitter:image" content="https://prompty-ai.com/images/prompty_logo.jpg" />
+        
+        {/* Additional SEO */}
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href={seoData.url} />
+        
+        {/* Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "SearchResultsPage",
+              "url": seoData.url,
+              "name": seoData.title,
+              "description": seoData.description,
+              "mainEntity": {
+                "@type": "ItemList",
+                "numberOfItems": filteredResults.length,
+                "itemListElement": filteredResults.slice(0, 10).map((item, index) => ({
+                  "@type": "ListItem",
+                  "position": index + 1,
+                  "item": {
+                    "@type": "CreativeWork",
+                    "name": item.title,
+                    "url": `https://prompty-ai.com/prompts/${item.id}`,
+                    "author": {
+                      "@type": "Person",
+                      "name": item.user.name
+                    }
+                  }
+                }))
+              }
+            })
+          }}
+        />
+      </Head>
+      <div className="min-h-screen bg-prompty-background">
       <main className="container max-w-7xl mx-auto px-4 py-8 pt-20">
         <h1 className="text-3xl font-bold mb-4">検索</h1>
         
@@ -472,7 +542,8 @@ const Search = () => {
       </main>
       
       <Footer />
-    </div>
+      </div>
+    </>
   );
 };
 

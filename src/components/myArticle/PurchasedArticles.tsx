@@ -1,6 +1,6 @@
 // components/PurchasedArticles.tsx
 import React, { useState, useEffect } from 'react';
-import { ShoppingBag } from 'lucide-react';
+import { ShoppingBag, FileText } from 'lucide-react';
 import { MoreVertical } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { useAuth } from '../../lib/auth-context';
@@ -155,75 +155,86 @@ const PurchasedArticles = () => {
   };
 
   return (
-    <div className="purchased-articles">
-      <div className="articles-container">
-        <div className="articles-header">
-          <h2>{purchasedArticles.length} 記事</h2>
-          <div className="filter-controls">
-            <div className="period-dropdown">
-              <button>期間 <span>▼</span></button>
-            </div>
-          </div>
+    <div className="p-4 md:p-6">
+      {loading ? (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <span className="ml-3 text-gray-600">読み込み中...</span>
         </div>
-        
-        <div className="articles-list">
-          {loading ? (
-            <p className="text-center py-6">読み込み中...</p>
-          ) : error ? (
-            <p className="text-center py-6 text-red-500">{error}</p>
-          ) : purchasedArticles.length > 0 ? (
-            purchasedArticles.map((article) => (
+      ) : error ? (
+        <div className="text-center py-8">
+          <p className="text-red-500 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            再試行
+          </button>
+        </div>
+      ) : purchasedArticles.length > 0 ? (
+        <div>
+          {/* ヘッダー */}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">{purchasedArticles.length} 件の購入記事</h2>
+          </div>
+          
+          {/* 記事リスト */}
+          <div className="space-y-3 md:space-y-4">
+            {purchasedArticles.map((article) => (
               <div 
                 key={article.id} 
-                className="article-item cursor-pointer hover:bg-gray-50 transition-colors"
+                className="flex items-start gap-3 md:gap-4 p-3 md:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
                 onClick={() => navigateToArticle(article.id)}
               >
-                <div className="article-content">
-                  <h3>{article.title}</h3>
-                  <div className="article-meta">
-                    <span>{article.author.display_name}</span>
-                    <span className="date">{formatDate(article.published_at)}</span>
-                  </div>
-                  <div className="article-actions mt-2 flex items-center">
-                    <div className="flex items-center text-amber-500 mr-3">
-                      <ShoppingBag className="h-4 w-4 mr-1" />
-                      <span className="text-xs">{formatPrice(article.price)}</span>
+                {/* サムネイル */}
+                <div className="flex-shrink-0">
+                  {article.thumbnail_url ? (
+                    <div className="relative w-16 h-12 md:w-24 md:h-16 rounded-md overflow-hidden">
+                      <Image 
+                        src={article.thumbnail_url}
+                        alt={article.title}
+                        fill
+                        sizes="(max-width: 768px) 64px, 96px"
+                        style={{ objectFit: 'cover' }}
+                        className="w-full h-full"
+                      />
                     </div>
-                    <span className="text-xs text-gray-500">購入日: {formatDate(article.purchased_at)}</span>
+                  ) : (
+                    <div className="w-16 h-12 md:w-24 md:h-16 bg-gray-100 rounded-md flex items-center justify-center">
+                      <FileText className="h-4 w-4 md:h-6 md:w-6 text-gray-400" />
+                    </div>
+                  )}
+                </div>
+                
+                {/* コンテンツ */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base md:text-lg font-semibold text-gray-900 line-clamp-2 leading-snug mb-2">
+                    {article.title}
+                  </h3>
+                  
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                    <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm text-gray-600">
+                      <span>by {article.author.display_name}</span>
+                      <span>購入日: {formatDate(article.purchased_at)}</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-1 text-amber-500">
+                      <ShoppingBag className="h-3 w-3 md:h-4 md:w-4" />
+                      <span className="text-xs md:text-sm font-medium">{formatPrice(article.price)}</span>
+                    </div>
                   </div>
                 </div>
-                {article.thumbnail_url && (
-                  <div className="article-thumbnail">
-                    <Image 
-                      src={article.thumbnail_url}
-                      alt={article.title}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 64px"
-                      style={{ objectFit: 'cover' }}
-                      className="rounded-md"
-                    />
-                  </div>
-                )}
-                <button 
-                  className="more-options"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    // ここに追加メニューの処理を実装
-                    console.log('More options clicked for:', article.id);
-                  }}
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </button>
               </div>
-            ))
-          ) : (
-            <div className="empty-state p-6 text-center">
-              <p className="text-gray-500">表示する購入記事はありません</p>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="text-center py-16">
+          <ShoppingBag className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">まだ購入した記事がありません</h3>
+          <p className="text-gray-600 mb-6">有料記事を購入して、ここに表示させましょう！</p>
+        </div>
+      )}
     </div>
   );
 };

@@ -17,6 +17,7 @@ import { UserData } from '../types/profile';
 import ProfileHeader from '../components/profile/ProfileHeader';
 import ProfileTabs from '../components/profile/ProfileTabs';
 import ProfileTabContent from '../components/profile/ProfileTabContent';
+import Head from 'next/head';
 
 const UserProfilePage: React.FC = () => {
   const router = useRouter();
@@ -264,12 +265,12 @@ const UserProfilePage: React.FC = () => {
     if (!user) return;
     
     try {
-      // フォロー中のユーザーを取得
+      // フォロー中のユーザーを取得（外部キー制約名を使用）
       const { data: followingData, error: followingError } = await supabase
         .from('follows')
         .select(`
           following_id,
-          profiles:following_id (
+          profiles!follows_following_id_fkey(
             id,
             username,
             display_name,
@@ -281,12 +282,24 @@ const UserProfilePage: React.FC = () => {
         
       if (followingError) throw followingError;
       
-      // フォロワーを取得
+      const followingUsers: UserData[] = followingData?.map((follow: any) => ({
+        id: follow.profiles.id as string,
+        username: (follow.profiles.username as string) || '',
+        display_name: follow.profiles.display_name as string | null,
+        avatar_url: (follow.profiles.avatar_url as string) || null,
+        bio: (follow.profiles.bio as string) || null,
+        followers_count: 0,
+        following_count: 0,
+        posts_count: 0,
+        is_following: true
+      })) || [];
+      
+      // フォロワーを取得（外部キー制約名を使用）
       const { data: followersData, error: followersError } = await supabase
         .from('follows')
         .select(`
           follower_id,
-          profiles:follower_id (
+          profiles!follows_follower_id_fkey(
             id,
             username,
             display_name,
@@ -298,30 +311,17 @@ const UserProfilePage: React.FC = () => {
         
       if (followersError) throw followersError;
       
-      // データを変換
-      const followingUsers: UserData[] = followingData.map((follow: any) => ({
+      const followerUsers: UserData[] = followersData?.map((follow: any) => ({
         id: follow.profiles.id as string,
         username: (follow.profiles.username as string) || '',
         display_name: follow.profiles.display_name as string | null,
         avatar_url: (follow.profiles.avatar_url as string) || null,
         bio: (follow.profiles.bio as string) || null,
-        followers_count: 0, // 簡略化のため0に設定
-        following_count: 0, // 簡略化のため0に設定
-        posts_count: 0, // 簡略化のため0に設定
-        is_following: true
-      }));
-      
-      const followerUsers: UserData[] = followersData.map((follow: any) => ({
-        id: follow.profiles.id as string,
-        username: (follow.profiles.username as string) || '',
-        display_name: follow.profiles.display_name as string | null,
-        avatar_url: (follow.profiles.avatar_url as string) || null,
-        bio: (follow.profiles.bio as string) || null,
-        followers_count: 0, // 簡略化のため0に設定
-        following_count: 0, // 簡略化のため0に設定
-        posts_count: 0, // 簡略化のため0に設定
-        is_following: false // 後で更新
-      }));
+        followers_count: 0,
+        following_count: 0,
+        posts_count: 0,
+        is_following: false
+      })) || [];
       
       // 相互フォローのユーザーを特定
       const followingIds = followingUsers.map(user => user.id);
@@ -438,7 +438,51 @@ const UserProfilePage: React.FC = () => {
   }
   
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <>
+      <Head>
+        <title>{profileData?.display_name ? `${profileData.display_name}のプロフィール | Prompty` : 'プロフィール | Prompty'}</title>
+        <meta name="description" content={profileData?.bio || `${profileData?.display_name || 'ユーザー'}のプロフィールページです。投稿数: ${posts.length}件、フォロワー: ${profileData?.followers_count || 0}人、フォロー中: ${profileData?.following_count || 0}人`} />
+        <meta name="keywords" content={`プロフィール,${profileData?.display_name || 'ユーザー'},AIプロンプト,投稿,フォロー,Prompty`} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="profile" />
+        <meta property="og:url" content="https://prompty-ai.com/profile" />
+        <meta property="og:title" content={`${profileData?.display_name || 'ユーザー'}のプロフィール | Prompty`} />
+        <meta property="og:description" content={profileData?.bio || `${profileData?.display_name || 'ユーザー'}のプロフィールページです。`} />
+        <meta property="og:image" content={profileData?.avatar_url || 'https://prompty-ai.com/images/prompty_logo.jpg'} />
+        <meta property="og:site_name" content="Prompty" />
+        <meta property="profile:username" content={profileData?.display_name || 'ユーザー'} />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:url" content="https://prompty-ai.com/profile" />
+        <meta name="twitter:title" content={`${profileData?.display_name || 'ユーザー'}のプロフィール | Prompty`} />
+        <meta name="twitter:description" content={profileData?.bio || `${profileData?.display_name || 'ユーザー'}のプロフィールページです。`} />
+        <meta name="twitter:image" content={profileData?.avatar_url || 'https://prompty-ai.com/images/prompty_logo.jpg'} />
+        
+        {/* Additional SEO */}
+        <meta name="robots" content="noindex, nofollow" />
+        
+        {/* Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Person",
+              "name": profileData?.display_name || 'ユーザー',
+              "description": profileData?.bio || '',
+              "image": profileData?.avatar_url,
+              "url": "https://prompty-ai.com/profile",
+              "worksFor": {
+                "@type": "Organization",
+                "name": "Prompty"
+              }
+            })
+          }}
+        />
+      </Head>
+      <div className="flex flex-col min-h-screen bg-gray-50">
       <main className="flex-1">
         <div className="container mx-auto px-4 py-6 max-w-4xl">
           <ProfileHeader 
@@ -479,7 +523,8 @@ const UserProfilePage: React.FC = () => {
           onProfileUpdated={handleProfileUpdated}
         />
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

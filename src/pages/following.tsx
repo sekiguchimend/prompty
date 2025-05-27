@@ -556,14 +556,14 @@ const Following: React.FC = () => {
         
         <div className="mt-auto">
           <div className="flex items-center gap-2">
-            <Link href={`/users/${post.user.name}`} className="block">
+            <Link href={`/users/${post.user.userId}`} className="block">
               <UnifiedAvatar
                 src={post.user.avatarUrl}
                 displayName={post.user.name}
                 size="xs"
               />
             </Link>
-            <Link href={`/users/${post.user.name}`} className="text-xs text-gray-600 hover:underline">
+            <Link href={`/users/${post.user.userId}`} className="text-xs text-gray-600 hover:underline">
               {post.user.name}
             </Link>
             <span className="text-xs text-gray-500">{post.postedAt}</span>
@@ -655,11 +655,47 @@ const Following: React.FC = () => {
   return (
     <div className="min-h-screen bg-prompty-background">
       <Head>
-        <title>フォロー中 | Prompty</title>
-        <meta name="description" content="フォローしているユーザーの投稿を表示します" />
-        <link rel="icon" href="https://prompty-zeta.vercel.app/favicon.ico" type="image/x-icon" />
-        <link rel="shortcut icon" href="https://prompty-zeta.vercel.app/favicon.ico" type="image/x-icon" />
-        <link rel="apple-touch-icon" href="https://prompty-zeta.vercel.app/favicon.ico" />
+        <title>フォロー中 | Prompty - フォローユーザーの最新AIプロンプト</title>
+        <meta name="description" content="フォローしているユーザーの最新AIプロンプトを表示します。ChatGPT、MidJourney、Stable Diffusionなど各種AIツールのプロンプトをタイムラインで確認できます。" />
+        <meta name="keywords" content="フォロー,タイムライン,AIプロンプト,フォローユーザー,最新投稿,ChatGPT,MidJourney,Stable Diffusion" />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://prompty-ai.com/following" />
+        <meta property="og:title" content="フォロー中 | Prompty - フォローユーザーの最新AIプロンプト" />
+        <meta property="og:description" content="フォローしているユーザーの最新AIプロンプトを表示します。ChatGPT、MidJourney、Stable Diffusionなど各種AIツールのプロンプトをタイムラインで確認できます。" />
+        <meta property="og:image" content="https://prompty-ai.com/images/prompty_logo.jpg" />
+        <meta property="og:site_name" content="Prompty" />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content="https://prompty-ai.com/following" />
+        <meta name="twitter:title" content="フォロー中 | Prompty - フォローユーザーの最新AIプロンプト" />
+        <meta name="twitter:description" content="フォローしているユーザーの最新AIプロンプトを表示します。" />
+        <meta name="twitter:image" content="https://prompty-ai.com/images/prompty_logo.jpg" />
+        
+        {/* Additional SEO */}
+        <meta name="robots" content="noindex, nofollow" />
+        <link rel="canonical" href="https://prompty-ai.com/following" />
+        
+        {/* Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebPage",
+              "name": "フォロー中",
+              "description": "フォローしているユーザーの最新AIプロンプトを表示します。",
+              "url": "https://prompty-ai.com/following",
+              "isPartOf": {
+                "@type": "WebSite",
+                "name": "Prompty",
+                "url": "https://prompty-ai.com"
+              }
+            })
+          }}
+        />
       </Head>
       
       <main className="flex-1 pb-12">

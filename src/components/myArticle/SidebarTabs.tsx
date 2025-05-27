@@ -36,20 +36,49 @@ const SidebarTabs: React.FC<SidebarTabsProps> = ({ activeTab, setActiveTab }) =>
   ];
 
   return (
-    <div className="sidebar-tabs">
-      <ul>
-        {tabs.map((tab) => (
-          <li 
-            key={tab.id}
-            className={activeTab === tab.id ? 'active' : ''}
-            onClick={() => handleTabClick(tab.id)}
-          >
-            <span className="icon">{tab.icon}</span>
-            <span className="hidden md:inline">{tab.label}</span>
-            <span className="md:hidden">{tab.shortLabel}</span>
-          </li>
-        ))}
-      </ul>
+    <div>
+      {/* デスクトップ用ナビゲーション */}
+      <nav className="hidden md:block">
+        <ul className="space-y-1">
+          {tabs.map((tab) => (
+            <li key={tab.id}>
+              <button
+                onClick={() => handleTabClick(tab.id)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-md transition-colors ${
+                  activeTab === tab.id
+                    ? 'bg-gray-100 text-gray-900 font-medium'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                }`}
+              >
+                <span className={`${activeTab === tab.id ? 'text-gray-700' : 'text-gray-400'}`}>
+                  {tab.icon}
+                </span>
+                <span>{tab.label}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      {/* スマホ用ナビゲーション */}
+      <div className="md:hidden">
+        <div className="flex overflow-x-auto gap-1 pb-1">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => handleTabClick(tab.id)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-md whitespace-nowrap text-sm transition-colors ${
+                activeTab === tab.id
+                  ? 'bg-gray-100 text-gray-900 font-medium'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <span className="text-xs">{tab.icon}</span>
+              <span>{tab.shortLabel}</span>
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

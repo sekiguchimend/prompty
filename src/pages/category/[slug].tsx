@@ -166,8 +166,82 @@ const CategoryPage: React.FC = () => {
   return (
     <div className="flex min-h-screen flex-col">
       <Head>
-        <title>{categoryName ? `${categoryName} - Prompty` : 'カテゴリー - Prompty'}</title>
-        <meta name="description" content={categoryDescription || `${categoryName}に関する記事一覧`} />
+        <title>{categoryName ? `${categoryName}のAIプロンプト一覧 | Prompty` : 'カテゴリー | Prompty'}</title>
+        <meta name="description" content={categoryDescription || `${categoryName}に関するAIプロンプトの一覧ページです。${prompts.length}件のプロンプトが投稿されています。`} />
+        <meta name="keywords" content={`${categoryName},AIプロンプト,カテゴリー,ChatGPT,MidJourney,Stable Diffusion`} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={`https://prompty-ai.com/category/${slug}`} />
+        <meta property="og:title" content={`${categoryName}のAIプロンプト一覧 | Prompty`} />
+        <meta property="og:description" content={categoryDescription || `${categoryName}に関するAIプロンプトの一覧ページです。`} />
+        <meta property="og:image" content="https://prompty-ai.com/images/prompty_logo.jpg" />
+        <meta property="og:site_name" content="Prompty" />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content={`https://prompty-ai.com/category/${slug}`} />
+        <meta name="twitter:title" content={`${categoryName}のAIプロンプト一覧 | Prompty`} />
+        <meta name="twitter:description" content={categoryDescription || `${categoryName}に関するAIプロンプトの一覧ページです。`} />
+        <meta name="twitter:image" content="https://prompty-ai.com/images/prompty_logo.jpg" />
+        
+        {/* Additional SEO */}
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href={`https://prompty-ai.com/category/${slug}`} />
+        
+        {/* Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "CollectionPage",
+              "name": `${categoryName}のAIプロンプト一覧`,
+              "description": categoryDescription || `${categoryName}に関するAIプロンプトの一覧`,
+              "url": `https://prompty-ai.com/category/${slug}`,
+              "mainEntity": {
+                "@type": "ItemList",
+                "numberOfItems": prompts.length,
+                "itemListElement": prompts.slice(0, 10).map((item, index) => ({
+                  "@type": "ListItem",
+                  "position": index + 1,
+                  "item": {
+                    "@type": "CreativeWork",
+                    "name": item.title,
+                    "url": `https://prompty-ai.com/prompts/${item.id}`,
+                    "author": {
+                      "@type": "Person",
+                      "name": item.user.name
+                    }
+                  }
+                }))
+              },
+              "breadcrumb": {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                  {
+                    "@type": "ListItem",
+                    "position": 1,
+                    "name": "ホーム",
+                    "item": "https://prompty-ai.com"
+                  },
+                  {
+                    "@type": "ListItem",
+                    "position": 2,
+                    "name": "カテゴリー",
+                    "item": "https://prompty-ai.com/category"
+                  },
+                  {
+                    "@type": "ListItem",
+                    "position": 3,
+                    "name": categoryName,
+                    "item": `https://prompty-ai.com/category/${slug}`
+                  }
+                ]
+              }
+            })
+          }}
+        />
       </Head>
       
       <div className="flex-1 md:ml-[240px]">

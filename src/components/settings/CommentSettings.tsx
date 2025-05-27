@@ -312,7 +312,7 @@ const CommentSettingsComponent: React.FC = () => {
         <Button
           onClick={saveSettings}
           disabled={isSaving}
-          className="flex items-center"
+          className="flex items-center ml-2"
         >
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           保存
@@ -323,7 +323,7 @@ const CommentSettingsComponent: React.FC = () => {
       
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
+          <div className="space-y-0.5 mr-2">
             <Label className="text-base">コメントを許可する</Label>
             <p className="text-sm text-gray-500">
               あなたの記事へのコメントを許可します
@@ -336,7 +336,7 @@ const CommentSettingsComponent: React.FC = () => {
         </div>
         
         <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
+          <div className="space-y-0.5 mr-2">
             <Label className="text-base">コメント通知</Label>
             <p className="text-sm text-gray-500">
               新しいコメントが投稿されたときに通知を受け取ります
@@ -349,7 +349,7 @@ const CommentSettingsComponent: React.FC = () => {
         </div>
         
         <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
+          <div className="space-y-0.5 mr-2">
             <Label className="text-base">コメント承認制</Label>
             <p className="text-sm text-gray-500">
               コメントがあなたの承認後に表示されるようにします
@@ -362,7 +362,7 @@ const CommentSettingsComponent: React.FC = () => {
         </div>
         
         <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
+          <div className="space-y-0.5 mr-2">
             <Label className="text-base">匿名コメントを許可</Label>
             <p className="text-sm text-gray-500">
               ログインしていないユーザーからのコメントを許可します
@@ -375,7 +375,7 @@ const CommentSettingsComponent: React.FC = () => {
         </div>
         
         <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
+          <div className="space-y-0.5 mr-2">
             <Label className="text-base">自動非表示</Label>
             <p className="text-sm text-gray-500">
               報告したコメントを自動的に非表示にします

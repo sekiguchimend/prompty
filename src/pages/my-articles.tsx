@@ -60,11 +60,11 @@ const MyArticles: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <main className="flex-1">
-        {/* スマホ用のコンパクトなレイアウト */}
+        {/* スマホ用レイアウト */}
         <div className="md:hidden">
-          <div className="bg-white border-b">
-            {/* スマホでもSidebarTabsを使用 */}
-            <div className="px-4 py-3">
+          <div className="bg-white border-b border-gray-200">
+            <div className="px-4 py-4">
+              <h1 className="text-lg font-semibold text-gray-900 mb-4">マイページ</h1>
               <SidebarTabs 
                 activeTab={activeTab} 
                 setActiveTab={setActiveTab}
@@ -72,8 +72,7 @@ const MyArticles: React.FC = () => {
             </div>
           </div>
           
-          {/* スマホ用コンテンツエリア */}
-          <div className="p-4">
+          <div className="bg-white">
             {renderTabContent()}
           </div>
         </div>

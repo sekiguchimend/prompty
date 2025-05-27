@@ -16,6 +16,7 @@ import { useAuth } from '../../lib/auth-context';
 import { UnifiedAvatar } from '../../components/index';
 import { supabase } from '../../lib/supabaseClient';
 import FollowModal from '../../components/modals/FollowModal';
+import Head from 'next/head';
 
 // ユーザーデータの型定義
 interface UserData {
@@ -470,8 +471,66 @@ const UserPage: React.FC = () => {
     );
   }
   
+  // SEO用のメタデータを生成
+  const generateSEOData = () => {
+    const title = `${userData.display_name} | Prompty`;
+    const description = userData.bio || `${userData.display_name}さんのプロフィールページです。${userPosts.length}件の投稿、${userData.followersCount}人のフォロワー、${userData.followingCount}人をフォロー中。`;
+    const url = `https://prompty-ai.com/users/${userData.id}`;
+    const imageUrl = userData.avatarUrl || 'https://prompty-ai.com/images/prompty_logo.jpg';
+    
+    return { title, description, url, imageUrl };
+  };
+
+  const seoData = generateSEOData();
+
   return (
-    <div className="min-h-screen bg-white">
+    <>
+      <Head>
+        <title>{seoData.title}</title>
+        <meta name="description" content={seoData.description} />
+        <meta name="keywords" content={`${userData.display_name},ユーザープロフィール,AIプロンプト,クリエイター,Prompty`} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="profile" />
+        <meta property="og:url" content={seoData.url} />
+        <meta property="og:title" content={seoData.title} />
+        <meta property="og:description" content={seoData.description} />
+        <meta property="og:image" content={seoData.imageUrl} />
+        <meta property="og:site_name" content="Prompty" />
+        <meta property="profile:username" content={userData.display_name} />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:url" content={seoData.url} />
+        <meta name="twitter:title" content={seoData.title} />
+        <meta name="twitter:description" content={seoData.description} />
+        <meta name="twitter:image" content={seoData.imageUrl} />
+        
+        {/* Additional SEO */}
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href={seoData.url} />
+        
+        {/* Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Person",
+              "name": userData.display_name,
+              "description": userData.bio,
+              "image": userData.avatarUrl,
+              "url": seoData.url,
+              "sameAs": [],
+              "worksFor": {
+                "@type": "Organization",
+                "name": "Prompty"
+              }
+            })
+          }}
+        />
+      </Head>
+      <div className="min-h-screen bg-white">
       <main className="">
         {/* プロフィールヘッダー */}
         <div className="border-b border-gray-200">
@@ -505,7 +564,7 @@ const UserPage: React.FC = () => {
                       <Button 
                         variant="outline"
                         className="px-4 py-2 text-sm h-9 rounded-full border-gray-300"
-                        onClick={() => router.push('/SettingsPage?tab=account')}
+                        onClick={() => router.push('/settings?tab=account')}
                       >
                         プロフィールを編集
                       </Button>
@@ -652,7 +711,8 @@ const UserPage: React.FC = () => {
       )}
       
       <Footer />
-    </div>
+      </div>
+    </>
   );
 };
 

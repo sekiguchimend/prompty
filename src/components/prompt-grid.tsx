@@ -715,8 +715,6 @@ const PromptGrid: React.FC<PromptGridProps> = memo(({
 
   // 非表示処理の関数 - useCallbackで最適化
   const handleHidePrompt = useCallback((id: string) => {
-    console.log(`Hiding prompt with ID: ${id}`);
-    
     try {
       // ローカルストレージから現在の非表示リストを取得
       const hiddenPosts = [...hiddenPromptIds];
@@ -728,7 +726,6 @@ const PromptGrid: React.FC<PromptGridProps> = memo(({
         setHiddenPromptIds(hiddenPosts);
         // ローカルストレージに保存
         localStorage.setItem('hiddenPosts', JSON.stringify(hiddenPosts));
-        console.log('非表示リストを更新しました:', hiddenPosts);
       }
     } catch (error) {
       console.error('非表示処理に失敗しました', error);
@@ -789,15 +786,6 @@ const PromptGrid: React.FC<PromptGridProps> = memo(({
   const { visiblePrompts, limitedPrompts, viewAllPath } = memoizedData;
   const { containerClass, cardClass, viewAllCardClass } = styles;
   
-  // デバッグ情報をコンソールに出力
-  console.log(`PromptGrid デバッグ情報:
-    - 渡されたプロンプト総数: ${prompts.length}
-    - 非表示を除いた数: ${visiblePrompts.length}
-    - 表示制限後の数: ${limitedPrompts.length}
-    - カテゴリパス: ${categoryPath || 'なし'}
-    - すべて見るカード表示: ${visiblePrompts.length > 6 ? 'はい' : 'いいえ'}
-  `);
-
   return (
     <FeatureSectionContext.Provider value={isFeatureSection}>
       <div className="relative" ref={gridRef}>

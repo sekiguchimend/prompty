@@ -20,7 +20,7 @@ const UserCard: React.FC<UserCardProps> = ({ userData, currentUserId, followLoad
 
   return (
     <div className="flex items-center justify-between p-4 border-b border-gray-100">
-      <Link href={`/users/${userData.username}`} className="flex items-center space-x-4 flex-1 min-w-0">
+      <Link href={`/users/${userData.id}`} className="flex items-center space-x-4 flex-1 min-w-0">
         <UnifiedAvatar
           src={avatarUrl}
           displayName={displayName}

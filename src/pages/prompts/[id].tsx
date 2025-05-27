@@ -23,6 +23,7 @@ import { checkPurchaseStatus } from '../../utils/purchase-helpers';
 import Comments from '../../components/Comments/Comments';
 import { toast } from '../../components/ui/use-toast';
 import { DEFAULT_AVATAR_URL } from '../../components/common/Avatar';
+import Head from 'next/head';
 
 // PromptItemの型定義 - エクスポートする
 export interface PromptItem {
@@ -501,9 +502,85 @@ prompt: |
     URL.revokeObjectURL(url);
   };
 
+  // SEO用のメタデータを生成
+  const generateSEOData = () => {
+    const title = `${postData.title} | Prompty`;
+    const description = postData.description || `${postData.title}のAIプロンプトです。${isFree ? '無料' : `¥${postData.price}`}でご利用いただけます。`;
+    const url = `https://prompty-ai.com/prompts/${postData.id}`;
+    const imageUrl = postData.thumbnailUrl || 'https://prompty-ai.com/images/prompty_logo.jpg';
+    
+    return { title, description, url, imageUrl };
+  };
+
+  const seoData = generateSEOData();
+
   // 表示切替
   return (
-    <div className="flex min-h-screen flex-col">
+    <>
+      <Head>
+        <title>{seoData.title}</title>
+        <meta name="description" content={seoData.description} />
+        <meta name="keywords" content={`AIプロンプト,${postData.title},${postData.user.name},ChatGPT,MidJourney,Stable Diffusion`} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content={seoData.url} />
+        <meta property="og:title" content={seoData.title} />
+        <meta property="og:description" content={seoData.description} />
+        <meta property="og:image" content={seoData.imageUrl} />
+        <meta property="og:site_name" content="Prompty" />
+        <meta property="article:author" content={postData.user.name} />
+        <meta property="article:published_time" content={postData.postedAt} />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content={seoData.url} />
+        <meta name="twitter:title" content={seoData.title} />
+        <meta name="twitter:description" content={seoData.description} />
+        <meta name="twitter:image" content={seoData.imageUrl} />
+        
+        {/* Additional SEO */}
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href={seoData.url} />
+        
+        {/* Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Article",
+              "headline": postData.title,
+              "description": seoData.description,
+              "image": seoData.imageUrl,
+              "author": {
+                "@type": "Person",
+                "name": postData.user.name
+              },
+              "publisher": {
+                "@type": "Organization",
+                "name": "Prompty",
+                "logo": {
+                  "@type": "ImageObject",
+                  "url": "https://prompty-ai.com/images/logo.png"
+                }
+              },
+              "datePublished": postData.postedAt,
+              "mainEntityOfPage": {
+                "@type": "WebPage",
+                "@id": seoData.url
+              },
+              "offers": isPremium ? {
+                "@type": "Offer",
+                "price": postData.price,
+                "priceCurrency": "JPY",
+                "availability": "https://schema.org/InStock"
+              } : undefined
+            })
+          }}
+        />
+      </Head>
+      <div className="flex min-h-screen flex-col">
       <main className="flex-1 bg-white">
         <div className="container px-4 md:px-6 py-6 max-w-7xl mx-auto">
           {/* Back link and Edit link */}
@@ -582,7 +659,8 @@ prompt: |
       </main>
       
       <Footer />
-    </div>
+      </div>
+    </>
   );
 };
 
