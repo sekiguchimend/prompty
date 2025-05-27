@@ -119,9 +119,7 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
                 <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
                   <Type className="h-5 w-5" />
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">プロジェクトタイトル</h3>
-                </div>
+               
               </div>
               
             <form onSubmit={(e) => {
@@ -178,9 +176,7 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
                 <div className="w-10 h-10 rounded-lg bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-600">
                   <Bot className="h-5 w-5" />
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">AIモデル選択</h3>
-                </div>
+                
               </div>
               
             <div className="mb-6">
@@ -225,9 +221,7 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
                 <div className="w-10 h-10 rounded-lg bg-green-50 border border-green-200 flex items-center justify-center text-green-600">
                   <DollarSign className="h-5 w-5" />
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">価格設定</h3>
-                </div>
+               
               </div>
               
             <div className="mb-6">
@@ -273,9 +267,7 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
                 <div className="w-10 h-10 rounded-lg bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-600">
                   <FileText className="h-5 w-5" />
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">プロジェクト説明</h3>
-                </div>
+                
               </div>
               
             <form onSubmit={(e) => {
@@ -339,9 +331,7 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
                 <div className="w-10 h-10 rounded-lg bg-red-50 border border-red-200 flex items-center justify-center text-red-600">
                   <Tag className="h-5 w-5" />
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">カテゴリ選択</h3>
-                </div>
+              
               </div>
               
             <div className="mb-6">
@@ -384,9 +374,7 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
                 <div className="w-10 h-10 rounded-lg bg-pink-50 border border-pink-200 flex items-center justify-center text-pink-600">
                   <Image className="h-5 w-5" />
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">サムネイル画像</h3>
-                </div>
+                
               </div>
               
             <div className="mb-6">
@@ -428,9 +416,7 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
                 <div className="w-10 h-10 rounded-lg bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600">
                   <MessageSquare className="h-5 w-5" />
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">プロンプト入力</h3>
-                </div>
+               
               </div>
               
             <PromptForm
