@@ -84,7 +84,7 @@ const CategoryIndexPage: React.FC = () => {
 
   // ブレッドクラムコンポーネント
   const Breadcrumb = () => (
-    <div className="bg-gray-50 py-3 px-4 sm:px-6 md:px-8 border-b sticky top-0 z-10 md:static md:z-auto mt-14 md:mt-0">
+    <div className="bg-gray-50 py-3 px-4 sm:px-6 md:px-8 border-b sticky top-0 z-10 md:static md:z-auto md:mt-0">
       <div className="container mx-auto flex items-center text-sm text-gray-600 overflow-x-auto whitespace-nowrap">
         <Link href="/" className="flex items-center hover:text-gray-900 flex-shrink-0">
           <Home size={14} className="mr-1" />

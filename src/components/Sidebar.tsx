@@ -73,17 +73,23 @@ const Sidebar = () => {
   };
 
   const handleCategoryClick = (category: string) => {
+    console.log(`カテゴリーがクリックされました: ${category}`);
+    
     // カテゴリーによって異なる動作をする
     if (category === 'following') {
+      console.log('フォロー中ページに遷移します');
       // フォロー中ページに遷移
       router.push('/following');
     } else if (category === 'posts') {
+      console.log('投稿企画ページに遷移します');
       // 投稿企画ページに遷移
       router.push('/contest-page');
     } else if (category === 'all') {
+      console.log('トップページに遷移します');
       // トップページに遷移
       router.push('/');
     } else {
+      console.log(`カテゴリー ${category} を展開/折りたたみします`);
       // その他のカテゴリーは展開/折りたたみのみ行う
       setExpandedCategories({
         ...expandedCategories,

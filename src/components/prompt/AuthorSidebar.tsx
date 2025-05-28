@@ -234,21 +234,21 @@ const AuthorSidebar: React.FC<AuthorSidebarProps> = ({ author, tags, website }) 
         
         {/* フォローボタン - 自分自身の場合は表示しない */}
         {currentUser && author.userId && currentUser.id !== author.userId && (
-          <Button 
-            variant={isFollowing ? "outline" : "default"}
-            className={`w-full mb-4 ${
-              isFollowing 
-                ? 'border border-gray-300 hover:bg-gray-100 text-gray-900' 
-                : 'bg-gray-900 text-white hover:bg-gray-800'
-            } rounded-sm text-sm py-1 h-auto transition-all duration-200 ${
-              isAnimating ? 'scale-95' : ''
-            } ${isFollowLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
-            onClick={handleFollowClick}
-            disabled={isFollowLoading}
-          >
-            <span className="mr-1">{isFollowing ? '✓' : '👤'}</span> 
-            {isFollowing ? 'フォロー中' : 'フォロー'}
-          </Button>
+        <Button 
+          variant={isFollowing ? "outline" : "default"}
+          className={`w-full mb-4 ${
+            isFollowing 
+              ? 'border border-gray-300 hover:bg-gray-100 text-gray-900' 
+              : 'bg-gray-900 text-white hover:bg-gray-800'
+          } rounded-sm text-sm py-1 h-auto transition-all duration-200 ${
+            isAnimating ? 'scale-95' : ''
+          } ${isFollowLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+          onClick={handleFollowClick}
+          disabled={isFollowLoading}
+        >
+          <span className="mr-1">{isFollowing ? '✓' : '👤'}</span> 
+          {isFollowing ? 'フォロー中' : 'フォロー'}
+        </Button>
         )}
       </div>
     </div>
