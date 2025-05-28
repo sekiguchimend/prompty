@@ -245,9 +245,19 @@ const Search = () => {
     
     return promptsData.map(prompt => {
       try {
-        const profileData = prompt.profiles && prompt.profiles.length > 0 
-          ? prompt.profiles[0] 
-          : { display_name: '不明なユーザー', avatar_url: '/images/default-avatar.svg' };
+        // プロフィールデータの取得を修正
+        let profileData;
+        if (prompt.profiles) {
+          // profilesが配列の場合は最初の要素を取得、オブジェクトの場合はそのまま使用
+          profileData = Array.isArray(prompt.profiles) ? prompt.profiles[0] : prompt.profiles;
+        } else {
+          // プロフィールデータがない場合のデフォルト値
+          profileData = { 
+            display_name: '不明なユーザー', 
+            username: null,
+            avatar_url: null 
+          };
+        }
         
         return {
           id: prompt.id,
@@ -263,6 +273,7 @@ const Search = () => {
           }
         };
       } catch (err) {
+        console.error('データ変換エラー:', err, prompt);
         // データ変換エラー時のフォールバック
         return {
           id: prompt.id || 'unknown',

@@ -145,7 +145,7 @@ export default function ContactPage() {
       </Head>
       
       <div className="flex min-h-screen flex-col">
-        <div className="flex-1 md:ml-[240px] bg-gray-50 py-12">
+        <div className="flex-1 bg-gray-50 py-12">
           <div className="container mx-auto px-4 max-w-3xl">
             <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
               <h1 className="text-3xl font-bold mb-2">お問い合わせ</h1>
@@ -260,7 +260,7 @@ export default function ContactPage() {
                 <div className="space-y-4">
                   <div>
                     <h3 className="font-medium text-gray-700">メールでのお問い合わせ</h3>
-                    <p className="text-gray-600">support@prompty.jp</p>
+                    <p className="text-gray-600">queue@queue-tech.jp</p>
                   </div>
                   
                   <div>

@@ -24,6 +24,7 @@ import Comments from '../../components/Comments/Comments';
 import { toast } from '../../components/ui/use-toast';
 import { DEFAULT_AVATAR_URL } from '../../components/common/Avatar';
 import Head from 'next/head';
+import { generateSiteUrl, getDefaultOgImageUrl } from '../../utils/seo-helpers';
 
 // PromptItemの型定義 - エクスポートする
 export interface PromptItem {
@@ -506,8 +507,20 @@ prompt: |
   const generateSEOData = () => {
     const title = `${postData.title} | Prompty`;
     const description = postData.description || `${postData.title}のAIプロンプトです。${isFree ? '無料' : `¥${postData.price}`}でご利用いただけます。`;
-    const url = `https://prompty-ai.com/prompts/${postData.id}`;
-    const imageUrl = postData.thumbnailUrl || 'https://prompty-ai.com/images/prompty_logo.jpg';
+    const url = generateSiteUrl(`/prompts/${postData.id}`);
+    
+    // 画像URLを絶対URLに変換
+    let imageUrl = getDefaultOgImageUrl(); // デフォルト画像
+    if (postData.thumbnailUrl && !postData.thumbnailUrl.includes('default-thumbnail.svg')) {
+      // カスタム画像がある場合
+      if (postData.thumbnailUrl.startsWith('http')) {
+        // 既に絶対URLの場合はそのまま使用
+        imageUrl = postData.thumbnailUrl;
+      } else {
+        // 相対パスの場合は絶対URLに変換
+        imageUrl = generateSiteUrl(postData.thumbnailUrl);
+      }
+    }
     
     return { title, description, url, imageUrl };
   };

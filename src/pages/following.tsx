@@ -143,6 +143,7 @@ const fetchFollowingPostsData = async (
         viewCount: post.view_count as number || 0,
         user: {
           userId: post.author_id as string,
+          username: profile?.username as string,
           name: profile?.display_name as string || profile?.username as string || '不明なユーザー',
           avatarUrl: profile?.avatar_url as string || DEFAULT_AVATAR_URL,
           bio: profile?.bio as string || ''
@@ -556,14 +557,14 @@ const Following: React.FC = () => {
         
         <div className="mt-auto">
           <div className="flex items-center gap-2">
-            <Link href={`/users/${post.user.userId}`} className="block">
+            <Link href={`/users/${post.user.username || post.user.userId}`} className="block">
               <UnifiedAvatar
                 src={post.user.avatarUrl}
                 displayName={post.user.name}
                 size="xs"
               />
             </Link>
-            <Link href={`/users/${post.user.userId}`} className="text-xs text-gray-600 hover:underline">
+            <Link href={`/users/${post.user.username || post.user.userId}`} className="text-xs text-gray-600 hover:underline">
               {post.user.name}
             </Link>
             <span className="text-xs text-gray-500">{post.postedAt}</span>

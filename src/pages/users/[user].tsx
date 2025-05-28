@@ -86,29 +86,53 @@ const UserPage: React.FC = () => {
       setError(null);
       
       try {
-        // ユーザー情報を取得
-        const { data: profileData, error: profileError } = await supabase
+        // ユーザー情報を取得 - idまたはusernameで検索
+        let profileData = null;
+        let profileError = null;
+
+        // まずidで検索を試行
+        const { data: profileByIdData, error: profileByIdError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', userParam)
           .single();
 
-        if (profileError) {
+        if (!profileByIdError && profileByIdData) {
+          profileData = profileByIdData;
+        } else {
+          // idで見つからない場合はusernameで検索
+          const { data: profileByUsernameData, error: profileByUsernameError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('username', userParam)
+            .single();
+
+          if (!profileByUsernameError && profileByUsernameData) {
+            profileData = profileByUsernameData;
+          } else {
+            profileError = profileByUsernameError;
+          }
+        }
+
+        if (profileError || !profileData) {
           setError('ユーザーが見つかりませんでした');
           return;
         }
+
+        // 実際のユーザーIDを取得（URLパラメータがusernameの場合もあるため）
+        const actualUserId = profileData.id;
 
         // フォロワー数を取得
         const { count: followersCount } = await supabase
           .from('follows')
           .select('*', { count: 'exact', head: true })
-          .eq('following_id', userParam);
+          .eq('following_id', actualUserId);
 
         // フォロー数を取得
         const { count: followingCount } = await supabase
           .from('follows')
           .select('*', { count: 'exact', head: true })
-          .eq('follower_id', userParam);
+          .eq('follower_id', actualUserId);
 
         // 現在のユーザーがこのユーザーをフォローしているかチェック
         let isFollowed = false;
@@ -117,7 +141,7 @@ const UserPage: React.FC = () => {
             .from('follows')
             .select('id')
             .eq('follower_id', user.id)
-            .eq('following_id', userParam)
+            .eq('following_id', actualUserId)
             .single();
           
           isFollowed = !!followData;
@@ -138,7 +162,7 @@ const UserPage: React.FC = () => {
 
         // ログインユーザーのプロフィールかどうかを判定
         if (user) {
-          setIsOwnProfile(userParam === user.id);
+          setIsOwnProfile(actualUserId === user.id);
         }
 
         // ユーザーの投稿を取得
@@ -156,7 +180,7 @@ const UserPage: React.FC = () => {
             view_count,
             like_count
           `)
-          .eq('author_id', userParam)
+          .eq('author_id', actualUserId)
           .eq('published', true)
           .order('created_at', { ascending: false })
           .limit(50);
@@ -213,6 +237,15 @@ const UserPage: React.FC = () => {
       toast({
         title: "ログインが必要です",
         description: "フォローするにはログインしてください",
+      });
+      return;
+    }
+
+    // 自分自身をフォローできないようにする制限を追加
+    if (user.id === userData.id) {
+      toast({
+        title: "自分自身をフォローすることはできません",
+        variant: "destructive",
       });
       return;
     }

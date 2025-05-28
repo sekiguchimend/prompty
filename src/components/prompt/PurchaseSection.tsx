@@ -348,6 +348,15 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
 
     if (!author?.userId || isFollowLoading) return false;
 
+    // 自分自身をフォローできないようにする制限を追加
+    if (currentUser.id === author.userId) {
+      toast({
+        title: "自分自身をフォローすることはできません",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     setIsFollowLoading(true);
     setIsAnimating(true);
     
@@ -865,38 +874,40 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
           </div>
           
           {/* フォローボタン */}
-          <div className="flex justify-center">
-            <Button 
-              className={`${
-                isFollowing 
-                  ? 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100' 
-                  : 'bg-gray-800 text-white hover:bg-gray-700'
-              } rounded-md text-sm py-2 px-6 h-auto transition-all duration-200 ${
-                isAnimating ? 'scale-95' : ''
-              } ${isFollowLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
-              onClick={handleFollowClick}
-              disabled={isFollowLoading || !author}
-            >
-              {isFollowing ? (
-                <span className="flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 6L9 17l-5-5"/>
-                  </svg>
-                  フォロー中
-                </span>
-              ) : (
-                <span className="flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                    <circle cx="8.5" cy="7" r="4"/>
-                    <line x1="20" y1="8" x2="20" y2="14"/>
-                    <line x1="23" y1="11" x2="17" y2="11"/>
-                  </svg>
-                  フォローする
-                </span>
-              )}
-            </Button>
-          </div>
+          {currentUser && author?.userId && currentUser.id !== author.userId && (
+            <div className="flex justify-center">
+              <Button 
+                className={`${
+                  isFollowing 
+                    ? 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100' 
+                    : 'bg-gray-800 text-white hover:bg-gray-700'
+                } rounded-md text-sm py-2 px-6 h-auto transition-all duration-200 ${
+                  isAnimating ? 'scale-95' : ''
+                } ${isFollowLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                onClick={handleFollowClick}
+                disabled={isFollowLoading || !author}
+              >
+                {isFollowing ? (
+                  <span className="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 6L9 17l-5-5"/>
+                    </svg>
+                    フォロー中
+                  </span>
+                ) : (
+                  <span className="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                      <circle cx="8.5" cy="7" r="4"/>
+                      <line x1="20" y1="8" x2="20" y2="14"/>
+                      <line x1="23" y1="11" x2="17" y2="11"/>
+                    </svg>
+                    フォローする
+                  </span>
+                )}
+              </Button>
+            </div>
+          )}
           
           {/* 投稿者の統計情報 */}
           {author?.userId && (
