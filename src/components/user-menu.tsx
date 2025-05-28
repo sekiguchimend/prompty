@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { X, LayoutDashboard, FilePen, Heart, Image, Book, Settings, LogOut, Users, Bookmark } from 'lucide-react';
+import { X, LayoutDashboard, FilePen, Heart, Image, Book, Settings, LogOut, Users, Bookmark, Shield } from 'lucide-react';
 import { Avatar } from './common/Avatar';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../lib/auth-context';
 import { supabase } from '../lib/supabaseClient';
 import { getDisplayName } from '../types/profile';
+import { checkAdminStatus } from '../lib/admin-auth';
 
 interface UserProfile {
   username?: string;
@@ -34,6 +35,7 @@ const UserMenu: React.FC<UserMenuProps> = React.memo(({
   const router = useRouter();
   const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   
   // ページ遷移開始時にメニューを閉じる
   useEffect(() => {
@@ -75,10 +77,27 @@ const UserMenu: React.FC<UserMenuProps> = React.memo(({
       console.error('プロフィール取得中のエラー:', error);
     }
   }, [user]);
+
+  // 管理者権限をチェック
+  const checkUserAdminStatus = useCallback(async () => {
+    if (!user) {
+      setIsAdmin(false);
+      return;
+    }
+    
+    try {
+      const adminStatus = await checkAdminStatus(user.id);
+      setIsAdmin(adminStatus);
+    } catch (error) {
+      console.error('管理者権限チェックエラー:', error);
+      setIsAdmin(false);
+    }
+  }, [user]);
   
   useEffect(() => {
     fetchUserProfile();
-  }, [fetchUserProfile]);
+    checkUserAdminStatus();
+  }, [fetchUserProfile, checkUserAdminStatus]);
   
   // 表示用の名前を取得 - useMemoで最適化
   const displayName = useMemo(() => getDisplayName(profile?.display_name), [profile?.display_name]);
@@ -162,6 +181,21 @@ const UserMenu: React.FC<UserMenuProps> = React.memo(({
               </div>
             </div>
           </Link>
+          
+          {/* 管理者ダッシュボードリンク - 管理者のみ表示 */}
+          {isAdmin && (
+            <Link href="/admin" className="block w-full px-4 py-3 border-b hover:bg-gray-50 text-left">
+              <div className="flex items-center">
+                <div className="flex flex-shrink-0 items-center justify-center bg-red-50 rounded-lg w-12 h-12 mr-3">
+                  <Shield className="h-6 w-6 text-red-600" />
+                </div>
+                <div>
+                  <p className="text-base font-medium text-red-600">管理者ダッシュボード</p>
+                  <p className="text-xs text-red-500">システム管理</p>
+                </div>
+              </div>
+            </Link>
+          )}
           
           {/* ポイント表示 */}
           <div className="flex p-4 items-center border-b">
@@ -291,6 +325,21 @@ const UserMenu: React.FC<UserMenuProps> = React.memo(({
           </div>
         </div>
       </Link>
+      
+      {/* 管理者ダッシュボードリンク - 管理者のみ表示 */}
+      {isAdmin && (
+        <Link href="/admin" className="block w-full px-4 py-3 border-b hover:bg-gray-50 text-left">
+          <div className="flex items-center">
+            <div className="flex flex-shrink-0 items-center justify-center bg-red-50 rounded-lg w-12 h-12 mr-3">
+              <Shield className="h-6 w-6 text-red-600" />
+            </div>
+            <div>
+              <p className="text-base font-medium text-red-600">管理者ダッシュボード</p>
+              <p className="text-xs text-red-500">システム管理</p>
+            </div>
+          </div>
+        </Link>
+      )}
       
       {/* ポイント表示 */}
       <div className="flex p-4 items-center">
