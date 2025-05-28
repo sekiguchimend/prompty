@@ -133,7 +133,7 @@ const ContestPage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      <main className="flex-1 pt-12 md:pt-12">
+      <main className="flex-1 pt-5 md:pt-12">
         <div className="container mx-auto px-4 py-6 max-w-6xl">
           {/* タブナビゲーション */}
           <div className="mb-6 border-b border-gray-200">
