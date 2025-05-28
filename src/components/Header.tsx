@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { Search, PenSquare, Bell, ChevronRight, Heart, MessageSquare, X } from 'lucide-react';
+import { Search, PenSquare, Bell, ChevronRight, Heart, MessageSquare, X, Code } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Link from 'next/link';
@@ -349,6 +349,16 @@ const Header = () => {
                             投稿
                           </Button>
                           
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="hidden md:flex items-center gap-2 border-purple-200 text-purple-700 hover:bg-purple-50"
+                            onClick={() => router.push('/code-generator')}
+                          >
+                            <Code className="h-4 w-4" />
+                            AI生成
+                          </Button>
+                          
                           <div className="flex items-center gap-3 md:hidden">
                             <button 
                               className="text-gray-700 p-1.5 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
@@ -361,6 +371,14 @@ const Header = () => {
                             <div className="p-1.5 flex items-center justify-center">
                               <NotificationDropdown />
                             </div>
+                            
+                            <button
+                              className="bg-purple-600 text-white p-2 rounded-full flex items-center justify-center shadow-sm hover:bg-purple-700 transition-colors mr-2"
+                              onClick={() => router.push('/code-generator')}
+                              aria-label="AI生成"
+                            >
+                              <Code className="h-4 w-4" />
+                            </button>
                             
                             <button
                               className="bg-black text-white p-2 rounded-full flex items-center justify-center shadow-sm hover:bg-gray-800 transition-colors"

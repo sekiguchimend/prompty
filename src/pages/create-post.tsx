@@ -16,7 +16,9 @@ import {
   type Prompt,
   PostModeSelector,
   StepBasedForm,
-  StandardForm
+  StandardForm,
+  CodeGenerationTab,
+  type GeneratedCodeProject
 } from '../components/create-post';
 import { useToast } from "../components/ui/use-toast";
 import { useAuth } from "../lib/auth-context";
@@ -126,12 +128,15 @@ const CreatePost = () => {
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   
   // 投稿モード選択のための状態を追加
-  type PostMode = 'selection' | 'standard' | 'step';
+  type PostMode = 'selection' | 'standard' | 'step' | 'code-generation';
   const [postMode, setPostMode] = useState<PostMode>('selection');
   // ステップベースのフォーム用の状態を追加
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const TOTAL_STEPS = 8; // 全ステップ数（プロジェクト情報の各項目、プロンプト入力、確認と投稿）
+  
+  // コード生成用の状態を追加
+  const [generatedCodeProjects, setGeneratedCodeProjects] = useState<GeneratedCodeProject[]>([]);
   
   // カテゴリ一覧を取得
   const fetchCategories = async () => {
@@ -975,7 +980,7 @@ const submitProject = async () => {
   };
 
   // 投稿モード選択ハンドラー
-  const handleSelectPostMode = (mode: 'standard' | 'step') => {
+  const handleSelectPostMode = (mode: 'standard' | 'step' | 'code-generation') => {
     setPostMode(mode);
   };
 
@@ -1021,6 +1026,27 @@ const submitProject = async () => {
   // ボタンのラベルを取得
   const getBackButtonLabel = () => {
     return postMode === 'selection' ? '戻る' : '投稿モード選択に戻る';
+  };
+
+  // コード生成プロジェクトの保存
+  const handleCodeProjectSave = (project: GeneratedCodeProject) => {
+    const projectWithId = {
+      ...project,
+      id: Date.now().toString(),
+    };
+    
+    setGeneratedCodeProjects(prev => [projectWithId, ...prev]);
+    
+    // ローカルストレージに保存
+    const existingProjects = JSON.parse(localStorage.getItem('prompty-code-projects') || '[]');
+    localStorage.setItem('prompty-code-projects', JSON.stringify([projectWithId, ...existingProjects]));
+    
+    // 成功通知
+    toast({
+      title: "プロジェクトが保存されました",
+      description: "コード生成プロジェクトが正常に保存されました",
+      variant: "default",
+    });
   };
 
   return (
@@ -1250,6 +1276,41 @@ const submitProject = async () => {
                           isSubmitting={isSubmitting}
                         />
                       )}
+                    </>
+                  )}
+                </>
+              );
+            case 'code-generation':
+              return (
+                <>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+                    <button 
+                      onClick={handleBackButtonClick}
+                      className="text-gray-500 hover:text-black flex items-center"
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-1" /> 
+                      {getBackButtonLabel()}
+                    </button>
+                  </div>
+                  
+                  {/* 認証状態表示 */}
+                  {isAnonymousSubmission && (
+                    <div className="w-full max-w-3xl mb-6 p-4 bg-red-50 border border-red-200 rounded-md shadow-sm">
+                      <p className="text-red-800">
+                        現在ログインしていません。プロンプトの投稿にはログインが必要です。
+                        <a href="/Login" className="underline text-blue-600 font-bold ml-1">ログイン</a>して投稿してください。
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* 投稿フォーム - モードに応じて表示を切り替え */}
+                  {!isAnonymousSubmission && (
+                    <>
+                      <div className="mb-8">
+                        <CodeGenerationTab
+                          onProjectSave={handleCodeProjectSave}
+                        />
+                      </div>
                     </>
                   )}
                 </>

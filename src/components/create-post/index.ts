@@ -8,6 +8,7 @@ export { default as ThumbnailUploader } from './ThumbnailUploader';
 export { default as CategorySelector } from './CategorySelector';
 export { default as ModelSelector } from './ModelSelector';
 export { default as PricingSelector } from './PricingSelector';
+export { default as CodeGenerationTab } from './CodeGenerationTab';
 
 // 復元したコンポーネントをエクスポート
 export { default as PostModeSelector } from './PostModeSelector';
@@ -20,6 +21,7 @@ export { default as StepBasedForm } from './StepBasedForm';
 export type { ProjectFormValues } from './ProjectSettingsForm';
 export type { PromptFormValues } from './PromptForm';
 export type { Prompt } from './PromptHistory';
+export type { GeneratedCodeProject } from './CodeGenerationTab';
 
 // 定数のエクスポート
 export { AI_MODELS } from './ProjectSettingsForm';

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { X, LayoutDashboard, FilePen, Heart, Image, Book, Settings, LogOut, Users, Bookmark } from 'lucide-react';
+import { X, LayoutDashboard, FilePen, Heart, Image, Book, Settings, LogOut, Users, Bookmark, Code } from 'lucide-react';
 import { Avatar } from './common/Avatar';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -180,6 +180,11 @@ const UserMenu: React.FC<UserMenuProps> = React.memo(({
               自分のコンテンツ
             </Link>
             
+            <Link href="/code-generator" className="flex w-full items-center text-sm px-4 py-2 hover:bg-gray-50">
+              <Code className="h-4 w-4 mr-3 text-purple-600" />
+              <span className="text-purple-600">AIコード生成</span>
+            </Link>
+            
             <Link href="/my-articles?tab=purchasedArticles" className="flex w-full items-center text-sm px-4 py-2 hover:bg-gray-50">
               <span className="h-4 w-4 mr-3 flex items-center justify-center text-amber-800">¥</span>
               <span className="text-amber-800">購入したコンテンツ</span>
@@ -307,6 +312,11 @@ const UserMenu: React.FC<UserMenuProps> = React.memo(({
         <Link href="/my-articles" className="flex w-full items-center text-base py-2 border-b border-gray-100 pb-4">
           <FilePen className="h-5 w-5 mr-3 text-gray-500" />
           自分の記事
+        </Link>
+        
+        <Link href="/code-generator" className="flex w-full items-center text-base py-2 border-b border-gray-100 pb-4">
+          <Code className="h-5 w-5 mr-3 text-purple-600" />
+          <span className="text-purple-600">AIコード生成</span>
         </Link>
         
         <Link href="/my-articles?tab=purchasedArticles" className="flex w-full items-center text-base py-2 border-b border-gray-100 pb-4">
