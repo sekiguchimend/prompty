@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { Search, PenSquare, Bell, ChevronRight, Heart, MessageSquare, X, Code } from 'lucide-react';
+import { Search, PenSquare, Bell, ChevronRight, Heart, MessageSquare, X, Code, Settings } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Link from 'next/link';
@@ -372,8 +372,22 @@ const Header = () => {
                               <NotificationDropdown />
                             </div>
                             
+                            {user?.email && isAdminUser(user.email) && (
+                              <button
+                                className="bg-red-600 text-white p-2 rounded-full flex items-center justify-center shadow-sm hover:bg-red-700 transition-colors"
+                                onClick={() => {
+                                  if (window.confirm('管理ページに移動しますか？')) {
+                                    router.push('/admin');
+                                  }
+                                }}
+                                aria-label="管理ページ"
+                              >
+                                <Settings className="h-4 w-4" />
+                              </button>
+                            )}
+                            
                             <button
-                              className="bg-purple-600 text-white p-2 rounded-full flex items-center justify-center shadow-sm hover:bg-purple-700 transition-colors mr-2"
+                              className="bg-purple-600 text-white p-2 rounded-full flex items-center justify-center shadow-sm hover:bg-purple-700 transition-colors"
                               onClick={() => router.push('/code-generator')}
                               aria-label="AI生成"
                             >

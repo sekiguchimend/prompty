@@ -646,6 +646,7 @@ prompt: |
                 canDownloadYaml={!!(isFree || isPaid || isAuthor)}
                 onDownloadYaml={() => handleDownloadYaml(postData)}
                 previewLines={postData.preview_lines || 3}
+                likes={postData.likeCount || 0}
               />
             </div>
             

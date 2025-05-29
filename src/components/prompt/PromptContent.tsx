@@ -78,6 +78,7 @@ interface PromptContentProps {
   canDownloadYaml?: boolean;
   onDownloadYaml?: () => void;
   previewLines?: number;
+  likes?: number;
 }
 
 // 複数プロンプト解析用の型定義
@@ -170,7 +171,8 @@ const PromptContent: React.FC<PromptContentProps> = ({
   reviewCount = 0,
   canDownloadYaml = false,
   onDownloadYaml = () => {},
-  previewLines = 2
+  previewLines = 2,
+  likes = 0
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -782,7 +784,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
         tags={[]}
         reviewers={[]}
         reviewCount={0}
-        likes={0}
+        likes={likes}
         author={{
           name: author.name,
           avatarUrl: author.avatarUrl,

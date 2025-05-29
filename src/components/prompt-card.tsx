@@ -65,25 +65,98 @@ const PromptCard: React.FC<PromptCardProps> = ({
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
   
-  // 初期状態でブックマーク状態を確認
+  // 初期状態でブックマーク状態といいね状態を確認
   useEffect(() => {
-    const checkBookmarkStatus = async () => {
+    const checkInitialState = async () => {
       if (!currentUser) return;
       
+      // ブックマーク状態を確認
       const isBookmarked = await checkIfBookmarked(promptId, currentUser.id);
       setBookmarked(isBookmarked);
+      
+      // いいね状態を確認
+      const isLiked = await checkIfLiked(promptId, currentUser.id);
+      setLiked(isLiked);
     };
     
-    checkBookmarkStatus();
+    checkInitialState();
   }, [currentUser, promptId]);
   
   // いいねをトグルする関数
-  const toggleLike = (e: React.MouseEvent) => {
+  const toggleLike = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
+    if (!currentUser) {
+      toast({
+        title: "ログインが必要です",
+        description: "いいねするにはログインしてください",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // 楽観的更新（UIを先に更新）
+    const wasLiked = liked;
+    const previousCount = currentLikeCount;
+    
     setLiked(!liked);
     setCurrentLikeCount(prevCount => liked ? prevCount - 1 : prevCount + 1);
+    
+    try {
+      if (wasLiked) {
+        // いいねを削除
+        const { error } = await supabase
+          .from('likes')
+          .delete()
+          .eq('prompt_id', promptId)
+          .eq('user_id', currentUser.id);
+
+        if (error) {
+          console.error("いいね削除エラー:", error);
+          // エラー時は元の状態に戻す
+          setLiked(wasLiked);
+          setCurrentLikeCount(previousCount);
+          toast({
+            title: "いいねの削除に失敗しました",
+            description: error.message,
+            variant: "destructive",
+          });
+          return;
+        }
+      } else {
+        // いいねを追加
+        const { error } = await supabase
+          .from('likes')
+          .insert({
+            prompt_id: promptId,
+            user_id: currentUser.id,
+          });
+
+        if (error) {
+          console.error("いいね追加エラー:", error);
+          // エラー時は元の状態に戻す
+          setLiked(wasLiked);
+          setCurrentLikeCount(previousCount);
+          toast({
+            title: "いいねの追加に失敗しました",
+            description: error.message,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+    } catch (err) {
+      console.error("いいね処理中のエラー:", err);
+      // エラー時は元の状態に戻す
+      setLiked(wasLiked);
+      setCurrentLikeCount(previousCount);
+      toast({
+        title: "エラーが発生しました",
+        description: "操作に失敗しました。後でもう一度お試しください。",
+        variant: "destructive",
+      });
+    }
   };
   
   // ブックマークをトグルする関数

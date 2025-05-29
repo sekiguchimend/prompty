@@ -70,6 +70,16 @@ interface Contact {
   updated_at: string;
 }
 
+interface Feedback {
+  id: string;
+  feedback_type: string;
+  email: string | null;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 const AdminDashboard: React.FC = () => {
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -93,6 +103,10 @@ const AdminDashboard: React.FC = () => {
   // お問い合わせ管理用の状態
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactsLoading, setContactsLoading] = useState(false);
+
+  // フィードバック管理用の状態
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [feedbacksLoading, setFeedbacksLoading] = useState(false);
 
   // 管理者権限チェック
   useEffect(() => {
@@ -367,138 +381,24 @@ const AdminDashboard: React.FC = () => {
   const fetchContacts = async () => {
     setContactsLoading(true);
     try {
-      console.log('=== お問い合わせ取得デバッグ開始 ===');
-      
-      // 1. まずテーブルの存在確認
-      console.log('1. contactsテーブル存在確認...');
-      const { data: tableCheck, error: tableError } = await supabase
-        .from('contacts')
-        .select('count', { count: 'exact', head: true });
-      
-      console.log('contactsテーブル存在確認結果:', { tableCheck, tableError });
-      
-      if (tableError) {
-        console.error('contactsテーブルアクセスエラー:', tableError);
-        setContacts([]);
-        toast({
-          title: 'テーブルアクセスエラー',
-          description: `contactsテーブルにアクセスできません: ${tableError.message}`,
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      // 2. 権限確認のため、最もシンプルなクエリを実行
-      console.log('2. contacts基本的な権限確認...');
-      const { data: simpleData, error: simpleError } = await supabase
-        .from('contacts')
-        .select('id')
-        .limit(1);
-      
-      console.log('contacts基本権限確認結果:', { simpleData, simpleError });
-      
-      if (simpleError) {
-        console.error('contacts権限エラー:', simpleError);
-        setContacts([]);
-        toast({
-          title: '権限エラー',
-          description: `contactsテーブルの読み取り権限がありません: ${simpleError.message}`,
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      // 3. カラム構造確認のため、特定のカラムを指定してクエリ
-      console.log('3. contactsカラム構造確認...');
-      const { data: columnData, error: columnError } = await supabase
-        .from('contacts')
-        .select('id, name, email, subject, message, is_read, created_at, updated_at')
-        .limit(5);
-      
-      console.log('contactsカラム構造確認結果:', { columnData, columnError });
-      
-      if (columnError) {
-        console.error('contactsカラム構造エラー:', columnError);
-        console.error('contactsカラム構造エラー詳細:', JSON.stringify(columnError, null, 2));
-        
-        // 個別カラムをテスト
-        console.log('4. contacts個別カラムテスト...');
-        const testColumns = ['id', 'name', 'email', 'subject', 'message', 'is_read', 'created_at', 'updated_at'];
-        
-        for (const column of testColumns) {
-          try {
-            const { data, error } = await supabase
-              .from('contacts')
-              .select(column)
-              .limit(1);
-            console.log(`contactsカラム ${column}:`, error ? `エラー - ${error.message}` : '正常');
-            if (error) {
-              console.error(`contactsカラム ${column} 詳細エラー:`, JSON.stringify(error, null, 2));
-            }
-          } catch (e) {
-            console.log(`contactsカラム ${column}: 例外 - ${e}`);
-          }
-        }
-        
-        // 最もシンプルなクエリを試す
-        console.log('5. 最もシンプルなクエリテスト...');
-        try {
-          const { data: simpleTest, error: simpleTestError } = await supabase
-            .from('contacts')
-            .select('*')
-            .limit(1);
-          console.log('シンプルクエリ結果:', { simpleTest, simpleTestError });
-          if (simpleTestError) {
-            console.error('シンプルクエリエラー詳細:', JSON.stringify(simpleTestError, null, 2));
-          }
-        } catch (e) {
-          console.log('シンプルクエリ例外:', e);
-        }
-        
-        setContacts([]);
-        toast({
-          title: 'カラム構造エラー',
-          description: `指定したカラムが存在しません: ${columnError.message}`,
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      // 4. 全データ取得
-      console.log('4. contacts全データ取得...');
       const { data, error } = await supabase
         .from('contacts')
         .select('*')
         .order('created_at', { ascending: false });
 
-      console.log('contacts全データ取得結果:', { data, error });
-      console.log('contacts取得データ数:', data?.length || 0);
-
       if (error) {
-        console.error('contacts全データ取得エラー:', error);
-        setContacts([]);
+        console.error('お問い合わせ取得エラー:', error);
         toast({
-          title: 'データ取得エラー',
-          description: `お問い合わせデータの取得に失敗しました: ${error.message}`,
+          title: 'エラー',
+          description: 'お問い合わせの取得に失敗しました',
           variant: 'destructive'
         });
         return;
       }
 
-      if (!data || data.length === 0) {
-        console.log('お問い合わせデータが空です（テーブルは存在するがデータなし）');
-        setContacts([]);
-        return;
-      }
-
-      console.log('取得したお問い合わせ数:', data.length);
-      console.log('最初のお問い合わせデータ:', data[0]);
-      
       setContacts(data || []);
-      console.log('=== お問い合わせ取得デバッグ終了 ===');
     } catch (error) {
       console.error('お問い合わせ取得エラー:', error);
-      setContacts([]);
       toast({
         title: 'エラー',
         description: 'お問い合わせの取得に失敗しました',
@@ -506,6 +406,38 @@ const AdminDashboard: React.FC = () => {
       });
     } finally {
       setContactsLoading(false);
+    }
+  };
+
+  // フィードバック一覧を取得
+  const fetchFeedbacks = async () => {
+    setFeedbacksLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('feedback')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('フィードバック取得エラー:', error);
+        toast({
+          title: 'エラー',
+          description: 'フィードバックの取得に失敗しました',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      setFeedbacks(data || []);
+    } catch (error) {
+      console.error('フィードバック取得エラー:', error);
+      toast({
+        title: 'エラー',
+        description: 'フィードバックの取得に失敗しました',
+        variant: 'destructive'
+      });
+    } finally {
+      setFeedbacksLoading(false);
     }
   };
 
@@ -519,6 +451,7 @@ const AdminDashboard: React.FC = () => {
       fetchReports();
       fetchAnnouncements();
       fetchContacts();
+      fetchFeedbacks();
     } else {
       console.log('管理者権限なし - データ取得スキップ');
     }
@@ -638,13 +571,12 @@ const AdminDashboard: React.FC = () => {
     try {
       const { error } = await supabase
         .from('contacts')
-        .update({ 
-          is_read: !isRead,
-          updated_at: new Date().toISOString()
-        })
+        .update({ is_read: !isRead })
         .eq('id', contactId);
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       toast({
         title: '更新完了',
@@ -657,6 +589,34 @@ const AdminDashboard: React.FC = () => {
       toast({
         title: 'エラー',
         description: 'お問い合わせの更新に失敗しました',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  // フィードバックの既読/未読切り替え
+  const toggleFeedbackRead = async (feedbackId: string, isRead: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('feedback')
+        .update({ is_read: !isRead })
+        .eq('id', feedbackId);
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: '更新完了',
+        description: `フィードバックを${!isRead ? '既読' : '未読'}にしました`
+      });
+
+      fetchFeedbacks();
+    } catch (error) {
+      console.error('フィードバック更新エラー:', error);
+      toast({
+        title: 'エラー',
+        description: 'フィードバックの更新に失敗しました',
         variant: 'destructive'
       });
     }
@@ -697,25 +657,30 @@ const AdminDashboard: React.FC = () => {
       </Head>
 
       <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">管理者ダッシュボード</h1>
-            <p className="text-gray-600">システムの管理と監視</p>
+        <div className="container mx-auto px-2 md:px-4 py-4 md:py-8">
+          <div className="mb-6 md:mb-8">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">管理者ダッシュボード</h1>
+            <p className="text-sm md:text-base text-gray-600">システムの管理と監視</p>
           </div>
 
           <Tabs defaultValue="reports" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="reports" className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" />
-                レポート管理
+            {/* モバイル対応: 縦並びレイアウト + 横スクロール対応 */}
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-1 h-auto p-1">
+              <TabsTrigger value="reports" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 text-xs md:text-sm py-2 px-2">
+                <AlertTriangle className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="text-center">レポート管理</span>
               </TabsTrigger>
-              <TabsTrigger value="announcements" className="flex items-center gap-2">
-                <Bell className="h-4 w-4" />
-                お知らせ管理
+              <TabsTrigger value="announcements" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 text-xs md:text-sm py-2 px-2">
+                <Bell className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="text-center">お知らせ管理</span>
               </TabsTrigger>
-              <TabsTrigger value="contacts" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                お問い合わせ管理
+              <TabsTrigger value="contacts" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 text-xs md:text-sm py-2 px-2">
+                <Users className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="text-center">お問い合わせ管理</span>
+              </TabsTrigger>
+              <TabsTrigger value="feedbacks" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 text-xs md:text-sm py-2 px-2">
+                <FileText className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="text-center">フィードバック管理</span>
               </TabsTrigger>
             </TabsList>
 
@@ -750,10 +715,10 @@ const AdminDashboard: React.FC = () => {
                         </div>
                       </div>
                       {reports.map((report) => (
-                        <div key={report.id} className="border rounded-lg p-4 space-y-3">
-                          <div className="flex items-start justify-between">
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2">
+                        <div key={report.id} className="border rounded-lg p-3 md:p-4 space-y-3">
+                          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                            <div className="space-y-2 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <Badge variant={
                                   report.status === 'pending' ? 'default' :
                                   report.status === 'resolved' ? 'secondary' : 'destructive'
@@ -761,39 +726,39 @@ const AdminDashboard: React.FC = () => {
                                   {report.status === 'pending' ? '保留中' :
                                    report.status === 'resolved' ? '解決済み' : '却下'}
                                 </Badge>
-                                <span className="text-sm text-gray-500">
+                                <span className="text-xs md:text-sm text-gray-500">
                                   {report.reason === 'inappropriate' ? '不適切なコンテンツ' :
                                    report.reason === 'harassment' ? 'ハラスメント' :
                                    report.reason === 'spam' ? 'スパム' : 'その他'}
                                 </span>
                               </div>
-                              <div className="text-sm">
-                                <p><strong>プロンプト:</strong> {report.prompt?.title || '不明'}</p>
+                              <div className="text-xs md:text-sm space-y-1">
+                                <p><strong>プロンプト:</strong> <span className="break-words">{report.prompt?.title || '不明'}</span></p>
                                 <p><strong>報告者:</strong> {report.reporter?.display_name || report.reporter?.username || '不明'}</p>
                                 <p><strong>報告日:</strong> {format(new Date(report.created_at), 'yyyy/MM/dd HH:mm', { locale: ja })}</p>
                                 {report.details && (
-                                  <p><strong>詳細:</strong> {report.details}</p>
+                                  <p><strong>詳細:</strong> <span className="break-words">{report.details}</span></p>
                                 )}
                               </div>
                             </div>
                             {report.status === 'pending' && (
-                              <div className="flex gap-2">
+                              <div className="flex flex-col sm:flex-row gap-2 md:ml-4">
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   onClick={() => updateReportStatus(report.id, 'resolved')}
-                                  className="flex items-center gap-1"
+                                  className="flex items-center justify-center gap-1 text-xs md:text-sm"
                                 >
-                                  <CheckCircle className="h-4 w-4" />
+                                  <CheckCircle className="h-3 w-3 md:h-4 md:w-4" />
                                   解決
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="destructive"
                                   onClick={() => updateReportStatus(report.id, 'dismissed')}
-                                  className="flex items-center gap-1"
+                                  className="flex items-center justify-center gap-1 text-xs md:text-sm"
                                 >
-                                  <XCircle className="h-4 w-4" />
+                                  <XCircle className="h-3 w-3 md:h-4 md:w-4" />
                                   却下
                                 </Button>
                               </div>
@@ -936,21 +901,21 @@ const AdminDashboard: React.FC = () => {
                   ) : (
                     <div className="space-y-4">
                       {announcements.map((announcement) => (
-                        <div key={announcement.id} className="border rounded-lg p-4 space-y-3">
-                          <div className="flex items-start justify-between">
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2">
+                        <div key={announcement.id} className="border rounded-lg p-3 md:p-4 space-y-3">
+                          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                            <div className="space-y-2 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <Badge variant={announcement.is_active ? 'default' : 'secondary'}>
                                   {announcement.is_active ? 'アクティブ' : '非アクティブ'}
                                 </Badge>
-                                <span className="text-sm text-gray-500">
+                                <span className="text-xs md:text-sm text-gray-500">
                                   {announcement.icon} • {announcement.icon_color}
                                 </span>
                               </div>
                               <div>
-                                <h3 className="font-medium">{announcement.title}</h3>
-                                <p className="text-sm text-gray-600 mt-1">{announcement.content}</p>
-                                <div className="text-xs text-gray-500 mt-2">
+                                <h3 className="font-medium text-sm md:text-base">{announcement.title}</h3>
+                                <p className="text-xs md:text-sm text-gray-600 mt-1 break-words">{announcement.content}</p>
+                                <div className="text-xs text-gray-500 mt-2 space-y-1">
                                   <p>開始: {format(new Date(announcement.start_date), 'yyyy/MM/dd HH:mm', { locale: ja })}</p>
                                   {announcement.end_date && (
                                     <p>終了: {format(new Date(announcement.end_date), 'yyyy/MM/dd HH:mm', { locale: ja })}</p>
@@ -962,6 +927,7 @@ const AdminDashboard: React.FC = () => {
                               size="sm"
                               variant="outline"
                               onClick={() => toggleAnnouncementActive(announcement.id, announcement.is_active)}
+                              className="text-xs md:text-sm w-full md:w-auto"
                             >
                               {announcement.is_active ? '非アクティブ化' : 'アクティブ化'}
                             </Button>
@@ -998,20 +964,20 @@ const AdminDashboard: React.FC = () => {
                   ) : (
                     <div className="space-y-4">
                       {contacts.map((contact) => (
-                        <div key={contact.id} className="border rounded-lg p-4 space-y-3">
-                          <div className="flex items-start justify-between">
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2">
+                        <div key={contact.id} className="border rounded-lg p-3 md:p-4 space-y-3">
+                          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                            <div className="space-y-2 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <Badge variant={contact.is_read ? 'default' : 'secondary'}>
                                   {contact.is_read ? '既読' : '未読'}
                                 </Badge>
-                                <span className="text-sm text-gray-500">
+                                <span className="text-xs md:text-sm text-gray-500 break-words">
                                   {contact.name} • {contact.email}
                                 </span>
                               </div>
                               <div>
-                                <h3 className="font-medium">{contact.subject}</h3>
-                                <p className="text-sm text-gray-600 mt-1">{contact.message}</p>
+                                <h3 className="font-medium text-sm md:text-base break-words">{contact.subject}</h3>
+                                <p className="text-xs md:text-sm text-gray-600 mt-1 break-words">{contact.message}</p>
                                 <div className="text-xs text-gray-500 mt-2">
                                   <p>受信日: {format(new Date(contact.created_at), 'yyyy/MM/dd HH:mm', { locale: ja })}</p>
                                 </div>
@@ -1021,8 +987,69 @@ const AdminDashboard: React.FC = () => {
                               size="sm"
                               variant="outline"
                               onClick={() => toggleContactRead(contact.id, contact.is_read)}
+                              className="text-xs md:text-sm w-full md:w-auto"
                             >
                               {contact.is_read ? '未読にする' : '既読にする'}
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* フィードバック管理タブ */}
+            <TabsContent value="feedbacks" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    フィードバック一覧
+                  </CardTitle>
+                  <CardDescription>
+                    受け取ったフィードバックを管理します
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {feedbacksLoading ? (
+                    <div className="flex justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                    </div>
+                  ) : feedbacks.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      フィードバックはありません
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {feedbacks.map((feedback) => (
+                        <div key={feedback.id} className="border rounded-lg p-3 md:p-4 space-y-3">
+                          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                            <div className="space-y-2 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <Badge variant={feedback.is_read ? 'default' : 'secondary'}>
+                                  {feedback.is_read ? '既読' : '未読'}
+                                </Badge>
+                                <span className="text-xs md:text-sm text-gray-500">
+                                  {feedback.feedback_type}
+                                </span>
+                              </div>
+                              <div>
+                                <h3 className="font-medium text-sm md:text-base break-words">{feedback.message}</h3>
+                                <div className="text-xs text-gray-500 mt-2 space-y-1">
+                                  {feedback.email && <p className="break-words">Email: {feedback.email}</p>}
+                                  <p>受信日: {format(new Date(feedback.created_at), 'yyyy/MM/dd HH:mm', { locale: ja })}</p>
+                                </div>
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => toggleFeedbackRead(feedback.id, feedback.is_read)}
+                              className="text-xs md:text-sm w-full md:w-auto"
+                            >
+                              {feedback.is_read ? '未読にする' : '既読にする'}
                             </Button>
                           </div>
                         </div>

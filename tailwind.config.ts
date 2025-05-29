@@ -59,7 +59,7 @@ const config = {
 				prompty: {
 					primary: '#3D9A9A',
 					secondary: '#FFC2D1',
-					background: '#F8F9FA',
+					background: '#FFFFFF',
 					text: '#333333',
 					lightGray: '#F2F2F2',
 					gray: '#AAAAAA',

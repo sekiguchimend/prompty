@@ -406,7 +406,7 @@ const Search = () => {
         />
       </Head>
       <div className="min-h-screen bg-prompty-background">
-      <main className="container max-w-7xl mx-auto px-4 py-8 pt-20">
+      <main className="container max-w-7xl mx-auto px-4 py-8 pt-12 md:pt-20">
         <h1 className="text-3xl font-bold mb-4">検索</h1>
         
         {/* 検索フォーム */}

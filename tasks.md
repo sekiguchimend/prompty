@@ -1,48 +1,21 @@
-# タスク完了報告 ✅
+以下のタスクを全てこなし実装前に修正.txtに実装するものをチェックリストでくわえ終えたらチェックしていき間違えが起こらないように進行してくださ。
 
-## 実装内容
-adminページを作成し、以下の機能を実装しました：
+・スマホ画面の時の検索結果ページのトップマージンが空きすぎているからそこをせばめて
 
-### 1. 管理者権限チェック機能
-- `src/lib/admin-auth.tsx` - 管理者権限をチェックするユーティリティ関数
-- profilesテーブルのstatusコラムが'admin'のユーザーのみアクセス可能
+・以下のテーブルを参考にして管理画面でフィードバックも表示されるようにして
+create table public.feedback (
+  id uuid not null default gen_random_uuid (),
+  feedback_type text not null,
+  email text null,
+  message text not null,
+  is_read boolean not null default false,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  constraint feedback_pkey primary key (id)
+) TABLESPACE pg_default;
 
-### 2. 管理者ダッシュボード
-- `src/pages/admin/index.tsx` - 管理者ダッシュボードメインページ
-- レポート管理機能：reportsテーブルの一覧表示と処理
-- お知らせ管理機能：announcementsテーブルへの通知作成・管理
+・全画面の背景の色を明るい白に変えてください
 
-### 3. ナビゲーション
-- UserMenuに管理者ダッシュボードリンクを追加
-- 管理者権限を持つユーザーのみに表示
+追加タスク
 
-### 4. セキュリティ機能
-- 管理者以外のユーザーは自動的にホームページにリダイレクト
-- 管理者ページはSEOインデックスから除外（noindex, nofollow）
-
-## データベーステーブル対応
-
-### announcementsテーブル
-- 新しいお知らせの作成機能
-- 既存のお知らせの管理（アクティブ/非アクティブ切り替え）
-- アイコン、カラー、開始・終了日時の設定
-
-### reportsテーブル  
-- レポート一覧の表示
-- ステータス管理（保留中/解決済み/却下）
-- 報告者とプロンプト情報の表示
-
----
-
-## 元のタスク内容（参考）
-
-adminページを作成しreportsテーブルを一覧できるようにしたり通知を作成することができannouncementsに保存されるようにしてください。adminページはprofilesテーブルのstatusコラムでadminとなっているユーザー以外は入れないようにしてください。
-
-announcementsテーブルがこちらです。
-
-INSERT INTO "public"."announcements" ("id", "title", "content", "icon", "icon_color", "start_date", "end_date", "is_active", "created_at", "updated_at") VALUES ('5395a3e8-014b-467e-b5d5-e949dc19a25f', '冬のキャンペーン', 'プレミアム会員が30%オフになります。12/25まで', 'campaign', 'purple', '2025-04-02 08:44:39.183153+00', '2025-12-25 23:59:59+00', 'true', '2025-04-16 08:44:39.183153+00', '2025-04-16 08:44:39.183153+00'), ('76aacf7a-4edc-4edf-a446-847357b8e75e', '修正のお知らせ', '通知機能のテストをしています。', null, null, '2025-04-20 15:56:40+00', null, 'true', '2025-04-20 15:56:44+00', '2025-04-20 15:56:47+00'), ('7bcef297-9aa1-4185-81f9-e31cd8b0c868', '渡辺', 'James LA', 'info', 'green', '2025-04-16 00:00:00+00', '2025-04-17 00:00:00+00', 'true', '2025-04-16 10:35:26.447239+00', '2025-04-16 10:35:26.447239+00'), ('cab6edb2-bb60-4a30-b8d0-99f0bf65d43a', 'システムメンテナンスのお知らせ', '12/15 AM2:00～AM5:00にメンテナンスを実施します', 'maintenance', 'blue', '2025-04-09 08:44:39.183153+00', '2025-04-23 08:44:39.183153+00', 'true', '2025-04-16 08:44:39.183153+00', '2025-04-16 08:44:39.183153+00');
-
-
-reportsテーブルがこちらです。
-
-INSERT INTO "public"."reports" ("id", "target_id", "target_type", "prompt_id", "reporter_id", "reason", "details", "status", "created_at", "updated_at") VALUES ('01e0132f-31f8-4082-9648-14fea7d6985e', '522f674b-e3e1-45ba-b025-eea4300898ba', 'prompt', '522f674b-e3e1-45ba-b025-eea4300898ba', '58139c6b-645d-4de0-b39c-eadc61e32266', 'other', 'お', 'pending', '2025-05-01 15:36:45.218+00', '2025-05-01 15:36:45.815567+00'), ('34e8c4d6-e8aa-468b-ad07-45261d572904', 'c8b7677c-b98f-4d88-bf6b-8b6c92ae28c2', 'prompt', 'c8b7677c-b98f-4d88-bf6b-8b6c92ae28c2', '58139c6b-645d-4de0-b39c-eadc61e32266', 'other', null, 'pending', '2025-05-02 15:28:55.206+00', '2025-05-02 15:28:55.336219+00'), ('4db00246-d531-400a-98ea-4b9bd61b1df4', 'da9316a1-16f5-4266-b52a-82b3abb56855', 'prompt', 'da9316a1-16f5-4266-b52a-82b3abb56855', 'dfefe66d-c6b1-4491-886a-2b0da35e1e83', 'inappropriate', null, 'pending', '2025-05-19 16:15:14.522+00', '2025-05-19 16:15:15.122191+00'), ('7c0407b4-b08a-432d-89b5-243e5d87dc50', 'ea6eaacc-b9fd-46fc-beed-a9638362910e', 'prompt', 'ea6eaacc-b9fd-46fc-beed-a9638362910e', '6eb8c0c5-685c-49ec-835a-bd0b89ba7c28', 'inappropriate', 'atge', 'pending', '2025-05-02 07:33:07.076+00', '2025-05-02 07:33:11.796099+00'), ('994ed418-c093-4051-bc08-cf129eba569e', '004e0e80-7982-4d2b-a9fc-c504db654d76', 'prompt', '004e0e80-7982-4d2b-a9fc-c504db654d76', '6eb8c0c5-685c-49ec-835a-bd0b89ba7c28', 'inappropriate', 'いちこめ', 'pending', '2025-05-02 10:16:23.019+00', '2025-05-02 10:16:27.57055+00'), ('9c4d8f75-d2eb-4713-b16e-79e37129dd7f', '004e0e80-7982-4d2b-a9fc-c504db654d76', 'prompt', '004e0e80-7982-4d2b-a9fc-c504db654d76', '58139c6b-645d-4de0-b39c-eadc61e32266', 'other', null, 'pending', '2025-05-02 15:26:33.924+00', '2025-05-02 15:26:34.48834+00'), ('acde86e1-d7a4-49e4-8b0d-d6d6d518b193', 'd5c7a594-b043-46d8-899b-628a5f86d460', 'prompt', 'd5c7a594-b043-46d8-899b-628a5f86d460', 'd8cfc742-f82e-4f9e-b6f9-2bdab1355622', 'inappropriate', 'ｙっふ', 'pending', '2025-04-30 13:17:31.001+00', '2025-04-30 13:17:31.207803+00'), ('f7c620d7-66fc-43ba-858c-6ffac4138a76', 'ea6eaacc-b9fd-46fc-beed-a9638362910e', 'prompt', 'ea6eaacc-b9fd-46fc-beed-a9638362910e', '58139c6b-645d-4de0-b39c-eadc61e32266', 'harassment', null, 'pending', '2025-05-02 15:25:53.454+00', '2025-05-02 15:25:54.093636+00');
+・イイねの表示が０になってしまっているのでそこを修正してくださ。
