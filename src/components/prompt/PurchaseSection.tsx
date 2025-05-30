@@ -137,6 +137,11 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
   const [isLikeLoading, setIsLikeLoading] = useState(false); // いいね処理中のローディング状態
   const [isFollowLoading, setIsFollowLoading] = useState(false); // フォロー処理中のローディング状態
 
+  // initialLikesが変更された時にlikesステートを更新
+  useEffect(() => {
+    setLikes(initialLikes);
+  }, [initialLikes]);
+
   // Get the prompt ID from the URL
   useEffect(() => {
     const pathname = window.location.pathname;
@@ -212,26 +217,61 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
     if (promptId && currentUser) {
       checkUserLikeStatus();
       checkUserFollowStatus(); // フォロー状態も確認
+    } else if (promptId) {
+      // ユーザーがログインしていない場合でも、最新のいいね数は取得する
+      fetchCurrentLikeCount();
     }
   }, [promptId, currentUser]);
+
+  // 最新のいいね数を取得する関数
+  const fetchCurrentLikeCount = async () => {
+    if (!promptId) return;
+
+    try {
+      const { count, error } = await supabase
+        .from('likes')
+        .select('*', { count: 'exact', head: true })
+        .eq('prompt_id', promptId);
+
+      if (!error && count !== null) {
+        setLikes(count);
+      }
+    } catch (err) {
+      console.error("いいね数取得エラー:", err);
+    }
+  };
 
   // ユーザーがいいねしているか確認
   const checkUserLikeStatus = async () => {
     if (!currentUser || !promptId) return;
 
     try {
-      // シンプルなクエリに修正
-      const { data, error } = await supabase
-        .from('likes')
-        .select('id')
-        .eq('prompt_id', promptId)
-        .eq('user_id', currentUser.id)
-        .limit(1);
+      // ユーザーのいいね状態と最新のいいね数を同時に取得
+      const [likeStatusResult, likeCountResult] = await Promise.all([
+        supabase
+          .from('likes')
+          .select('id')
+          .eq('prompt_id', promptId)
+          .eq('user_id', currentUser.id)
+          .limit(1),
+        supabase
+          .from('likes')
+          .select('*', { count: 'exact', head: true })
+          .eq('prompt_id', promptId)
+      ]);
 
-      if (!error && data && data.length > 0) {
+      // いいね状態の設定
+      if (!likeStatusResult.error && likeStatusResult.data && likeStatusResult.data.length > 0) {
         setLiked(true);
-      } else if (error) {
-        console.error("いいね状態取得エラー:", error);
+      } else if (likeStatusResult.error) {
+        console.error("いいね状態取得エラー:", likeStatusResult.error);
+      }
+
+      // 最新のいいね数の設定
+      if (!likeCountResult.error && likeCountResult.count !== null) {
+        setLikes(likeCountResult.count);
+      } else if (likeCountResult.error) {
+        console.error("いいね数取得エラー:", likeCountResult.error);
       }
     } catch (err) {
       console.error("いいね状態取得エラー:", err);
