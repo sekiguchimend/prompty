@@ -6,18 +6,104 @@ const app = express();
 const PORT = process.env.GEMINI_PORT || 3002;
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
+// APIキー設定
+const API_KEYS = {
+  gemini: process.env.NEXT_PUBLIC_GEMINI_API_KEY || 'AIzaSyDquv5JsikJVqweEAOtMxEt5oTEtI4IMmc',
+  openai: process.env.OPENAI_API_KEY,
+  anthropic: process.env.ANTHROPIC_API_KEY
+};
+
 // Gemini API設定
-const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || 'AIzaSyDquv5JsikJVqweEAOtMxEt5oTEtI4IMmc';
-const genAI = new GoogleGenerativeAI(API_KEY);
-const model = genAI.getGenerativeModel({ 
-  model: "gemini-2.0-flash-exp",
-  generationConfig: {
-    temperature: 0.7,
-    topP: 0.8,
-    topK: 40,
-    maxOutputTokens: 8192,
+const genAI = new GoogleGenerativeAI(API_KEYS.gemini);
+
+// モデル設定
+const getGeminiModel = (modelName = 'gemini-2.0-flash-exp') => {
+  return genAI.getGenerativeModel({ 
+    model: modelName,
+    generationConfig: {
+      temperature: 0.7,
+      topP: 0.8,
+      topK: 40,
+      maxOutputTokens: 8192,
+    }
+  });
+};
+
+// OpenAI API呼び出し関数
+const callOpenAI = async (prompt, model = 'gpt-4') => {
+  if (!API_KEYS.openai) {
+    throw new Error('OpenAI APIキーが設定されていません');
   }
-});
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${API_KEYS.openai}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: model,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+      max_tokens: 8192,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`OpenAI API Error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0].message.content;
+};
+
+// Claude API呼び出し関数
+const callClaude = async (prompt, model = 'claude-3-sonnet-20240229') => {
+  if (!API_KEYS.anthropic) {
+    throw new Error('Anthropic APIキーが設定されていません');
+  }
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': API_KEYS.anthropic,
+      'Content-Type': 'application/json',
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: model,
+      max_tokens: 8192,
+      temperature: 0.7,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Claude API Error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.content[0].text;
+};
+
+// 統一されたAI呼び出し関数
+const callAI = async (prompt, model = 'gemini-2.0-flash') => {
+  console.log(`[AI Server] 使用モデル: ${model}`);
+  
+  if (model.startsWith('gemini')) {
+    const geminiModel = getGeminiModel(model + '-exp');
+    const result = await geminiModel.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
+  } else if (model.startsWith('gpt')) {
+    return await callOpenAI(prompt, model);
+  } else if (model.startsWith('claude')) {
+    const claudeModel = model === 'claude-3-sonnet' ? 'claude-3-sonnet-20240229' : 'claude-3-haiku-20240307';
+    return await callClaude(prompt, claudeModel);
+  } else {
+    throw new Error(`サポートされていないモデルです: ${model}`);
+  }
+};
 
 // ミドルウェア設定
 app.use(cors({
@@ -25,8 +111,25 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// シンプルなJSONパーサーを使用してiconv-lite問題を回避
+app.use((req, res, next) => {
+  if (req.headers['content-type'] && req.headers['content-type'].includes('application/json')) {
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+    req.on('end', () => {
+      try {
+        req.body = JSON.parse(body);
+      } catch (e) {
+        req.body = {};
+      }
+      next();
+    });
+  } else {
+    next();
+  }
+});
 
 // ログミドルウェア（開発環境のみ）
 if (isDevelopment) {
@@ -65,13 +168,19 @@ app.get('/', (req, res) => {
 const generateSystemPrompt = (request) => {
   const { framework, language, styling, complexity } = request;
   
-  return `あなたは優秀なフロントエンド開発者です。以下の要件に基づいてコードを生成してください：
+  return `あなたは優秀なフロントエンド開発者です。ユーザーのリクエストに基づいて、最適な技術スタックを自動選択してコードを生成してください。
 
-**技術要件:**
-- フレームワーク: ${framework}
-- 言語: ${language}
-- スタイリング: ${styling}
-- 複雑さ: ${complexity}
+**自動選択の指針:**
+- フレームワーク: リクエスト内容に最適なもの（React, Next.js, Vue, Svelte, Vanilla JS等）
+- 言語: TypeScriptを優先（特別な理由がない限り）
+- スタイリング: モダンな手法を優先（Tailwind CSS, CSS Modules, Styled-components等）
+- 複雑さ: リクエスト内容の要求レベルに応じて適切に判断
+
+**指定された技術要件（ある場合のみ考慮）:**
+${framework ? `- フレームワーク: ${framework}` : ''}
+${language ? `- 言語: ${language}` : ''}
+${styling ? `- スタイリング: ${styling}` : ''}
+${complexity ? `- 複雑さ: ${complexity}` : ''}
 
 **出力形式:**
 以下のJSON形式で応答してください：
@@ -83,24 +192,32 @@ const generateSystemPrompt = (request) => {
   },
   "dependencies": ["依存関係のリスト"],
   "description": "プロジェクトの説明",
-  "instructions": "使用方法や注意事項"
+  "instructions": "使用方法や注意事項",
+  "techStack": {
+    "framework": "選択したフレームワーク",
+    "language": "選択した言語",
+    "styling": "選択したスタイリング手法",
+    "complexity": "判定した複雑さレベル"
+  }
 }
 \`\`\`
 
 **コード生成ルール:**
 1. 実際に動作する完全なコードを生成する
-2. ${framework}の最新のベストプラクティスに従う
-3. ${styling}を使用してモダンで美しいUIを作成する
+2. 選択したフレームワークの最新のベストプラクティスに従う
+3. 選択したスタイリング手法を使用してモダンで美しいUIを作成する
 4. レスポンシブデザインを考慮する
 5. アクセシビリティを考慮する
 6. コメントを適切に記述する
 7. エラーハンドリングを含める
-8. ${complexity}レベルに適した機能を実装する
+8. リクエスト内容に適した機能を実装する
+9. 必要に応じて状態管理やルーティングも含める
 
 **ファイル構成:**
 - メインコンポーネントファイル
 - スタイルファイル（必要に応じて）
 - 設定ファイル（必要に応じて）
+- package.json（依存関係を含む）
 - README.md（使用方法を記載）
 
 ユーザーのリクエスト: `;
@@ -115,14 +232,13 @@ app.post('/api/generate-code', async (req, res) => {
       return res.status(400).json({ error: 'プロンプトが必要です' });
     }
 
-    console.log('[Gemini] コード生成リクエスト受信:', request.prompt.substring(0, 100) + '...');
+    const selectedModel = request.model || 'gemini-2.0-flash';
+    console.log(`[AI Server] コード生成リクエスト受信: ${request.prompt.substring(0, 100)}... (モデル: ${selectedModel})`);
 
     const systemPrompt = generateSystemPrompt(request);
     const fullPrompt = systemPrompt + request.prompt;
 
-    const result = await model.generateContent(fullPrompt);
-    const response = await result.response;
-    const text = response.text();
+    const text = await callAI(fullPrompt, selectedModel);
 
     // JSONレスポンスを抽出
     const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
@@ -141,14 +257,16 @@ app.post('/api/generate-code', async (req, res) => {
       files: parsedResponse.files,
       dependencies: parsedResponse.dependencies || [],
       description: parsedResponse.description || 'Generated Code Project',
-      instructions: parsedResponse.instructions || ''
+      instructions: parsedResponse.instructions || '',
+      techStack: parsedResponse.techStack || {},
+      usedModel: selectedModel
     };
 
-    console.log('[Gemini] コード生成完了');
+    console.log(`[AI Server] コード生成完了 (モデル: ${selectedModel})`);
     res.json(result_data);
 
   } catch (error) {
-    console.error('[Gemini] コード生成エラー:', error);
+    console.error(`[AI Server] コード生成エラー:`, error);
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'コード生成に失敗しました' 
     });
@@ -158,13 +276,14 @@ app.post('/api/generate-code', async (req, res) => {
 // コード改善エンドポイント
 app.post('/api/improve-code', async (req, res) => {
   try {
-    const { originalCode, improvementRequest, framework } = req.body;
+    const { originalCode, improvementRequest, framework, model } = req.body;
     
     if (!originalCode || !improvementRequest) {
       return res.status(400).json({ error: '元のコードと改善要求が必要です' });
     }
 
-    console.log('[Gemini] コード改善リクエスト受信');
+    const selectedModel = model || 'gemini-2.0-flash';
+    console.log(`[AI Server] コード改善リクエスト受信 (モデル: ${selectedModel})`);
 
     const prompt = `以下のコードを改善してください：
 
@@ -182,15 +301,18 @@ ${originalCode}
   },
   "dependencies": ["必要な依存関係"],
   "description": "改善内容の説明",
-  "instructions": "変更点や使用方法"
+  "instructions": "変更点や使用方法",
+  "techStack": {
+    "framework": "使用フレームワーク",
+    "language": "使用言語", 
+    "styling": "スタイリング手法"
+  }
 }
 \`\`\`
 
 改善されたコードを生成してください。`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const text = await callAI(prompt, selectedModel);
 
     const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
     if (!jsonMatch) {
@@ -198,11 +320,13 @@ ${originalCode}
     }
 
     const parsedResponse = JSON.parse(jsonMatch[1]);
-    console.log('[Gemini] コード改善完了');
+    parsedResponse.usedModel = selectedModel;
+    
+    console.log(`[AI Server] コード改善完了 (モデル: ${selectedModel})`);
     res.json(parsedResponse);
 
   } catch (error) {
-    console.error('[Gemini] コード改善エラー:', error);
+    console.error(`[AI Server] コード改善エラー:`, error);
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'コード改善に失敗しました' 
     });

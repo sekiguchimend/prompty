@@ -1,103 +1,108 @@
-// next.config.js
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Basic configuration
   reactStrictMode: true,
   swcMinify: true,
-  // TypeScriptエラーを無視
-  typescript: {
-    ignoreBuildErrors: true,
+  poweredByHeader: false, // Remove X-Powered-By header for security
+  
+  // Environment configuration
+  env: {
+    CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
-  // ESLintエラーを無視
-  eslint: {
-    ignoreDuringBuilds: true,
+
+  // Security headers
+  async headers() {
+    const securityHeaders = [
+      {
+        key: 'X-DNS-Prefetch-Control',
+        value: 'on'
+      },
+      {
+        key: 'Strict-Transport-Security',
+        value: 'max-age=63072000; includeSubDomains; preload'
+      },
+      {
+        key: 'X-XSS-Protection',
+        value: '1; mode=block'
+      },
+      {
+        key: 'X-Frame-Options',
+        value: 'SAMEORIGIN'
+      },
+      {
+        key: 'X-Content-Type-Options',
+        value: 'nosniff'
+      },
+      {
+        key: 'Referrer-Policy',
+        value: 'strict-origin-when-cross-origin'
+      },
+      {
+        key: 'Permissions-Policy',
+        value: 'camera=(), microphone=(), geolocation=()'
+      }
+    ];
+
+    // Add CSP header in production
+    if (process.env.NODE_ENV === 'production') {
+      securityHeaders.push({
+        key: 'Content-Security-Policy',
+        value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.openai.com https://generativelanguage.googleapis.com;"
+      });
+    }
+
+    return [
+      {
+        source: '/(.*)',
+        headers: securityHeaders,
+      },
+    ];
   },
+
+  // Image optimization
   images: {
-    domains: ['qrxrulntwojimhhhnwqk.supabase.co'],
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'prompty-zeta.vercel.app',
-      },
-      {
-        protocol: 'https',
-        hostname: '*.supabase.co',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'lh3.googleusercontent.com',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'source.unsplash.com',
-        pathname: '/**',
-      },
+    domains: [
+      'qrxrulntwojimhhhnwqk.supabase.co', // Supabase storage
+      'prompty-ai.com',
+      'localhost'
     ],
-    unoptimized: false,
+    formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60,
-    dangerouslyAllowSVG: true,
+    dangerouslyAllowSVG: false, // Security: disable SVG
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
-  assetPrefix: '',
-  basePath: '',
-  experimental: {
-    optimizeCss: true,
-    optimizePackageImports: [
-      'lucide-react', 
-      '@radix-ui/react-icons',
-      'framer-motion',
-      'recharts',
-      'sonner',
-      '@radix-ui/react-dropdown-menu',
-      '@radix-ui/react-dialog',
-    ],
-    scrollRestoration: true,
-    largePageDataBytes: 128 * 1000, // 128KB
-  },
-  compiler: {
-    removeConsole: process.env.NODE_ENV === 'production' ? {
-      exclude: ['error', 'warn', 'debug', 'info', 'log'],
-    } : false,
-  },
-  transpilePackages: [],
-  webpack: (config, { isServer }) => {
-    // 日本語パス対応: シンボリックリンクを無効化
-    config.resolve.symlinks = false;
-    
-    // ファイルシステムキャッシュを無効化（日本語パス問題回避）
-    config.cache = false;
-    
-    config.optimization.splitChunks = {
-      chunks: 'all',
-      cacheGroups: {
-        commons: {
-          test: /[\\/]node_modules[\\/]/,
-          name: 'vendors',
-          chunks: 'all',
-        },
-        styles: {
-          name: 'styles',
-          test: /\.(css|scss)$/,
-          chunks: 'all',
-          enforce: true
-        }
-      },
-    };
-    
-    if (!isServer) {
-      config.optimization.splitChunks.cacheGroups.styles = {
-        name: 'styles',
-        test: /\.(css|scss)$/,
-        chunks: 'all',
-        enforce: true,
-      };
+
+  // Webpack configuration
+  webpack: (config, { dev, isServer }) => {
+    // Security: Remove source maps in production
+    if (!dev && !isServer) {
+      config.devtool = false;
     }
-    
+
     return config;
   },
+
+  // Experimental features
+  experimental: {
+    // Enable modern features
+    serverComponentsExternalPackages: ['@supabase/supabase-js'],
+  },
+
+  // Compression
+  compress: true,
+
+  // TypeScript configuration
+  typescript: {
+    ignoreBuildErrors: false, // Fail build on TypeScript errors
+  },
+
+  // ESLint configuration
+  eslint: {
+    ignoreDuringBuilds: false, // Fail build on ESLint errors
+  },
+
+  // Trailing slash configuration
+  trailingSlash: false,
 };
 
 module.exports = nextConfig;
-  

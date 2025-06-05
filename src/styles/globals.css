@@ -160,3 +160,181 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* VSCode-like styling enhancements */
+.vscode-sandbox {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --vscode-editor-background: #1e1e1e;
+  --vscode-editor-foreground: #cccccc;
+  --vscode-sidebar-background: #252526;
+  --vscode-titlebar-background: #2d2d30;
+  --vscode-border-color: #3e3e42;
+  --vscode-accent-color: #007acc;
+  --vscode-hover-background: #3c3c3c;
+  --vscode-selection-background: #37373d;
+}
+
+/* Custom scrollbar for VSCode-like appearance */
+.vscode-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.vscode-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.vscode-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(121, 121, 121, 0.4);
+  border-radius: 0;
+  border: 1px solid transparent;
+}
+
+.vscode-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(121, 121, 121, 0.7);
+}
+
+.vscode-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* VSCode-like focus styles */
+.vscode-focus:focus {
+  outline: 1px solid var(--vscode-accent-color);
+  outline-offset: -1px;
+}
+
+/* VSCode-like button hover effects */
+.vscode-button {
+  transition: background-color 0.1s ease-in-out;
+}
+
+.vscode-button:hover {
+  background-color: var(--vscode-hover-background);
+}
+
+/* VSCode-like tab styling */
+.vscode-tab {
+  position: relative;
+  border-bottom: 1px solid transparent;
+  transition: all 0.1s ease-in-out;
+}
+
+.vscode-tab.active {
+  border-bottom-color: var(--vscode-accent-color);
+}
+
+.vscode-tab:hover:not(.active) {
+  background-color: var(--vscode-hover-background);
+}
+
+/* VSCode-like file tree styling */
+.vscode-file-tree {
+  user-select: none;
+}
+
+.vscode-file-tree .file-item {
+  position: relative;
+  padding-left: 8px;
+  border-left: 2px solid transparent;
+  transition: all 0.1s ease-in-out;
+}
+
+.vscode-file-tree .file-item.selected {
+  background-color: var(--vscode-selection-background);
+  border-left-color: var(--vscode-accent-color);
+}
+
+.vscode-file-tree .file-item:hover:not(.selected) {
+  background-color: var(--vscode-hover-background);
+}
+
+/* Monaco Editor enhancements */
+.monaco-editor {
+  font-feature-settings: "liga" 1, "calt" 1;
+}
+
+/* VSCode-like status bar */
+.vscode-status-bar {
+  background-color: var(--vscode-accent-color);
+  color: white;
+  font-size: 12px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+}
+
+/* VSCode-like breadcrumb */
+.vscode-breadcrumb {
+  font-size: 12px;
+  color: var(--vscode-editor-foreground);
+  opacity: 0.8;
+  padding: 4px 8px;
+  background-color: var(--vscode-titlebar-background);
+  border-bottom: 1px solid var(--vscode-border-color);
+}
+
+/* VSCode-like activity bar */
+.vscode-activity-bar {
+  width: 48px;
+  background-color: var(--vscode-titlebar-background);
+  border-right: 1px solid var(--vscode-border-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.vscode-activity-bar .activity-item {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  transition: background-color 0.1s ease-in-out;
+  cursor: pointer;
+}
+
+.vscode-activity-bar .activity-item:hover {
+  background-color: var(--vscode-hover-background);
+}
+
+.vscode-activity-bar .activity-item.active {
+  background-color: var(--vscode-selection-background);
+  border-left: 2px solid var(--vscode-accent-color);
+}
+
+/* Smooth animations */
+.vscode-transition {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* VSCode-like loading spinner */
+.vscode-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--vscode-border-color);
+  border-top: 2px solid var(--vscode-accent-color);
+  border-radius: 50%;
+  animation: vscode-spin 1s linear infinite;
+}
+
+@keyframes vscode-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* VSCode-like tooltip */
+.vscode-tooltip {
+  background-color: #2d2d30;
+  color: #cccccc;
+  border: 1px solid #454545;
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-size: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}

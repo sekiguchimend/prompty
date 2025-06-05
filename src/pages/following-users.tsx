@@ -328,7 +328,7 @@ const FollowingUsers: React.FC = () => {
   // ユーザーカードコンポーネント
   const UserCard = useCallback(({ user }: { user: FollowingUser }) => (
     <div className="flex items-center justify-between p-4 border-b border-gray-100">
-      <Link href={`/users/${user.username}`} className="flex items-center space-x-4 flex-1">
+      <Link href={`/users/${encodeURIComponent(user.username)}`} className="flex items-center space-x-4 flex-1">
         <UnifiedAvatar
           src={user.avatar_url}
           displayName={user.display_name || user.username}

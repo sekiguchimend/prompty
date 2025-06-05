@@ -17,7 +17,7 @@ import {
   PostModeSelector,
   StepBasedForm,
   StandardForm,
-  CodeGenerationTab,
+  // CodeGenerationTab,
   type GeneratedCodeProject
 } from '../components/create-post';
 import { useToast } from "../components/ui/use-toast";
@@ -1307,9 +1307,11 @@ const submitProject = async () => {
                   {!isAnonymousSubmission && (
                     <>
                       <div className="mb-8">
-                        <CodeGenerationTab
-                          onProjectSave={handleCodeProjectSave}
-                        />
+                        {/* CodeGenerationTabは一時的に無効化 */}
+                        <div className="text-center py-20 bg-gray-50 rounded-lg">
+                          <h3 className="text-xl font-semibold text-gray-600">コード生成機能</h3>
+                          <p className="text-gray-500 mt-2">現在開発中です。/code-generatorページをご利用ください。</p>
+                        </div>
                       </div>
                     </>
                   )}
