@@ -297,47 +297,64 @@ const Header = () => {
                 </div>
               
                 <div className="flex items-center gap-4">
-                  {!isLoading && (
+                  {isLoading ? (
+                    // 認証状態チェック中のスケルトン表示
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 md:hidden">
+                        <button 
+                          className="text-gray-700 p-1.5 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                          onClick={openMobileSearch}
+                          aria-label="検索"
+                        >
+                          <Search className="h-5 w-5" />
+                        </button>
+                        <div className="w-16 h-8 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="w-20 h-8 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                      <div className="hidden md:flex items-center gap-2">
+                        <div className="w-20 h-9 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="w-24 h-9 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                    </div>
+                  ) : !user ? (
                     <>
-                      {!user ? (
-                        <>
-                          <div className="flex items-center gap-3 md:hidden">
-                            <button 
-                              className="text-gray-700 p-1.5 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-                              onClick={openMobileSearch}
-                              aria-label="検索"
-                            >
-                              <Search className="h-5 w-5" />
-                            </button>
-                            
-                            <div className="flex items-center gap-2">
-                              <Link href="/login">
-                                <Button variant="ghost" className="text-gray-700 text-xs px-2 py-1 hover:bg-gray-100 transition-colors">
-                                  ログイン
-                                </Button>
-                              </Link>
-                              <Link href="/register">
-                                <Button className="bg-black text-white hover:bg-gray-800 text-xs px-2 py-1 shadow-sm transition-colors">
-                                  会員登録
-                                </Button>
-                              </Link>
-                            </div>
-                          </div>
-                          
-                          <div className="hidden md:flex items-center gap-2">
-                            <Link href="/login">
-                              <Button variant="ghost" className="text-gray-700 text-sm px-3 py-1.5 hover:bg-gray-100 transition-colors">
-                                ログイン
-                              </Button>
-                            </Link>
-                            <Link href="/register">
-                              <Button className="bg-black text-white hover:bg-gray-800 text-sm px-3 py-1.5 shadow-sm transition-colors">
-                                会員登録
-                              </Button>
-                            </Link>
-                          </div>
-                        </>
-                      ) : (
+                      <div className="flex items-center gap-3 md:hidden">
+                        <button 
+                          className="text-gray-700 p-1.5 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                          onClick={openMobileSearch}
+                          aria-label="検索"
+                        >
+                          <Search className="h-5 w-5" />
+                        </button>
+                        
+                        <div className="flex items-center gap-2">
+                          <Link href="/login">
+                            <Button variant="ghost" className="text-gray-700 text-xs px-2 py-1 hover:bg-gray-100 transition-colors">
+                              ログイン
+                            </Button>
+                          </Link>
+                          <Link href="/register">
+                            <Button className="bg-black text-white hover:bg-gray-800 text-xs px-2 py-1 shadow-sm transition-colors">
+                              会員登録
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                      
+                      <div className="hidden md:flex items-center gap-2">
+                        <Link href="/login">
+                          <Button variant="ghost" className="text-gray-700 text-sm px-3 py-1.5 hover:bg-gray-100 transition-colors">
+                            ログイン
+                          </Button>
+                        </Link>
+                        <Link href="/register">
+                          <Button className="bg-black text-white hover:bg-gray-800 text-sm px-3 py-1.5 shadow-sm transition-colors">
+                            会員登録
+                          </Button>
+                        </Link>
+                      </div>
+                    </>
+                  ) : (
                         <>
                           <Button 
                             variant="secondary" 
@@ -385,7 +402,7 @@ const Header = () => {
                                 <Settings className="h-4 w-4" />
                               </button>
                             )}
-                            //a
+                            
                             <button
                               className="bg-purple-600 text-white p-2 rounded-full flex items-center justify-center shadow-sm hover:bg-purple-700 transition-colors"
                               onClick={() => router.push('/code-generator')}

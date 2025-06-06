@@ -47,7 +47,7 @@ const nextConfig = {
     if (process.env.NODE_ENV === 'production') {
       securityHeaders.push({
         key: 'Content-Security-Policy',
-        value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.openai.com https://generativelanguage.googleapis.com;"
+        value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://qrxrulntwojimhhhnwqk.supabase.co; connect-src 'self' https://api.openai.com https://generativelanguage.googleapis.com https://qrxrulntwojimhhhnwqk.supabase.co;"
       });
     }
 
