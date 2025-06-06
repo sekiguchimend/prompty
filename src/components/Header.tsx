@@ -385,7 +385,7 @@ const Header = () => {
                                 <Settings className="h-4 w-4" />
                               </button>
                             )}
-                            
+                            //a
                             <button
                               className="bg-purple-600 text-white p-2 rounded-full flex items-center justify-center shadow-sm hover:bg-purple-700 transition-colors"
                               onClick={() => router.push('/code-generator')}
