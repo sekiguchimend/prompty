@@ -119,10 +119,6 @@ ${improvementRequest}
 async function callClaudeAPI(prompt: string, model: string): Promise<string> {
   if (!CLAUDE_API_KEY) throw new Error('Claude API key not configured');
 
-  const claudeModel = model.includes('claude-sonnet-4') ? 'claude-3-5-sonnet-20241022' : 
-                     model.includes('claude-3.5-sonnet') ? 'claude-3-5-sonnet-20241022' :
-                     'claude-3-5-sonnet-20241022';
-
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -131,8 +127,8 @@ async function callClaudeAPI(prompt: string, model: string): Promise<string> {
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model: claudeModel,
-      max_tokens: 8192,
+      model: 'claude-3-7-sonnet-20250219',
+      max_tokens: 4096,
       temperature: 0.3, // Lower temperature for more consistent improvements
       messages: [{ role: 'user', content: prompt }]
     }),

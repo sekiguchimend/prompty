@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { generateCode, improveCode, CodeGenerationResponse } from '@/src/lib/gemini';
 
-export type ModelType = 'claude-3.5-sonnet' | 'claude-3-5-haiku' | 'claude-3-5-sonnet-20241022';
+export type ModelType = 'claude-3-7-sonnet-20250219' | 'claude-3-5-sonnet-20241022' | 'claude-3-sonnet-20240229' | 'claude-3-opus-20240229';
 
 export interface ProjectHistory {
   id: string;
@@ -22,7 +22,7 @@ export interface ProjectHistory {
 
 export const useCodeGenerator = () => {
   const [prompt, setPrompt] = useState('');
-  const [model, setModel] = useState<ModelType>('claude-3.5-sonnet');
+  const [model, setModel] = useState<ModelType>('claude-3-7-sonnet-20250219');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isImproving, setIsImproving] = useState(false);
   const [generatedCode, setGeneratedCode] = useState<CodeGenerationResponse | null>(null);

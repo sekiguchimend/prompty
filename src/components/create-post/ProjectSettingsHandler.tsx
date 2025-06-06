@@ -32,7 +32,7 @@ export const ProjectSettingsHandler: React.FC<ProjectSettingsHandlerProps> = ({
   const [projectSettings, setProjectSettings] = useState<ProjectFormValues>(
     defaultSettings || {
       projectTitle: "新しいプロンプトプロジェクト",
-      aiModel: "claude-3-5-sonnet",
+      aiModel: "claude-4-sonnet",
       customAiModel: "",
       pricingType: "free",
       price: 0,

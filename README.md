@@ -1,113 +1,113 @@
-﻿# Prompty - AI-Powered Prompt Sharing Platform
+﻿# Prompty - AI搭載プロンプト共有プラットフォーム
 
-A secure, production-ready Next.js application for sharing and monetizing AI prompts with enterprise-grade security features.
+エンタープライズグレードのセキュリティ機能を備えた、AIプロンプトの共有と収益化のための安全で本格的なNext.jsアプリケーション。
 
-## 🔒 Security Features
+## 🔒 セキュリティ機能
 
-### ✅ Comprehensive Security Implementation
-- **Authentication & Authorization**: JWT-based auth with role-based access control
-- **Input Validation**: Zod schema validation for all API endpoints
-- **Rate Limiting**: Advanced rate limiting with IP-based tracking
-- **File Upload Security**: Virus scanning, type validation, and secure storage
-- **SQL Injection Prevention**: Parameterized queries and input sanitization
-- **XSS Protection**: Content Security Policy and HTML sanitization
-- **CSRF Protection**: Token-based CSRF protection
-- **Security Headers**: Comprehensive security header implementation
-- **Error Handling**: Safe error responses without information leakage
-- **Audit Logging**: Security event logging and monitoring
+### ✅ 包括的なセキュリティ実装
+- **認証・認可**: JWT ベースの認証とロールベースアクセス制御
+- **入力検証**: すべての API エンドポイントに対する Zod スキーマ検証
+- **レート制限**: IP ベースの追跡による高度なレート制限
+- **ファイルアップロードセキュリティ**: ウイルススキャン、タイプ検証、安全なストレージ
+- **SQL インジェクション防止**: パラメータ化クエリと入力サニタイゼーション
+- **XSS 保護**: コンテンツセキュリティポリシーと HTML サニタイゼーション
+- **CSRF 保護**: トークンベースの CSRF 保護
+- **セキュリティヘッダー**: 包括的なセキュリティヘッダー実装
+- **エラーハンドリング**: 情報漏洩のない安全なエラーレスポンス
+- **監査ログ**: セキュリティイベントのログ記録と監視
 
-### 🛡️ Production Security Standards
-- **HTTPS Enforcement**: Automatic HTTP to HTTPS redirects
-- **Content Security Policy**: Strict CSP to prevent injection attacks
-- **CORS Configuration**: Restricted origins for production
-- **Environment Validation**: Required security variables checked at startup
-- **Dependency Security**: Regular security audits and updates
-- **Secret Management**: Proper environment variable handling
+### 🛡️ 本番環境セキュリティ標準
+- **HTTPS 強制**: HTTP から HTTPS への自動リダイレクト
+- **コンテンツセキュリティポリシー**: インジェクション攻撃を防ぐ厳格な CSP
+- **CORS 設定**: 本番環境での制限されたオリジン
+- **環境検証**: 起動時に必要なセキュリティ変数をチェック
+- **依存関係セキュリティ**: 定期的なセキュリティ監査とアップデート
+- **秘密管理**: 適切な環境変数の取り扱い
 
-## 🚀 Quick Start
+## 🚀 クイックスタート
 
-### Prerequisites
+### 前提条件
 - Node.js 18+ 
-- npm or yarn
-- Supabase account
-- Stripe account (for payments)
-- Google AI API key (for Gemini)
+- npm または yarn
+- Supabase アカウント
+- Stripe アカウント（決済用）
+- Google AI API キー（Gemini 用）
 
-### Installation
+### インストール
 
-1. **Clone the repository**
+1. **リポジトリのクローン**
 ```bash
 git clone https://github.com/your-repo/prompty.git
 cd prompty
 ```
 
-2. **Install dependencies**
+2. **依存関係のインストール**
 ```bash
 npm install
 ```
 
-3. **Environment setup**
+3. **環境設定**
 ```bash
-# Copy environment template
+# 環境テンプレートをコピー
 cp .env.example .env
 
-# Configure your environment variables
-# See PRODUCTION_DEPLOYMENT.md for complete list
+# 環境変数を設定
+# 完全なリストは PRODUCTION_DEPLOYMENT.md を参照
 ```
 
-4. **Database setup**
+4. **データベース設定**
 ```bash
-# Initialize Supabase
+# Supabase の初期化
 npx supabase init
 npx supabase start
 npx supabase db push
 ```
 
-5. **Development server**
+5. **開発サーバー**
 ```bash
-# Start development server
+# 開発サーバーを開始
 npm run dev
 
-# Start with Gemini server
+# Gemini サーバーと一緒に開始
 npm run dev:with-gemini
 ```
 
-## 📁 Project Structure
+## 📁 プロジェクト構造
 
 ```
 prompty/
 ├── src/
-│   ├── components/          # React components
-│   ├── pages/              # Next.js pages and API routes
-│   │   └── api/            # API endpoints
-│   │       ├── auth/       # Authentication endpoints
-│   │       ├── stripe/     # Payment processing
-│   │       └── upload-image-secure.ts  # Secure file upload
-│   ├── lib/                # Utility libraries
-│   │   ├── security/       # Security modules
-│   │   │   ├── auth-middleware.ts     # Authentication middleware
-│   │   │   ├── rate-limiter.ts        # Rate limiting
-│   │   │   ├── validation.ts          # Input validation
-│   │   │   ├── error-handler.ts       # Error handling
-│   │   │   └── config.ts              # Security configuration
-│   │   └── supabase/       # Database clients
-│   │       ├── client-secure.ts       # Secure client
-│   │       └── admin-secure.ts        # Secure admin client
-│   ├── styles/             # CSS styles
-│   └── types/              # TypeScript types
-├── supabase/               # Database migrations and functions
-├── SECURITY.md             # Security documentation
-├── PRODUCTION_DEPLOYMENT.md # Deployment guide
-└── next.config.js          # Next.js configuration with security
+│   ├── components/          # React コンポーネント
+│   ├── pages/              # Next.js ページと API ルート
+│   │   └── api/            # API エンドポイント
+│   │       ├── auth/       # 認証エンドポイント
+│   │       ├── stripe/     # 決済処理
+│   │       └── upload-image-secure.ts  # 安全なファイルアップロード
+│   ├── lib/                # ユーティリティライブラリ
+│   │   ├── security/       # セキュリティモジュール
+│   │   │   ├── auth-middleware.ts     # 認証ミドルウェア
+│   │   │   ├── rate-limiter.ts        # レート制限
+│   │   │   ├── validation.ts          # 入力検証
+│   │   │   ├── error-handler.ts       # エラーハンドリング
+│   │   │   └── config.ts              # セキュリティ設定
+│   │   └── supabase/       # データベースクライアント
+│   │       ├── client-secure.ts       # セキュアクライアント
+│   │       └── admin-secure.ts        # セキュア管理者クライアント
+│   ├── styles/             # CSS スタイル
+│   └── types/              # TypeScript 型
+├── supabase/               # データベースマイグレーションと関数
+├── SECURITY.md             # セキュリティドキュメント
+├── PRODUCTION_DEPLOYMENT.md # デプロイメントガイド
+└── next.config.js          # セキュリティ機能付き Next.js 設定
 ```
 
-## 🔧 Configuration
+## 🔧 設定
 
-### Environment Variables
+### 環境変数
 
-#### Required for Production
+#### 本番環境で必須
 ```bash
-# Application
+# アプリケーション
 NODE_ENV=production
 NEXT_PUBLIC_URL=https://your-domain.com
 
@@ -121,80 +121,80 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_key
 STRIPE_SECRET_KEY=your_stripe_secret
 STRIPE_WEBHOOK_SECRET=your_webhook_secret
 
-# Security
+# セキュリティ
 JWT_SECRET=your_32_character_secret
 ENCRYPTION_KEY=your_32_character_key
 ```
 
-#### Optional Security Configuration
+#### オプションのセキュリティ設定
 ```bash
-# Rate Limiting
+# レート制限
 RATE_LIMIT_MAX=100
 RATE_LIMIT_WINDOW_MS=900000
 
-# File Upload
+# ファイルアップロード
 MAX_FILE_SIZE=5242880
 ALLOWED_FILE_TYPES=image/jpeg,image/png,image/webp,image/gif
 VIRUS_SCAN_ENABLED=true
 
-# Monitoring
+# 監視
 LOG_LEVEL=info
 SENTRY_DSN=your_sentry_dsn
 ```
 
-### Security Configuration
+### セキュリティ設定
 
-The application includes comprehensive security configuration in `src/lib/security/config.ts`:
+アプリケーションは `src/lib/security/config.ts` に包括的なセキュリティ設定を含んでいます：
 
-- **Rate Limiting**: Different limits for different endpoint types
-- **File Upload Security**: Type validation, size limits, virus scanning
-- **CORS**: Restricted origins for production
-- **CSP**: Strict Content Security Policy
-- **Headers**: Security headers for all responses
+- **レート制限**: エンドポイントタイプごとの異なる制限
+- **ファイルアップロードセキュリティ**: タイプ検証、サイズ制限、ウイルススキャン
+- **CORS**: 本番環境での制限されたオリジン
+- **CSP**: 厳格なコンテンツセキュリティポリシー
+- **ヘッダー**: すべてのレスポンスに対するセキュリティヘッダー
 
-## 🛠️ Development
+## 🛠️ 開発
 
-### Available Scripts
+### 利用可能なスクリプト
 
 ```bash
-# Development
-npm run dev                 # Start development server
-npm run dev:gemini         # Start Gemini AI server
-npm run dev:with-gemini    # Start both servers
+# 開発
+npm run dev                 # 開発サーバーを開始
+npm run dev:gemini         # Gemini AI サーバーを開始
+npm run dev:with-gemini    # 両方のサーバーを開始
 
-# Production
-npm run build              # Build for production
-npm run start              # Start production server
-npm run start:with-gemini  # Start production with Gemini
+# 本番
+npm run build              # 本番用ビルド
+npm run start              # 本番サーバーを開始
+npm run start:with-gemini  # Gemini と一緒に本番開始
 
-# Utilities
-npm run lint               # Run ESLint
-npm run type-check         # Run TypeScript checks
+# ユーティリティ
+npm run lint               # ESLint を実行
+npm run type-check         # TypeScript チェックを実行
 ```
 
-### Security Development Guidelines
+### セキュリティ開発ガイドライン
 
-1. **Input Validation**: Always validate inputs using Zod schemas
-2. **Authentication**: Use provided auth middleware for protected routes
-3. **Rate Limiting**: Apply appropriate rate limits to new endpoints
-4. **Error Handling**: Use safe error handlers that don't leak information
-5. **File Uploads**: Use secure upload handlers with validation
-6. **Database Access**: Use provided secure database clients
+1. **入力検証**: Zod スキーマを使用して常に入力を検証
+2. **認証**: 保護されたルートには提供された認証ミドルウェアを使用
+3. **レート制限**: 新しいエンドポイントに適切なレート制限を適用
+4. **エラーハンドリング**: 情報を漏洩しない安全なエラーハンドラーを使用
+5. **ファイルアップロード**: 検証付きの安全なアップロードハンドラーを使用
+6. **データベースアクセス**: 提供されたセキュアなデータベースクライアントを使用
 
-### Adding New API Endpoints
+### 新しい API エンドポイントの追加
 
 ```typescript
-// Example secure API endpoint
+// セキュアな API エンドポイントの例
 import { withAuth } from '../../lib/security/auth-middleware';
 import { withRateLimit, generalRateLimit } from '../../lib/security/rate-limiter';
 import { withErrorHandler } from '../../lib/security/error-handler';
 import { validateRequest, yourSchema } from '../../lib/security/validation';
 
 const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
-  // Validate input
+  // 入力検証
   const validatedData = validateRequest(yourSchema, req.body);
   
-  // Your logic here
+  // あなたのロジックをここに
   
   res.status(200).json({ success: true });
 };
@@ -205,125 +205,125 @@ export default withRateLimit(
 );
 ```
 
-## 🚀 Deployment
+## 🚀 デプロイメント
 
-### Production Deployment
+### 本番環境デプロイメント
 
-See [PRODUCTION_DEPLOYMENT.md](./PRODUCTION_DEPLOYMENT.md) for comprehensive deployment instructions.
+包括的なデプロイメント手順については [PRODUCTION_DEPLOYMENT.md](./PRODUCTION_DEPLOYMENT.md) を参照してください。
 
-#### Quick Deploy Checklist
-- [ ] Environment variables configured
-- [ ] SSL certificates installed
-- [ ] Security headers enabled
-- [ ] Rate limiting configured
-- [ ] Database migrations applied
-- [ ] Monitoring setup
-- [ ] Backup procedures established
+#### クイックデプロイチェックリスト
+- [ ] 環境変数が設定済み
+- [ ] SSL 証明書がインストール済み
+- [ ] セキュリティヘッダーが有効
+- [ ] レート制限が設定済み
+- [ ] データベースマイグレーションが適用済み
+- [ ] 監視がセットアップ済み
+- [ ] バックアップ手順が確立済み
 
-### Supported Platforms
-- **Vercel**: Recommended for Next.js applications
-- **Netlify**: Full-stack deployment support
-- **AWS**: EC2, ECS, or Lambda deployment
-- **Google Cloud**: App Engine or Compute Engine
-- **DigitalOcean**: App Platform or Droplets
+### サポートされているプラットフォーム
+- **Vercel**: Next.js アプリケーションに推奨
+- **Netlify**: フルスタックデプロイメントサポート
+- **AWS**: EC2、ECS、または Lambda デプロイメント
+- **Google Cloud**: App Engine または Compute Engine
+- **DigitalOcean**: App Platform または Droplets
 
-## 📊 Monitoring & Analytics
+## 📊 監視とアナリティクス
 
-### Security Monitoring
-- Authentication failures
-- Rate limit violations
-- Suspicious file uploads
-- API error rates
-- Database query performance
+### セキュリティ監視
+- 認証失敗
+- レート制限違反
+- 疑わしいファイルアップロード
+- API エラー率
+- データベースクエリパフォーマンス
 
-### Performance Monitoring
-- Page load times
-- API response times
-- Memory usage
-- CPU utilization
-- Database performance
+### パフォーマンス監視
+- ページ読み込み時間
+- API レスポンス時間
+- メモリ使用量
+- CPU 使用率
+- データベースパフォーマンス
 
-## 🔍 Security Auditing
+## 🔍 セキュリティ監査
 
-### Regular Security Tasks
-- **Weekly**: Review security logs and failed authentication attempts
-- **Monthly**: Update dependencies and review access permissions
-- **Quarterly**: Conduct security assessments and penetration testing
+### 定期的なセキュリティタスク
+- **週次**: セキュリティログと認証失敗の確認
+- **月次**: 依存関係の更新とアクセス権限の確認
+- **四半期**: セキュリティ評価とペネトレーションテストの実施
 
-### Security Testing
+### セキュリティテスト
 ```bash
-# Run security audit
+# セキュリティ監査を実行
 npm audit
 
-# Check for vulnerabilities
+# 脆弱性をチェック
 npm audit fix
 
-# Analyze bundle for security issues
+# セキュリティ問題のためのバンドル分析
 npm run build && npm run analyze
 ```
 
-## 🤝 Contributing
+## 🤝 貢献
 
-### Security Guidelines for Contributors
-1. Follow secure coding practices
-2. Validate all inputs
-3. Use provided security middleware
-4. Don't expose sensitive information in logs
-5. Test security features thoroughly
-6. Update security documentation
+### 貢献者向けセキュリティガイドライン
+1. セキュアコーディング慣行に従う
+2. すべての入力を検証する
+3. 提供されたセキュリティミドルウェアを使用する
+4. ログに機密情報を公開しない
+5. セキュリティ機能を徹底的にテストする
+6. セキュリティドキュメントを更新する
 
-### Pull Request Requirements
-- [ ] Security review completed
-- [ ] Input validation implemented
-- [ ] Error handling follows safe patterns
-- [ ] Tests include security scenarios
-- [ ] Documentation updated
+### プルリクエスト要件
+- [ ] セキュリティレビューが完了
+- [ ] 入力検証が実装済み
+- [ ] エラーハンドリングが安全なパターンに従う
+- [ ] テストにセキュリティシナリオを含む
+- [ ] ドキュメントが更新済み
 
-## 📚 Documentation
+## 📚 ドキュメント
 
-- [Security Implementation](./SECURITY.md) - Comprehensive security documentation
-- [Production Deployment](./PRODUCTION_DEPLOYMENT.md) - Deployment guide
-- [API Documentation](./docs/API.md) - API endpoint documentation
-- [Database Schema](./docs/DATABASE.md) - Database structure and relationships
+- [セキュリティ実装](./SECURITY.md) - 包括的なセキュリティドキュメント
+- [本番環境デプロイメント](./PRODUCTION_DEPLOYMENT.md) - デプロイメントガイド
+- [API ドキュメント](./docs/API.md) - API エンドポイントドキュメント
+- [データベーススキーマ](./docs/DATABASE.md) - データベース構造と関係
 
-## 🆘 Support & Security
+## 🆘 サポートとセキュリティ
 
-### Security Issues
-For security vulnerabilities, please email: security@prompty-ai.com
+### セキュリティ問題
+セキュリティ脆弱性については、以下にメールしてください: security@prompty-ai.com
 
-**Do not** create public issues for security vulnerabilities.
+セキュリティ脆弱性について公開 issue を**作成しないでください**。
 
-### General Support
-- Create an issue on GitHub
-- Check existing documentation
-- Review security guidelines
+### 一般的なサポート
+- GitHub で issue を作成
+- 既存のドキュメントを確認
+- セキュリティガイドラインを確認
 
-## 📄 License
+## 📄 ライセンス
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+このプロジェクトは MIT ライセンスの下でライセンスされています - 詳細は [LICENSE](LICENSE) ファイルを参照してください。
 
-## 🙏 Acknowledgments
+## 🙏 謝辞
 
-- **Next.js** - React framework
+- **Next.js** - React フレームワーク
 - **Supabase** - Backend as a Service
-- **Stripe** - Payment processing
-- **Zod** - Schema validation
-- **Radix UI** - UI components
-- **Tailwind CSS** - Styling framework
+- **Stripe** - 決済処理
+- **Zod** - スキーマ検証
+- **Radix UI** - UI コンポーネント
+- **Tailwind CSS** - スタイリングフレームワーク
 
 ---
 
-## 🔐 Security Notice
+## 🔐 セキュリティ通知
 
-This application implements enterprise-grade security features including:
-- Input validation and sanitization
-- Authentication and authorization
-- Rate limiting and DDoS protection
-- Secure file upload handling
-- SQL injection prevention
-- XSS protection
-- CSRF protection
-- Security headers and CSP
-- Audit logging and monitoring
+このアプリケーションは以下を含むエンタープライズグレードのセキュリティ機能を実装しています：
+- 入力検証とサニタイゼーション
+- 認証と認可
+- レート制限と DDoS 保護
+- 安全なファイルアップロード処理
+- SQL インジェクション防止
+- XSS 保護
+- CSRF 保護
+- セキュリティヘッダーと CSP
+- 監査ログと監視
 
-For production deployment, ensure all security configurations are properly set up according to the deployment guide.
+本番環境デプロイメントでは、デプロイメントガイドに従ってすべてのセキュリティ設定が適切にセットアップされていることを確認してください。

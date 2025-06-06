@@ -49,7 +49,7 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
   onSave,
   defaultValues = {
     projectTitle: "",
-    aiModel: "claude-3-5-sonnet",
+    aiModel: "claude-3-7-sonnet-20250219",
     customAiModel: "",
     pricingType: "free",
     price: 0,

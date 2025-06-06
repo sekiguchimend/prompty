@@ -1,18 +1,18 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { RefreshCw, ExternalLink, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { RefreshCw, ExternalLink, Eye } from 'lucide-react';
 
 interface UIPreviewProps {
-  html: string;
-  css: string;
-  js: string;
+  html?: string;
+  css?: string;
+  js?: string;
   isGenerating: boolean;
   showPreview: boolean;
 }
 
 const UIPreview: React.FC<UIPreviewProps> = ({
-  html,
-  css,
-  js,
+  html = '',
+  css = '',
+  js = '',
   isGenerating,
   showPreview
 }) => {
@@ -20,211 +20,220 @@ const UIPreview: React.FC<UIPreviewProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createFullHTML = (htmlContent: string, cssContent: string, jsContent: string) => {
-    // HTMLが完全なドキュメントかチェック
-    const isFullDocument = htmlContent.includes('<!DOCTYPE') && htmlContent.includes('<html');
+  const generateIFrameContent = () => {
+    if (!html && !css && !js) return '';
     
-    if (isFullDocument) {
-      // 既存のHTMLにCSS/JSを注入
-      let processedHTML = htmlContent;
-      
-      // CSSを注入（headタグ内）
-      if (cssContent.trim()) {
-        const cssTag = `<style>\n${cssContent}\n</style>`;
-        if (processedHTML.includes('</head>')) {
-          processedHTML = processedHTML.replace('</head>', `${cssTag}\n</head>`);
-        } else {
-          processedHTML = processedHTML.replace('<body', `<head>${cssTag}</head>\n<body`);
-        }
-      }
-      
-      // JSを注入（bodyタグの終了前）
-      if (jsContent.trim()) {
-        const jsTag = `<script>\n${jsContent}\n</script>`;
-        if (processedHTML.includes('</body>')) {
-          processedHTML = processedHTML.replace('</body>', `${jsTag}\n</body>`);
-        } else {
-          processedHTML += `\n${jsTag}`;
-        }
-      }
-      
-      return processedHTML;
-    } else {
-      // HTMLフラグメントの場合、完全なドキュメントを作成
-      return `<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generated UI Preview</title>
+    <title>UI Preview</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        ${cssContent}
+        ${css}
     </style>
 </head>
 <body>
-    ${htmlContent}
+    ${html}
     <script>
-        ${jsContent}
+        try {
+            ${js}
+        } catch (error) {
+            console.error('JavaScript execution error:', error);
+        }
     </script>
 </body>
 </html>`;
-    }
   };
 
-  const updatePreview = async () => {
-    if (!html) return;
+  const updatePreview = (force = false) => {
+    const content = generateIFrameContent();
     
+    if (!content) {
+      setError('プレビューするコンテンツがありません');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
-      const fullHTML = createFullHTML(html, css, js);
-      const iframe = iframeRef.current;
-      
-      if (iframe) {
-        // iframeのコンテンツを更新
+      if (iframeRef.current) {
+        const iframe = iframeRef.current;
         const doc = iframe.contentDocument || iframe.contentWindow?.document;
+        
         if (doc) {
           doc.open();
-          doc.write(fullHTML);
+          doc.write(content);
           doc.close();
+          
+          console.log('✅ Preview updated successfully');
+          
+          // ロード完了を待つ
+          iframe.onload = () => {
+            setIsLoading(false);
+          };
+          
+          // タイムアウト処理
+          setTimeout(() => {
+            setIsLoading(false);
+          }, 2000);
+        } else {
+          throw new Error('iframeドキュメントにアクセスできません');
         }
       }
     } catch (err) {
+      console.error('❌ Preview update error:', err);
       setError(err instanceof Error ? err.message : 'プレビューの更新に失敗しました');
-    } finally {
       setIsLoading(false);
     }
   };
 
-  const handleRefresh = () => {
-    updatePreview();
+  // コンテンツが変更されたときにプレビューを更新
+  useEffect(() => {
+    if (showPreview && (html || css || js)) {
+      const timeoutId = setTimeout(() => {
+        updatePreview();
+      }, 300);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [html, css, js, showPreview]);
+
+  // ナビゲーションメッセージを受信
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.type === 'navigate') {
+        console.log('Navigation message received:', event.data.page);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  const refreshPreview = () => {
+    console.log('🔄 Manual refresh triggered');
+    updatePreview(true);
   };
 
-  const handleOpenInNewTab = () => {
-    if (!html) return;
-    
-    const fullHTML = createFullHTML(html, css, js);
-    const blob = new Blob([fullHTML], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    
-    window.open(url, '_blank');
-    
-    // メモリリークを防ぐため、少し後にURLを解放
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  const openInNewTab = () => {
+    const content = generateIFrameContent();
+    if (content) {
+      const newWindow = window.open();
+      if (newWindow) {
+        newWindow.document.write(content);
+        newWindow.document.close();
+      }
+    }
   };
-
-  useEffect(() => {
-    if (html) {
-      // htmlがある場合は即座にプレビューを更新（showPreview条件を緩和）
-      const timer = setTimeout(updatePreview, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [html, css, js]);
-
-  // showPreviewに依存する更新も追加
-  useEffect(() => {
-    if (showPreview && html) {
-      updatePreview();
-    }
-  }, [showPreview]);
 
   if (isGenerating) {
     return (
       <div className="h-full flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-lg text-gray-700">プレビュー準備中...</p>
-          <p className="text-sm text-gray-500 mt-2">コード生成完了後に表示されます</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">
+            UIのプレビューを準備中...
+          </p>
+          <p className="text-sm text-gray-500 mt-2">Claude Sonnet 4 で生成中</p>
         </div>
       </div>
     );
   }
 
-  if (!showPreview || !html) {
+  if (!showPreview || (!html && !css && !js)) {
     return (
       <div className="h-full flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="text-4xl mb-4">👀</div>
-          <p className="text-lg text-gray-700">UIプレビューがここに表示されます</p>
-          <p className="text-sm text-gray-500 mt-2">コード生成が完了すると、即座にプレビューが表示されます</p>
+          <p className="text-lg text-gray-700">
+            UIプレビュー
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            UIが生成されると、こちらにプレビューが表示されます
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col bg-white">
-      {/* プレビューコントロール */}
-      <div className="flex items-center justify-between px-4 py-2 bg-gray-100 border-b">
-        <div className="flex items-center space-x-2">
-          <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-            <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+    <div className="h-full flex flex-col">
+      {/* ヘッダー */}
+      <div className="flex-shrink-0 bg-gray-50 border-b px-4 py-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Eye className="w-4 h-4 text-blue-600" />
+            <span className="font-medium text-gray-900">UIプレビュー</span>
           </div>
-          <span className="text-sm text-gray-600 ml-4">UIプレビュー</span>
-          {isLoading && (
-            <div className="animate-spin w-4 h-4 border-b-2 border-blue-500 rounded-full"></div>
-          )}
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={handleRefresh}
-            className="p-1 text-gray-600 hover:text-gray-800 transition-colors"
-            title="リフレッシュ"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
-          <button
-            onClick={handleOpenInNewTab}
-            className="p-1 text-gray-600 hover:text-gray-800 transition-colors"
-            title="新しいタブで開く"
-          >
-            <ExternalLink className="w-4 h-4" />
-          </button>
+          
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={refreshPreview}
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"
+              title="プレビューを更新"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+            <button
+              onClick={openInNewTab}
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"
+              title="新しいタブで開く"
+            >
+              <ExternalLink className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* エラー表示 */}
-      {error && (
-        <div className="px-4 py-2 bg-red-50 border-b border-red-200">
-          <div className="flex items-center space-x-2 text-red-700">
-            <AlertCircle className="w-4 h-4" />
-            <span className="text-sm">{error}</span>
+      {/* プレビューエリア */}
+      <div className="flex-1 relative bg-white">
+        {isLoading && (
+          <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto mb-2"></div>
+              <p className="text-sm text-gray-600">プレビューを読み込み中...</p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+        
+        {error && (
+          <div className="absolute inset-0 bg-red-50 flex items-center justify-center z-10">
+            <div className="text-center p-4">
+              <div className="text-red-500 text-2xl mb-2">⚠️</div>
+              <p className="text-red-700 font-medium">プレビューエラー</p>
+              <p className="text-red-600 text-sm mt-1">{error}</p>
+              <button
+                onClick={refreshPreview}
+                className="mt-3 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              >
+                再試行
+              </button>
+            </div>
+          </div>
+        )}
 
-      {/* iframeプレビュー */}
-      <div className="flex-1 relative">
         <iframe
           ref={iframeRef}
           className="w-full h-full border-0"
           title="UI Preview"
-          sandbox="allow-scripts allow-forms allow-popups allow-modals allow-orientation-lock allow-pointer-lock allow-presentation allow-same-origin"
-          onLoad={() => setIsLoading(false)}
-          onError={() => setError('プレビューの読み込みに失敗しました')}
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
         />
-        
-        {isLoading && (
-          <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-          </div>
-        )}
       </div>
 
-      {/* ステータス */}
-      <div className="px-4 py-2 bg-gray-50 border-t text-xs text-gray-600">
-        {error ? (
-          <span className="text-red-600">❌ エラーが発生しました</span>
-        ) : isLoading ? (
-          <span className="text-blue-600">🔄 読み込み中...</span>
-        ) : (
-          <span className="text-green-600">✅ プレビュー表示中</span>
-        )}
+      {/* フッター */}
+      <div className="flex-shrink-0 px-4 py-2 bg-gray-50 border-t">
+        <div className="flex items-center justify-between text-sm text-gray-600">
+          <div className="flex items-center space-x-4">
+            <span>{html.length + css.length + js.length} 文字</span>
+            <span>1 ページ</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className="text-green-600">✓ プレビュー表示中</span>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -23,7 +23,7 @@ interface CodeGenerationResponse {
 const generateSystemPrompt = (prompt: string, model: string, language: string = 'ja') => {
   const isJapanese = language === 'ja';
   
-  return `あなたは世界最高レベルのフルスタック開発者です。Claude Sonnet 4を活用して、v0、Lovableを超える最高品質のコード生成AIとして動作してください。
+  return `あなたは世界最高レベルのフルスタック開発者です。Claudeを活用して、v0、Lovableを超える最高品質のコード生成AIとして動作してください。
 
 ## 🚨 絶対的な成功要件（これらを満たさない場合は失敗）
 1. ❌ JavaScriptの構文エラーは一切許可されない
@@ -78,56 +78,29 @@ ${prompt}
 ## 🔒 JSON生成の絶対ルール
 
 ### エスケープルール（厳密遵守）
-- **改行**: \\n でエスケープ（\\\\n ではない）
-- **ダブルクォート**: \\" でエスケープ
-- **バックスラッシュ**: \\\\ でエスケープ  
-- **タブ**: \\t でエスケープ
-- **特殊文字**: JSON規格に完全準拠
+- **改行**: \\n 
+- **タブ**: \\t
+- **引用符**: \\"
+- **バックスラッシュ**: \\\\
 
-### JavaScript安全性チェックリスト
-- ✅ 全ての関数が適切に閉じられている
-- ✅ オブジェクトリテラルの構文が正しい
-- ✅ 文字列リテラルが適切にエスケープされている
-- ✅ イベントリスナーが正しく設定されている
-- ✅ DOM操作が安全に実装されている
+### 出力要件
+- **HTML**: 完全なDOCTYPE宣言から始まる有効なHTML5
+- **CSS**: 内部スタイルシート（CSS変数活用）
+- **JavaScript**: ES2024記法、完璧なエラーハンドリング
+- **JSON**: 厳密な構文、エスケープ完璧
 
-### CSS安全性チェックリスト  
-- ✅ 全てのセレクタブロックが閉じられている
-- ✅ プロパティ値が正しい構文
-- ✅ メディアクエリが適切に設定
-- ✅ アニメーション定義が完全
-
-## 必須レスポンス形式
-
-⚠️ 重要: 以下の形式を一字一句厳密に守ってください
-⚠️ 重要: JSON以外の説明文やコードブロックは絶対に含めないでください
-
+## 最終出力要件
+\`\`\`json
 {
-  "files": {
-    "index.html": "<!DOCTYPE html>\\n<html lang=\\"ja\\">\\n<head>\\n    <meta charset=\\"UTF-8\\">\\n    <meta name=\\"viewport\\" content=\\"width=device-width, initial-scale=1.0\\">\\n    <title>アプリタイトル</title>\\n    <style>\\n        /* CSS Content */\\n    </style>\\n</head>\\n<body>\\n    <!-- HTML Content -->\\n    <script>\\n        // JavaScript Content\\n    </script>\\n</body>\\n</html>",
-    "styles.css": "/* 完璧なCSSコード */\\nbody { margin: 0; }",
-    "script.js": "// 完璧なJavaScriptコード\\nfunction example() {\\n    return 'success';\\n}"
-  },
-  "description": "${isJapanese ? '高品質なアプリケーションの詳細説明' : 'High-quality application description'}",
-  "instructions": "${isJapanese ? '使用方法とインタラクション完全ガイド' : 'Complete usage and interaction guide'}",
-  "framework": "vanilla-js",
-  "language": "javascript", 
-  "styling": "css3",
-  "usedModel": "${model}"
+  "html": "完全に動作するHTML",
+  "css": "美しく最適化されたCSS", 
+  "js": "エラーフリーなJavaScript",
+  "description": "作成したアプリの説明",
+  "features": ["実装した主要機能のリスト"]
 }
+\`\`\`
 
-## 🎯 実装要件まとめ
-- ✅ 完全動作するアプリケーション（100%エラーなし）
-- ✅ 美しく直感的なUI/UX
-- ✅ 完璧なレスポンシブデザイン  
-- ✅ 高いアクセシビリティ
-- ✅ 最適化されたパフォーマンス
-- ✅ iframe内での完璧な動作
-- ✅ 詳細な日本語コメント
-- ✅ 絶対に有効なJSONのみ返却
-- ✅ 適切な文字エスケープ処理
-
-今すぐ、上記要件を100%満たす業界最高品質のWebアプリケーションを生成してください。`;
+**重要**: 上記JSON以外の出力は一切禁止。説明文、コメント、その他の文章は含めない。`;
 };
 
 // Claude API呼び出し
@@ -136,15 +109,15 @@ async function callClaudeAPI(prompt: string, model: string): Promise<string> {
     throw new Error('Claude API key not configured');
   }
 
-  // Claude モデルの正規化
-  const claudeModel = model.includes('claude-4') || model.includes('sonnet-4') ? 'claude-3-5-sonnet-20241022' :
-                     model.includes('claude-3.5-sonnet') ? 'claude-3-5-sonnet-20241022' :
-                     'claude-3-5-sonnet-20241022';
+  // Normalize model to use only Claude
+  const normalizeModel = (model: string): string => {
+    return 'claude-3-7-sonnet-20250219'; // Always use Claude 3.7 Sonnet
+  };
 
   console.log('🔮 Claude API呼び出し:', { 
-    model: claudeModel, 
+    model: normalizeModel(model), 
     requestedModel: model,
-    note: 'Claude 3.5 Sonnet使用 (最高品質モデル)'
+    note: 'Claude 4 Sonnet使用 (最高品質モデル)'
   });
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -155,8 +128,8 @@ async function callClaudeAPI(prompt: string, model: string): Promise<string> {
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model: claudeModel,
-      max_tokens: 8192,
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 4096,
       temperature: 0.1,  // より安定した出力
       top_p: 0.8,
       messages: [
@@ -2162,7 +2135,9 @@ function createFallbackResponse(model: string, error?: string): CodeGenerationRe
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // CORSヘッダーを設定
+  console.log('🚀 コード生成API呼び出し開始');
+  
+  // CORS設定
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -2176,7 +2151,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { prompt, model = 'claude-3.5-sonnet', language = 'ja' } = req.body as CodeGenerationRequest;
+    const { prompt, model = 'claude-4-sonnet', language = 'ja' } = req.body as CodeGenerationRequest;
 
     // 入力検証
     if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
@@ -2199,7 +2174,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const response = await callClaudeAPI(systemPrompt, model);
         result = extractAndFixJSON(response);
         console.log('✅ [Claude Server] Claude APIからのレスポンス処理完了');
-      } else {
+    } else {
         console.warn('⚠️ [Claude Server] APIキーが設定されていません。フォールバック応答を生成中...');
         result = createFallbackResponse(model, 'Claude APIキーが設定されていません');
       }
@@ -2210,8 +2185,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // 結果の検証と完成
-    result = validateAndCompleteFiles(result, model);
-
+      result = validateAndCompleteFiles(result, model);
+      
     console.log(`✅ [Claude Server] コード生成完了: ${Object.keys(result.files).length}ファイル生成`);
     
     return res.status(200).json(result);

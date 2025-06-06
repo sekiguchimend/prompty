@@ -1,78 +1,78 @@
-# Security Implementation Guide
+# セキュリティ実装ガイド
 
-This document outlines the comprehensive security measures implemented in the Prompty application for production deployment.
+このドキュメントは、本番環境デプロイメント用のPromptyアプリケーションに実装された包括的なセキュリティ対策について説明します。
 
-## 🔒 Security Features Implemented
+## 🔒 実装されたセキュリティ機能
 
-### 1. Authentication & Authorization
-- **JWT Token Validation**: Secure token verification with proper error handling
-- **Role-Based Access Control (RBAC)**: Admin, user, and guest roles
-- **Session Management**: Secure session handling with automatic refresh
-- **Password Security**: Minimum 8 characters with strength validation
-- **Multi-Factor Authentication Ready**: Infrastructure prepared for MFA
+### 1. 認証と認可
+- **JWT トークン検証**: 適切なエラーハンドリングによる安全なトークン検証
+- **ロールベースアクセス制御（RBAC）**: 管理者、ユーザー、ゲストロール
+- **セッション管理**: 自動更新機能付きの安全なセッション処理
+- **パスワードセキュリティ**: 最低8文字で強度検証
+- **多要素認証対応**: MFA用のインフラ準備済み
 
-### 2. Input Validation & Sanitization
-- **Zod Schema Validation**: Comprehensive input validation for all API endpoints
-- **SQL Injection Prevention**: Parameterized queries and input sanitization
-- **XSS Protection**: HTML sanitization and content security policies
-- **File Upload Security**: File type validation, size limits, and virus scanning
-- **Request Size Limits**: Protection against large payload attacks
+### 2. 入力検証とサニタイゼーション
+- **Zod スキーマ検証**: すべての API エンドポイントに対する包括的な入力検証
+- **SQL インジェクション防止**: パラメータ化クエリと入力サニタイゼーション
+- **XSS 保護**: HTML サニタイゼーションとコンテンツセキュリティポリシー
+- **ファイルアップロードセキュリティ**: ファイル形式検証、サイズ制限、ウイルススキャン
+- **リクエストサイズ制限**: 大容量ペイロード攻撃からの保護
 
-### 3. Rate Limiting
-- **Endpoint-Specific Limits**: Different limits for auth, uploads, payments, and AI requests
-- **IP-Based Tracking**: Rate limiting by IP address with user agent fingerprinting
-- **Sliding Window**: Advanced rate limiting with proper reset mechanisms
-- **DDoS Protection**: Multiple layers of request throttling
+### 3. レート制限
+- **エンドポイント固有の制限**: 認証、アップロード、決済、AI リクエストごとの異なる制限
+- **IP ベースの追跡**: ユーザーエージェントフィンガープリンティングを使用した IP アドレスによるレート制限
+- **スライディングウィンドウ**: 適切なリセット機能を持つ高度なレート制限
+- **DDoS 保護**: 複数レイヤーのリクエスト調整
 
-### 4. File Upload Security
-- **File Type Validation**: Whitelist of allowed MIME types
-- **Magic Number Verification**: File signature validation to prevent spoofing
-- **Size Restrictions**: 5MB maximum file size
-- **Virus Scanning**: Basic malicious pattern detection (extensible to full AV)
-- **Secure File Names**: Cryptographically secure filename generation
-- **Quarantine System**: Suspicious files isolated for review
+### 4. ファイルアップロードセキュリティ
+- **ファイル形式検証**: 許可された MIME タイプのホワイトリスト
+- **マジックナンバー検証**: スプーフィングを防ぐファイル署名検証
+- **サイズ制限**: 最大ファイルサイズ 5MB
+- **ウイルススキャン**: 基本的な悪意あるパターン検出（フル AV に拡張可能）
+- **安全なファイル名**: 暗号学的に安全なファイル名生成
+- **隔離システム**: 疑わしいファイルをレビューのために隔離
 
-### 5. API Security
-- **CORS Configuration**: Strict origin validation
-- **Security Headers**: Comprehensive security header implementation
-- **Content Security Policy**: Strict CSP to prevent XSS and injection attacks
-- **HTTPS Enforcement**: Redirect HTTP to HTTPS in production
-- **Request Validation**: All requests validated against schemas
+### 5. API セキュリティ
+- **CORS 設定**: 厳格なオリジン検証
+- **セキュリティヘッダー**: 包括的なセキュリティヘッダー実装
+- **コンテンツセキュリティポリシー**: XSS とインジェクション攻撃を防ぐ厳格な CSP
+- **HTTPS 強制**: 本番環境での HTTP から HTTPS へのリダイレクト
+- **リクエスト検証**: すべてのリクエストをスキーマに対して検証
 
-### 6. Database Security
-- **Row Level Security (RLS)**: Supabase RLS policies enforced
-- **Admin Client Isolation**: Separate admin client with restricted operations
-- **Query Whitelisting**: Only allowed tables accessible via admin operations
-- **Connection Security**: SSL/TLS encryption for database connections
-- **Audit Logging**: Database operations logged for security monitoring
+### 6. データベースセキュリティ
+- **行レベルセキュリティ（RLS）**: Supabase RLS ポリシーの強制
+- **管理者クライアント分離**: 制限された操作を持つ独立した管理者クライアント
+- **クエリホワイトリスト**: 管理者操作では許可されたテーブルのみアクセス可能
+- **接続セキュリティ**: データベース接続の SSL/TLS 暗号化
+- **監査ログ**: セキュリティ監視のためのデータベース操作ログ
 
-### 7. Error Handling
-- **Safe Error Responses**: No sensitive information leaked in error messages
-- **Structured Logging**: Comprehensive error logging for monitoring
-- **Graceful Degradation**: Application continues functioning during partial failures
-- **Security Event Logging**: All security-related events logged
+### 7. エラーハンドリング
+- **安全なエラーレスポンス**: エラーメッセージに機密情報を含まない
+- **構造化ログ**: 監視のための包括的なエラーログ
+- **グレースフルデグラデーション**: 部分的障害時もアプリケーションは機能継続
+- **セキュリティイベントログ**: すべてのセキュリティ関連イベントをログ記録
 
-### 8. Environment Security
-- **Environment Variable Validation**: Required variables checked at startup
-- **Secret Management**: Sensitive data properly isolated
-- **Configuration Validation**: Security configuration validated
-- **Development vs Production**: Different security levels for different environments
+### 8. 環境セキュリティ
+- **環境変数検証**: 起動時に必要な変数をチェック
+- **秘密管理**: 機密データの適切な分離
+- **設定検証**: セキュリティ設定の検証
+- **開発 vs 本番**: 環境ごとの異なるセキュリティレベル
 
-## 🚀 Deployment Security Checklist
+## 🚀 デプロイメントセキュリティチェックリスト
 
-### Pre-Deployment
-- [ ] All environment variables configured
-- [ ] SSL certificates installed
-- [ ] Database RLS policies enabled
-- [ ] Rate limiting configured
-- [ ] File upload restrictions set
-- [ ] CORS origins configured
-- [ ] Security headers enabled
-- [ ] CSP policies defined
+### デプロイ前
+- [ ] すべての環境変数が設定済み
+- [ ] SSL 証明書がインストール済み
+- [ ] データベース RLS ポリシーが有効
+- [ ] レート制限が設定済み
+- [ ] ファイルアップロード制限が設定済み
+- [ ] CORS オリジンが設定済み
+- [ ] セキュリティヘッダーが有効
+- [ ] CSP ポリシーが定義済み
 
-### Environment Variables Required
+### 必要な環境変数
 ```bash
-# Core Application
+# コアアプリケーション
 NEXT_PUBLIC_URL=https://your-domain.com
 NODE_ENV=production
 
@@ -86,70 +86,70 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
 STRIPE_SECRET_KEY=your_stripe_secret_key
 STRIPE_WEBHOOK_SECRET=your_webhook_secret
 
-# Security
+# セキュリティ
 JWT_SECRET=your_jwt_secret_32_chars_minimum
 ENCRYPTION_KEY=your_encryption_key_32_chars
 RATE_LIMIT_MAX=100
 RATE_LIMIT_WINDOW_MS=900000
 
-# File Upload
+# ファイルアップロード
 MAX_FILE_SIZE=5242880
 ALLOWED_FILE_TYPES=image/jpeg,image/png,image/webp,image/gif
 VIRUS_SCAN_ENABLED=true
 
-# AI Services
+# AI サービス
 NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
 ```
 
-### Post-Deployment
-- [ ] Security headers verified
-- [ ] Rate limiting tested
-- [ ] File upload restrictions tested
-- [ ] Authentication flows tested
-- [ ] Error handling verified
-- [ ] Monitoring configured
-- [ ] Backup procedures established
+### デプロイ後
+- [ ] セキュリティヘッダーの確認済み
+- [ ] レート制限のテスト済み
+- [ ] ファイルアップロード制限のテスト済み
+- [ ] 認証フローのテスト済み
+- [ ] エラーハンドリングの確認済み
+- [ ] 監視が設定済み
+- [ ] バックアップ手順が確立済み
 
-## 🛡️ Security Monitoring
+## 🛡️ セキュリティ監視
 
-### Metrics to Monitor
-- Failed authentication attempts
-- Rate limit violations
-- File upload rejections
-- Database query failures
-- API error rates
-- Unusual traffic patterns
+### 監視対象メトリクス
+- 認証失敗の試行
+- レート制限違反
+- ファイルアップロード拒否
+- データベースクエリ失敗
+- API エラー率
+- 異常なトラフィックパターン
 
-### Alerting Setup
-- Multiple failed login attempts from same IP
-- Rate limit threshold exceeded
-- Suspicious file uploads
-- Database connection issues
-- High error rates
-- Security header violations
+### アラート設定
+- 同一 IP からの複数回ログイン失敗
+- レート制限閾値の超過
+- 疑わしいファイルアップロード
+- データベース接続問題
+- 高いエラー率
+- セキュリティヘッダー違反
 
-## 🔧 Security Configuration
+## 🔧 セキュリティ設定
 
-### Rate Limiting Configuration
+### レート制限設定
 ```typescript
-// Different limits for different endpoints
-GENERAL: 100 requests per 15 minutes
-AUTH: 10 requests per 15 minutes
-UPLOAD: 20 requests per hour
-PAYMENT: 5 requests per hour
-AI: 50 requests per hour
+// エンドポイントごとの異なる制限
+一般: 15分間に100リクエスト
+認証: 15分間に10リクエスト
+アップロード: 1時間に20リクエスト
+決済: 1時間に5リクエスト
+AI: 1時間に50リクエスト
 ```
 
-### File Upload Security
+### ファイルアップロードセキュリティ
 ```typescript
-// Strict file validation
-MAX_SIZE: 5MB
-ALLOWED_TYPES: JPEG, PNG, WebP, GIF only
-VIRUS_SCAN: Pattern-based detection
-FILENAME: Cryptographically secure generation
+// 厳格なファイル検証
+最大サイズ: 5MB
+許可タイプ: JPEG、PNG、WebP、GIF のみ
+ウイルススキャン: パターンベースの検出
+ファイル名: 暗号学的に安全な生成
 ```
 
-### Content Security Policy
+### コンテンツセキュリティポリシー
 ```
 default-src 'self';
 script-src 'self' 'unsafe-inline' https://js.stripe.com;
@@ -158,73 +158,73 @@ img-src 'self' data: blob: https:;
 connect-src 'self' https://api.stripe.com [supabase-url];
 ```
 
-## 🚨 Incident Response
+## 🚨 インシデント対応
 
-### Security Incident Types
-1. **Authentication Bypass**: Immediate token revocation and user notification
-2. **Data Breach**: Database isolation and forensic analysis
-3. **DDoS Attack**: Rate limiting escalation and traffic analysis
-4. **Malicious Upload**: File quarantine and user account review
-5. **API Abuse**: Endpoint disabling and request analysis
+### セキュリティインシデントタイプ
+1. **認証バイパス**: 即座のトークン無効化とユーザー通知
+2. **データ漏洩**: データベース分離と法科学的分析
+3. **DDoS 攻撃**: レート制限のエスカレーションとトラフィック分析
+4. **悪意あるアップロード**: ファイル隔離とユーザーアカウント確認
+5. **API 悪用**: エンドポイント無効化とリクエスト分析
 
-### Response Procedures
-1. **Immediate**: Isolate affected systems
-2. **Assessment**: Determine scope and impact
-3. **Containment**: Prevent further damage
-4. **Recovery**: Restore normal operations
-5. **Lessons Learned**: Update security measures
+### 対応手順
+1. **即座**: 影響を受けたシステムの分離
+2. **評価**: 範囲と影響の判定
+3. **封じ込め**: さらなる損害の防止
+4. **復旧**: 正常な操作の復元
+5. **教訓**: セキュリティ対策の更新
 
-## 🔍 Security Testing
+## 🔍 セキュリティテスト
 
-### Automated Testing
-- Input validation testing
-- Authentication flow testing
-- Rate limiting verification
-- File upload security testing
-- Error handling validation
+### 自動テスト
+- 入力検証テスト
+- 認証フローテスト
+- レート制限確認
+- ファイルアップロードセキュリティテスト
+- エラーハンドリング検証
 
-### Manual Testing
-- Penetration testing
-- Social engineering assessment
-- Physical security review
-- Code review
-- Configuration audit
+### 手動テスト
+- ペネトレーションテスト
+- ソーシャルエンジニアリング評価
+- 物理セキュリティ確認
+- コードレビュー
+- 設定監査
 
-## 📚 Security Resources
+## 📚 セキュリティリソース
 
-### Documentation
+### ドキュメント
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
-- [Next.js Security](https://nextjs.org/docs/advanced-features/security-headers)
-- [Supabase Security](https://supabase.com/docs/guides/auth/row-level-security)
-- [Stripe Security](https://stripe.com/docs/security)
+- [Next.js セキュリティ](https://nextjs.org/docs/advanced-features/security-headers)
+- [Supabase セキュリティ](https://supabase.com/docs/guides/auth/row-level-security)
+- [Stripe セキュリティ](https://stripe.com/docs/security)
 
-### Tools
-- Security scanners
-- Vulnerability assessments
-- Code analysis tools
-- Monitoring solutions
-- Backup systems
+### ツール
+- セキュリティスキャナー
+- 脆弱性評価
+- コード分析ツール
+- 監視ソリューション
+- バックアップシステム
 
-## 🔄 Regular Security Maintenance
+## 🔄 定期的なセキュリティメンテナンス
 
-### Weekly
-- Review security logs
-- Check for failed authentication attempts
-- Monitor rate limiting effectiveness
-- Verify backup integrity
+### 週次
+- セキュリティログの確認
+- 認証失敗試行のチェック
+- レート制限効果の監視
+- バックアップ整合性の確認
 
-### Monthly
-- Update dependencies
-- Review access permissions
-- Test incident response procedures
-- Audit user accounts
+### 月次
+- 依存関係の更新
+- アクセス権限の確認
+- インシデント対応手順のテスト
+- ユーザーアカウントの監査
 
-### Quarterly
-- Security assessment
-- Penetration testing
-- Policy review
-- Training updates
+### 四半期
+- セキュリティ評価
+- ペネトレーションテスト
+- ポリシー確認
+- トレーニング更新
 
 ---
 
-**Note**: This security implementation provides enterprise-grade protection. Regular updates and monitoring are essential for maintaining security posture.
+**注記**: このセキュリティ実装はエンタープライズグレードの保護を提供します。セキュリティ体制を維持するために、定期的な更新と監視が不可欠です。

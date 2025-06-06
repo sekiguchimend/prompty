@@ -37,7 +37,7 @@ const CodeGenerationTab: React.FC<CodeGenerationTabProps> = ({
 }) => {
   const [prompt, setPrompt] = useState('');
   const [additionalPrompt, setAdditionalPrompt] = useState('');
-  const [model, setModel] = useState<'gemini-2.0-flash' | 'gemini-1.5-pro' | 'gpt-4' | 'gpt-3.5-turbo' | 'claude-3-sonnet' | 'claude-3-haiku'>('gemini-2.0-flash');
+  const [model, setModel] = useState<'claude-4-sonnet' | 'claude-sonnet-4'>('claude-4-sonnet');
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [isImproving, setIsImproving] = useState(false);
@@ -90,14 +90,14 @@ const CodeGenerationTab: React.FC<CodeGenerationTabProps> = ({
 
       console.log('コード改善開始:', {
         originalFilesCount: Object.keys(generatedCode.files).length,
-        framework: generatedCode.techStack?.framework,
+        framework: generatedCode.framework,
         improvementRequest: additionalPrompt.trim()
       });
 
       const response = await improveCode(
         currentCode,
         additionalPrompt.trim(),
-        generatedCode.techStack?.framework || 'react',
+        generatedCode.framework || 'react',
         model
       );
 
@@ -145,13 +145,10 @@ const CodeGenerationTab: React.FC<CodeGenerationTabProps> = ({
       description: generatedCode.description || '',
       prompt,
       files: generatedCode.files,
-      dependencies: generatedCode.dependencies?.reduce((acc: Record<string, string>, dep: string) => {
-        acc[dep] = 'latest';
-        return acc;
-      }, {}) || {},
-      framework: 'react',
-      language: 'javascript',
-      styling: 'css',
+      dependencies: {},
+      framework: generatedCode.framework || 'react',
+      language: generatedCode.language || 'javascript',
+      styling: generatedCode.styling || 'css',
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -176,8 +173,8 @@ const CodeGenerationTab: React.FC<CodeGenerationTabProps> = ({
   };
 
   const getTemplate = () => {
-    if (generatedCode && generatedCode.techStack) {
-      const { framework, language } = generatedCode.techStack;
+    if (generatedCode && generatedCode.framework) {
+      const { framework, language } = generatedCode;
       if (framework === 'react' && language === 'typescript') return 'react-ts';
       if (framework === 'react') return 'react';
       if (framework === 'vue' && language === 'typescript') return 'vue-ts';
@@ -238,12 +235,8 @@ const CodeGenerationTab: React.FC<CodeGenerationTabProps> = ({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="gemini-2.0-flash">🔸 Gemini 2.0 Flash (推奨)</SelectItem>
-                      <SelectItem value="gemini-1.5-pro">🔹 Gemini 1.5 Pro</SelectItem>
-                      <SelectItem value="gpt-4">🔸 GPT-4</SelectItem>
-                      <SelectItem value="gpt-3.5-turbo">🔹 GPT-3.5 Turbo</SelectItem>
-                      <SelectItem value="claude-3-sonnet">🔸 Claude 3 Sonnet</SelectItem>
-                      <SelectItem value="claude-3-haiku">🔹 Claude 3 Haiku</SelectItem>
+                      <SelectItem value="claude-4-sonnet">🎯 Claude 4 Sonnet</SelectItem>
+                      <SelectItem value="claude-sonnet-4">⚡ Claude Sonnet 4</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -386,16 +379,16 @@ const CodeGenerationTab: React.FC<CodeGenerationTabProps> = ({
                     </div>
                     <div className="flex items-center gap-2">
                       {/* AIが自動選択した技術スタックを表示 */}
-                      {generatedCode.techStack && (
+                      {generatedCode.framework && (
                         <>
                           <Badge variant="default" className="bg-green-500 hover:bg-green-600">
-                            🤖 {generatedCode.techStack.framework}
+                            🤖 {generatedCode.framework}
                           </Badge>
                           <Badge variant="default" className="bg-green-500 hover:bg-green-600">
-                            🤖 {generatedCode.techStack.language}
+                            🤖 {generatedCode.language}
                           </Badge>
                           <Badge variant="default" className="bg-green-500 hover:bg-green-600">
-                            🤖 {generatedCode.techStack.styling}
+                            🤖 {generatedCode.styling}
                           </Badge>
                         </>
                       )}
@@ -489,19 +482,17 @@ const CodeGenerationTab: React.FC<CodeGenerationTabProps> = ({
               {/* コードサンドボックス */}
               <CodeSandbox
                 files={generatedCode.files}
-                dependencies={generatedCode.dependencies?.reduce((acc: Record<string, string>, dep: string) => {
-                  acc[dep] = 'latest';
-                  return acc;
-                }, {}) || {}}
-                template={getTemplate() as any}
                 title={generatedCode.description}
-                description={generatedCode.instructions}
+                description={generatedCode.description}
+                framework={generatedCode.framework}
+                language={generatedCode.language}
+                styling={generatedCode.styling}
                 height="600px"
-                showConsole={true}
-                showFileExplorer={true}
-                editable={true}
-                autorun={true}
                 initialTab="preview"
+                onFilesChange={(newFiles) => {
+                  setGeneratedCode(prev => prev ? { ...prev, files: newFiles } : null);
+                }}
+                onSave={handleSaveProject}
               />
             </>
           )}

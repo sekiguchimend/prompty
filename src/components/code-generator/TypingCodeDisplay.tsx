@@ -1,285 +1,154 @@
 import React, { useState, useEffect, useRef } from 'react';
-
-// シンプルなコードハイライト表示（react-syntax-highlighterの代替）
-const SimpleCodeDisplay: React.FC<{
-  code: string;
-  language: string;
-}> = ({ code, language }) => {
-  return (
-    <pre className="text-sm h-full overflow-auto p-4 bg-gray-900 text-white">
-      <code className={`language-${language}`}>{code}</code>
-    </pre>
-  );
-};
+import { FileText, Download, Copy, Check } from 'lucide-react';
 
 interface TypingCodeDisplayProps {
-  html: string;
-  css: string;
-  js: string;
+  html?: string;
+  css?: string;
+  js?: string;
   isGenerating: boolean;
   onComplete?: () => void;
 }
 
 const TypingCodeDisplay: React.FC<TypingCodeDisplayProps> = ({
-  html,
-  css,
-  js,
+  html = '',
+  css = '',
+  js = '',
   isGenerating,
   onComplete
 }) => {
-  const [displayedHTML, setDisplayedHTML] = useState('');
-  const [displayedCSS, setDisplayedCSS] = useState('');
-  const [displayedJS, setDisplayedJS] = useState('');
-  const [currentSection, setCurrentSection] = useState<'html' | 'css' | 'js' | 'complete'>('html');
-  const [activeTab, setActiveTab] = useState<'html' | 'css' | 'js'>('html');
-  
-  const typingSpeed = 1; // milliseconds per frame (極超高速)
-  const charsPerFrame = 20; // 1回に表示する文字数を大幅増加
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('html');
+  const [displayedContent, setDisplayedContent] = useState<Record<string, string>>({});
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const animationRef = useRef<number>();
 
-  // デバッグ用：コンテンツの検証
-  useEffect(() => {
-    console.log('🔍 TypingCodeDisplay content check:', {
-      htmlLength: html?.length || 0,
-      cssLength: css?.length || 0,
-      jsLength: js?.length || 0,
-      htmlPreview: html?.substring(0, 100),
-      cssPreview: css?.substring(0, 100),
-      jsPreview: js?.substring(0, 100)
-    });
-  }, [html, css, js]);
-
-  // 新しいコンテンツが来た時にリセット
-  useEffect(() => {
-    if (html || css || js) {
-      const isNewContent = displayedHTML !== html || displayedCSS !== css || displayedJS !== js;
-      if (isNewContent && currentSection === 'complete') {
-        setCurrentSection('html');
-      }
-    }
-  }, [html, css, js, displayedHTML, displayedCSS, displayedJS, currentSection]);
-
-  // アクティブタブが変更された時の処理
-  useEffect(() => {
-    // タブが変更されたら、そのタブのコンテンツが利用可能な場合は即座に表示
+  // タイピングアニメーション用のコンテンツを取得
+  const getCurrentContent = () => {
     switch (activeTab) {
-      case 'html':
-        if (html && displayedHTML !== html) {
-          setDisplayedHTML(html);
-        }
-        break;
-      case 'css':
-        if (css && displayedCSS !== css) {
-          setDisplayedCSS(css);
-        }
-        break;
-      case 'js':
-        if (js && displayedJS !== js) {
-          setDisplayedJS(js);
-          console.log('🔧 JSタブ選択時にコンテンツを即座に表示:', js.substring(0, 100));
-        }
-        break;
+      case 'html': return html;
+      case 'css': return css;
+      case 'js': return js;
+      default: return '';
     }
-  }, [activeTab, html, css, js, displayedHTML, displayedCSS, displayedJS]);
+  };
 
-  // デバッグ用：コンテンツの検証
+  // タイピングアニメーション
   useEffect(() => {
-    console.log('🔍 TypingCodeDisplay content check:', {
-      htmlLength: html?.length || 0,
-      cssLength: css?.length || 0,
-      jsLength: js?.length || 0,
-      htmlPreview: html?.substring(0, 100),
-      cssPreview: css?.substring(0, 100),
-      jsPreview: js?.substring(0, 100),
-      currentSection,
-      activeTab,
-      displayedJSLength: displayedJS?.length || 0
-    });
-  }, [html, css, js, currentSection, activeTab, displayedJS]);
+    if (isGenerating) return;
 
-  useEffect(() => {
-    if (!html && !css && !js) {
-      setDisplayedHTML('');
-      setDisplayedCSS('');
-      setDisplayedJS('');
-      setCurrentSection('html');
-      return;
-    }
+    const content = getCurrentContent();
+    if (!content || isCompleted) return;
 
-    let htmlIndex = 0;
-    let cssIndex = 0;
-    let jsIndex = 0;
-    let animationFrameId: number;
-    let isCompleted = false;
-    
-    const typeCode = () => {
-      if (isCompleted) return;
-      
-      let shouldContinue = true;
-      let progressMade = false;
-      
-      // HTMLセクション
-      if (currentSection === 'html' && htmlIndex < html.length) {
-        const nextIndex = Math.min(htmlIndex + charsPerFrame, html.length);
-        setDisplayedHTML(html.substring(0, nextIndex));
-        htmlIndex = nextIndex;
-        progressMade = true;
+    const animate = () => {
+      setCurrentIndex(prev => {
+        const newIndex = Math.min(prev + 3, content.length);
         
-        if (htmlIndex >= html.length) {
-          console.log('✅ HTML typing completed, moving to CSS');
-          setCurrentSection('css');
-        }
-      }
-      // CSSセクション
-      else if (currentSection === 'css' && cssIndex < css.length) {
-        const nextIndex = Math.min(cssIndex + charsPerFrame, css.length);
-        setDisplayedCSS(css.substring(0, nextIndex));
-        cssIndex = nextIndex;
-        progressMade = true;
-        
-        if (cssIndex >= css.length) {
-          console.log('✅ CSS typing completed, moving to JS');
-          setCurrentSection('js');
-        }
-      }
-      // JSセクション
-      else if (currentSection === 'js' && jsIndex < js.length) {
-        const nextIndex = Math.min(jsIndex + charsPerFrame, js.length);
-        setDisplayedJS(js.substring(0, nextIndex));
-        jsIndex = nextIndex;
-        progressMade = true;
-        console.log(`📝 JS typing progress: ${jsIndex}/${js.length} chars`);
-        
-        if (jsIndex >= js.length) {
-          console.log('✅ JS typing completed, animation finished');
-          setCurrentSection('complete');
-          isCompleted = true;
-          shouldContinue = false;
-          // onCompleteを呼ぶ前に少し待つ
-          setTimeout(() => {
-            onComplete?.();
-          }, 100);
-          return;
-        }
-      }
-      // 全セクション完了チェック
-      else if (htmlIndex >= html.length && cssIndex >= css.length && jsIndex >= js.length) {
-        if (!isCompleted) {
-          console.log('✅ All sections completed');
-          setCurrentSection('complete');
-          isCompleted = true;
-          setTimeout(() => {
-            onComplete?.();
-          }, 100);
-        }
-        return;
-      }
-      // セクション移行の処理
-      else {
-        console.log(`🔄 Section transition check: currentSection=${currentSection}, html=${htmlIndex}/${html.length}, css=${cssIndex}/${css.length}, js=${jsIndex}/${js.length}`);
-        
-        // 強制的に次のセクションに移動（スタック防止）
-        if (currentSection === 'html' && htmlIndex >= html.length && css.length > 0) {
-          setCurrentSection('css');
-          progressMade = true;
-        } else if (currentSection === 'css' && cssIndex >= css.length && js.length > 0) {
-          setCurrentSection('js');
-          progressMade = true;
-        } else if (currentSection === 'js' && jsIndex >= js.length) {
-          setCurrentSection('complete');
-          isCompleted = true;
-          setTimeout(() => {
-            onComplete?.();
-          }, 100);
-          return;
-        }
-      }
-      
-      if (shouldContinue && progressMade && !isCompleted) {
-        setTimeout(() => {
-          if (!isCompleted) {
-            animationFrameId = requestAnimationFrame(typeCode);
+        setDisplayedContent(prevDisplayed => ({
+          ...prevDisplayed,
+          [activeTab]: content.substring(0, newIndex)
+        }));
+
+        if (newIndex >= content.length) {
+          setIsCompleted(true);
+          if (onComplete) {
+            onComplete();
           }
-        }, typingSpeed);
-      } else if (!progressMade && !isCompleted) {
-        // プログレスがない場合は強制的に次のフレームを試行
-        console.log('⚠️ No progress made, retrying...');
-        setTimeout(() => {
-          if (!isCompleted) {
-            animationFrameId = requestAnimationFrame(typeCode);
-          }
-        }, typingSpeed * 10);
-      }
+          return newIndex;
+        }
+
+        return newIndex;
+      });
     };
 
-    if (html || css || js) {
-      // コンテンツがすでに表示済みかチェック
-      const isAlreadyDisplayed = 
-        displayedHTML === html && 
-        displayedCSS === css && 
-        displayedJS === js;
-      
-      if (isAlreadyDisplayed) {
-        // すでに表示済みの場合は即座にcompleteにしてonCompleteを呼ぶ
-        setCurrentSection('complete');
-        setTimeout(() => {
-          onComplete?.();
-        }, 50);
-      } else {
-        // 新しいコンテンツの場合はタイピングアニメーション開始
-        setCurrentSection('html');
-        isCompleted = false;
-        animationFrameId = requestAnimationFrame(typeCode);
-      }
-    }
+    const timeoutId = setTimeout(animate, 10);
+    animationRef.current = requestAnimationFrame(() => {
+      setTimeout(animate, 10);
+    });
 
     return () => {
-      isCompleted = true; // クリーンアップ時にフラグを設定
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-      }
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+      clearTimeout(timeoutId);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [html, css, js]);
+  }, [activeTab, isGenerating, isCompleted, getCurrentContent(), onComplete]);
 
-  const getCurrentCode = () => {
-    switch (activeTab) {
-      case 'html':
-        // HTMLタブ: タイピング中またはアニメーション完了後のコンテンツを表示
-        return currentSection === 'html' || currentSection === 'complete' ? displayedHTML : html;
-      case 'css':
-        // CSSタブ: タイピングでCSSまで進んでいるか、全体が完了している場合
-        return (currentSection === 'css' || currentSection === 'js' || currentSection === 'complete') ? displayedCSS : css;
-      case 'js':
-        // JSタブ: タイピングでJSまで進んでいるか、全体が完了している場合、または直接JSタブを選択した場合
-        return (currentSection === 'js' || currentSection === 'complete') ? displayedJS : js;
-      default:
-        return '';
+  // コンテンツが変更されたときにリセット
+  useEffect(() => {
+    if (!isGenerating && (html || css || js)) {
+      setDisplayedContent({});
+      setIsCompleted(false);
+      setCurrentIndex(0);
+    }
+  }, [html, css, js, isGenerating]);
+
+  // アクティブタブが変更されたときの処理
+  useEffect(() => {
+    const content = getCurrentContent();
+    if (content && !displayedContent[activeTab]) {
+      setCurrentIndex(0);
+      setIsCompleted(false);
+    }
+  }, [activeTab]);
+
+  // コピー機能
+  const [copiedTab, setCopiedTab] = useState<string | null>(null);
+  
+  const copyToClipboard = async (content: string, tabName: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedTab(tabName);
+      setTimeout(() => setCopiedTab(null), 2000);
+    } catch (err) {
+      console.error('コピーに失敗しました:', err);
     }
   };
 
-  const getLanguage = () => {
-    switch (activeTab) {
-      case 'html':
-        return 'html';
-      case 'css':
-        return 'css';
-      case 'js':
-        return 'javascript';
-      default:
-        return 'html';
-    }
+  // ダウンロード機能
+  const downloadFile = (content: string, filename: string) => {
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
+
+  const downloadAllFiles = () => {
+    if (html) downloadFile(html, 'index.html');
+    if (css) downloadFile(css, 'styles.css');
+    if (js) downloadFile(js, 'script.js');
+  };
+
+  // タブリストを生成
+  const getTabs = () => {
+    return [
+      { key: 'html', label: 'HTML', type: 'html', color: 'text-orange-600 bg-orange-50 border-orange-200' },
+      { key: 'css', label: 'CSS', type: 'css', color: 'text-blue-600 bg-blue-50 border-blue-200' },
+      { key: 'js', label: 'JavaScript', type: 'js', color: 'text-green-600 bg-green-50 border-green-200' }
+    ];
+  };
+
+  const tabs = getTabs();
+  const currentContent = displayedContent[activeTab] || '';
+  const fullContent = getCurrentContent();
 
   if (isGenerating) {
     return (
-      <div className="h-full flex items-center justify-center bg-gray-900 text-white">
+      <div className="h-full flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-lg">Claude Sonnet 4 がコードを生成中...</p>
-          <p className="text-sm text-gray-400 mt-2">少々お待ちください</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 mb-2">Claude Sonnet 4 でコード生成中...</p>
+          <div className="text-sm text-gray-500">
+            <div className="flex items-center justify-center space-x-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -287,72 +156,93 @@ const TypingCodeDisplay: React.FC<TypingCodeDisplayProps> = ({
 
   if (!html && !css && !js) {
     return (
-      <div className="h-full flex items-center justify-center bg-gray-900 text-gray-400">
+      <div className="h-full flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="text-4xl mb-4">💻</div>
-          <p className="text-lg">生成されたコードがここに表示されます</p>
-          <p className="text-sm mt-2">プロンプトを入力して、UIを生成してください</p>
+          <p className="text-lg text-gray-700">コード表示</p>
+          <p className="text-sm text-gray-500 mt-2">
+            UIが生成されると、こちらにコードが表示されます
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col bg-gray-900">
-      {/* タブ */}
-      <div className="flex border-b border-gray-700">
-        {[
-          { key: 'html', label: 'HTML', icon: '🌐' },
-          { key: 'css', label: 'CSS', icon: '🎨' },
-          { key: 'js', label: 'JavaScript', icon: '⚡' }
-        ].map(({ key, label, icon }) => (
-          <button
-            key={key}
-            onClick={() => setActiveTab(key as any)}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === key
-                ? 'border-blue-500 text-blue-400 bg-gray-800'
-                : 'border-transparent text-gray-400 hover:text-gray-300'
-            }`}
-          >
-            <span className="mr-2">{icon}</span>
-            {label}
-            {/* タイピング中のインジケーター */}
-            {currentSection !== 'complete' && (
-              ((key === 'html' && currentSection === 'html') ||
-               (key === 'css' && currentSection === 'css') ||
-               (key === 'js' && currentSection === 'js'))
-            ) && (
-              <span className="ml-2 w-2 h-2 bg-green-400 rounded-full inline-block animate-pulse"></span>
-            )}
-            {/* 完了インジケーター */}
-            {currentSection === 'complete' && (
-              <span className="ml-2 w-2 h-2 bg-blue-400 rounded-full inline-block"></span>
-            )}
-          </button>
-        ))}
+    <div className="h-full flex flex-col bg-white">
+      {/* ヘッダー */}
+      <div className="flex-shrink-0 bg-gray-50 border-b">
+        <div className="flex items-center justify-between px-4 py-2">
+          <div className="flex space-x-1">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors flex items-center space-x-2 ${
+                  activeTab === tab.key
+                    ? `${tab.color} border`
+                    : 'text-gray-600 bg-white border border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <FileText className="w-4 h-4" />
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => copyToClipboard(fullContent, activeTab)}
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"
+              title="コードをコピー"
+            >
+              {copiedTab === activeTab ? (
+                <Check className="w-4 h-4 text-green-600" />
+              ) : (
+                <Copy className="w-4 h-4" />
+              )}
+            </button>
+            <button
+              onClick={downloadAllFiles}
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"
+              title="ファイルをダウンロード"
+            >
+              <Download className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* コード表示エリア */}
-      <div className="flex-1 overflow-hidden">
-        <SimpleCodeDisplay
-          code={getCurrentCode()}
-          language={getLanguage()}
-        />
+      {/* コードエリア */}
+      <div className="flex-1 relative">
+        <div className="absolute inset-0 overflow-auto">
+          <pre className="h-full p-4 text-sm font-mono text-gray-800 bg-gray-50 whitespace-pre-wrap">
+            <code className="language-markup">
+              {currentContent}
+              {!isCompleted && (
+                <span className="animate-pulse bg-blue-500 text-blue-500 ml-1">|</span>
+              )}
+            </code>
+          </pre>
+        </div>
       </div>
 
-      {/* 進行状況 */}
-      <div className="bg-gray-800 px-4 py-2 text-xs text-gray-400 border-t border-gray-700">
-        {currentSection === 'complete' ? (
-          <span className="text-green-400">✅ コード生成完了</span>
-        ) : (
-          <span>
-            📝 生成中... 
-            {currentSection === 'html' && ' HTML'}
-            {currentSection === 'css' && ' CSS'}
-            {currentSection === 'js' && ' JavaScript'}
-          </span>
-        )}
+      {/* フッター */}
+      <div className="flex-shrink-0 px-4 py-2 bg-gray-50 border-t">
+        <div className="flex items-center justify-between text-sm text-gray-600">
+          <div className="flex items-center space-x-4">
+            <span>{fullContent.length} 文字</span>
+            <span>{fullContent.split('\n').length} 行</span>
+            <span className="capitalize">{activeTab}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            {isCompleted ? (
+              <span className="text-green-600">✓ 表示完了</span>
+            ) : (
+              <span className="text-blue-600">⌨️ タイピング中...</span>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -2,17 +2,14 @@ import React, { useState } from 'react';
 import { FormControl, FormField, FormItem, FormLabel } from "../../components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { Input } from "../../components/ui/input";
+import { RadioGroup, RadioGroupItem } from "../../components/ui/radio-group";
+import { Label } from "../../components/ui/label";
 
 // 利用可能なAIモデルのリスト
 export const AI_MODELS = [
-  { value: "claude-3-5-sonnet", label: "Claude 3.5 Sonnet" },
-  { value: "claude-3-opus", label: "Claude 3 Opus" },
-  { value: "claude-3-haiku", label: "Claude 3 Haiku" },
-  { value: "gpt-4o", label: "GPT-4o" },
-  { value: "gpt-4", label: "GPT-4" },
-  { value: "gpt-3.5", label: "GPT-3.5" },
-  { value: "custom", label: "カスタム（直接入力）" },
-];
+  { value: "claude-4-sonnet", label: "Claude 4 Sonnet" },
+  { value: "claude-sonnet-4", label: "Claude Sonnet 4" },
+] as const;
 
 interface ModelSelectorProps {
   control: any;
@@ -31,26 +28,43 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         control={control}
         name="aiModel"
         render={({ field }) => (
-          <FormItem className="w-full">
-            <FormLabel className="text-gray-700">使用AIモデル</FormLabel>
-            <Select
-              value={field.value}
-              onValueChange={(value) => {
-                field.onChange(value);
-                onModelChange(value);
-              }}
-            >
-              <SelectTrigger className="border-gray-300 bg-white">
-                <SelectValue placeholder="AIモデル選択" />
-              </SelectTrigger>
-              <SelectContent>
-                {AI_MODELS.map((model) => (
-                  <SelectItem key={model.value} value={model.value}>
-                    {model.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <FormItem className="space-y-3">
+            <FormLabel className="text-base font-medium">AIモデル</FormLabel>
+            <FormControl>
+              <RadioGroup
+                onValueChange={(value) => {
+                  field.onChange(value);
+                  onModelChange(value);
+                }}
+                value={field.value}
+                className="flex flex-col space-y-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="claude-3-7-sonnet-20250219" id="claude-3-7-sonnet-20250219" />
+                  <Label htmlFor="claude-3-7-sonnet-20250219" className="text-sm">
+                    Claude 3.7 Sonnet (2025年2月19日版) - 推奨
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="claude-3-5-sonnet-20241022" id="claude-3-5-sonnet-20241022" />
+                  <Label htmlFor="claude-3-5-sonnet-20241022" className="text-sm">
+                    Claude 3.5 Sonnet (最新版)
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="claude-3-sonnet-20240229" id="claude-3-sonnet-20240229" />
+                  <Label htmlFor="claude-3-sonnet-20240229" className="text-sm">
+                    Claude 3 Sonnet
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="claude-3-opus-20240229" id="claude-3-opus-20240229" />
+                  <Label htmlFor="claude-3-opus-20240229" className="text-sm">
+                    Claude 3 Opus (最高性能)
+                  </Label>
+                </div>
+              </RadioGroup>
+            </FormControl>
           </FormItem>
         )}
       />

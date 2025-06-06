@@ -1,6 +1,7 @@
-// 高品質AIコード生成ライブラリ (Claude 3.5 Sonnet ベース) - Enhanced Version
-// 既存コード保護機能付き
+import { z } from 'zod';
+import JSZip from 'jszip';
 
+// Claude-only types - remove all Gemini references
 export interface CodeGenerationRequest {
   prompt: string;
   model?: string;
@@ -22,6 +23,14 @@ export interface CodeGenerationResponse {
   warnings?: string[];
 }
 
+// Claude models only
+export const AVAILABLE_MODELS = [
+  'claude-3-7-sonnet-20250219',
+  'claude-3-5-sonnet-20241022',
+  'claude-3-sonnet-20240229', 
+  'claude-3-opus-20240229'
+] as const;
+
 export interface CodeImprovementOptions {
   preserveStructure: boolean;
   preserveStyles: boolean;
@@ -30,89 +39,57 @@ export interface CodeImprovementOptions {
   targetAreas?: string[];
 }
 
-// APIベースURL
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://your-domain.com/api'
-  : 'http://localhost:3000/api';
+const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
 
-// 共通のAPIコール関数（エラーハンドリング強化）
+// Claude API call function
 async function callApi(endpoint: string, data: any): Promise<any> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api${endpoint}`;
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`API Error (${response.status}):`, errorText);
+    throw new Error(`API request failed: ${response.status} ${errorText}`);
+  }
+
+  return response.json();
+}
+
+// Generate code using Claude only
+export async function generateCode(request: CodeGenerationRequest): Promise<CodeGenerationResponse> {
+  console.log('🚀 Generating code with Claude:', {
+    model: request.model || 'claude-3-7-sonnet-20250219',
+    language: request.language || 'ja',
+    framework: request.targetFramework || 'react'
+  });
+
   try {
-    console.log(`🚀 [Claude Client] API Call: ${endpoint}`, { 
-      prompt: data.prompt?.substring(0, 100) + '...',
-      model: data.model,
-      language: data.language 
-    });
-    
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
+    const response = await callApi('/generate-code', {
+      prompt: request.prompt,
+      model: request.model || 'claude-3-7-sonnet-20250219',
+      language: request.language || 'ja'
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`❌ [Claude Client] API Error (${response.status}):`, errorText);
-      
-      // より詳細なエラーメッセージ
-      let errorMessage = `Claude API Error: ${response.status}`;
-      try {
-        const errorJson = JSON.parse(errorText);
-        errorMessage = errorJson.error || errorMessage;
-      } catch {
-        errorMessage = errorText || errorMessage;
-      }
-      
-      throw new Error(errorMessage);
-    }
-
-    const result = await response.json();
-    console.log(`✅ [Claude Client] API Success:`, { 
-      files: Object.keys(result.files || {}),
-      description: result.description?.substring(0, 100) + '...',
-      framework: result.framework,
-      usedModel: result.usedModel
-    });
-    
-    return result;
+    return response;
   } catch (error) {
-    console.error(`❌ [Claude Client] Network Error:`, error);
-    
-    // ネットワークエラーの場合のより詳細な情報
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error('ネットワーク接続エラー: Claude APIサーバーに接続できません');
-    }
-    
+    console.error('❌ Code generation failed:', error);
     throw error;
   }
 }
 
-// メインのコード生成関数（Claude 3.5 Sonnet ベース）
-export async function generateCode(request: CodeGenerationRequest): Promise<CodeGenerationResponse> {
-  // 入力検証
-  if (!request.prompt || request.prompt.trim().length === 0) {
-    throw new Error('プロンプトが空です');
-  }
-  
-  if (request.prompt.length > 10000) {
-    throw new Error('プロンプトが長すぎます（10,000文字以内）');
-  }
-  
-  return callApi('/generate-code', {
-    prompt: request.prompt.trim(),
-    model: request.model || 'claude-3.5-sonnet',
-    language: request.language || 'ja'
-  });
-}
-
-// コード改善関数（Claude 3.5 Sonnet ベース・既存コード保護強化）
+// Improve code using Claude only
 export async function improveCode(
   originalCode: string,
   improvementRequest: string,
   framework: string = 'react',
-  model: string = 'claude-3.5-sonnet',
+  model: string = 'claude-3-7-sonnet-20250219',
   language: 'ja' | 'en' = 'ja',
   options: CodeImprovementOptions = {
     preserveStructure: true,
@@ -121,38 +98,30 @@ export async function improveCode(
     enhanceOnly: true
   }
 ): Promise<CodeGenerationResponse> {
-  // 入力検証
-  if (!originalCode || originalCode.trim().length === 0) {
-    throw new Error('元のコードが空です');
-  }
-  
-  if (!improvementRequest || improvementRequest.trim().length === 0) {
-    throw new Error('改善要求が空です');
-  }
-  
-  if (originalCode.length > 200000) {
-    throw new Error('元のコードが長すぎます（200,000文字以内）');
-  }
-  
-  if (improvementRequest.length > 20000) {
-    throw new Error('改善要求が長すぎます（20,000文字以内）');
-  }
-
-  // 既存コードの構造分析
-  const codeAnalysis = analyzeCodeStructure(originalCode);
-  
-  return callApi('/improve-code-enhanced', {
-    originalCode: originalCode.trim(),
-    improvementRequest: improvementRequest.trim(),
-    framework,
+  console.log('🔧 Improving code with Claude:', {
     model,
     language,
-    preservationOptions: options,
-    codeAnalysis
+    framework,
+    options
   });
+
+  try {
+    const response = await callApi('/improve-code-enhanced', {
+      originalCode,
+      improvementRequest,
+      framework,
+      model,
+      language
+    });
+
+    return response;
+  } catch (error) {
+    console.error('❌ Code improvement failed:', error);
+    throw error;
+  }
 }
 
-// コード構造分析関数（既存機能の保護用）
+// Code analysis function
 function analyzeCodeStructure(code: string): {
   functions: string[];
   classes: string[];
@@ -161,116 +130,75 @@ function analyzeCodeStructure(code: string): {
   eventListeners: string[];
   variables: string[];
 } {
-  const analysis: {
-    functions: string[];
-    classes: string[];
-    cssClasses: string[];
-    htmlElements: string[];
-    eventListeners: string[];
-    variables: string[];
-  } = {
-    functions: [],
-    classes: [],
-    cssClasses: [],
-    htmlElements: [],
-    eventListeners: [],
-    variables: []
+  const result = {
+    functions: [] as string[],
+    classes: [] as string[],
+    cssClasses: [] as string[],
+    htmlElements: [] as string[],
+    eventListeners: [] as string[],
+    variables: [] as string[]
   };
 
-  try {
-    // JavaScript関数の検出
-    const functionMatches = code.match(/function\s+(\w+)|const\s+(\w+)\s*=\s*\(|(\w+)\s*:\s*function|(\w+)\s*=>\s*/g);
-    if (functionMatches) {
-      analysis.functions = functionMatches.map(match =>
-        match.replace(/function\s+|const\s+|:\s*function|=>\s*|\s*=\s*\(/g, '').trim()
-      ).filter(name => name.length > 0);
-    }
-
-    // CSSクラスの検出
-    const cssClassMatches = code.match(/\.[\w-]+(?=\s*{)/g);
-    if (cssClassMatches) {
-      analysis.cssClasses = cssClassMatches.map(match => match.substring(1));
-    }
-
-    // HTMLクラス属性の検出
-    const htmlClassMatches = code.match(/class\s*=\s*["']([^"']+)["']/g);
-    if (htmlClassMatches) {
-      const htmlClasses = htmlClassMatches.flatMap(match =>
-        match.replace(/class\s*=\s*["']|["']/g, '').split(/\s+/)
-      );
-      const uniqueClasses = Array.from(new Set([...analysis.cssClasses, ...htmlClasses]));
-      analysis.cssClasses = uniqueClasses;
-    }
-
-    // HTMLタグの検出
-    const htmlTagMatches = code.match(/<(\w+)(?:\s|>)/g);
-    if (htmlTagMatches) {
-      const uniqueTags = Array.from(new Set(htmlTagMatches.map(match =>
-        match.replace(/<|>|\s/g, '')
-      )));
-      analysis.htmlElements = uniqueTags;
-    }
-
-    // イベントリスナーの検出
-    const eventMatches = code.match(/addEventListener\s*\(\s*["'](\w+)["']|on\w+\s*=/g);
-    if (eventMatches) {
-      analysis.eventListeners = eventMatches.map(match =>
-        match.replace(/addEventListener\s*\(\s*["']|["']|on|=/g, '').trim()
-      );
-    }
-
-    // 変数の検出
-    const variableMatches = code.match(/(?:var|let|const)\s+(\w+)/g);
-    if (variableMatches) {
-      analysis.variables = variableMatches.map(match =>
-        match.replace(/var\s+|let\s+|const\s+/g, '').trim()
-      );
-    }
-  } catch (error) {
-    console.warn('コード構造分析でエラーが発生しました:', error);
+  // Extract JavaScript functions
+  const funcMatches = Array.from(code.matchAll(/(?:function\s+(\w+)|const\s+(\w+)\s*=\s*(?:\([^)]*\)\s*=>|\w+))/g));
+  for (const match of funcMatches) {
+    const funcName = match[1] || match[2];
+    if (funcName) result.functions.push(funcName);
   }
 
-  return analysis;
+  // Extract CSS classes
+  const cssMatches = Array.from(code.matchAll(/\.([a-zA-Z][\w-]*)/g));
+  for (const match of cssMatches) {
+    if (!result.cssClasses.includes(match[1])) {
+      result.cssClasses.push(match[1]);
+    }
+  }
+
+  // Extract HTML elements
+  const htmlMatches = Array.from(code.matchAll(/<(\w+)/g));
+  for (const match of htmlMatches) {
+    if (!result.htmlElements.includes(match[1])) {
+      result.htmlElements.push(match[1]);
+    }
+  }
+
+  // Extract event listeners
+  const eventMatches = Array.from(code.matchAll(/addEventListener\(['"](\w+)['"]/g));
+  for (const match of eventMatches) {
+    if (!result.eventListeners.includes(match[1])) {
+      result.eventListeners.push(match[1]);
+    }
+  }
+
+  return result;
 }
 
-// コード説明機能（詳細分析対応）
+// Explain code using Claude
 export const explainCode = async (code: string, language: 'ja' | 'en' = 'ja'): Promise<string> => {
+  console.log('📖 Explaining code with Claude...');
+  
   try {
-    // 入力検証
-    if (!code || code.trim().length === 0) {
-      throw new Error('コードが空です');
-    }
-    
-    if (code.length > 100000) {
-      throw new Error('コードが長すぎます（100,000文字以内）');
-    }
-    
-    const response = await fetch(`${API_BASE_URL}/explain-code`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ 
-        code: code.trim(),
-        language 
-      }),
+    // Use Claude to explain the code
+    const prompt = language === 'ja' 
+      ? `以下のコードを分析して、機能と構造を日本語で説明してください：\n\n${code}`
+      : `Please analyze and explain the functionality and structure of the following code:\n\n${code}`;
+
+    const response = await callApi('/generate-code', {
+      prompt,
+      model: 'claude-3-7-sonnet-20250219',
+      language
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`❌ コード説明エラー:`, errorText);
-      throw new Error(`コード説明に失敗しました: ${response.status} - ${errorText}`);
-    }
-
-    const result = await response.json();
-    return result.explanation || 'コードの説明を取得できませんでした';
+    return response.description || 'コードの説明を生成できませんでした。';
   } catch (error) {
-    console.error('❌ コード説明エラー:', error);
-    throw new Error(error instanceof Error ? error.message : 'コード説明に失敗しました');
+    console.error('❌ Code explanation failed:', error);
+    return language === 'ja' 
+      ? 'コードの説明中にエラーが発生しました。'
+      : 'An error occurred while explaining the code.';
   }
 };
 
-// プロジェクト保存機能
+// Project management functions
 export const saveProject = (project: {
   title: string;
   description: string;
@@ -280,168 +208,108 @@ export const saveProject = (project: {
   language: string;
   styling: string;
 }): string => {
+  const projectId = `project_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  const projectData = {
+    ...project,
+    id: projectId,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    model: 'claude-3-7-sonnet-20250219'
+  };
+
   try {
-    const savedProjects = JSON.parse(localStorage.getItem('codeProjects') || '[]');
-    const projectWithId = {
-      ...project,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+    const existingProjects = JSON.parse(localStorage.getItem('claude_projects') || '[]');
+    existingProjects.push(projectData);
+    localStorage.setItem('claude_projects', JSON.stringify(existingProjects));
     
-    savedProjects.push(projectWithId);
-    localStorage.setItem('codeProjects', JSON.stringify(savedProjects));
-    
-    console.log('✅ プロジェクト保存完了:', projectWithId.id);
-    return projectWithId.id;
+    console.log('💾 Project saved:', projectId);
+    return projectId;
   } catch (error) {
-    console.error('❌ プロジェクト保存エラー:', error);
+    console.error('❌ Failed to save project:', error);
     throw new Error('プロジェクトの保存に失敗しました');
   }
 };
 
-// プロジェクト読み込み機能
 export const loadProjects = (): any[] => {
   try {
-    const savedProjects = JSON.parse(localStorage.getItem('codeProjects') || '[]');
-    console.log('📂 プロジェクト読み込み完了:', savedProjects.length, '件');
-    return savedProjects;
+    return JSON.parse(localStorage.getItem('claude_projects') || '[]');
   } catch (error) {
-    console.error('❌ プロジェクト読み込みエラー:', error);
+    console.error('❌ Failed to load projects:', error);
     return [];
   }
 };
 
-// プロジェクト削除機能
 export const deleteProject = (projectId: string): boolean => {
   try {
-    const savedProjects = JSON.parse(localStorage.getItem('codeProjects') || '[]');
-    const filteredProjects = savedProjects.filter((p: any) => p.id !== projectId);
-    localStorage.setItem('codeProjects', JSON.stringify(filteredProjects));
+    const projects = loadProjects();
+    const filteredProjects = projects.filter(p => p.id !== projectId);
+    localStorage.setItem('claude_projects', JSON.stringify(filteredProjects));
     
-    console.log('🗑️ プロジェクト削除完了:', projectId);
+    console.log('🗑️ Project deleted:', projectId);
     return true;
   } catch (error) {
-    console.error('❌ プロジェクト削除エラー:', error);
+    console.error('❌ Failed to delete project:', error);
     return false;
   }
 };
 
-// コードダウンロード機能
-export const downloadCode = async (files: Record<string, string>, projectName: string = 'ai-generated-app'): Promise<void> => {
+// Code export functions
+export const downloadCode = async (files: Record<string, string>, projectName: string = 'claude-generated-app'): Promise<void> => {
   try {
-    // 動的インポートでJSZipを読み込み
-    const JSZip = (await import('jszip')).default;
-    
+    // Create a zip file with all the files
     const zip = new JSZip();
     
-    // ファイルをZIPに追加
     Object.entries(files).forEach(([filename, content]) => {
       zip.file(filename, content);
     });
-    
-    // README.mdを追加
-    const readme = `# ${projectName}
 
-AI Generated Web Application
-
-## ファイル構成
-${Object.keys(files).map(filename => `- ${filename}`).join('\n')}
-
-## 使用方法
-1. index.htmlをブラウザで開く
-2. または、ローカルサーバーで実行する
-
-## 生成日時
-${new Date().toLocaleString('ja-JP')}
-`;
-    
-    zip.file('README.md', readme);
-    
-    // ZIPファイルを生成してダウンロード
     const content = await zip.generateAsync({ type: 'blob' });
-    const url = URL.createObjectURL(content);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${projectName.replace(/\s+/g, '-').toLowerCase()}.zip`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
     
-    console.log('📥 ダウンロード完了:', projectName);
+    // Download the zip file
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(content);
+    link.download = `${projectName}.zip`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    console.log('📥 Code downloaded:', projectName);
   } catch (error) {
-    console.error('❌ ダウンロードエラー:', error);
-    throw new Error('ファイルのダウンロードに失敗しました');
+    console.error('❌ Download failed:', error);
+    throw new Error('コードのダウンロードに失敗しました');
   }
 };
 
-// コードコピー機能
 export const copyCode = async (files: Record<string, string>): Promise<void> => {
   try {
-    const codeText = Object.entries(files)
-      .map(([filename, content]) => `// ===== ${filename} =====\n${content}`)
-      .join('\n\n');
+    let combinedCode = '';
     
-    await navigator.clipboard.writeText(codeText);
-    console.log('📋 コピー完了');
+    Object.entries(files).forEach(([filename, content]) => {
+      combinedCode += `// === ${filename} ===\n${content}\n\n`;
+    });
+
+    await navigator.clipboard.writeText(combinedCode);
+    console.log('📋 Code copied to clipboard');
   } catch (error) {
-    console.error('❌ コピーエラー:', error);
-    throw new Error('クリップボードへのコピーに失敗しました');
+    console.error('❌ Copy failed:', error);
+    throw new Error('コードのコピーに失敗しました');
   }
 };
 
-// 利用可能なモデル一覧
-export const AVAILABLE_MODELS = [
-  {
-    id: 'claude-3.5-sonnet',
-    name: 'Claude 3.5 Sonnet',
-    description: '最新・バランス型',
-    icon: '⚡',
-    provider: 'Anthropic'
-  },
-  {
-    id: 'claude-sonnet-4-20250514',
-    name: 'Claude Sonnet 4',
-    description: '最高性能・複雑なタスク（推奨）',
-    icon: '🎯',
-    provider: 'Anthropic'
-  }
-] as const;
-
-// フレームワーク検出機能
+// Framework detection
 export const detectFramework = (files: Record<string, string>): string => {
-  const fileNames = Object.keys(files);
-  const fileContents = Object.values(files).join('\n').toLowerCase();
+  const allContent = Object.values(files).join('\n').toLowerCase();
   
-  // React検出
-  if (fileNames.some(name => name.endsWith('.jsx') || name.endsWith('.tsx')) ||
-      fileContents.includes('react') || fileContents.includes('jsx')) {
+  if (allContent.includes('react') || allContent.includes('jsx') || allContent.includes('usestate')) {
     return 'react';
-  }
-  
-  // Vue検出
-  if (fileNames.some(name => name.endsWith('.vue')) ||
-      fileContents.includes('vue')) {
+  } else if (allContent.includes('vue') || allContent.includes('v-if') || allContent.includes('v-for')) {
     return 'vue';
-  }
-  
-  // Next.js検出
-  if (fileContents.includes('next') || fileContents.includes('getstaticprops')) {
-    return 'nextjs';
-  }
-  
-  // Svelte検出
-  if (fileNames.some(name => name.endsWith('.svelte')) ||
-      fileContents.includes('svelte')) {
+  } else if (allContent.includes('angular') || allContent.includes('component') || allContent.includes('injectable')) {
+    return 'angular';
+  } else if (allContent.includes('svelte') || allContent.includes('$:')) {
     return 'svelte';
+  } else {
+    return 'vanilla';
   }
-  
-  // TypeScript検出
-  if (fileNames.some(name => name.endsWith('.ts') || name.endsWith('.tsx'))) {
-    return 'typescript';
-  }
-  
-  // デフォルト
-  return 'vanilla-js';
 };

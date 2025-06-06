@@ -108,14 +108,13 @@ ${improvementRequest}
 async function callClaudeAPI(prompt: string, model: string): Promise<string> {
   if (!CLAUDE_API_KEY) throw new Error('Claude API key not configured');
 
-  const claudeModel = model.includes('claude-sonnet-4') ? 'claude-sonnet-4-20250514' : 
-                     model.includes('claude-3.5-sonnet') ? 'claude-3-5-sonnet-20241022' :
-                     'claude-3-5-sonnet-20241022';
+  // すべてClaude 4 Sonnetを使用
+  const claudeModel = 'claude-4-sonnet';
 
   console.log('🔮 Claude API呼び出し:', { 
     model: claudeModel, 
     requestedModel: model,
-    note: model.includes('claude-sonnet-4') ? 'Claude 4 Sonnetを使用' : 'Claude 3.5 Sonnetを使用'
+    note: 'Claude 4 Sonnet使用'
   });
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -126,8 +125,8 @@ async function callClaudeAPI(prompt: string, model: string): Promise<string> {
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model: claudeModel,
-      max_tokens: 8192,
+      model: 'claude-3-7-sonnet-20250219',
+      max_tokens: 4096,
       temperature: 0.7,
       messages: [{ role: 'user', content: prompt }]
     }),
@@ -141,36 +140,6 @@ async function callClaudeAPI(prompt: string, model: string): Promise<string> {
 
   const data = await response.json();
   return data.content[0].text;
-}
-
-async function callGeminiAPI(prompt: string, model: string): Promise<string> {
-  if (!GEMINI_API_KEY) throw new Error('Gemini API key not configured');
-
-  const geminiModel = model.includes('gemini-1.5-pro') ? 'gemini-1.5-pro' : 'gemini-2.0-flash-exp';
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent`;
-
-  const response = await fetch(`${apiUrl}?key=${GEMINI_API_KEY}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.7,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 8192,
-      }
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('❌ Gemini API Error:', errorText);
-    throw new Error(`Gemini API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text;
 }
 
 // 外部ファイル参照をクリーンアップする関数
@@ -1091,13 +1060,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { 
-      originalCode, 
-      improvementRequest, 
-      framework = 'react', 
-      model = 'gemini-2.0-flash', 
-      language = 'ja' 
-    }: CodeImprovementRequest = req.body;
+    const { originalCode, improvementRequest, framework = 'react', model = 'claude-3-7-sonnet-20250219', language = 'ja' } = req.body as CodeImprovementRequest;
 
     if (!originalCode || !improvementRequest) {
       return res.status(400).json({ error: 'Original code and improvement request are required' });
@@ -1105,40 +1068,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log('🔄 コード改善開始:', { framework, model, language });
 
-    const prompt = generateImprovementPrompt(originalCode, improvementRequest, framework, model, language);
-    
-    let generatedText: string;
-    try {
-      generatedText = model.includes('claude') 
-        ? await callClaudeAPI(prompt, model)
-        : await callGeminiAPI(prompt, model);
-    } catch (apiError) {
-      console.error('❌ API呼び出し失敗:', apiError);
-      const fallbackResult = createFallbackResponse(framework, model, originalCode);
-      return res.status(200).json(fallbackResult);
-    }
-
-    if (!generatedText) {
-      console.error('❌ AIからのレスポンスが空');
-      const fallbackResult = createFallbackResponse(framework, model, originalCode);
-      return res.status(200).json(fallbackResult);
-    }
+    console.log(`🔧 [Claude] コード改善開始:`, {
+      model,
+      framework, 
+      language,
+      originalCodeLength: originalCode.length,
+      improvementRequest: improvementRequest.substring(0, 100) + '...'
+    });
 
     let result: CodeGenerationResponse;
+    
+    // Use Claude only - remove all Gemini references
     try {
-      result = extractAndFixJSON(generatedText, originalCode);
+      const prompt = generateImprovementPrompt(originalCode, improvementRequest, framework, model, language);
+      const claudeResponse = await callClaudeAPI(prompt, model);
+      result = extractAndFixJSON(claudeResponse, originalCode);
       
-      // 結果の検証とファイル補完
-      result = validateAndCompleteFiles(result, framework, model);
+      console.log(`✅ [Claude] コード改善完了:`, {
+        model,
+        filesGenerated: Object.keys(result.files).length,
+        framework: result.framework
+      });
+    } catch (claudeError) {
+      console.error(`❌ Claude コード改善エラー:`, claudeError);
       
-    } catch (parseError) {
-      console.error('❌ JSON処理失敗:', parseError);
-      console.error('❌ 生成されたテキスト (最初の1000文字):', generatedText.substring(0, 1000));
-      
+      // Use fallback
+      console.log('🔄 フォールバック改善コードにフォールオーバー中...');
       result = createFallbackResponse(framework, model, originalCode);
     }
-    
-    // 最終検証
+
     if (!result.files || Object.keys(result.files).length === 0) {
       console.error('❌ 最終検証失敗: ファイルが生成されていません');
       result = createFallbackResponse(framework, model, originalCode);
@@ -3267,5 +3225,23 @@ body::before {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }`;
+}
+
+// Remove Gemini API function
+async function generateCodeWithClaude(request: any): Promise<CodeGenerationResponse> {
+  const prompt = generateImprovementPrompt(
+    request.originalCode,
+    request.improvementRequest,
+    request.framework || 'react',
+    'claude-3-7-sonnet-20250219',
+    request.language || 'ja'
+  );
+  
+  const response = await callClaudeAPI(prompt, 'claude-3-7-sonnet-20250219');
+  return extractAndFixJSON(response, request.originalCode);
 }

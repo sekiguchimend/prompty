@@ -72,7 +72,7 @@ export const codeGenerationSchema = z.object({
   language: z.enum(['javascript', 'typescript', 'auto']).optional(),
   styling: z.enum(['css', 'tailwind', 'styled-components', 'emotion', 'auto']).optional(),
   complexity: z.enum(['simple', 'intermediate', 'advanced', 'auto']).optional(),
-  model: z.enum(['gemini-2.0-flash', 'gemini-1.5-pro', 'claude-3.5-sonnet', 'claude-sonnet-4']).optional()
+  model: z.enum(['claude-4-sonnet', 'claude-sonnet-4']).optional()
 });
 
 // Validation helper function
@@ -110,3 +110,10 @@ export const rateLimitSchema = z.object({
   maxRequests: z.number().min(1).max(10000).default(100),
   windowMs: z.number().min(1000).max(3600000).default(900000) // 15 minutes default
 });
+
+export const MODEL_VALIDATION = z.enum([
+  'claude-3-7-sonnet-20250219',
+  'claude-3-5-sonnet-20241022',
+  'claude-3-sonnet-20240229',
+  'claude-3-opus-20240229'
+]);
