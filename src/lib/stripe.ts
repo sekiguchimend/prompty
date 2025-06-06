@@ -7,6 +7,5 @@ if (!process.env.STRIPE_SECRET_KEY) {
 
 // ここには必ず「プラットフォーム」のキーを入れる
 export const stripe = new Stripe(
-  process.env.STRIPE_SECRET_KEY!,
-  { apiVersion: '2025-04-30.basil' }
+  process.env.STRIPE_SECRET_KEY!
 ); 
