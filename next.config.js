@@ -43,13 +43,15 @@ const nextConfig = {
       }
     ];
 
-    // Add CSP header in production
-    if (process.env.NODE_ENV === 'production') {
-      securityHeaders.push({
-        key: 'Content-Security-Policy',
-        value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://qrxrulntwojimhhhnwqk.supabase.co https://lh3.googleusercontent.com; connect-src 'self' https://api.openai.com https://generativelanguage.googleapis.com https://qrxrulntwojimhhhnwqk.supabase.co wss://qrxrulntwojimhhhnwqk.supabase.co;"
-      });
-    }
+    // Add CSP header - より緩い本番設定
+    const cspValue = process.env.NODE_ENV === 'production' 
+      ? "default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' data: https:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https:; img-src 'self' data: blob: https:; connect-src 'self' https: wss:;"
+      : "default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: data:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; connect-src 'self' https: wss:;";
+    
+    securityHeaders.push({
+      key: 'Content-Security-Policy',
+      value: cspValue
+    });
 
     return [
       {
