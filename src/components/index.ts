@@ -8,13 +8,6 @@ export * from './ui/avatar';
 export * from './shared/Avatar';
 export * from './shared/ReportDialog';
 
-// Feature Components
-export * from './features/auth';
-export * from './features/prompts';
-export * from './features/comments';
-export * from './features/dashboard';
-export * from './features/profile';
-export * from './features/settings';
 
 // Layout Components
 export * from './layout';
