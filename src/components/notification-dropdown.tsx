@@ -88,7 +88,7 @@ const NotificationDropdown: React.FC = () => {
     
     // Set up a subscription for real-time updates to announcements
     const subscription = supabase
-      .channel('public:announcements')
+      .channel(`notifications-announcements-${Math.random().toString(36).substr(2, 9)}`)
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
@@ -100,7 +100,7 @@ const NotificationDropdown: React.FC = () => {
       
     // Also listen for changes to announcement_reads table
     const readsSubscription = supabase
-      .channel('public:announcement_reads')
+      .channel(`notifications-reads-${Math.random().toString(36).substr(2, 9)}`)
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
