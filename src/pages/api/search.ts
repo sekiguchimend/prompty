@@ -1,6 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { supabase } from '../../lib/supabaseClient';
 import { DEFAULT_AVATAR_URL } from '../../components/common/Avatar';
+import { searchQuerySchema, sanitizeSearchQuery } from '../../lib/security/input-validation';
+import { SecureDB } from '../../lib/security/secure-db';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // GETリクエストのみ受け付ける
@@ -8,92 +10,59 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
   
-  const { q: query } = req.query;
-  
-  // クエリパラメータチェック
-  if (!query || typeof query !== 'string') {
-    return res.status(400).json({ 
-      error: 'Search query is required',
-      results: []
-    });
-  }
-  
   try {
-    // 検索方法を修正し、個別のフィルターを使用
-    // タイトルでの検索
-    const { data: titleSearchResults, error: titleSearchError } = await supabase
-      .from('prompts')
-      .select(`
-        id,
-        title,
-        thumbnail_url,
-        content,
-        created_at,
-        price,
-        author_id,
-        view_count,
-        profiles:profiles(id, username, display_name, avatar_url, bio)
-      `)
-      .ilike('title', `%${query}%`)
-      .order('created_at', { ascending: false });
-      
-    if (titleSearchError) {
-      console.error('タイトル検索エラー:', titleSearchError);
-      throw titleSearchError;
-    }
+    // 🔒 セキュアな入力検証
+    const validatedQuery = searchQuerySchema.parse({
+      query: req.query.q,
+      category: req.query.category,
+      page: req.query.page ? parseInt(req.query.page as string) : 1,
+      limit: req.query.limit ? parseInt(req.query.limit as string) : 20
+    });
+
+    const secureDB = new SecureDB(supabase);
     
-    // プロフィール名での検索
-    let profileSearchResults: any[] = [];
-    const { data: profilesData, error: profilesError } = await supabase
-      .from('profiles')
-      .select(`
-        id, 
-        username,
-        display_name,
-        avatar_url
-      `)
-      .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`);
-      
-    if (profilesError) {
-      console.error('プロフィール検索エラー:', profilesError);
-    } else if (profilesData && profilesData.length > 0) {
-      // 見つかったプロフィールのユーザーIDで投稿を検索
-      const userIds = profilesData.map(profile => profile.id);
-      const { data: userPromptsData, error: userPromptsError } = await supabase
-        .from('prompts')
-        .select(`
-          id,
-          title,
-          thumbnail_url,
-          content,
-          created_at,
-          price,
-          author_id,
-          view_count,
-          profiles:profiles(id, username, display_name, avatar_url, bio)
-        `)
-        .in('author_id', userIds)
-        .order('created_at', { ascending: false });
-        
-      if (userPromptsError) {
-        console.error('ユーザー投稿検索エラー:', userPromptsError);
-      } else {
-        profileSearchResults = userPromptsData || [];
+    // 🔒 SQLインジェクション対策済みの検索
+    const { data: searchResults, error: searchError } = await secureDB.searchPrompts(
+      validatedQuery.query,
+      {
+        category: validatedQuery.category,
+        limit: validatedQuery.limit,
+        offset: (validatedQuery.page - 1) * validatedQuery.limit
       }
+    );
+      
+    if (searchError) {
+      console.error('検索エラー:', searchError);
+      throw searchError;
     }
     
-    // 両方の検索結果を結合してユニークにする
-    const allResults = [...(titleSearchResults || []), ...profileSearchResults];
-    const uniqueResults = Array.from(new Map(allResults.map(item => [item.id, item])).values());
+    // 🔒 データ変換（XSS対策込み）
+    const formattedResults = transformPromptsData(searchResults || []);
     
-    // データ変換
-    const formattedResults = transformPromptsData(uniqueResults || []);
-    
-    return res.status(200).json({ results: formattedResults });
+    return res.status(200).json({ 
+      results: formattedResults,
+      pagination: {
+        page: validatedQuery.page,
+        limit: validatedQuery.limit,
+        total: searchResults?.length || 0
+      }
+    });
     
   } catch (error) {
     console.error('検索中にエラーが発生しました:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    
+    // 🔒 セキュアなエラーレスポンス（内部情報を隠す）
+    if (error instanceof Error && error.message.includes('validation')) {
+      return res.status(400).json({ 
+        error: '無効な検索パラメータです',
+        results: []
+      });
+    }
+    
+    return res.status(500).json({ 
+      error: '検索処理でエラーが発生しました',
+      results: []
+    });
   }
 }
 
