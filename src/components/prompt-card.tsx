@@ -10,13 +10,13 @@ import { bookmarkPrompt, unbookmarkPrompt, checkIfBookmarked } from '../lib/book
 import { notoSansJP } from '../../lib/fonts';
 import { HeartIcon, EyeIcon } from './ui/icons';
 import LazyImage from './common/LazyImage';
-import { Avatar } from './common/Avatar';
+import { Avatar } from './shared/Avatar';
 import { getDisplayName } from '../lib/avatar-utils';
 import { PromptItem } from '../pages/prompts/[id]';
 import { likePrompt, unlikePrompt, checkIfLiked } from '../lib/like-service';
 import { useAuth } from '../lib/auth-context';
 import { UnifiedAvatar, DEFAULT_AVATAR_URL } from './index';
-import ReportDialog from './common/ReportDialog';
+import ReportDialog from './shared/ReportDialog';
 
 interface PromptCardProps {
   id: string;

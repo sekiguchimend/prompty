@@ -42,6 +42,7 @@ export class UserRepository {
     );
 
     if (error) throw new Error(error);
+    if (!user) throw new Error('Failed to update user - no data returned');
     return user;
   }
 
@@ -80,7 +81,7 @@ export class UserRepository {
     );
 
     if (error) throw new Error(error);
-    return data?.map(item => item.profiles).filter(Boolean) || [];
+    return (data?.map(item => item.profiles).filter(Boolean) as unknown as User[]) || [];
   }
 
   async getFollowing(userId: string): Promise<User[]> {
@@ -105,7 +106,7 @@ export class UserRepository {
     );
 
     if (error) throw new Error(error);
-    return data?.map(item => item.profiles).filter(Boolean) || [];
+    return (data?.map(item => item.profiles).filter(Boolean) as unknown as User[]) || [];
   }
 
   async follow(followerId: string, followingId: string): Promise<void> {

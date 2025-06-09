@@ -7,7 +7,7 @@ import { PromptItem } from '../prompts/[id]';
 import Head from 'next/head';
 import Link from 'next/link';
 import { ChevronRight, Home } from 'lucide-react';
-import { DEFAULT_AVATAR_URL } from '../../components/common/Avatar';
+import { DEFAULT_AVATAR_URL } from '../../components/index';
 
 const CategoryPage: React.FC = () => {
   const router = useRouter();

@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabaseClient';
 import { PromptItem } from '../types/components';
-import { DEFAULT_AVATAR_URL } from '../components/common/Avatar';
+import { DEFAULT_AVATAR_URL } from '../components/index';
 
 // 投稿の型定義
 export interface PostItem {

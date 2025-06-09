@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { supabase } from '../../../lib/supabaseClient';
-import { DEFAULT_AVATAR_URL } from '../../../components/common/Avatar';
+import { DEFAULT_AVATAR_URL } from '../../../components/index';
 
 interface PromptProfile {
   id: string;

@@ -9,6 +9,11 @@ export * from './dto/prompt.dto';
 
 // Legacy exports (for backward compatibility)
 export * from './api';
-export * from './components';
+export type { 
+  PromptItem,
+  User,
+  Category,
+  SearchResult
+} from './components';
 export * from './content';
 export * from './profile';

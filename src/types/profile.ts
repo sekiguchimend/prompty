@@ -28,7 +28,7 @@ export function getDisplayName(displayName: string | null | undefined): string {
 
 // アバター画像URLの取得関数
 // nullや空文字の場合はデフォルト画像を返す
-import { DEFAULT_AVATAR_URL } from '../components/common/Avatar';
+import { DEFAULT_AVATAR_URL } from '../components/index';
 
 export function getAvatarUrl(avatarUrl: string | null | undefined): string {
   return avatarUrl || DEFAULT_AVATAR_URL;

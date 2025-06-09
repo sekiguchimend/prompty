@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { X, LayoutDashboard, FilePen, Heart, Image, Book, Settings, LogOut, Users, Bookmark, Code, Shield } from 'lucide-react';
-import { Avatar } from './common/Avatar';
+import { Avatar } from './shared/Avatar';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../lib/auth-context';

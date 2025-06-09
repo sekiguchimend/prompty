@@ -6,7 +6,7 @@ import PromptSection from './prompt-section';
 import { useResponsive } from '../hooks/use-responsive';
 import { PromptItem } from '../pages/prompts/[id]';
 import { cachedFetch, generateCacheKey } from '../lib/cache';
-import { DEFAULT_AVATAR_URL } from './common/Avatar';
+import { DEFAULT_AVATAR_URL } from './index';
 
 // カテゴリの型定義
 interface Category {

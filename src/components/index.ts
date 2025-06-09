@@ -5,12 +5,5 @@ export * from './ui/input';
 export * from './ui/avatar';
 
 // Shared Components
-export * from './shared/Avatar';
+export { Avatar as UnifiedAvatar, DEFAULT_AVATAR_URL } from './shared/Avatar';
 export * from './shared/ReportDialog';
-
-
-// Layout Components
-export * from './layout';
-
-// Provider Components
-export * from './providers';

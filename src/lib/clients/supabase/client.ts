@@ -1,23 +1,23 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { supabaseConfig, clientOptions } from '../../config/supabase';
 
-let clientInstance: SupabaseClient | null = null;
+let clientInstance: SupabaseClient<any, "public", any> | null = null;
 
-export const getSupabaseClient = (): SupabaseClient => {
+export const getSupabaseClient = (): SupabaseClient<any, "public", any> => {
   if (!clientInstance) {
-    clientInstance = createClient(
+    clientInstance = createClient<any, "public", any>(
       supabaseConfig.url,
       supabaseConfig.anonKey,
       clientOptions
     );
   }
-  return clientInstance;
+  return clientInstance!;
 };
 
 export const supabase = getSupabaseClient();
 
 export const safeSupabaseOperation = async <T>(
-  operation: () => Promise<{ data: T | null; error: any }>
+  operation: () => PromiseLike<{ data: T | null; error: any }>
 ): Promise<{ data: T | null; error: string | null }> => {
   try {
     const result = await operation();

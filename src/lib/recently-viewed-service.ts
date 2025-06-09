@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient';
-import { DEFAULT_AVATAR_URL } from '../components/common/Avatar';
+import { DEFAULT_AVATAR_URL } from '../components/index';
 
 // 型定義
 interface PromptData {

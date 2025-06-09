@@ -38,10 +38,10 @@ interface UserProfile {
 // ユーザープロフィール情報取得カスタムフック
 const useUserProfile = (userId: string | undefined) => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-
+  
   useEffect(() => {
     if (!userId) return;
-
+    
     const fetchUserProfile = async () => {
       try {
         const { data, error } = await supabase
@@ -49,12 +49,12 @@ const useUserProfile = (userId: string | undefined) => {
           .select('username, display_name, avatar_url')
           .eq('id', userId)
           .single();
-
+          
         if (error) {
           console.error('ヘッダー: プロフィール取得エラー:', error);
           return;
         }
-
+        
         if (data) {
           setUserProfile({
             username: data.username as string | undefined,
@@ -66,33 +66,33 @@ const useUserProfile = (userId: string | undefined) => {
         console.error('ヘッダー: プロフィール取得中のエラー:', error);
       }
     };
-
+    
     fetchUserProfile();
   }, [userId]);
-
+  
   return userProfile;
 };
 
 // 画面サイズ監視カスタムフック
 const useIsMobile = () => {
   const [isMobile, setIsMobile] = useState(false);
-
+  
   useEffect(() => {
     const checkIfMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-
+    
     // 初期チェック
     checkIfMobile();
-
+    
     // リサイズイベントのリスナー
     window.addEventListener('resize', checkIfMobile);
-
+    
     return () => {
       window.removeEventListener('resize', checkIfMobile);
     };
   }, []);
-
+  
   return isMobile;
 };
 
@@ -118,20 +118,20 @@ const Header = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userProfile = useUserProfile(user?.id);
   const tabButtonsRef = useRef<(HTMLButtonElement | null)[]>([]);
-
+  
   const displayName = userProfile?.display_name || userProfile?.username || user?.email?.split('@')[0] || "ユーザー";
   const profileAvatarUrl = userProfile?.avatar_url || user?.user_metadata?.avatar_url || "https://github.com/shadcn.png";
 
   useEffect(() => {
     const currentPath = pathname || '/';
-
+    
     const matchingTab = categoryTabs.find(tab => {
       if (tab.path === '/') {
         return currentPath === '/';
       }
       return currentPath.startsWith(tab.path);
     });
-
+    
     if (matchingTab) {
       setActiveTab(matchingTab.id);
     }
@@ -146,7 +146,7 @@ const Header = () => {
     if (searchQuery.trim()) {
       setMobileSearchOpen(false);
       const searchUrl = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
-
+      
       if (pathname === '/search' && queryParams?.q === searchQuery.trim()) {
         window.location.href = searchUrl;
       } else {
@@ -173,14 +173,14 @@ const Header = () => {
 
   const changeTab = (tabId: string) => {
     setActiveTab(tabId);
-
+    
     const selectedTab = categoryTabs.find(tab => tab.id === tabId);
     if (!selectedTab) return;
-
+    
     if (tabId === 'following' && user) {
       router.prefetch('/following');
     }
-
+    
     router.push(selectedTab.path);
   };
 
@@ -241,7 +241,7 @@ const Header = () => {
                 </Link>
               </div>
             </div>
-
+            
             {mobileSearchOpen ? (
               <div className="flex w-full items-center">
                 <form onSubmit={handleSearchSubmit} className="flex-1">
@@ -295,7 +295,7 @@ const Header = () => {
                     </form>
                   </div>
                 </div>
-
+              
                 <div className="flex items-center gap-4">
                   {!isLoading && (
                     <>
@@ -309,7 +309,7 @@ const Header = () => {
                             >
                               <Search className="h-5 w-5" />
                             </button>
-
+                            
                             <div className="flex items-center gap-2">
                               <Link href="/login">
                                 <Button variant="ghost" className="text-gray-700 text-xs px-2 py-1 hover:bg-gray-100 transition-colors">
@@ -323,7 +323,7 @@ const Header = () => {
                               </Link>
                             </div>
                           </div>
-
+                          
                           <div className="hidden md:flex items-center gap-2">
                             <Link href="/login">
                               <Button variant="ghost" className="text-gray-700 text-sm px-3 py-1.5 hover:bg-gray-100 transition-colors">
@@ -348,7 +348,7 @@ const Header = () => {
                             <PenSquare className="mr-2 h-4 w-4" />
                             投稿
                           </Button>
-
+                          
                           <Button 
                             variant="outline" 
                             size="sm" 
@@ -358,7 +358,7 @@ const Header = () => {
                             <Code className="h-4 w-4" />
                             AI生成
                           </Button>
-
+                          
                           <div className="flex items-center gap-3 md:hidden">
                             <button 
                               className="text-gray-700 p-1.5 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
@@ -367,7 +367,7 @@ const Header = () => {
                             >
                               <Search className="h-5 w-5" />
                             </button>
-
+                            
                             <div className="p-1.5 flex items-center justify-center">
                               <NotificationDropdown />
                             </div>
@@ -393,7 +393,7 @@ const Header = () => {
                             >
                               <Code className="h-4 w-4" />
                             </button>
-
+                            
                             <button
                               className="bg-black text-white p-2 rounded-full flex items-center justify-center shadow-sm hover:bg-gray-800 transition-colors"
                               onClick={() => router.push('/create-post')}
@@ -402,11 +402,11 @@ const Header = () => {
                               <PenSquare className="h-4 w-4" />
                             </button>
                           </div>
-
+                          
                           <div className="hidden md:block">
                             <NotificationDropdown />
                           </div>
-
+                          
                           {user?.email && isAdminUser(user.email) && (
                             <Link href="/admin" passHref>
                               <Button
@@ -424,7 +424,7 @@ const Header = () => {
                               </Button>
                             </Link>
                           )}
-
+                          
                           <div className="flex items-center">
                             <Button 
                               variant="ghost" 
@@ -488,4 +488,4 @@ const Header = () => {
   );
 };
 
-export default Header;
+export default Header; 

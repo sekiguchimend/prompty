@@ -22,7 +22,7 @@ import { isContentFree, isContentPremium, normalizeContentText } from '../../uti
 import { checkPurchaseStatus } from '../../utils/purchase-helpers';
 import Comments from '../../components/Comments/Comments';
 import { toast } from '../../components/ui/use-toast';
-import { DEFAULT_AVATAR_URL } from '../../components/common/Avatar';
+import { DEFAULT_AVATAR_URL } from '../../components/index';
 import Head from 'next/head';
 import { generateSiteUrl, getDefaultOgImageUrl } from '../../utils/seo-helpers';
 

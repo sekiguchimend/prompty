@@ -36,7 +36,7 @@ export const clientOptions = {
     debug: process.env.NODE_ENV === 'development'
   },
   db: {
-    schema: 'public'
+    schema: 'public' as const
   },
   global: {
     headers: {

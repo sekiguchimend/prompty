@@ -18,7 +18,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { supabase } from '../../lib/supabaseClient';
 import { LoadingSpinner } from '../../components/ui/loading-spinner';
-import ReportDialog from '../../components/common/ReportDialog';
+import ReportDialog from '../shared/ReportDialog';
 import { UnifiedAvatar, DEFAULT_AVATAR_URL } from '../index';
 
 // ユーザー情報の型定義
@@ -249,10 +249,10 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
       // ユーザーのいいね状態と最新のいいね数を同時に取得
       const [likeStatusResult, likeCountResult] = await Promise.all([
         supabase
-          .from('likes')
-          .select('id')
-          .eq('prompt_id', promptId)
-          .eq('user_id', currentUser.id)
+        .from('likes')
+        .select('id')
+        .eq('prompt_id', promptId)
+        .eq('user_id', currentUser.id)
           .limit(1),
         supabase
           .from('likes')
@@ -1058,7 +1058,7 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
       <ReportDialog
         open={isReportDialogOpen}
         onOpenChange={() => setIsReportDialogOpen(false)}
-        selectedPostId={promptId}
+        targetId={promptId}
         promptId={promptId}
         targetType="prompt"
       />

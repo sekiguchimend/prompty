@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { supabase } from '../../lib/supabaseClient';
-import { DEFAULT_AVATAR_URL } from '../../components/common/Avatar';
+import { DEFAULT_AVATAR_URL } from '../../components/index';
 import { searchQuerySchema, sanitizeSearchQuery } from '../../lib/security/input-validation';
 import { SecureDB } from '../../lib/security/secure-db';
 

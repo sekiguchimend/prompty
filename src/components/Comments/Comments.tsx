@@ -3,8 +3,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { supabase } from '../../lib/supabaseClient';
 import { MoreVertical } from 'lucide-react';
-import ReportDialog from '../common/ReportDialog';
-import { Avatar } from '../common/Avatar';
+import ReportDialog from '../shared/ReportDialog';
+import { Avatar } from '../shared/Avatar';
 import { getDisplayName } from '../../lib/avatar-utils';
 
 type Comment = {
@@ -534,7 +534,7 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
         onOpenChange={(open: boolean) => {
           if (!open) closeReportDialog();
         }}
-        selectedPostId={selectedCommentId || ''}
+        targetId={selectedCommentId || ''}
         promptId={promptId}
         targetType="comment"
       />

@@ -13,7 +13,7 @@ import Link from 'next/link';
 import { supabase } from '../lib/supabaseClient';
 import { Button } from '../components/ui/button';
 import { useInView } from 'react-intersection-observer';
-import ReportDialog from '../components/common/ReportDialog';
+import ReportDialog from '../components/shared/ReportDialog';
 import Head from 'next/head';
 import { useAuth } from '../lib/auth-context';
 import { Badge } from '../components/ui/badge';
@@ -728,7 +728,7 @@ const Following: React.FC = () => {
       <ReportDialog 
         open={reportDialogOpen}
         onOpenChange={setReportDialogOpen}
-        selectedPostId={selectedPostId}
+        targetId={selectedPostId}
         targetType="prompt"
       />
       

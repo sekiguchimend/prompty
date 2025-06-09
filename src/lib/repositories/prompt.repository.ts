@@ -157,6 +157,7 @@ export class PromptRepository {
     );
 
     if (error) throw new Error(error);
+    if (!prompt) throw new Error('Failed to create prompt - no data returned');
     return prompt;
   }
 
@@ -171,6 +172,7 @@ export class PromptRepository {
     );
 
     if (error) throw new Error(error);
+    if (!prompt) throw new Error('Failed to update prompt - no data returned');
     return prompt;
   }
 
@@ -284,6 +286,7 @@ export class PromptRepository {
     );
 
     if (error) throw new Error(error);
+    if (!data) throw new Error('Failed to get stats - no data returned');
     return data;
   }
 

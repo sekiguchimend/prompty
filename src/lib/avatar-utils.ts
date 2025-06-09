@@ -3,7 +3,7 @@
  */
 
 // アバターユーティリティ関数
-import { DEFAULT_AVATAR_URL } from '../components/common/Avatar';
+import { DEFAULT_AVATAR_URL } from '../components/index';
 
 /**
  * アバターURLを取得する

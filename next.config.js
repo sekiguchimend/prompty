@@ -48,10 +48,10 @@ const nextConfig = {
       ? "default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' data: https:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https:; img-src 'self' data: blob: https:; connect-src 'self' https: wss:;"
       : "default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: data:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; connect-src 'self' https: wss:;";
     
-    securityHeaders.push({
-      key: 'Content-Security-Policy',
+      securityHeaders.push({
+        key: 'Content-Security-Policy',
       value: cspValue
-    });
+      });
 
     return [
       {

@@ -7,9 +7,9 @@ import { bookmarkPrompt, unbookmarkPrompt, checkIfBookmarked } from '../../lib/b
 import { useAuth } from '../../lib/auth-context';
 import { HeartIcon, BookmarkIcon, DotsVerticalIcon } from '../ui/icons';
 import LazyImage from './LazyImage';
-import { Avatar } from './Avatar';
+import { Avatar } from '../shared/Avatar';
 import { getDisplayName } from '../../lib/avatar-utils';
-import ReportDialog from './ReportDialog';
+import ReportDialog from '../shared/ReportDialog';
 import { notoSansJP } from '../../../lib/fonts';
 
 interface OptimizedPromptCardProps {
@@ -337,7 +337,7 @@ const OptimizedPromptCard: React.FC<OptimizedPromptCardProps> = memo(({
       <ReportDialog
         open={reportDialogOpen}
         onOpenChange={setReportDialogOpen}
-        selectedPostId={id}
+        targetId={id}
         targetType="prompt"
       />
     </>

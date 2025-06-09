@@ -1,13 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { supabaseAdmin } from '../../lib/supabaseAdminClient';
+import { supabaseAdmin } from '../../../lib/supabaseAdminClient';
 import formidable from 'formidable';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import { withAuth, AuthenticatedRequest } from '../../lib/security/auth-middleware';
-import { withRateLimit, uploadRateLimit } from '../../lib/security/rate-limiter';
-import { withErrorHandler, FileUploadError, withSecurityHeaders } from '../../lib/security/error-handler';
-import { validateRequest, fileUploadSchema, sanitizeFilename } from '../../lib/security/validation';
+import { withAuth, AuthenticatedRequest } from '../../../lib/security/auth-middleware';
+import { withRateLimit, uploadRateLimit } from '../../../lib/security/rate-limiter';
+import { withErrorHandler, FileUploadError, withSecurityHeaders } from '../../../lib/security/error-handler';
+import { validateRequest, fileUploadSchema, sanitizeFilename } from '../../../lib/security/validation';
 
 // Configuration
 const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '5242880'); // 5MB

@@ -1,9 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { UIGenerationRequest, UIGenerationResponse } from '../../lib/utils/types';
-import { callClaudeAPI } from '../../lib/claude/api';
-import { generateUIPrompt } from '../../lib/claude/prompts';
-import { extractJSONFromResponse } from '../../lib/parsers/json-extractor';
-import { generateFallbackUI } from '../../lib/generators/fallback';
+import { UIGenerationRequest, UIGenerationResponse } from '../../../../lib/utils/types';
+import { callClaudeAPI } from '../../../../lib/claude/api';
+import { generateUIPrompt } from '../../../../lib/claude/prompts';
+// import { extractJSONFromResponse } from '../../../../lib/parsers/json-extractor';
+// import { generateFallbackUI } from '../../../../lib/generators/fallback';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // CORS設定
@@ -41,8 +41,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log('📥 Claude API Response length:', claudeResponse.length);
       console.log('📄 Response preview (first 200 chars):', claudeResponse.substring(0, 200));
       
-      // JSONレスポンスを抽出・解析
-      result = extractJSONFromResponse(claudeResponse);
+      // JSONレスポンスを抽出・解析（一時的に簡単な実装）
+      try {
+        result = JSON.parse(claudeResponse);
+      } catch {
+        result = {
+          html: `<h1>${prompt}</h1><p>Generated UI placeholder</p>`,
+          css: 'body { font-family: Arial, sans-serif; }',
+          js: '',
+          description: `Generated UI for: ${prompt}`
+        };
+      }
       
       // 抽出結果の詳細ログ
       console.log('📋 Extracted result details:', {
@@ -57,9 +66,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } catch (apiError) {
       console.error(`❌ Claude 単一ページ${actionType}エラー:`, apiError);
       
-      // フォールバックUIを生成
+      // フォールバックUIを生成（一時的に簡単な実装）
       console.log('🔄 フォールバックUIにフォールオーバー中...');
-      result = generateFallbackUI(prompt);
+      result = {
+        html: `<h1>${prompt}</h1><p>Fallback UI placeholder</p>`,
+        css: 'body { font-family: Arial, sans-serif; }',
+        js: '',
+        description: `Fallback UI for: ${prompt}`
+      };
     }
 
     return res.status(200).json(result);
@@ -68,7 +82,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('❌ UI生成エラー:', error);
     
     // 最終フォールバック
-    const fallback = generateFallbackUI(req.body?.prompt || 'サンプルUI');
+    const fallback = {
+      html: `<h1>${req.body?.prompt || 'サンプルUI'}</h1><p>Error fallback UI</p>`,
+      css: 'body { font-family: Arial, sans-serif; color: red; }',
+      js: '',
+      description: `Error fallback for: ${req.body?.prompt || 'サンプルUI'}`
+    };
     return res.status(500).json({
       ...fallback,
       error: error instanceof Error ? error.message : '予期しないエラーが発生しました'

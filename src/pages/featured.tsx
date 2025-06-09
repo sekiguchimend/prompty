@@ -11,7 +11,7 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
-import { DEFAULT_AVATAR_URL } from '../components/common/Avatar';
+import { DEFAULT_AVATAR_URL } from '../components/index';
 
 // 記事をPromptItem形式に変換する関数
 const transformToPromptItem = (item: any): PromptItem => {

@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { supabaseAdmin } from '../../lib/supabaseAdminClient';
+import { supabaseAdmin } from '../../../lib/supabaseAdminClient';
 import formidable from 'formidable';
 import fs from 'fs';
 

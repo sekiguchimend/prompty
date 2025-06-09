@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { supabase } from '../../lib/supabaseClient';
-import { Avatar } from '../common/Avatar';
+import { Avatar } from '../shared/Avatar';
 import { getDisplayName } from '../../lib/avatar-utils';
 
 type UserProfile = {

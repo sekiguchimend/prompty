@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient';
 import { PromptItem } from '../components/prompt-grid';
-import { DEFAULT_AVATAR_URL } from '../components/common/Avatar';
+import { DEFAULT_AVATAR_URL } from '../components/index';
 
 // 最適化：複数のプロンプト種類をまとめて取得する関数
 export async function getBatchPrompts(limit: number = 10): Promise<{

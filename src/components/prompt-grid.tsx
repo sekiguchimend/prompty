@@ -9,7 +9,7 @@ import { bookmarkPrompt, unbookmarkPrompt } from '../lib/bookmark-service';
 import { useAuth } from '../lib/auth-context';
 import { checkIfLiked } from '../lib/like-service';
 import { checkIfBookmarked } from '../lib/bookmark-service';
-import ReportDialog from './common/ReportDialog';
+import ReportDialog from './shared/ReportDialog';
 import { notoSansJP } from '../../lib/fonts';
 import { UnifiedAvatar, DEFAULT_AVATAR_URL } from './index';
 
@@ -578,7 +578,7 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
       <ReportDialog
         open={reportDialogOpen}
         onOpenChange={handleCloseReportDialog}
-        selectedPostId={promptId}
+        targetId={promptId}
         promptId={promptId}
         targetType="prompt"
       />
