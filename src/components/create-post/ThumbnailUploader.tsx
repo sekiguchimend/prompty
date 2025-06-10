@@ -1,22 +1,29 @@
 import React, { useRef, useState } from 'react';
 import { Button } from "../../components/ui/button";
-import { Image, Upload, XCircle, Camera } from "lucide-react";
+import { Image, Upload, XCircle, Camera, Video, Play, Pause } from "lucide-react";
 import { useToast } from "../../components/ui/use-toast";
 
 interface ThumbnailUploaderProps {
   thumbnailPreview: string | null;
   onThumbnailChange: (file: File) => void;
   onThumbnailClear: () => void;
+  mediaType?: 'image' | 'video' | null;
 }
+
+
 
 const ThumbnailUploader: React.FC<ThumbnailUploaderProps> = ({
   thumbnailPreview,
   onThumbnailChange,
-  onThumbnailClear
+  onThumbnailClear,
+  mediaType
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [isVideoHovered, setIsVideoHovered] = useState(false);
   
   // ファイル選択処理
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -24,12 +31,13 @@ const ThumbnailUploader: React.FC<ThumbnailUploaderProps> = ({
       const file = e.target.files[0];
       
       try {
-        // ファイルサイズチェック
-        const maxSize = 5 * 1024 * 1024; // 5MB
+        // ファイルサイズチェック（動画は50MB、画像は5MB）
+        const maxSize = file.type.startsWith('video/') ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
+        const maxSizeText = file.type.startsWith('video/') ? '50MB' : '5MB';
         if (file.size > maxSize) {
           toast({
             title: "エラー",
-            description: "ファイルサイズは5MB以下にしてください",
+            description: `ファイルサイズは${maxSizeText}以下にしてください`,
             variant: "destructive",
           });
           if (fileInputRef.current) {
@@ -39,10 +47,13 @@ const ThumbnailUploader: React.FC<ThumbnailUploaderProps> = ({
         }
 
         // ファイルタイプチェック
-        if (!file.type.startsWith('image/')) {
+        const isImage = file.type.startsWith('image/');
+        const isVideo = file.type.startsWith('video/');
+        
+        if (!isImage && !isVideo) {
           toast({
             title: "エラー",
-            description: "画像ファイルのみアップロードできます",
+            description: "画像または動画ファイルのみアップロードできます",
             variant: "destructive",
           });
           if (fileInputRef.current) {
@@ -51,11 +62,12 @@ const ThumbnailUploader: React.FC<ThumbnailUploaderProps> = ({
           return;
         }
 
-        // 明示的に対応している画像形式をチェック
-        const supportedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        if (!supportedTypes.includes(file.type)) {
+        // 対応形式チェック
+        const supportedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        const supportedVideoTypes = ['video/mp4', 'video/webm', 'video/mov', 'video/avi'];
+        
+        if (isImage && !supportedImageTypes.includes(file.type)) {
           console.warn(`未サポートの画像形式が検出されました: ${file.type}`);
-          // エラーとはせず、ユーザーに通知のみ
           toast({
             title: "注意",
             description: `この画像形式(${file.type})は完全にサポートされていない可能性があります。JPG、PNG、GIF、WebPの使用を推奨します。`,
@@ -64,7 +76,17 @@ const ThumbnailUploader: React.FC<ThumbnailUploaderProps> = ({
           });
         }
         
-        // 親コンポーネントに通知
+        if (isVideo && !supportedVideoTypes.includes(file.type)) {
+          console.warn(`未サポートの動画形式が検出されました: ${file.type}`);
+          toast({
+            title: "注意",
+            description: `この動画形式(${file.type})は完全にサポートされていない可能性があります。MP4、WebM、MOV、AVIの使用を推奨します。`,
+            variant: "destructive",
+            duration: 5000,
+          });
+        }
+        
+        // 親コンポーネントに通知（ファイルオブジェクト自体を渡す）
         onThumbnailChange(file);
         
       } catch (err) {
@@ -101,26 +123,61 @@ const ThumbnailUploader: React.FC<ThumbnailUploaderProps> = ({
       const file = files[0];
       
       // 同じバリデーションロジックを使用
-      if (!file.type.startsWith('image/')) {
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+      
+      if (!isImage && !isVideo) {
         toast({
           title: "エラー",
-          description: "画像ファイルのみアップロードできます",
+          description: "画像または動画ファイルのみアップロードできます",
           variant: "destructive",
         });
         return;
       }
       
-      const maxSize = 5 * 1024 * 1024; // 5MB
+      const maxSize = file.type.startsWith('video/') ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
+      const maxSizeText = file.type.startsWith('video/') ? '50MB' : '5MB';
       if (file.size > maxSize) {
         toast({
           title: "エラー",
-          description: "ファイルサイズは5MB以下にしてください",
+          description: `ファイルサイズは${maxSizeText}以下にしてください`,
           variant: "destructive",
         });
         return;
       }
 
       onThumbnailChange(file);
+    }
+  };
+
+  // 動画制御の関数
+  const handleVideoMouseEnter = () => {
+    setIsVideoHovered(true);
+    if (videoRef.current && mediaType === 'video') {
+      videoRef.current.play();
+      setIsVideoPlaying(true);
+    }
+  };
+
+  const handleVideoMouseLeave = () => {
+    setIsVideoHovered(false);
+    if (videoRef.current && mediaType === 'video') {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+      setIsVideoPlaying(false);
+    }
+  };
+
+  const handleVideoClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (videoRef.current && mediaType === 'video') {
+      if (isVideoPlaying) {
+        videoRef.current.pause();
+        setIsVideoPlaying(false);
+      } else {
+        videoRef.current.play();
+        setIsVideoPlaying(true);
+      }
     }
   };
   
@@ -141,22 +198,65 @@ const ThumbnailUploader: React.FC<ThumbnailUploaderProps> = ({
         onDrop={handleDrop}
       >
         {thumbnailPreview ? (
-          // 画像が設定されている場合
+          // 画像または動画が設定されている場合
           <>
-            <img 
-              src={thumbnailPreview} 
-              alt="記事のメイン画像" 
-              className="w-full h-full object-cover"
-            />
-            {/* ホバー時のオーバーレイ */}
-            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-3">
-                <div className="bg-white rounded-lg px-3 py-2 shadow-lg flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <Camera className="h-4 w-4" />
-                  画像を変更
+            {mediaType === 'video' && thumbnailPreview.startsWith('http') ? (
+              <div 
+                className="relative w-full h-full"
+                onMouseEnter={handleVideoMouseEnter}
+                onMouseLeave={handleVideoMouseLeave}
+              >
+                <video 
+                  ref={videoRef}
+                  src={thumbnailPreview} 
+                  className="w-full h-full object-cover"
+                  muted
+                  loop
+                  onClick={handleVideoClick}
+                />
+                {/* 動画制御オーバーレイ */}
+                <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
+                  {!isVideoPlaying && (
+                    <div className="bg-white/90 rounded-full p-3 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <Play className="h-6 w-6 text-gray-700" />
+                    </div>
+                  )}
+                </div>
+                {/* 動画インジケーター */}
+                <div className="absolute bottom-3 left-3 bg-black/70 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+                  <Video className="h-3 w-3" />
+                  動画
                 </div>
               </div>
-            </div>
+            ) : mediaType === 'video' && thumbnailPreview.startsWith('uploading_') ? (
+              // 動画アップロード中の表示
+              <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                <div className="text-center">
+                  <Video className="h-12 w-12 text-blue-500 mx-auto mb-2 animate-pulse" />
+                  <p className="text-sm text-gray-600">動画をアップロード中...</p>
+                  <p className="text-xs text-gray-500">{thumbnailPreview.replace('uploading_', '')}</p>
+                </div>
+              </div>
+            ) : (
+              <img 
+                src={thumbnailPreview} 
+                alt="記事のメイン画像" 
+                className="w-full h-full object-cover"
+              />
+            )}
+            
+            {/* ホバー時のオーバーレイ（動画以外または動画停止時） */}
+            {mediaType !== 'video' && (
+              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-3">
+                  <div className="bg-white rounded-lg px-3 py-2 shadow-lg flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <Camera className="h-4 w-4" />
+                    画像を変更
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* 削除ボタン */}
             <Button
               type="button"
@@ -180,14 +280,20 @@ const ThumbnailUploader: React.FC<ThumbnailUploaderProps> = ({
               </div>
             </div>
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-gray-900">記事のメイン画像</h3>
+              <h3 className="text-lg font-semibold text-gray-900">記事のメイン画像・動画</h3>
               <p className="text-sm text-gray-600 max-w-xs">
-                クリックして画像を選択するか、<br />
-                ここに画像をドラッグ&ドロップしてください
+                クリックして画像・動画を選択するか、<br />
+                ここにファイルをドラッグ&ドロップしてください
               </p>
-              <div className="flex items-center justify-center gap-2 mt-3">
-                <Upload className="h-4 w-4 text-gray-400" />
-                <span className="text-xs text-gray-500">JPG, PNG, GIF, WebP (最大5MB)</span>
+              <div className="flex flex-col items-center gap-2 mt-3">
+                <div className="flex items-center gap-2">
+                  <Upload className="h-4 w-4 text-gray-400" />
+                  <span className="text-xs text-gray-500">画像: JPG, PNG, GIF, WebP (最大5MB)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Video className="h-4 w-4 text-gray-400" />
+                  <span className="text-xs text-gray-500">動画: MP4, WebM, MOV, AVI (最大50MB)</span>
+                </div>
               </div>
             </div>
           </div>
@@ -197,7 +303,7 @@ const ThumbnailUploader: React.FC<ThumbnailUploaderProps> = ({
       {/* 隠れたファイル入力 */}
       <input
         type="file"
-        accept="image/*"
+        accept="image/*,video/*"
         ref={fileInputRef}
         onChange={handleFileChange}
         className="hidden"

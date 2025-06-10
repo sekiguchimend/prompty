@@ -39,31 +39,41 @@ export default async function handler(
       return res.status(400).json({ error: '無効なBase64データ形式' });
     }
 
-    // ContentTypeが画像形式かチェック
-    if (!contentType.startsWith('image/')) {
-      console.warn(`非画像MIMEタイプ "${contentType}" は許可されていません`);
+    // ContentTypeが画像または動画形式かチェック
+    const isImage = contentType.startsWith('image/');
+    const isVideo = contentType.startsWith('video/');
+    
+    if (!isImage && !isVideo) {
+      console.warn(`非対応MIMEタイプ "${contentType}" は許可されていません`);
       return res.status(400).json({ 
         error: '許可されていないContentType', 
-        message: 'アップロードできるのは画像ファイルのみです',
+        message: 'アップロードできるのは画像または動画ファイルのみです',
         providedType: contentType
       });
     }
 
-    // サポートする画像形式の定義
+    // サポートする形式の定義
     const supportedImageTypes = [
       'image/jpeg', 'image/png', 'image/gif', 
       'image/webp', 'image/svg+xml', 'image/bmp', 'image/tiff'
     ];
+    
+    const supportedVideoTypes = [
+      'video/mp4', 'video/webm', 'video/mov', 'video/avi', 'video/quicktime'
+    ];
 
     // MIMEタイプが未サポートの場合は拡張子に基づいて正しいMIMEタイプを設定
     let finalContentType = contentType;
-    if (!supportedImageTypes.includes(contentType)) {
-      console.warn(`未サポートの画像形式 "${contentType}" を検出`);
+    const supportedTypes = [...supportedImageTypes, ...supportedVideoTypes];
+    
+    if (!supportedTypes.includes(contentType)) {
+      console.warn(`未サポートの形式 "${contentType}" を検出`);
       
       // ファイル拡張子からMIMEタイプを推測
       const fileExt = fileName.split('.').pop()?.toLowerCase();
       if (fileExt) {
         const mimeMapping: { [key: string]: string } = {
+          // 画像形式
           'jpg': 'image/jpeg',
           'jpeg': 'image/jpeg',
           'png': 'image/png',
@@ -72,18 +82,23 @@ export default async function handler(
           'svg': 'image/svg+xml',
           'bmp': 'image/bmp',
           'tiff': 'image/tiff',
-          'tif': 'image/tiff'
+          'tif': 'image/tiff',
+          // 動画形式
+          'mp4': 'video/mp4',
+          'webm': 'video/webm',
+          'mov': 'video/quicktime',
+          'avi': 'video/avi'
         };
         
         if (mimeMapping[fileExt]) {
           finalContentType = mimeMapping[fileExt];
           console.log(`ファイル拡張子から正しいMIMEタイプを設定: ${finalContentType}`);
         } else {
-          finalContentType = 'image/png'; // デフォルト値
+          finalContentType = isVideo ? 'video/mp4' : 'image/png'; // デフォルト値
           console.log(`不明な拡張子のため、デフォルトのMIMEタイプを使用: ${finalContentType}`);
         }
       } else {
-        finalContentType = 'image/png'; // デフォルト値
+        finalContentType = isVideo ? 'video/mp4' : 'image/png'; // デフォルト値
         console.log(`拡張子がないため、デフォルトのMIMEタイプを使用: ${finalContentType}`);
       }
     }
@@ -98,7 +113,8 @@ export default async function handler(
       process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
     );
 
-    console.log(`ファイルアップロード開始: ${fileName} (${finalContentType}) -> ${bucketName}`);
+    const mediaTypeText = isVideo ? '動画' : '画像';
+    console.log(`${mediaTypeText}ファイルアップロード開始: ${fileName} (${finalContentType}) -> ${bucketName}`);
 
     // Supabaseストレージにアップロード
     const { data, error } = await supabase.storage
@@ -129,6 +145,8 @@ export default async function handler(
       success: true,
       filePath: data.path,
       url: urlData.publicUrl,
+      mediaType: isVideo ? 'video' : 'image',
+      contentType: finalContentType,
     });
   } catch (error: any) {
     console.error('アップロードプロセスエラー:', error);

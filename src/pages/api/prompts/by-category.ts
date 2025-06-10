@@ -120,6 +120,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             id,
             title,
             thumbnail_url,
+            media_type,
             created_at,
             view_count,
             profiles:author_id (
@@ -167,6 +168,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             id,
             title,
             thumbnail_url,
+            media_type,
             created_at,
             view_count,
             profiles:author_id (

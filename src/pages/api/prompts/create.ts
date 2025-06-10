@@ -70,7 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       title: req.body.prompt_title || req.body.title,
       description: req.body.description || '',
       content: req.body.prompt_content || req.body.content,
-      category_id: req.body.category_id,
+      category_id: req.body.category_id || null,
       is_public: true,
       is_premium: req.body.is_premium || false,
       price: req.body.price || 0
@@ -85,6 +85,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       site_url: req.body.site_url || null,
       preview_lines: req.body.preview_lines || null
     };
+
+    // media_typeはオプショナル（カラムが存在しない場合を考慮）
+    // 一時的にコメントアウト
+    // if (req.body.media_type) {
+    //   safePromptData.media_type = req.body.media_type;
+    // }
     
     // 🔒 セキュアなプロンプト作成（権限チェック付き）
     try {

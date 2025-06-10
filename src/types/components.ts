@@ -18,6 +18,7 @@ export interface PromptItem {
   id: string;
   title: string;
   thumbnailUrl: string;
+  mediaType?: 'image' | 'video';
   user: User;
   postedAt: string;
   likeCount: number;

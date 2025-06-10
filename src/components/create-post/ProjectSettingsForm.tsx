@@ -14,6 +14,7 @@ import { useToast } from "../../components/ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
 import { Button } from "../../components/ui/button";
+import { useAuth } from "../../lib/auth-context";
 
 // フォームのスキーマ定義
 const projectSchema = z.object({
@@ -38,6 +39,7 @@ export { AI_MODELS };
 // コンポーネントのprops
 interface ProjectSettingsFormProps {
   onSave: (data: ProjectFormValues) => void;
+  onThumbnailFileChange?: (file: File | null) => void;  // 追加
   defaultValues?: Partial<ProjectFormValues>;
   categories?: { id: string; name: string; slug: string; description: string | null; icon: string | null; parent_id: string | null; }[];
   isLoadingCategories?: boolean;
@@ -47,9 +49,10 @@ interface ProjectSettingsFormProps {
 
 const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({ 
   onSave,
+  onThumbnailFileChange,  // 追加
   defaultValues = {
     projectTitle: "",
-    aiModel: "claude-3-7-sonnet-20250219",
+    aiModel: "claude-4-20250120",
     customAiModel: "",
     pricingType: "free",
     price: 0,
@@ -65,8 +68,10 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
   onInsertPreviewMarker
 }) => {
   const { toast } = useToast();
+  const { session } = useAuth();
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(defaultValues.thumbnail || null);
-  const [isCustomModel, setIsCustomModel] = useState(defaultValues.aiModel === "custom");
+  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
+
   
   // アコーディオンの開閉状態
   const [openSections, setOpenSections] = useState({
@@ -90,41 +95,127 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
     }));
   };
 
-  // サムネイル画像の処理
-  const handleThumbnailChange = (file: File) => {
-    const reader = new FileReader();
-    
-    console.log('サムネイル画像を読み込み中...', {
-      name: file.name,
-      type: file.type,
-      size: `${(file.size / 1024).toFixed(2)} KB`
-    });
-    
-    reader.onload = (event) => {
-      const result = event.target?.result as string;
-      setThumbnailPreview(result);
-      projectForm.setValue("thumbnail", result);
+  // サムネイル画像・動画の処理
+  const handleThumbnailChange = async (file: File) => {
+    try {
+      // 先にファイルオブジェクトを親に渡す（即座に状態更新）
+      if (onThumbnailFileChange) {
+        onThumbnailFileChange(file);
+        console.log('📁 ファイルオブジェクトを親コンポーネントに送信:', file.name);
+      }
       
-      // 設定が変更されたら自動的に親コンポーネントに通知
-      autoSaveChanges({...projectForm.getValues(), thumbnail: result});
-    };
-    
-    reader.onerror = (error) => {
-      console.error('ファイル読み込みエラー:', error);
+      // メディアタイプを判定
+      const isVideo = file.type.startsWith('video/');
+      const currentMediaType = isVideo ? 'video' : 'image';
+      setMediaType(currentMediaType);
+      
+      console.log('サムネイルアップロード開始...', {
+        name: file.name,
+        type: file.type,
+        mediaType: currentMediaType,
+        size: `${(file.size / 1024).toFixed(2)} KB`
+      });
+
+      // 動画の場合はプレビューを後で設定（data URLは使わない）
+      if (!isVideo) {
+        // 画像の場合のみローカルプレビューを表示
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const result = event.target?.result as string;
+          setThumbnailPreview(result);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // 動画の場合は一時的にファイル名を表示
+        setThumbnailPreview(`uploading_${file.name}`);
+      }
+
+      // Supabaseにアップロード
+      const formData = new FormData();
+      formData.append('thumbnailImage', file);
+
+      // 認証トークンを取得
+      let authHeader = '';
+      
+      if (session?.access_token) {
+        authHeader = `Bearer ${session.access_token}`;
+        console.log('認証トークンを設定しました');
+      } else {
+        console.warn('認証セッションが見つかりません');
+        throw new Error('ログインしてください');
+      }
+
+      const response = await fetch('/api/media/thumbnail-upload', {
+        method: 'POST',
+        headers: authHeader ? { 'Authorization': authHeader } : {},
+        body: formData
+      });
+
+      console.log('サムネイルアップロードAPI応答:', response.status, response.statusText);
+
+      if (!response.ok) {
+        const responseText = await response.text();
+        console.error(`サムネイルアップロードAPI応答エラー: ${response.status}`, responseText);
+        
+        // HTMLレスポンスの場合は404ページが返されている
+        if (responseText.includes('<!DOCTYPE html')) {
+          throw new Error(`APIエンドポイントが見つかりません (${response.status})`);
+        }
+        
+        try {
+          const errorData = JSON.parse(responseText);
+          throw new Error(errorData.error || `アップロードエラー: ${response.status}`);
+        } catch (parseError) {
+          throw new Error(`サーバーエラー: ${response.status} - ${responseText.slice(0, 100)}`);
+        }
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.publicUrl) {
+        console.log('アップロード成功:', result.publicUrl);
+        
+        // アップロード成功時、公開URLをプレビューとフォームに設定
+        setThumbnailPreview(result.publicUrl);
+        projectForm.setValue("thumbnail", result.publicUrl);
+        
+        // 設定が変更されたら自動的に親コンポーネントに通知
+        autoSaveChanges({...projectForm.getValues(), thumbnail: result.publicUrl});
+        
+        toast({
+          title: "アップロード完了",
+          description: `${currentMediaType === 'video' ? '動画' : '画像'}のアップロードが完了しました`,
+          variant: "default",
+        });
+      } else {
+        throw new Error('アップロード結果が不正です');
+      }
+      
+    } catch (error: any) {
+      console.error('サムネイルアップロードエラー:', error);
+      
+      // エラー時はプレビューをクリア
+      setThumbnailPreview(null);
+      setMediaType(null);
+      
       toast({
-        title: "エラー",
-        description: "画像の読み込み中にエラーが発生しました",
+        title: "アップロードエラー",
+        description: error.message || "サムネイルのアップロード中にエラーが発生しました",
         variant: "destructive",
       });
-    };
-    
-    reader.readAsDataURL(file);
+    }
   };
 
-  // サムネイル画像をクリア
+  // サムネイル画像・動画をクリア
   const clearThumbnail = () => {
     setThumbnailPreview(null);
+    setMediaType(null);
     projectForm.setValue("thumbnail", "");
+    
+    // ファイルオブジェクトもクリア
+    if (onThumbnailFileChange) {
+      onThumbnailFileChange(null);
+    }
     
     // クリア時も親コンポーネントに通知
     autoSaveChanges({...projectForm.getValues(), thumbnail: ""});
@@ -132,11 +223,6 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
   
   // 変更を自動保存する関数
   const autoSaveChanges = (data: ProjectFormValues) => {
-    // カスタムAIモデルの処理
-    if (data.aiModel === "custom" && data.customAiModel) {
-      data.aiModel = data.customAiModel;
-    }
-    
     // 無料の場合は価格を0に設定
     if (data.pricingType === "free") {
       data.price = 0;
@@ -149,7 +235,6 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
   // AIモデル変更時のハンドラー
   const handleAiModelChange = (value: string) => {
     projectForm.setValue("aiModel", value);
-    setIsCustomModel(value === "custom");
     
     // モデル変更時も自動保存
     setTimeout(() => {
@@ -216,8 +301,8 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
                         <Image className="h-5 w-5 text-blue-600" />
                       </div>
                       <div className="text-left">
-                        <h4 className="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors duration-300">記事のメイン画像</h4>
-                        <p className="text-sm text-gray-600">読者の注目を集める魅力的な画像を設定</p>
+                        <h4 className="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors duration-300">記事のメイン画像・動画</h4>
+                        <p className="text-sm text-gray-600">読者の注目を集める魅力的な画像・動画を設定</p>
                       </div>
                     </div>
                     <div className="transform transition-transform duration-300 group-hover:scale-110">
@@ -232,6 +317,7 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
                       thumbnailPreview={thumbnailPreview}
                       onThumbnailChange={handleThumbnailChange}
                       onThumbnailClear={clearThumbnail}
+                      mediaType={mediaType}
                     />
                 </div>
               </CollapsibleContent>
@@ -350,7 +436,6 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
                 <div className="bg-white rounded-b-xl border-l border-r border-b border-gray-200 shadow-sm p-6 hover:shadow-md transition-shadow duration-300">
                   <ModelSelector
                     control={projectForm.control}
-                    isCustomModel={isCustomModel}
                     onModelChange={handleAiModelChange}
                   />
                 </div>
@@ -412,8 +497,8 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
                         <LinkIcon className="h-5 w-5 text-gray-600" />
                       </div>
                       <div className="text-left">
-                        <h4 className="font-semibold text-gray-900 group-hover:text-gray-700 transition-colors duration-300">高度な設定</h4>
-                        <p className="text-sm text-gray-600">関連URLなどのオプション設定</p>
+                        <h4 className="font-semibold text-gray-900 group-hover:text-gray-700 transition-colors duration-300">URL設定</h4>
+                        <p className="text-sm text-gray-600">プロジェクトのURLを設定</p>
                       </div>
                     </div>
                     <div className="transform transition-transform duration-300 group-hover:scale-110">
@@ -431,7 +516,7 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
                       <FormItem>
                         <FormLabel className="text-sm font-medium text-gray-900 flex items-center">
                           <LinkIcon className="h-4 w-4 mr-2 text-blue-600" />
-                          関連URL（任意）
+                          プロジェクトのURL（任意）
                         </FormLabel>
                         <FormControl>
                             <Input

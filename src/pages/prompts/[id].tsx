@@ -31,6 +31,7 @@ export interface PromptItem {
   id: string;
   title: string;
   thumbnailUrl: string;
+  mediaType?: 'image' | 'video';
   user: {
     name: string;
     avatarUrl: string;
@@ -53,6 +54,7 @@ interface ExtendedPostItem extends PostItem {
   stripe_product_id?: string;
   stripe_price_id?: string;
   preview_lines?: number;
+  mediaType?: 'image' | 'video';
 }
 
 // サーバーサイドレンダリングの最適化
@@ -81,6 +83,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
       id,
       title,
       thumbnail_url,
+      media_type,
       content,
       prompt_content,
       created_at,
@@ -212,6 +215,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
       id: promptData.id,
       title: promptData.title || 'タイトルなし',
       thumbnailUrl: promptData.thumbnail_url || '/images/default-thumbnail.svg',
+      mediaType: promptData.media_type || 'image', // デフォルトは画像
     content: Array.isArray(promptData.content) ? promptData.content : [],
       prompt_content: promptData.prompt_content || '',
       price: promptData.price || 0,
@@ -631,6 +635,7 @@ prompt: |
               {/* 本文部分 */}
               <PromptContent
                 imageUrl={promptData.thumbnailUrl}
+                mediaType={postData.mediaType}
                 title={promptData.title}
                 content={basicContent}
                 premiumContent={premiumContent}

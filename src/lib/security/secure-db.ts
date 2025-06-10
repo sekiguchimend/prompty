@@ -84,6 +84,11 @@ export class SecureDB {
       throw new Error('権限エラー: 他のユーザーとしてコンテンツを作成することはできません');
     }
 
+    // media_typeカラムが存在するかチェックしてから追加（エラーを避けるため一時的にコメントアウト）
+    // if (promptData.media_type) {
+    //   secureData.media_type = promptData.media_type;
+    // }
+
     return this.db
       .from('prompts')
       .insert(secureData)

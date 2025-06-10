@@ -227,7 +227,7 @@ const SimplifiedPromptForm: React.FC<PromptFormProps> = ({
                                 updateDisplayContent(updatedValue);
                               }}
                               ref={textareaRef}
-                              placeholder="例: あなたは経験豊富なマーケティング専門家です。以下の商品について、ターゲット顧客に響く魅力的なキャッチコピーを3つ提案してください..."
+                              placeholder=""
                               className="min-h-[300px] border-gray-300 focus:border-blue-500 focus:ring-blue-500 resize-none relative z-10"
                             />
                             
@@ -285,7 +285,7 @@ const SimplifiedPromptForm: React.FC<PromptFormProps> = ({
                         <Hash className="h-5 w-5 text-purple-600" />
                       </div>
                       <div className="text-left">
-                        <h4 className="font-semibold text-gray-900 group-hover:text-purple-700 transition-colors duration-300">高度な設定</h4>
+                        <h4 className="font-semibold text-gray-900 group-hover:text-purple-700 transition-colors duration-300">詳細設定</h4>
                         <p className="text-sm text-gray-600">プロンプト番号などの詳細設定</p>
                       </div>
                     </div>

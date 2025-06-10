@@ -13,6 +13,7 @@ import { checkPurchaseStatus } from '../../utils/purchase-helpers';
 import { UnifiedAvatar } from '../index';
 import PurchaseSection from './PurchaseSection';
 import { useAuth } from '../../lib/auth-context';
+import VideoPlayer from '../common/VideoPlayer';
 
 // 重いコンポーネントを遅延読み込み（Code Splitting）
 const ViewCounter = lazy(() => import('../view-counter'));
@@ -57,6 +58,7 @@ if (typeof window !== 'undefined') {
 
 interface PromptContentProps {
   imageUrl?: string;
+  mediaType?: 'image' | 'video';
   title: string;
   author: {
     name: string;
@@ -157,6 +159,7 @@ const parseMultiplePrompts = (content: string): ParsedPrompt[] => {
 // - 画像最適化: Next.js Image、blur placeholder、lazy loading
 const PromptContent: React.FC<PromptContentProps> = ({
   imageUrl,
+  mediaType = 'image',
   title,
   author,
   content,
@@ -525,43 +528,66 @@ const PromptContent: React.FC<PromptContentProps> = ({
             </div>
           </div>
         </div>
-        {/* メイン画像（あれば表示） */}
+        {/* メイン画像/動画（あれば表示） */}
         {imageUrl && (
           <div className="rounded-md overflow-hidden aspect-video mb-2 relative bg-gray-100">
-           {imageUrl.startsWith('http') ? (
-              <img 
-                src={imageUrl} 
-                alt={title} 
-                className="w-full h-full object-cover"
-                loading="lazy"
-                decoding="async"
-                onLoad={(e) => {
-                  e.currentTarget.style.opacity = '1';
-                }}
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-                style={{
-                  aspectRatio: '16/9',
-                  opacity: 0,
-                  transition: 'opacity 0.3s ease-in-out'
-                }}
-              />
-            ) : (
-              <Image 
-                src={getSafeImageUrl(imageUrl)}
-                alt={title}
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 800px"
-                priority={false}
-                placeholder="blur"
-                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
-                className="object-cover"
-                onLoad={() => {
-                  // 画像読み込み完了時の処理
-                }}
-              />
-            )}
+            {(() => {
+              // mediaTypeまたはファイル拡張子から動画かどうかを判定
+              const isVideo = mediaType === 'video' || /\.(mp4|mov|avi|mkv|webm|ogv)$/i.test(imageUrl);
+              
+              if (isVideo) {
+                return (
+                  <VideoPlayer
+                    src={imageUrl}
+                    alt={title}
+                    className="w-full h-full"
+                    hoverToPlay={true}
+                    tapToPlay={true}
+                    muted={true}
+                    loop={true}
+                    showThumbnail={true}
+                    controls={true} // 詳細ページではコントロールを表示
+                  />
+                );
+              } else if (imageUrl.startsWith('http')) {
+                return (
+                  <img 
+                    src={imageUrl} 
+                    alt={title} 
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                    onLoad={(e) => {
+                      e.currentTarget.style.opacity = '1';
+                    }}
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                    style={{
+                      aspectRatio: '16/9',
+                      opacity: 0,
+                      transition: 'opacity 0.3s ease-in-out'
+                    }}
+                  />
+                );
+              } else {
+                return (
+                  <Image 
+                    src={getSafeImageUrl(imageUrl)}
+                    alt={title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 800px"
+                    priority={false}
+                    placeholder="blur"
+                    blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+                    className="object-cover"
+                    onLoad={() => {
+                      // 画像読み込み完了時の処理
+                    }}
+                  />
+                );
+              }
+            })()}
           </div>
         )}
 
@@ -588,6 +614,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
         )}
         
         {/* YAMLダウンロードセクション - プロンプト表示の真上 */}
+        {/* 
         {canDownloadYaml && premiumContent && (
           <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-3 mb-4">
             <div className="flex items-center justify-between">
@@ -612,6 +639,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
             </div>
           </div>
         )}
+        */}
         
         {/* Content section */}
         <div className="relative max-w-none">
@@ -632,6 +660,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
                     </h3>
                     
                     {/* 個別プロンプトYAMLダウンロード - 小さく */}
+                    {/* 
                     {canDownloadYaml && (
                       <Button
                         onClick={() => downloadIndividualYaml(prompt)}
@@ -643,6 +672,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
                         YAML
                       </Button>
                     )}
+                    */}
                   </div>
                   
                   {/* プロンプト内容 - 記事形式 */}

@@ -10,6 +10,8 @@ interface CreatePromptRequest {
   prompt_title: string; // プロンプトタイトル
   prompt_content: string; // プロンプト内容
   thumbnail_url?: string | null;
+  media_type?: 'image' | 'video'; // メディアタイプを追加
+
   category_id?: string | null;
   price?: number;
   is_free?: boolean;
@@ -186,6 +188,8 @@ async function createPrompt(req: NextApiRequest, res: NextApiResponse) {
       prompt_title: promptData.prompt_title, // プロンプトタイトル
       prompt_content: promptData.prompt_content, // プロンプト内容
       thumbnail_url: promptData.thumbnail_url || null,
+      media_type: promptData.media_type || 'image', // メディアタイプを追加
+
       category_id: promptData.category_id === 'none' ? null : promptData.category_id || null,
       price: promptData.price || 0,
       is_free: promptData.is_free !== undefined ? promptData.is_free : true,
@@ -201,7 +205,9 @@ async function createPrompt(req: NextApiRequest, res: NextApiResponse) {
       description: insertData.description.substring(0, 20) + '...',
       contentLength: insertData.content.length,
       prompt_title: insertData.prompt_title,
-      prompt_content: insertData.prompt_content.substring(0, 20) + '...'
+      prompt_content: insertData.prompt_content.substring(0, 20) + '...',
+      thumbnail_url: insertData.thumbnail_url,
+      media_type: insertData.media_type
     });
     
     // データ挿入を試行

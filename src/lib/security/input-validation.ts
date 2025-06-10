@@ -24,15 +24,16 @@ export const createPromptSchema = z.object({
     .transform(sanitizeString),
   
   description: z.string()
-    .min(10, '説明は10文字以上必要です')
     .max(1000, '説明は1000文字以下にしてください')
-    .transform(sanitizeString),
+    .transform(sanitizeString)
+    .optional()
+    .default(''),
     
   content: z.string()
     .min(10, 'コンテンツは10文字以上必要です')
     .max(50000, 'コンテンツは50000文字以下にしてください'),
     
-  category_id: z.string().uuid().optional(),
+  category_id: z.string().uuid().optional().nullable(),
   
   is_public: z.boolean().default(true),
   

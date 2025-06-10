@@ -71,6 +71,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         id,
         title,
         thumbnail_url,
+        media_type,
         created_at,
         author_id,
         profiles!prompts_author_id_fkey(id, username, display_name, avatar_url)
@@ -92,6 +93,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         id,
         title,
         thumbnail_url,
+        media_type,
         created_at,
         author_id,
         view_count,

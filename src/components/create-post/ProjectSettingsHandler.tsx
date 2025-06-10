@@ -33,7 +33,6 @@ export const ProjectSettingsHandler: React.FC<ProjectSettingsHandlerProps> = ({
     defaultSettings || {
       projectTitle: "新しいプロンプトプロジェクト",
       aiModel: "claude-4-sonnet",
-      customAiModel: "",
       pricingType: "free",
       price: 0,
       projectDescription: "",

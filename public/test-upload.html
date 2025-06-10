@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>サムネイルアップロードテスト</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        input[type="file"] { margin: 10px 0; }
+        button { padding: 10px 20px; margin: 5px; }
+        #preview { max-width: 300px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>サムネイルアップロードテスト</h1>
+        
+        <div id="status" class="status info">
+            準備中...
+        </div>
+        
+        <div>
+            <label for="fileInput">画像ファイルを選択:</label>
+            <input type="file" id="fileInput" accept="image/*,video/*">
+        </div>
+        
+        <button onclick="uploadFile()">アップロード</button>
+        <button onclick="testAuth()">認証テスト</button>
+        
+        <div id="preview"></div>
+        
+        <h3>ログ:</h3>
+        <div id="log" style="background-color: #f8f9fa; padding: 10px; height: 300px; overflow-y: scroll; font-family: monospace; font-size: 12px;"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Supabase設定
+        const supabaseUrl = 'https://qrxrulntwojimhhhnwqk.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyeHJ1bG50d29qaW1oaGhud3FrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ3MDM2OTUsImV4cCI6MjA2MDI3OTY5NX0.bI8Ha_EEmaES81U2GG8Mk7y0riS0FQL8CFeny64zbvE';
+        
+        const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+        
+        async function testAuth() {
+            try {
+                log('認証テスト開始...');
+                updateStatus('認証中...', 'info');
+                
+                // 匿名サインイン
+                const { data: authData, error: authError } = await supabase.auth.signInAnonymously();
+                
+                if (authError) {
+                    throw new Error(`認証エラー: ${authError.message}`);
+                }
+                
+                log(`認証成功: ユーザーID ${authData.user.id}`);
+                
+                // セッション取得
+                const { data: sessionData } = await supabase.auth.getSession();
+                if (sessionData.session) {
+                    log(`セッション取得成功: ${sessionData.session.access_token.substring(0, 20)}...`);
+                    updateStatus('認証済み', 'success');
+                } else {
+                    throw new Error('セッション取得失敗');
+                }
+                
+            } catch (error) {
+                log(`認証テストエラー: ${error.message}`);
+                updateStatus('認証失敗', 'error');
+            }
+        }
+        
+        async function uploadFile() {
+            try {
+                const fileInput = document.getElementById('fileInput');
+                const file = fileInput.files[0];
+                
+                if (!file) {
+                    alert('ファイルを選択してください');
+                    return;
+                }
+                
+                log(`ファイル選択: ${file.name} (${file.type}, ${(file.size/1024).toFixed(2)}KB)`);
+                updateStatus('アップロード中...', 'info');
+                
+                // セッション確認
+                const { data: sessionData } = await supabase.auth.getSession();
+                if (!sessionData.session) {
+                    log('セッションなし - 認証を試行...');
+                    await testAuth();
+                    
+                    const { data: newSessionData } = await supabase.auth.getSession();
+                    if (!newSessionData.session) {
+                        throw new Error('認証が必要です');
+                    }
+                }
+                
+                const accessToken = sessionData.session.access_token;
+                log('認証トークン取得済み');
+                
+                // FormData作成
+                const formData = new FormData();
+                formData.append('thumbnailImage', file);
+                
+                // APIエンドポイントにアップロード
+                log('APIエンドポイントにアップロード中...');
+                const response = await fetch('/api/media/thumbnail-upload', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    },
+                    body: formData
+                });
+                
+                log(`レスポンスステータス: ${response.status}`);
+                
+                const responseText = await response.text();
+                log(`レスポンス: ${responseText}`);
+                
+                if (!response.ok) {
+                    throw new Error(`アップロードエラー (${response.status}): ${responseText}`);
+                }
+                
+                const result = JSON.parse(responseText);
+                
+                if (result.success && result.publicUrl) {
+                    log(`アップロード成功: ${result.publicUrl}`);
+                    updateStatus('アップロード完了', 'success');
+                    
+                    // プレビュー表示
+                    const previewDiv = document.getElementById('preview');
+                    if (result.mediaType === 'video') {
+                        previewDiv.innerHTML = `<video controls style="max-width: 300px;"><source src="${result.publicUrl}" type="${result.mimeType}"></video>`;
+                    } else {
+                        previewDiv.innerHTML = `<img src="${result.publicUrl}" style="max-width: 300px;" alt="アップロード済み画像">`;
+                    }
+                } else {
+                    throw new Error('アップロード結果が不正です');
+                }
+                
+            } catch (error) {
+                log(`アップロードエラー: ${error.message}`);
+                updateStatus('アップロード失敗', 'error');
+            }
+        }
+        
+        // 初期化
+        document.addEventListener('DOMContentLoaded', () => {
+            log('テストページ読み込み完了');
+            updateStatus('ファイルを選択してアップロードをテストしてください', 'info');
+        });
+    </script>
+</body>
+</html>

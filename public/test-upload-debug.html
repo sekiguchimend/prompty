@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>アップロードデバッグテスト</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .error { color: red; }
+        .success { color: green; }
+        .info { color: blue; }
+        textarea { width: 100%; height: 200px; margin: 10px 0; }
+        button { padding: 10px 20px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>サムネイルアップロードデバッグテスト</h1>
+    
+    <div class="section">
+        <h2>1. 認証テスト</h2>
+        <button onclick="testAuth()">認証状態を確認</button>
+        <div id="authResult"></div>
+    </div>
+    
+    <div class="section">
+        <h2>2. ファイルアップロードテスト</h2>
+        <input type="file" id="fileInput" accept="image/*,video/*">
+        <button onclick="testUpload()">アップロードテスト</button>
+        <div id="uploadResult"></div>
+    </div>
+    
+    <div class="section">
+        <h2>3. レスポンスログ</h2>
+        <textarea id="logArea" readonly></textarea>
+        <button onclick="clearLog()">ログクリア</button>
+    </div>
+
+    <script>
+        function log(message) {
+            const logArea = document.getElementById('logArea');
+            const timestamp = new Date().toLocaleTimeString();
+            logArea.value += `[${timestamp}] ${message}\n`;
+            logArea.scrollTop = logArea.scrollHeight;
+            console.log(message);
+        }
+
+        function getAuthToken() {
+            // ローカルストレージから認証トークンを取得
+            const authData = localStorage.getItem('sb-qrxrulntwojimhhhnwqk-auth-token');
+            if (authData) {
+                try {
+                    const parsed = JSON.parse(authData);
+                    return parsed.access_token;
+                } catch (e) {
+                    log('認証トークンの解析に失敗: ' + e.message);
+                    return null;
+                }
+            }
+            return null;
+        }
+
+        async function testAuth() {
+            const resultDiv = document.getElementById('authResult');
+            const token = getAuthToken();
+            
+            log('認証テスト開始');
+            
+            if (!token) {
+                resultDiv.innerHTML = '<div class="error">認証トークンが見つかりません。ログインしてください。</div>';
+                log('認証トークンなし');
+                return;
+            }
+            
+            log('認証トークン取得成功: ' + token.substring(0, 20) + '...');
+            
+            try {
+                const response = await fetch('/api/debug/auth-test', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                log('認証テスト応答: ' + JSON.stringify(result, null, 2));
+                
+                if (result.status === 'auth_success') {
+                    resultDiv.innerHTML = `<div class="success">認証成功: ${result.user.email}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">認証失敗: ${result.message || result.error}</div>`;
+                }
+            } catch (error) {
+                log('認証テストエラー: ' + error.message);
+                resultDiv.innerHTML = `<div class="error">エラー: ${error.message}</div>`;
+            }
+        }
+
+        async function testUpload() {
+            const resultDiv = document.getElementById('uploadResult');
+            const fileInput = document.getElementById('fileInput');
+            const token = getAuthToken();
+            
+            if (!fileInput.files[0]) {
+                resultDiv.innerHTML = '<div class="error">ファイルを選択してください。</div>';
+                return;
+            }
+            
+            if (!token) {
+                resultDiv.innerHTML = '<div class="error">認証トークンが見つかりません。</div>';
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            log(`アップロードテスト開始: ${file.name} (${file.type}, ${file.size} bytes)`);
+            
+            const formData = new FormData();
+            formData.append('thumbnailImage', file);
+            
+            try {
+                const response = await fetch('/api/media/thumbnail-upload', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+                
+                log(`アップロード応答: ${response.status} ${response.statusText}`);
+                
+                const responseText = await response.text();
+                log('応答テキスト: ' + responseText);
+                
+                if (response.ok) {
+                    const result = JSON.parse(responseText);
+                    resultDiv.innerHTML = `<div class="success">アップロード成功: <a href="${result.publicUrl}" target="_blank">${result.publicUrl}</a></div>`;
+                } else {
+                    if (responseText.includes('<!DOCTYPE html')) {
+                        resultDiv.innerHTML = '<div class="error">404エラー: APIエンドポイントが見つかりません</div>';
+                    } else {
+                        try {
+                            const errorResult = JSON.parse(responseText);
+                            resultDiv.innerHTML = `<div class="error">アップロードエラー: ${errorResult.error}</div>`;
+                        } catch (e) {
+                            resultDiv.innerHTML = `<div class="error">サーバーエラー: ${responseText.slice(0, 100)}</div>`;
+                        }
+                    }
+                }
+            } catch (error) {
+                log('アップロードエラー: ' + error.message);
+                resultDiv.innerHTML = `<div class="error">エラー: ${error.message}</div>`;
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('logArea').value = '';
+        }
+
+        // ページ読み込み時に認証状態を確認
+        window.onload = function() {
+            log('ページ読み込み完了');
+            const token = getAuthToken();
+            if (token) {
+                log('認証トークンが見つかりました');
+            } else {
+                log('認証トークンが見つかりません');
+            }
+        };
+    </script>
+</body>
+</html>

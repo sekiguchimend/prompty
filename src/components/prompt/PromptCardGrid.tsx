@@ -47,6 +47,7 @@ export const PromptCardGrid = memo(forwardRef<HTMLDivElement, PromptCardGridProp
             id={prompt.id}
             title={prompt.title}
             thumbnailUrl={prompt.thumbnailUrl}
+            mediaType={prompt.mediaType}
             user={prompt.user}
             postedAt={prompt.postedAt}
             likeCount={prompt.likeCount}

@@ -43,10 +43,10 @@ const nextConfig = {
       }
     ];
 
-    // Add CSP header - より緩い本番設定
+    // Add CSP header - 動画対応版
     const cspValue = process.env.NODE_ENV === 'production' 
-      ? "default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' data: https:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https:; img-src 'self' data: blob: https:; connect-src 'self' https: wss:;"
-      : "default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: data:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; connect-src 'self' https: wss:;";
+      ? "default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' data: https:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https:; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https: wss:;"
+      : "default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: data:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https: wss:;";
     
       securityHeaders.push({
         key: 'Content-Security-Policy',
@@ -66,7 +66,8 @@ const nextConfig = {
     domains: [
       'qrxrulntwojimhhhnwqk.supabase.co', // Supabase storage
       'prompty-ai.com',
-      'localhost'
+      'localhost',
+      'lh3.googleusercontent.com' // Google profile images
     ],
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60,

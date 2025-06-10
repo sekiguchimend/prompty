@@ -36,12 +36,55 @@ function detectMimeType(buffer: Buffer, originalExt: string): string {
         buffer[5] === 0x61) {
       return 'image/gif';
     }
+    
+    // MP4 シグネチャをチェック
+    if (buffer.length > 8) {
+      // ftyp box を探す
+      if (buffer[4] === 0x66 && buffer[5] === 0x74 && buffer[6] === 0x79 && buffer[7] === 0x70) {
+        return 'video/mp4';
+      }
+    }
+    
+    // WebM シグネチャをチェック
+    if (buffer.length > 4) {
+      // EBML header
+      if (buffer[0] === 0x1A && buffer[1] === 0x45 && buffer[2] === 0xDF && buffer[3] === 0xA3) {
+        return 'video/webm';
+      }
+    }
+    
+    // AVI シグネチャをチェック
+    if (buffer.length > 8) {
+      // RIFF header + AVI
+      if (buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46 &&
+          buffer[8] === 0x41 && buffer[9] === 0x56 && buffer[10] === 0x49 && buffer[11] === 0x20) {
+        return 'video/avi';
+      }
+    }
   }
   
   // ファイル拡張子から推測（上記の検出に失敗した場合）
   const mimeType = getMimeTypeFromExt(originalExt);
-  if (mimeType && mimeType.startsWith('image/')) {
+  if (mimeType && (mimeType.startsWith('image/') || mimeType.startsWith('video/'))) {
     return mimeType;
+  }
+  
+  // 拡張子から推測
+  const ext = originalExt.toLowerCase();
+  const extensionMapping: { [key: string]: string } = {
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'gif': 'image/gif',
+    'webp': 'image/webp',
+    'mp4': 'video/mp4',
+    'webm': 'video/webm',
+    'mov': 'video/quicktime',
+    'avi': 'video/avi'
+  };
+  
+  if (extensionMapping[ext]) {
+    return extensionMapping[ext];
   }
   
   // デフォルトはJPEG
@@ -79,8 +122,16 @@ async function ensureBucketExists(supabase: SupabaseClient) {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  console.log(`[${new Date().toISOString()}] API呼び出し: ${req.method} ${req.url}`);
+  console.log('リクエストヘッダー:', {
+    authorization: req.headers.authorization ? 'Bearer ***' : 'なし',
+    'content-type': req.headers['content-type'],
+    'user-agent': req.headers['user-agent']
+  });
+  
   // POSTリクエスト以外は許可しない
   if (req.method !== 'POST') {
+    console.log('❌ 許可されていないメソッド:', req.method);
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
@@ -150,12 +201,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { files } = formData;
 
-    // サムネイル画像が提供されていれば処理
+    // サムネイル画像・動画が提供されていれば処理
     const thumbnail = files.thumbnailImage;
     const thumbnailFile = Array.isArray(thumbnail) ? thumbnail[0] : thumbnail;
     
     if (!thumbnailFile || !thumbnailFile.filepath) {
-      return res.status(400).json({ error: 'サムネイル画像が提供されていません' });
+      return res.status(400).json({ error: 'サムネイル画像・動画が提供されていません' });
     }
 
     try {
@@ -165,7 +216,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const originalExt = path.extname(thumbnailFile.originalFilename || '').substring(1) || 'jpg';
       const timestamp = Date.now();
       const fileName = `thumbnail-${timestamp}.${originalExt}`;
-      console.log('ファイルパス:', fileName, '（バケットのルートに保存します）');
+      console.log('🔍 ファイル詳細情報:');
+      console.log('- 元のファイル名:', thumbnailFile.originalFilename);
+      console.log('- 抽出された拡張子:', originalExt);
+      console.log('- 生成されたファイル名:', fileName);
+      console.log('- ファイルパス:', fileName, '（バケットのルートに保存します）');
 
       // ファイルを読み込む
       const fileBuffer = fs.readFileSync(thumbnailFile.filepath);
@@ -180,11 +235,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       // 最終的に使用するMIMEタイプ（検出されたものを優先、次にformidable、最後にデフォルト）
       const contentType = detectedMimeType || thumbnailFile.mimetype || 'image/jpeg';
+      const mediaTypeText = contentType.startsWith('video/') ? '動画' : '画像';
+      console.log(`最終的なメディアタイプ: ${mediaTypeText} (${contentType})`);
       
-      // MIMEタイプが画像でない場合は拒否
-      if (!contentType.startsWith('image/')) {
+      // MIMEタイプが画像または動画でない場合は拒否
+      const isImage = contentType.startsWith('image/');
+      const isVideo = contentType.startsWith('video/');
+      
+      if (!isImage && !isVideo) {
         return res.status(400).json({ 
-          error: '無効なファイル形式です。画像ファイルのみアップロード可能です。', 
+          error: '無効なファイル形式です。画像または動画ファイルのみアップロード可能です。', 
           detectedType: contentType 
         });
       }
@@ -244,7 +304,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return res.status(200).json({
             success: true,
             publicUrl: finalPublicUrl,
-            mimeType: contentType
+            mimeType: contentType,
+            mediaType: isVideo ? 'video' : 'image'
           });
         } else {
           console.log('アップロード直前の認証確認: 有効 (ユーザーID:', authData.session.user.id, ')');
@@ -301,7 +362,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json({
         success: true,
         publicUrl: finalPublicUrl,
-        mimeType: contentType
+        mimeType: contentType,
+        mediaType: isVideo ? 'video' : 'image'
       });
       
     } catch (uploadError: any) {

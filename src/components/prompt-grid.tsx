@@ -12,6 +12,7 @@ import { checkIfBookmarked } from '../lib/bookmark-service';
 import ReportDialog from './shared/ReportDialog';
 import { notoSansJP } from '../../lib/fonts';
 import { UnifiedAvatar, DEFAULT_AVATAR_URL } from './index';
+import VideoPlayer from './common/VideoPlayer';
 
 // グローバルトースト用のイベント名
 const GLOBAL_TOAST_EVENT = 'global:toast:show';
@@ -32,6 +33,7 @@ interface PromptCardProps {
   id: string;
   title: string;
   thumbnailUrl: string;
+  mediaType?: 'image' | 'video';
   user: {
     name: string;
     account_name?: string;
@@ -160,6 +162,7 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
   id,
   title,
   thumbnailUrl,
+  mediaType = 'image',
   user,
   postedAt,
   likeCount,
@@ -442,23 +445,39 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
           </div>
         </div>
         
-        {/* カード右側：サムネイル画像 - Next.js Imageコンポーネントで最適化 */}
+        {/* カード右側：サムネイル画像/動画 - Next.js Imageコンポーネントで最適化 */}
         <div className="w-20 h-16 flex-shrink-0">
           <Link href={`/prompts/${id}`} passHref legacyBehavior prefetch={false}>
             <div className="w-full h-full rounded overflow-hidden relative">
-              <Image
-                src={imageUrl}
-                alt={title}
-                fill
-                className="object-cover"
-                loading="lazy"
-                priority={false}
-                quality={75}
-                sizes="80px"
-                placeholder="blur"
-                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGBkbHR4f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R7hLHk="
-                onError={() => setImageError(true)}
-              />
+              {mediaType === 'video' ? (
+                <VideoPlayer
+                  src={imageUrl}
+                  alt={title}
+                  className="w-full h-full"
+                  hoverToPlay={false} // モバイルでは自動再生無効
+                  tapToPlay={false}
+                  muted={true}
+                  loop={false}
+                  showThumbnail={true}
+                  onLinkClick={() => {
+                    window.location.href = `/prompts/${id}`;
+                  }}
+                />
+              ) : (
+                <Image
+                  src={imageUrl}
+                  alt={title}
+                  fill
+                  className="object-cover"
+                  loading="lazy"
+                  priority={false}
+                  quality={75}
+                  sizes="80px"
+                  placeholder="blur"
+                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGBkbHR4f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R7hLHk="
+                  onError={() => setImageError(true)}
+                />
+              )}
             </div>
           </Link>
         </div>
@@ -473,19 +492,35 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
         <div className="relative pt-[56.25%] bg-gray-50">
           <Link href={`/prompts/${id}`} passHref legacyBehavior prefetch={false}>
             <div className="absolute inset-0">
-              <Image
-                src={imageUrl}
-                alt={title}
-                fill
-                className="object-cover"
-                loading="lazy"
-                priority={false}
-                quality={75}
-                sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
-                placeholder="blur"
-                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGBkbHR4f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R7hLHk="
-                onError={() => setImageError(true)}
-              />
+              {mediaType === 'video' ? (
+                <VideoPlayer
+                  src={imageUrl}
+                  alt={title}
+                  className="w-full h-full"
+                  hoverToPlay={true}
+                  tapToPlay={true}
+                  muted={true}
+                  loop={true}
+                  showThumbnail={true}
+                  onLinkClick={() => {
+                    window.location.href = `/prompts/${id}`;
+                  }}
+                />
+              ) : (
+                <Image
+                  src={imageUrl}
+                  alt={title}
+                  fill
+                  className="object-cover"
+                  loading="lazy"
+                  priority={false}
+                  quality={75}
+                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
+                  placeholder="blur"
+                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGBkbHR4f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R7hLHk="
+                  onError={() => setImageError(true)}
+                />
+              )}
             </div>
           </Link>
         </div>
@@ -826,6 +861,7 @@ const PromptGrid: React.FC<PromptGridProps> = memo(({
                 id={prompt.id}
                 title={prompt.title}
                 thumbnailUrl={prompt.thumbnailUrl}
+                mediaType={prompt.mediaType}
                 user={prompt.user}
                 postedAt={prompt.postedAt}
                 likeCount={prompt.likeCount}

@@ -124,6 +124,7 @@ const CreatePost = () => {
   const [authorId, setAuthorId] = useState<string | null>(null);
   const [isAnonymousSubmission, setIsAnonymousSubmission] = useState(false);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [uploadedMediaType, setUploadedMediaType] = useState<'image' | 'video' | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   
@@ -205,6 +206,7 @@ const CreatePost = () => {
     } else {
       // サムネイルがない場合は明示的にnullをセット
       setThumbnailFile(null);
+      setUploadedMediaType(null);
     }
   };
   
@@ -213,6 +215,7 @@ const CreatePost = () => {
     try {
       if (!thumbnailDataUrl || !thumbnailDataUrl.startsWith('data:')) {
         setThumbnailFile(null);
+        setUploadedMediaType(null);
         return;
       }
       
@@ -235,6 +238,32 @@ const CreatePost = () => {
       
     } catch (error) {
       setThumbnailFile(null);
+      setUploadedMediaType(null);
+    }
+  };
+
+  // Fileオブジェクトを直接受け取る関数（ThumbnailUploaderから呼ばれる）
+  const handleThumbnailFileChange = (file: File | null) => {
+    console.log('🖼️ 直接ファイル処理:', file ? { name: file.name, size: file.size, type: file.type } : 'ファイルなし');
+    
+    setThumbnailFile(file);
+    
+    if (file) {
+      // メディアタイプを設定
+      const isVideo = file.type.startsWith('video/');
+      setUploadedMediaType(isVideo ? 'video' : 'image');
+      console.log('📁 メディアタイプ設定:', isVideo ? 'video' : 'image');
+      
+      // プレビュー用にdata URLを生成（projectSettingsに保存）
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        setProjectSettings(prev => ({ ...prev, thumbnail: result }));
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setUploadedMediaType(null);
+      setProjectSettings(prev => ({ ...prev, thumbnail: '' }));
     }
   };
   
@@ -255,17 +284,30 @@ const CreatePost = () => {
       // MIMEタイプを抽出し、画像形式かチェック
       let mimeType = parts[0].replace('data:', '');
       
-      // サポートする画像形式の定義
+      // サポートする画像・動画形式の定義
       const supportedImageTypes = [
         'image/jpeg', 'image/png', 'image/gif', 
         'image/webp', 'image/svg+xml', 'image/bmp', 'image/tiff'
       ];
       
-      // MIMEタイプが画像でない場合は強制的に画像形式に変更
-      if (!mimeType.startsWith('image/')) {
+      const supportedVideoTypes = [
+        'video/mp4', 'video/webm', 'video/mov', 
+        'video/avi', 'video/quicktime'
+      ];
+      
+      // MIMEタイプのチェック（画像・動画両方をサポート）
+      const isImage = mimeType.startsWith('image/');
+      const isVideo = mimeType.startsWith('video/');
+      
+      if (!isImage && !isVideo) {
+        // 画像でも動画でもない場合はデフォルトで画像として扱う
         mimeType = 'image/png';
-      } else if (!supportedImageTypes.includes(mimeType)) {
-        mimeType = 'image/png'; // サポートされていない画像形式の場合もpngをデフォルトに
+      } else if (isImage && !supportedImageTypes.includes(mimeType)) {
+        // サポートされていない画像形式の場合はpngをデフォルトに
+        mimeType = 'image/png';
+      } else if (isVideo && !supportedVideoTypes.includes(mimeType)) {
+        // サポートされていない動画形式の場合はmp4をデフォルトに
+        mimeType = 'video/mp4';
       }
       
       
@@ -280,8 +322,19 @@ const CreatePost = () => {
           uint8Array[i] = byteString.charCodeAt(i);
         }
         
-        // ファイル拡張子の検出
-        const fileExt = mimeType.split('/')[1] || 'png';
+        // ファイル拡張子の検出（画像・動画に対応）
+        let fileExt = mimeType.split('/')[1] || 'png';
+        
+        // 特定のMIMEタイプに対する拡張子マッピング
+        const mimeToExtMapping: { [key: string]: string } = {
+          'video/quicktime': 'mov',
+          'image/jpeg': 'jpg',
+          'image/svg+xml': 'svg'
+        };
+        
+        if (mimeToExtMapping[mimeType]) {
+          fileExt = mimeToExtMapping[mimeType];
+        }
         
         // 拡張子が含まれていない場合はファイル名に追加
         let finalFilename = filename;
@@ -290,7 +343,6 @@ const CreatePost = () => {
         }
         
         // Blobを作成し、そこからFileを生成
-        // contentTypeを必ず画像形式にする
         const blob = new Blob([uint8Array], { type: mimeType });
         const file = new File([blob], finalFilename, { type: mimeType });
         
@@ -342,7 +394,7 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
     // API経由でアップロード
   
     
-    const response = await fetch('/api/thumbnail/upload', {
+    const response = await fetch('/api/media/thumbnail-upload', {
       method: 'POST',
       headers,
       body: formData,
@@ -359,6 +411,14 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
     if (!result.publicUrl) {
       console.error('公開URL取得エラー:', result);
       throw new Error('公開URLの取得に失敗しました');
+    }
+    
+    // メディアタイプ情報を保存
+    if (result.mediaType) {
+      setUploadedMediaType(result.mediaType);
+      console.log('📁 アップロードされたメディアタイプ:', result.mediaType);
+    } else {
+      console.log('⚠️ アップロードAPIからmedia_typeが返されませんでした');
     }
     
     
@@ -636,6 +696,14 @@ const submitProject = async () => {
     // サムネイル画像のアップロード
     let thumbnailUrl = null;
     
+    // サムネイル処理のデバッグ情報
+    console.log('🖼️ サムネイル処理開始:', {
+      thumbnailFile: !!thumbnailFile,
+      projectSettingsThumbnail: !!projectSettings.thumbnail,
+      isDataUrl: projectSettings.thumbnail?.startsWith('data:'),
+      thumbnailValue: projectSettings.thumbnail?.substring(0, 50) + '...'
+    });
+    
     // サムネイル画像があれば処理
     if (thumbnailFile || (projectSettings.thumbnail && projectSettings.thumbnail.startsWith('data:'))) {
       toast({
@@ -741,8 +809,14 @@ const submitProject = async () => {
           }
         }
       } else {
+        console.log('⚠️ 画像ファイルが見つかりません');
       }
     } else {
+      console.log('⚠️ サムネイル処理をスキップ - 条件に合致しません:', {
+        thumbnailFile: !!thumbnailFile,
+        hasThumbnail: !!projectSettings.thumbnail,
+        isDataUrl: projectSettings.thumbnail?.startsWith('data:')
+      });
     }
 
     // 投稿直前に認証状態を再取得
@@ -775,12 +849,33 @@ const submitProject = async () => {
       variant: "default",
     });
 
+    // 最終メディアタイプの決定（デバッグ情報付き）
+    let finalMediaType = uploadedMediaType || 'image';
+    
+    // サムネイルURLからもメディアタイプを推定してフォールバック
+    if (!uploadedMediaType && thumbnailUrl) {
+      const videoExtensions = ['.mp4', '.webm', '.mov', '.avi', '.mkv'];
+      const isVideoFromUrl = videoExtensions.some(ext => thumbnailUrl.toLowerCase().includes(ext));
+      if (isVideoFromUrl) {
+        finalMediaType = 'video';
+        console.log('🔄 URLからメディアタイプを推定: video');
+      }
+    }
+    
+    console.log('📝 投稿データのメディア情報:', {
+      uploadedMediaType,
+      finalMediaType,
+      thumbnailUrl,
+      hasThumbnailFile: !!thumbnailFile
+    });
+    
     // プロンプトプロジェクトのメインデータを保存
     const requestBody = {
       title: projectSettings.projectTitle || "無題のプロジェクト",
       description: projectSettings.projectDescription || "",
       content: projectSettings.projectDescription || "", // プロジェクト説明をcontentに
       thumbnail_url: thumbnailUrl, // Supabase Storageの公開URL
+      media_type: finalMediaType, // 最終的なメディアタイプ
       category_id: projectSettings.categoryId, // カテゴリーIDを追加
       price: projectSettings.pricingType === "paid" ? projectSettings.price : 0,
       is_free: projectSettings.pricingType === "free",
@@ -821,24 +916,39 @@ const submitProject = async () => {
 
     
     
-    const mainPromptResponse = await fetch('/api/prompts/create', {
+    console.log('📤 投稿データ送信:', {
+      title: requestBody.title,
+      prompt_title: requestBody.prompt_title,
+      media_type: requestBody.media_type,
+      author_id: requestBody.author_id
+    });
+
+    const mainPromptResponse = await fetch('/api/prompts', {
       method: 'POST',
       headers,
       body: JSON.stringify(requestBody),
     });
     
+    console.log('📨 API応答ステータス:', mainPromptResponse.status);
     
     const responseText = await mainPromptResponse.text();
+    console.log('📨 API応答内容:', responseText);
     
     let responseData;
     try {
       responseData = JSON.parse(responseText);
     } catch (parseError) {
+      console.error('❌ JSON解析エラー:', parseError);
       throw new Error(`サーバーからの応答の解析に失敗しました: ${responseText}`);
     }
     
     if (!mainPromptResponse.ok || !responseData.success) {
       const errorMessage = responseData.message || responseData.error || 'プロンプト保存中にエラーが発生しました';
+      console.error('❌ API投稿エラー:', {
+        status: mainPromptResponse.status,
+        error: errorMessage,
+        response: responseData
+      });
       throw new Error(errorMessage);
     }
     
@@ -1112,6 +1222,7 @@ const submitProject = async () => {
                           <div className="mb-8">
                             <ProjectSettingsForm
                               onSave={handleProjectSave}
+                              onThumbnailFileChange={handleThumbnailFileChange}
                               defaultValues={projectSettings}
                               categories={categories}
                               isLoadingCategories={isLoadingCategories}

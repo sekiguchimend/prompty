@@ -10,6 +10,7 @@ import { bookmarkPrompt, unbookmarkPrompt, checkIfBookmarked } from '../lib/book
 import { notoSansJP } from '../../lib/fonts';
 import { HeartIcon, EyeIcon } from './ui/icons';
 import LazyImage from './common/LazyImage';
+import VideoPlayer from './common/VideoPlayer';
 import { Avatar } from './shared/Avatar';
 import { getDisplayName } from '../lib/avatar-utils';
 import { PromptItem } from '../pages/prompts/[id]';
@@ -22,6 +23,7 @@ interface PromptCardProps {
   id: string;
   title: string;
   thumbnailUrl: string;
+  mediaType?: 'image' | 'video';
   user: {
     name: string;
     account_name?: string;
@@ -38,6 +40,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
   id,
   title,
   thumbnailUrl,
+  mediaType = 'image',
   user,
   postedAt,
   likeCount,
@@ -250,15 +253,42 @@ const PromptCard: React.FC<PromptCardProps> = ({
     <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm min-h-[340px]">
       <Link href={`/prompts/${promptId}`} className="block" prefetch={false}>
         <div className="relative pb-[56.25%]">
-          <Image 
-            width={100}
-            height={100}
-            src={thumbnailUrl || '/placeholder.jpg'}
-            alt={title} 
-            priority={false}
-            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
-            className="absolute inset-0 h-full w-full object-cover"
-          />
+          {(() => {
+            console.log('🎨 PromptCardメディアタイプ判定:', {
+              id: promptId,
+              title: title?.substring(0, 30),
+              mediaType,
+              thumbnailUrl,
+              isVideo: mediaType === 'video'
+            });
+            
+            return mediaType === 'video' ? (
+              <VideoPlayer
+                src={thumbnailUrl}
+                alt={title}
+                className="absolute inset-0 h-full w-full"
+                hoverToPlay={true}
+                tapToPlay={true}
+                muted={true}
+                loop={true}
+                showThumbnail={true}
+                onLinkClick={() => {
+                  // プログラム的にナビゲーション
+                  window.location.href = `/prompts/${promptId}`;
+                }}
+              />
+            ) : (
+              <Image 
+                width={100}
+                height={100}
+                src={thumbnailUrl || '/images/default-thumbnail.svg'}
+                alt={title} 
+                priority={false}
+                sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            );
+          })()}
         </div>
       </Link>
       <div className="flex flex-col p-3">

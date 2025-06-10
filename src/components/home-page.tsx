@@ -104,10 +104,46 @@ const HomePage: React.FC = memo(() => {
       }
     }
 
+    // データベースのmedia_typeを優先し、フォールバック用にURL拡張子判定も残す
+    const thumbnailUrl = item.thumbnail_url || '/images/default-thumbnail.svg';
+    let isVideo = false;
+    
+    console.log('🔍 メディアタイプ判定開始:', {
+      title: item.title?.substring(0, 30),
+      media_type: item.media_type,
+      thumbnail_url: item.thumbnail_url,
+      has_thumbnail: !!item.thumbnail_url
+    });
+    
+    if (item.media_type) {
+      // データベースにmedia_typeがある場合はそれを使用
+      isVideo = item.media_type === 'video';
+      console.log('✅ データベースからmedia_type取得:', item.media_type, '→ isVideo:', isVideo, 'for:', item.title?.substring(0, 20));
+    } else {
+      // フォールバック: URLから拡張子を取得してメディアタイプを判定
+      const videoExtensions = ['.mp4', '.webm', '.mov', '.avi', '.mkv'];
+      isVideo = videoExtensions.some(ext => thumbnailUrl.toLowerCase().includes(ext));
+      console.log('⚠️ フォールバック処理(データベースにmedia_typeがない):', {
+        isVideo,
+        thumbnailUrl,
+        title: item.title?.substring(0, 20)
+      });
+    }
+    
+    const finalMediaType = isVideo ? 'video' : 'image';
+    
+    console.log('✨ 最終的なメディアタイプ結果:', {
+      title: item.title?.substring(0, 30),
+      finalMediaType,
+      originalMediaType: item.media_type,
+      thumbnailUrl: item.thumbnail_url
+    });
+    
     return {
       id: item.id,
       title: item.title,
-      thumbnailUrl: item.thumbnail_url || '/images/default-thumbnail.svg',
+      thumbnailUrl: thumbnailUrl,
+      mediaType: finalMediaType,
       user: {
         name: displayName,
         account_name: displayName,

@@ -7,6 +7,7 @@ import { bookmarkPrompt, unbookmarkPrompt, checkIfBookmarked } from '../../lib/b
 import { useAuth } from '../../lib/auth-context';
 import { HeartIcon, BookmarkIcon, DotsVerticalIcon } from '../ui/icons';
 import LazyImage from './LazyImage';
+import VideoPlayer from './VideoPlayer';
 import { Avatar } from '../shared/Avatar';
 import { getDisplayName } from '../../lib/avatar-utils';
 import ReportDialog from '../shared/ReportDialog';
@@ -16,6 +17,7 @@ interface OptimizedPromptCardProps {
   id: string;
   title: string;
   thumbnailUrl: string;
+  mediaType?: 'image' | 'video';
   user: {
     name: string;
     account_name?: string;
@@ -64,6 +66,7 @@ const OptimizedPromptCard: React.FC<OptimizedPromptCardProps> = memo(({
   id,
   title,
   thumbnailUrl,
+  mediaType = 'image',
   user,
   postedAt,
   likeCount,
@@ -240,13 +243,30 @@ const OptimizedPromptCard: React.FC<OptimizedPromptCardProps> = memo(({
         <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200 h-full flex flex-col">
           {/* サムネイル */}
           <div className="relative aspect-video overflow-hidden">
-            <LazyImage
-              src={thumbnailUrl}
-              alt={title}
-              className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-200"
-              fallbackSrc="/images/default-thumbnail.svg"
-              priority={isFeatureSection}
-            />
+            {mediaType === 'video' ? (
+              <VideoPlayer
+                src={thumbnailUrl}
+                alt={title}
+                className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-200"
+                hoverToPlay={true}
+                tapToPlay={true}
+                muted={true}
+                loop={true}
+                showThumbnail={true}
+                onLinkClick={() => {
+                  // プログラム的にナビゲーション
+                  window.location.href = `/prompts/${id}`;
+                }}
+              />
+            ) : (
+              <LazyImage
+                src={thumbnailUrl}
+                alt={title}
+                className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-200"
+                fallbackSrc="/images/default-thumbnail.svg"
+                priority={isFeatureSection}
+              />
+            )}
           </div>
           
           {/* コンテンツ */}
