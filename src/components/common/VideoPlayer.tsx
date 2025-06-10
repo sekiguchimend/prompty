@@ -96,6 +96,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       return;
     }
     
+    // 再生中の場合は一時停止（UI要素が非表示なので動画エリアクリックで一時停止）
     if (isPlaying) {
       videoRef.current.pause();
     } else {
@@ -115,8 +116,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   const handleVideoAreaClick = (e: React.MouseEvent) => {
-    // 再生ボタン以外の部分をクリックした場合
-    if (onLinkClick) {
+    // 再生中の場合は一時停止、停止中は再生
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+    } else if (onLinkClick) {
+      // 動画が利用できない場合はリンクに飛ぶ
       onLinkClick();
     }
   };
@@ -169,58 +177,52 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             }`}
             onClick={!isMobile ? handleClick : undefined}
           >
-            {/* デスクトップ: ホバーで表示 */}
-            {!isMobile && (!isPlaying || showControls) && (
+            {/* デスクトップ: ホバーで表示（再生中は非表示） */}
+            {!isMobile && (!isPlaying || showControls) && !isPlaying && (
               <button 
                 onClick={handlePlayButtonClick}
                 className={`bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg transition-all duration-300 hover:bg-white hover:scale-110 ${
                   showControls || !hoverToPlay ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                 }`}
               >
-                {isPlaying ? (
-                  <Pause className="h-6 w-6 text-gray-700" />
-                ) : (
-                  <Play className="h-6 w-6 text-gray-700" />
-                )}
+                <Play className="h-6 w-6 text-gray-700" />
               </button>
             )}
             
-            {/* モバイル: 常に表示される再生ボタン */}
-            {isMobile && (
+            {/* モバイル: 再生中は非表示 */}
+            {isMobile && !isPlaying && (
               <button 
                 onClick={handlePlayButtonClick}
-                className={`bg-white/90 backdrop-blur-sm rounded-full p-4 shadow-lg transition-all duration-300 hover:bg-white hover:scale-110 ${
-                  !isPlaying ? 'opacity-100' : 'opacity-70'
-                }`}
+                className="bg-white/90 backdrop-blur-sm rounded-full p-4 shadow-lg transition-all duration-300 hover:bg-white hover:scale-110 opacity-100"
               >
-                {isPlaying ? (
-                  <Pause className="h-8 w-8 text-gray-700" />
-                ) : (
-                  <Play className="h-8 w-8 text-gray-700" />
-                )}
+                <Play className="h-8 w-8 text-gray-700" />
               </button>
             )}
           </div>
 
-          {/* 音声コントロール */}
-          <button
-            onClick={handleMuteToggle}
-            className={`absolute top-3 right-3 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-300 ${
-              showControls || isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-            }`}
-          >
-            {isMuted ? (
-              <VolumeX className="h-4 w-4" />
-            ) : (
-              <Volume2 className="h-4 w-4" />
-            )}
-          </button>
+          {/* 音声コントロール（再生中は非表示） */}
+          {!isPlaying && (
+            <button
+              onClick={handleMuteToggle}
+              className={`absolute top-3 right-3 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-300 ${
+                showControls || isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+              }`}
+            >
+              {isMuted ? (
+                <VolumeX className="h-4 w-4" />
+              ) : (
+                <Volume2 className="h-4 w-4" />
+              )}
+            </button>
+          )}
 
-          {/* 動画インジケーター */}
-          <div className="absolute bottom-3 left-3 bg-black/70 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
-            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-            動画
-          </div>
+          {/* 動画インジケーター（再生中は非表示） */}
+          {!isPlaying && (
+            <div className="absolute bottom-3 left-3 bg-black/70 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+              動画
+            </div>
+          )}
         </>
       )}
     </div>
