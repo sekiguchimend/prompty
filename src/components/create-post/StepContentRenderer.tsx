@@ -186,7 +186,6 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
                   </FormLabel>
                 <ModelSelector
                   control={form.control}
-                  isCustomModel={projectSettings.aiModel === "custom"}
                   onModelChange={(value: string) => {
                     saveProjectSetting({ aiModel: value });
                   }}
