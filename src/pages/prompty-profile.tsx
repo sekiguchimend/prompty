@@ -1,5 +1,6 @@
 import React from 'react';
 import Head from 'next/head';
+import Link from 'next/link';
 import { generateSiteUrl, getDefaultOgImageUrl } from '../utils/seo-helpers';
 
 export default function PromptyProfile() {
@@ -306,18 +307,22 @@ export default function PromptyProfile() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              <button className="group relative bg-black text-white px-12 py-6 text-lg font-semibold overflow-hidden transform hover:scale-105 transition-transform duration-300">
-                <span className="relative z-10">プロンプトを投稿する</span>
-                <div className="absolute inset-0 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
-                <div className="absolute inset-0 border-2 border-black group-hover:text-black transition-colors duration-500 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                  プロンプトを投稿する
-                </div>
-              </button>
+              <Link href="/create-post">
+                <button className="group relative bg-black text-white px-12 py-6 text-lg font-semibold overflow-hidden transform hover:scale-105 transition-transform duration-300">
+                  <span className="relative z-10">プロンプトを投稿する</span>
+                  <div className="absolute inset-0 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+                  <div className="absolute inset-0 border-2 border-black group-hover:text-black transition-colors duration-500 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    プロンプトを投稿する
+                  </div>
+                </button>
+              </Link>
               
-              <button className="group relative border-2 border-black text-black px-12 py-6 text-lg font-semibold overflow-hidden transform hover:scale-105 transition-transform duration-300">
-                <span className="relative z-10 group-hover:text-white transition-colors duration-500">プロンプトを探す</span>
-                <div className="absolute inset-0 bg-black transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-right"></div>
-              </button>
+              <Link href="/">
+                <button className="group relative border-2 border-black text-black px-12 py-6 text-lg font-semibold overflow-hidden transform hover:scale-105 transition-transform duration-300">
+                  <span className="relative z-10 group-hover:text-white transition-colors duration-500">プロンプトを探す</span>
+                  <div className="absolute inset-0 bg-black transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-right"></div>
+                </button>
+              </Link>
             </div>
           </div>
           

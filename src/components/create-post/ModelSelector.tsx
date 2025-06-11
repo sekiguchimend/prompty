@@ -6,8 +6,8 @@ import { Input } from "../../components/ui/input";
 
 // 利用可能なAIモデルのリスト
 export const AI_MODELS = [
-  { value: "claude-4-sonnet", label: "Claude 4 Sonnet" },
-  { value: "claude-sonnet-4", label: "Claude Sonnet 4" },
+  { value: "claude-4-sonnet", label: "promptyAI Sonnet" },
+  { value: "claude-sonnet-4", label: "promptyAI Sonnet 4" },
 ] as const;
 
 interface ModelSelectorProps {
@@ -39,7 +39,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
               />
             </FormControl>
             <div className="text-sm text-gray-500 space-y-1">
-              <p>• 推奨: claude-4-20250120 (最新・高性能)</p>
+              <p>• 推奨: promptyAI-20250120 (最新・高性能)</p>
               <p>• 高速: claude-3-5-haiku-20241022 (経済的)</p>
               <p>• その他: gpt-4o, gemini-1.5-pro など</p>
             </div>

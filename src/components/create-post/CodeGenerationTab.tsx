@@ -38,7 +38,6 @@ const CodeGenerationTab: React.FC<CodeGenerationTabProps> = ({
   const [prompt, setPrompt] = useState('');
   const [additionalPrompt, setAdditionalPrompt] = useState('');
   const [model, setModel] = useState<'claude-4-sonnet' | 'claude-sonnet-4'>('claude-4-sonnet');
-  
   const [isGenerating, setIsGenerating] = useState(false);
   const [isImproving, setIsImproving] = useState(false);
   const [generatedCode, setGeneratedCode] = useState<CodeGenerationResponse | null>(null);
@@ -235,8 +234,8 @@ const CodeGenerationTab: React.FC<CodeGenerationTabProps> = ({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="claude-4-sonnet">🎯 Claude 4 Sonnet</SelectItem>
-                      <SelectItem value="claude-sonnet-4">⚡ Claude Sonnet 4</SelectItem>
+                      <SelectItem value="claude-4-sonnet">🎯 promptyAI Sonnet</SelectItem>
+                      <SelectItem value="claude-sonnet-4">⚡ promptyAI Sonnet 4</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

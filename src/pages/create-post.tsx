@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "../components/ui/button";
-import { HelpCircle, Send, Loader2, ArrowLeft } from 'lucide-react';
+import { HelpCircle, Send, Loader2, ArrowLeft, Settings, Sparkles, Code } from 'lucide-react';
 import Footer from "../components/footer";
 import { useRouter } from 'next/router';
 // まとめてインポート
@@ -1419,9 +1419,47 @@ const submitProject = async () => {
                     <>
                       <div className="mb-8">
                         {/* CodeGenerationTabは一時的に無効化 */}
-                        <div className="text-center py-20 bg-gray-50 rounded-lg">
-                          <h3 className="text-xl font-semibold text-gray-600">コード生成機能</h3>
-                          <p className="text-gray-500 mt-2">現在開発中です。/code-generatorページをご利用ください。</p>
+                        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+                          {/* アイコン */}
+                          <div className="flex justify-center mb-6">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                              <Settings className="w-8 h-8 text-gray-600" />
+                            </div>
+                          </div>
+
+                          {/* タイトル */}
+                          <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                            Code Generator
+                          </h3>
+                          
+                          {/* ステータス */}
+                          <div className="mb-6">
+                            <span className="inline-block bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
+                              開発中
+                            </span>
+                          </div>
+
+                          {/* 説明 */}
+                          <p className="text-gray-600 mb-8">
+                            現在開発中です。<br />
+                            しばらくお待ちください。
+                          </p>
+
+                          {/* ボタン */}
+                          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                            <button 
+                              onClick={() => window.open('/code-generator', '_blank')}
+                              className="bg-gray-900 text-white px-6 py-2 rounded-md text-sm hover:bg-gray-800 transition-colors"
+                            >
+                              Code Generatorを開く
+                            </button>
+                            <button 
+                              onClick={() => setPostMode('standard')}
+                              className="border border-gray-300 text-gray-700 px-6 py-2 rounded-md text-sm hover:bg-gray-50 transition-colors"
+                            >
+                              通常投稿に戻る
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </>

@@ -15,10 +15,66 @@ import {
   AlertCircle,
   X,
   SkipBack,
-  SkipForward
+  SkipForward,
+  Settings,
+  Code,
+  Rocket
 } from 'lucide-react';
 
+// 開発中フラグ（開発完了時にfalseに変更）
+const IS_UNDER_DEVELOPMENT = true;
+
+// 開発中ページコンポーネント
+const UnderDevelopmentPage: React.FC = () => {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="max-w-md mx-auto px-6 text-center">
+        <div className="bg-white rounded-lg shadow-sm p-8 border border-gray-200">
+          {/* アイコン */}
+          <div className="flex justify-center mb-6">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+              <Settings className="w-8 h-8 text-gray-600" />
+            </div>
+          </div>
+
+          {/* タイトル */}
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            Code Generator
+          </h1>
+          
+          {/* ステータス */}
+          <div className="mb-6">
+            <span className="inline-block bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
+              開発中
+            </span>
+          </div>
+
+          {/* 説明 */}
+          <p className="text-gray-600 mb-8">
+            現在開発中です。<br />
+            しばらくお待ちください。
+          </p>
+
+          {/* ボタン */}
+          <button 
+            onClick={() => window.location.href = '/'}
+            className="bg-gray-900 text-white px-6 py-2 rounded-md text-sm hover:bg-gray-800 transition-colors"
+          >
+            ホームに戻る
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const CodeGeneratorPage: React.FC = () => {
+  // 開発中の場合は専用ページを表示
+  if (IS_UNDER_DEVELOPMENT) {
+    return <UnderDevelopmentPage />;
+  }
+
+  // 以下は既存のコード（開発完了時に使用）
   const {
     isGenerating,
     error,
