@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { ChevronUp, ChevronDown, GripHorizontal } from 'lucide-react';
 
 interface PreviewMarkerOverlayProps {
   content: string;
@@ -18,7 +19,18 @@ export const PreviewMarkerOverlay: React.FC<PreviewMarkerOverlayProps> = ({
   const [markerPosition, setMarkerPosition] = useState<{ top: number; left: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [previewLines, setPreviewLines] = useState<number>(initialPreviewLines || 3);
+  const [isMobile, setIsMobile] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
+
+  // モバイル判定
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // マーカータグを挿入する関数
   const insertMarkerAtLine = useCallback((content: string, targetLine: number) => {
@@ -62,8 +74,8 @@ export const PreviewMarkerOverlay: React.FC<PreviewMarkerOverlayProps> = ({
     return { top, left };
   }, [content, textareaRef]);
 
-  // 位置から行数を計算する関数
-  const calculateLinesFromPosition = useCallback((clientY: number) => {
+  // 位置から行数を計算する関数（タッチイベント対応）
+  const calculateLinesFromPosition = useCallback((clientY: number, isTouchEvent: boolean = false) => {
     if (!textareaRef.current) return 1;
 
     const textarea = textareaRef.current;
@@ -83,15 +95,17 @@ export const PreviewMarkerOverlay: React.FC<PreviewMarkerOverlayProps> = ({
     // 最小1行、最大は50行まで許可（十分な範囲を確保）
     const lines = Math.max(1, Math.min(calculatedLines, 50));
     
-    console.log('行数計算:', {
-      clientY,
-      relativeY,
-      adjustedY,
-      lineHeight,
-      calculatedLines,
-      finalLines: lines,
-      contentLines: content.split('\n').length
-    });
+    if (isTouchEvent) {
+      console.log('行数計算（タッチ）:', {
+        clientY,
+        relativeY,
+        adjustedY,
+        lineHeight,
+        calculatedLines,
+        finalLines: lines,
+        contentLines: content.split('\n').length
+      });
+    }
     
     return lines;
   }, [content, textareaRef]);
@@ -109,7 +123,7 @@ export const PreviewMarkerOverlay: React.FC<PreviewMarkerOverlayProps> = ({
     }
   }, [content, previewLines, calculatePositionFromLines]);
 
-  // ドラッグ中の処理
+  // ドラッグ中の処理（マウス）
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging) return;
     
@@ -120,7 +134,28 @@ export const PreviewMarkerOverlay: React.FC<PreviewMarkerOverlayProps> = ({
     
     // 行数が変わった場合のみ更新（パフォーマンス向上）
     if (newLines !== previewLines) {
-      console.log('行数変更:', previewLines, '->', newLines);
+      setPreviewLines(newLines);
+      const newPosition = calculatePositionFromLines(newLines);
+      if (newPosition) {
+        setMarkerPosition(newPosition);
+      }
+    }
+  }, [isDragging, previewLines, calculateLinesFromPosition, calculatePositionFromLines]);
+
+  // タッチ移動処理
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (!isDragging) return;
+    
+    e.preventDefault();
+    
+    const touch = e.touches[0];
+    if (!touch) return;
+    
+    // 新しい行数を計算
+    const newLines = calculateLinesFromPosition(touch.clientY, true);
+    
+    // 行数が変わった場合のみ更新（パフォーマンス向上）
+    if (newLines !== previewLines) {
       setPreviewLines(newLines);
       const newPosition = calculatePositionFromLines(newLines);
       if (newPosition) {
@@ -130,7 +165,7 @@ export const PreviewMarkerOverlay: React.FC<PreviewMarkerOverlayProps> = ({
   }, [isDragging, previewLines, calculateLinesFromPosition, calculatePositionFromLines]);
 
   // ドラッグ終了の処理
-  const handleMouseUp = useCallback((e: MouseEvent) => {
+  const handleEnd = useCallback((e: MouseEvent | TouchEvent) => {
     e.preventDefault();
     setIsDragging(false);
     
@@ -147,25 +182,48 @@ export const PreviewMarkerOverlay: React.FC<PreviewMarkerOverlayProps> = ({
     }
   }, [previewLines, onPreviewLinesChange, onContentChange, content, insertMarkerAtLine]);
 
-  // ドラッグ開始
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+  // マウス/タッチ開始
+  const handleStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
   }, []);
 
+  // 行数調整ボタン（スマホ向け）
+  const adjustLines = (delta: number) => {
+    const newLines = Math.max(1, Math.min(previewLines + delta, 50));
+    setPreviewLines(newLines);
+    const newPosition = calculatePositionFromLines(newLines);
+    if (newPosition) {
+      setMarkerPosition(newPosition);
+    }
+    
+    // すぐに内容に反映
+    const updatedContent = insertMarkerAtLine(content, newLines);
+    if (onContentChange) {
+      onContentChange(updatedContent);
+    }
+    if (onPreviewLinesChange) {
+      onPreviewLinesChange(newLines);
+    }
+  };
+
   // グローバルイベントリスナーの管理
   useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove, { passive: false });
-      document.addEventListener('mouseup', handleMouseUp, { passive: false });
+      document.addEventListener('mouseup', handleEnd, { passive: false });
+      document.addEventListener('touchmove', handleTouchMove, { passive: false });
+      document.addEventListener('touchend', handleEnd, { passive: false });
       
       return () => {
         document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('mouseup', handleEnd);
+        document.removeEventListener('touchmove', handleTouchMove);
+        document.removeEventListener('touchend', handleEnd);
       };
     }
-  }, [isDragging, handleMouseMove, handleMouseUp]);
+  }, [isDragging, handleMouseMove, handleTouchMove, handleEnd]);
 
   if (!markerPosition || !content) {
     return null;
@@ -182,18 +240,98 @@ export const PreviewMarkerOverlay: React.FC<PreviewMarkerOverlayProps> = ({
         height: '100%',
       }}
     >
-      {/* ドラッグ可能エリア - テキストエリア全体 */}
-      <div
-        className={`absolute pointer-events-auto ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-        style={{
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-        }}
-        onMouseDown={handleMouseDown}
-      >
-        {/* 赤線の表示位置 */}
+      {/* ドラッグ可能エリア - デスクトップ */}
+      {!isMobile && (
+        <div
+          className={`absolute pointer-events-auto ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+          style={{
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+          }}
+          onMouseDown={handleStart}
+        >
+          {/* 赤線の表示位置 */}
+          <div
+            className="absolute"
+            style={{
+              top: markerPosition.top,
+              left: markerPosition.left,
+              width: '100%',
+              height: '20px',
+              marginTop: '-10px',
+              pointerEvents: 'none',
+            }}
+          >
+            <div className="relative">
+              {/* メインの赤線 */}
+              <div 
+                className={`w-full bg-red-500 shadow-lg ${isDragging ? 'animate-none bg-red-600' : 'animate-pulse'}`}
+                style={{ 
+                  height: '2px',
+                  boxShadow: '0 0 8px rgba(239, 68, 68, 0.8)',
+                  marginTop: '9px'
+                }}
+              />
+              
+              {/* 光る効果 */}
+              {!isDragging && (
+                <div 
+                  className="absolute top-0 left-0 w-full bg-red-400 opacity-60 animate-ping"
+                  style={{ height: '2px', marginTop: '9px' }}
+                />
+              )}
+              
+              {/* ドラッグハンドル */}
+              <div 
+                className={`absolute w-6 h-6 bg-red-500 rounded-full shadow-md flex items-center justify-center transition-colors ${
+                  isDragging ? 'bg-red-600 scale-110' : 'hover:bg-red-600'
+                }`}
+                style={{ 
+                  top: '-3px',
+                  left: '-3px',
+                  boxShadow: '0 2px 8px rgba(239, 68, 68, 0.4)',
+                  pointerEvents: 'auto',
+                }}
+              >
+                <div className="w-2 h-2 bg-white rounded-full"></div>
+              </div>
+              
+              {/* 行数表示ラベル */}
+              <div 
+                className={`absolute bg-red-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap shadow-md ${
+                  isDragging ? 'bg-red-600' : ''
+                }`}
+                style={{
+                  top: '-32px',
+                  left: '20px',
+                  pointerEvents: 'none',
+                }}
+              >
+                {previewLines}行目で終了
+              </div>
+              
+              {/* ドラッグ中のヘルプテキスト */}
+              {isDragging && (
+                <div 
+                  className="absolute bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap shadow-md"
+                  style={{
+                    top: '-48px',
+                    left: '120px',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  ドラッグして位置を調整
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* モバイル向けのタッチエリア */}
+      {isMobile && (
         <div
           className="absolute"
           style={{
@@ -201,74 +339,76 @@ export const PreviewMarkerOverlay: React.FC<PreviewMarkerOverlayProps> = ({
             left: markerPosition.left,
             width: '100%',
             height: '20px',
-            marginTop: '-10px', // 中央揃え
-            pointerEvents: 'none', // 赤線自体はクリックを通す
+            marginTop: '-10px',
+            pointerEvents: 'none',
           }}
         >
           <div className="relative">
             {/* メインの赤線 */}
             <div 
-              className={`w-full bg-red-500 shadow-lg ${isDragging ? 'animate-none bg-red-600' : 'animate-pulse'}`}
+              className="w-full bg-red-500 shadow-lg animate-pulse"
               style={{ 
-                height: '2px',
+                height: '3px',
                 boxShadow: '0 0 8px rgba(239, 68, 68, 0.8)',
-                marginTop: '9px'
+                marginTop: '8px'
               }}
             />
             
-            {/* 光る効果 */}
-            {!isDragging && (
-              <div 
-                className="absolute top-0 left-0 w-full bg-red-400 opacity-60 animate-ping"
-                style={{ height: '2px', marginTop: '9px' }}
-              />
-            )}
-            
-            {/* ドラッグハンドル */}
+            {/* タッチエリア付きハンドル（大きめ） */}
             <div 
-              className={`absolute w-6 h-6 bg-red-500 rounded-full shadow-md flex items-center justify-center transition-colors ${
-                isDragging ? 'bg-red-600 scale-110' : 'hover:bg-red-600'
-              }`}
+              className="absolute flex items-center gap-2 bg-red-500 rounded-lg shadow-lg pointer-events-auto"
               style={{ 
-                top: '-3px',
-                left: '-3px',
-                boxShadow: '0 2px 8px rgba(239, 68, 68, 0.4)',
-                pointerEvents: 'auto', // ハンドルはクリック可能
+                top: '-20px',
+                left: '-10px',
+                padding: '8px 12px',
+                boxShadow: '0 4px 12px rgba(239, 68, 68, 0.4)',
+                minHeight: '44px', // iOSの推奨タッチサイズ
               }}
+              onTouchStart={handleStart}
             >
-              <div className="w-2 h-2 bg-white rounded-full"></div>
+              <GripHorizontal className="w-4 h-4 text-white" />
+              <span className="text-white text-sm font-medium">{previewLines}行目</span>
             </div>
             
-            {/* 行数表示ラベル */}
+            {/* 上下調整ボタン */}
             <div 
-              className={`absolute bg-red-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap shadow-md ${
-                isDragging ? 'bg-red-600' : ''
-              }`}
+              className="absolute flex flex-col gap-1 pointer-events-auto"
               style={{
-                top: '-32px',
-                left: '20px',
+                top: '-40px',
+                right: '10px',
+              }}
+            >
+              <button
+                className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-md"
+                style={{ minWidth: '44px', minHeight: '44px' }}
+                onClick={() => adjustLines(-1)}
+              >
+                <ChevronUp className="w-5 h-5" />
+              </button>
+              <button
+                className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-md"
+                style={{ minWidth: '44px', minHeight: '44px' }}
+                onClick={() => adjustLines(1)}
+              >
+                <ChevronDown className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {/* モバイル用説明テキスト */}
+            <div 
+              className="absolute bg-gray-800 text-white text-xs px-3 py-2 rounded-lg whitespace-nowrap shadow-md"
+              style={{
+                top: '-80px',
+                left: '50%',
+                transform: 'translateX(-50%)',
                 pointerEvents: 'none',
               }}
             >
-              {previewLines}行目で終了
+              ドラッグまたは↑↓ボタンで調整
             </div>
-            
-            {/* ドラッグ中のヘルプテキスト */}
-            {isDragging && (
-              <div 
-                className="absolute bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap shadow-md"
-                style={{
-                  top: '-48px',
-                  left: '120px',
-                  pointerEvents: 'none',
-                }}
-              >
-                ドラッグして位置を調整
-              </div>
-            )}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }; 

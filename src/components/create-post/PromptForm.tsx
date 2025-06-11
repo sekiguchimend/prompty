@@ -227,7 +227,7 @@ const SimplifiedPromptForm: React.FC<PromptFormProps> = ({
                                 updateDisplayContent(updatedValue);
                               }}
                               ref={textareaRef}
-                              placeholder=""
+                              placeholder="例：あなたは優秀なコピーライターです。以下の商品についてSEOに最適化された魅力的な商品説明文を作成してください..."
                               className="min-h-[300px] border-gray-300 focus:border-blue-500 focus:ring-blue-500 resize-none relative z-10"
                             />
                             
@@ -330,6 +330,7 @@ const SimplifiedPromptForm: React.FC<PromptFormProps> = ({
                                 field.onChange(value);
                               }
                             }}
+                            placeholder="1"
                             className="border-gray-300 focus:border-purple-500 focus:ring-purple-500 w-32"
                             min="1"
                           />

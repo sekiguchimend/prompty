@@ -109,8 +109,8 @@ const Terms: React.FC = () => {
             </section>
             
             <p className="text-right text-sm text-gray-500">
-              制定日: 2023年4月1日<br />
-              最終更新日: 2025年4月11日
+              制定日: 2025年1月21日<br />
+              最終更新日: 2025年1月21日
             </p>
           </div>
         </div>

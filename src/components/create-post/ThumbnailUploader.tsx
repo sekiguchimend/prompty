@@ -31,9 +31,9 @@ const ThumbnailUploader: React.FC<ThumbnailUploaderProps> = ({
       const file = e.target.files[0];
       
       try {
-        // ファイルサイズチェック（動画は50MB、画像は5MB）
-        const maxSize = file.type.startsWith('video/') ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
-        const maxSizeText = file.type.startsWith('video/') ? '50MB' : '5MB';
+        // ファイルサイズチェック（動画は100MB、画像は10MB）
+        const maxSize = file.type.startsWith('video/') ? 100 * 1024 * 1024 : 10 * 1024 * 1024;
+        const maxSizeText = file.type.startsWith('video/') ? '100MB' : '10MB';
         if (file.size > maxSize) {
           toast({
             title: "エラー",
@@ -135,8 +135,8 @@ const ThumbnailUploader: React.FC<ThumbnailUploaderProps> = ({
         return;
       }
       
-      const maxSize = file.type.startsWith('video/') ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
-      const maxSizeText = file.type.startsWith('video/') ? '50MB' : '5MB';
+      const maxSize = file.type.startsWith('video/') ? 100 * 1024 * 1024 : 10 * 1024 * 1024;
+      const maxSizeText = file.type.startsWith('video/') ? '100MB' : '10MB';
       if (file.size > maxSize) {
         toast({
           title: "エラー",
@@ -285,14 +285,20 @@ const ThumbnailUploader: React.FC<ThumbnailUploaderProps> = ({
                 クリックして画像・動画を選択するか、<br />
                 ここにファイルをドラッグ&ドロップしてください
               </p>
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mt-3 max-w-xs mx-auto">
+                <p className="text-xs text-orange-700 font-medium flex items-center gap-1">
+                  <span className="text-orange-500">⚠️</span>
+                  1つのファイルのみアップロード可能です
+                </p>
+              </div>
               <div className="flex flex-col items-center gap-2 mt-3">
                 <div className="flex items-center gap-2">
                   <Upload className="h-4 w-4 text-gray-400" />
-                  <span className="text-xs text-gray-500">画像: JPG, PNG, GIF, WebP (最大5MB)</span>
+                  <span className="text-xs text-gray-500">画像: JPG, PNG, GIF, WebP (最大10MB)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Video className="h-4 w-4 text-gray-400" />
-                  <span className="text-xs text-gray-500">動画: MP4, WebM, MOV, AVI (最大50MB)</span>
+                  <span className="text-xs text-gray-500">動画: MP4, WebM, MOV, AVI (最大100MB)</span>
                 </div>
               </div>
             </div>

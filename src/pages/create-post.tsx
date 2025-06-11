@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "../components/ui/button";
-import { HelpCircle, Send, Loader2, ArrowLeft, Settings, Sparkles, Code } from 'lucide-react';
+import { HelpCircle, Send, Loader2, ArrowLeft, Settings, Sparkles, Code, X } from 'lucide-react';
 import Footer from "../components/footer";
 import { useRouter } from 'next/router';
 // まとめてインポート
@@ -21,6 +21,7 @@ import {
   type GeneratedCodeProject
 } from '../components/create-post';
 import { useToast } from "../components/ui/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { useAuth } from "../lib/auth-context";
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '../lib/supabaseClient';
@@ -108,6 +109,7 @@ const CreatePost = () => {
   const [promptNumber, setPromptNumber] = useState(1);
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [showHistory, setShowHistory] = useState(true);
+  const [helpDialogOpen, setHelpDialogOpen] = useState(false);
   const [projectSettings, setProjectSettings] = useState<ProjectFormValues>({
     projectTitle: "新しいプロンプトプロジェクト",
     aiModel: "claude-4-sonnet",
@@ -1185,21 +1187,34 @@ const submitProject = async () => {
                       {getBackButtonLabel()}
                     </button>
                     
-                    {postMode === 'standard' && (
-                      <div className="flex flex-wrap gap-2">
-                        <PromptGuideDialog onApplyExample={applyPromptExample} />
-                        
-                        {prompts.length > 0 && (
-                          <Button 
-                            variant="outline" 
-                            onClick={toggleHistory}
-                            className="border-gray-300 text-black text-sm"
-                          >
-                            {showHistory ? "履歴を隠す" : "履歴を表示"}
-                          </Button>
-                        )}
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {/* ヘルプアイコン */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setHelpDialogOpen(true)}
+                        className="border-gray-300 text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                      >
+                        <HelpCircle className="h-4 w-4 mr-1" />
+                        ヘルプ
+                      </Button>
+                      
+                      {postMode === 'standard' && (
+                        <div className="flex flex-wrap gap-2">
+                          <PromptGuideDialog onApplyExample={applyPromptExample} />
+                          
+                          {prompts.length > 0 && (
+                            <Button 
+                              variant="outline" 
+                              onClick={toggleHistory}
+                              className="border-gray-300 text-black text-sm"
+                            >
+                              {showHistory ? "履歴を隠す" : "履歴を表示"}
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
                   {/* 認証状態表示 */}
@@ -1471,6 +1486,115 @@ const submitProject = async () => {
           }
         })()}
       </main>
+      
+      {/* ヘルプダイアログ */}
+      <Dialog open={helpDialogOpen} onOpenChange={setHelpDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <HelpCircle className="h-5 w-5 text-blue-600" />
+              投稿ガイド
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* 基本的な投稿手順 */}
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-gray-900">📝 基本的な投稿手順</h3>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+                  <li><span className="font-medium">プロジェクトタイトル</span>を入力してください</li>
+                  <li><span className="font-medium">カテゴリ</span>を選択してください（検索機能も使えます）</li>
+                  <li><span className="font-medium">AIモデル</span>を選択してください</li>
+                  <li><span className="font-medium">料金設定</span>（無料 or 有料）を決めてください</li>
+                  <li><span className="font-medium">サムネイル画像</span>をアップロードしてください（任意）</li>
+                  <li><span className="font-medium">プロンプト内容</span>を入力してプロンプトを追加してください</li>
+                  <li>最後に<span className="font-medium">「プロジェクトを投稿」</span>ボタンを押してください</li>
+                </ol>
+              </div>
+            </div>
+
+            {/* サムネイル関連 */}
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-gray-900">🖼️ サムネイルについて</h3>
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+                  <li><span className="font-medium">1つのファイルのみ</span>アップロード可能です</li>
+                  <li>対応形式：<span className="font-medium">JPG, PNG, GIF, WebP, MP4, WebM</span></li>
+                  <li>画像は最大5MB、動画は最大50MB</li>
+                  <li>推奨サイズ：16:9の比率</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* 有料記事の設定 */}
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-gray-900">💰 有料記事の設定</h3>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="space-y-2 text-sm text-gray-700">
+                  <p><span className="font-medium">デスクトップ：</span>赤い線をドラッグして無料表示範囲を調整</p>
+                  <p><span className="font-medium">スマートフォン：</span>タッチで操作するか、↑↓ボタンで行数を調整</p>
+                  <p className="mt-2 p-2 bg-yellow-100 rounded text-yellow-800">
+                    💡 ヒント：読者が興味を持つような内容を無料範囲に含めると効果的です
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* プロンプト作成のコツ */}
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-gray-900">✨ 良いプロンプトを作るコツ</h3>
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+                  <li><span className="font-medium">具体的な指示</span>を心がけてください</li>
+                  <li><span className="font-medium">期待する出力形式</span>を明記してください</li>
+                  <li><span className="font-medium">例文やテンプレート</span>があると分かりやすいです</li>
+                  <li><span className="font-medium">ターゲット</span>（誰が使うか）を明確にしてください</li>
+                  <li><span className="font-medium">制約条件</span>がある場合は記載してください</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* よくある質問 */}
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-gray-900">❓ よくある質問</h3>
+              <div className="space-y-3">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                  <p className="font-medium text-sm text-gray-900">Q: プロンプトは何個まで追加できますか？</p>
+                  <p className="text-sm text-gray-700 mt-1">A: 制限はありませんが、関連性のあるプロンプトをまとめることをお勧めします。</p>
+                </div>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                  <p className="font-medium text-sm text-gray-900">Q: 投稿後に編集はできますか？</p>
+                  <p className="text-sm text-gray-700 mt-1">A: はい、マイページから投稿したプロンプトを編集できます。</p>
+                </div>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                  <p className="font-medium text-sm text-gray-900">Q: 無料と有料の使い分けは？</p>
+                  <p className="text-sm text-gray-700 mt-1">A: 一般的なプロンプトは無料、特別なノウハウや高品質なプロンプトは有料にすることをお勧めします。</p>
+                </div>
+              </div>
+            </div>
+
+            {/* アクションボタン */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
+              <Button
+                onClick={() => setHelpDialogOpen(false)}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                理解しました
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  window.open('/contact', '_blank');
+                }}
+                className="border-gray-300"
+              >
+                お問い合わせ
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       
       <Footer />
     </div>
