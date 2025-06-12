@@ -61,6 +61,33 @@ jobs:
         script: |
           cd /home/ec2-user/prompty
           
+          # ディスク容量チェックと清理
+          echo "📊 ディスク使用量チェック開始..."
+          df -h
+          
+          # 容量不足の場合は清理実行
+          AVAILABLE_SPACE=$(df /home | tail -1 | awk '{print $4}')
+          if [ "$AVAILABLE_SPACE" -lt 2000000 ]; then
+            echo "⚠️ ディスク容量不足を検出。清理を実行します..."
+            
+            # ログファイル削除
+            sudo find /var/log -name "*.log" -type f -mtime +7 -delete || true
+            sudo find /tmp -type f -mtime +1 -delete || true
+            
+            # npm cache清理
+            npm cache clean --force || true
+            
+            # Docker清理（存在する場合）
+            docker system prune -af || true
+            docker volume prune -f || true
+            
+            # PM2ログ清理
+            pm2 flush || true
+            
+            echo "✅ 清理完了。新しいディスク使用量:"
+            df -h
+          fi
+          
           # 現在のプロセスを停止
           pm2 stop prompty || true
           
@@ -69,24 +96,71 @@ jobs:
           git reset --hard origin/main
           
           # node_modulesを完全にクリーンアップ（権限問題対策）
+          echo "🧹 node_modules清理中..."
           sudo rm -rf node_modules package-lock.json || true
           sudo rm -rf .next || true
           
-          # 依存関係をインストール
-          npm install
+          # 依存関係をインストール（段階的実行）
+          echo "📦 依存関係インストール中..."
           
-          # アプリケーションをビルド
-          NODE_OPTIONS="--max-old-space-size=3072" npm run build
+          # 軽量インストールを試行
+          if ! npm ci --only=production --no-audit --no-fund; then
+            echo "⚠️ 軽量インストール失敗。通常インストールを試行..."
+            
+            # さらなる清理
+            sudo rm -rf ~/.npm/_cacache || true
+            sudo rm -rf ~/.npm/_logs || true
+            
+            # 通常インストール
+            if ! npm install --no-audit --no-fund; then
+              echo "❌ npm install失敗。容量不足の可能性があります。"
+              df -h
+              exit 1
+            fi
+          fi
+          
+          # アプリケーションをビルド（メモリ制限付き）
+          echo "🔨 ビルド開始..."
+          if ! NODE_OPTIONS="--max-old-space-size=2048" npm run build; then
+            echo "❌ ビルド失敗。再試行します..."
+            
+            # .next清理後再試行
+            rm -rf .next || true
+            
+            if ! NODE_OPTIONS="--max-old-space-size=1536" npm run build; then
+              echo "❌ ビルド再試行も失敗しました。"
+              exit 1
+            fi
+          fi
           
           # PM2でアプリケーションを再起動
+          echo "🚀 アプリケーション起動中..."
           pm2 start ecosystem.config.js --env production || pm2 restart prompty
           
-          # ヘルスチェック
-          sleep 15
-          curl -f https://prompty-ai.com || curl -f http://localhost:3000 || exit 1
+          # ヘルスチェック（複数回試行）
+          echo "🔍 ヘルスチェック開始..."
+          for i in {1..3}; do
+            sleep 10
+            if curl -f https://prompty-ai.com; then
+              echo "✅ ヘルスチェック成功 (試行 $i/3)"
+              break
+            elif curl -f http://localhost:3000; then
+              echo "✅ ローカルヘルスチェック成功 (試行 $i/3)"
+              break
+            else
+              echo "⚠️ ヘルスチェック失敗 (試行 $i/3)"
+              if [ $i -eq 3 ]; then
+                echo "❌ 全てのヘルスチェックが失敗しました"
+                pm2 logs prompty --lines 20
+                exit 1
+              fi
+            fi
+          done
           
           echo "🚀 デプロイが完了しました！"
           echo "🌐 アクセスURL: https://prompty-ai.com"
+          echo "📊 最終ディスク使用量:"
+          df -h
           
     - name: Notify deployment status
       if: always()
