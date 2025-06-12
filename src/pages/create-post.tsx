@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "../components/ui/button";
-import { HelpCircle, Send, Loader2, ArrowLeft, Settings, Sparkles, Code, X } from 'lucide-react';
+import { HelpCircle, Send, Loader2, ArrowLeft, Settings, Sparkles, Code, X, Rocket } from 'lucide-react';
 import Footer from "../components/footer";
 import { useRouter } from 'next/router';
 // まとめてインポート
@@ -111,7 +111,7 @@ const CreatePost = () => {
   const [showHistory, setShowHistory] = useState(true);
   const [helpDialogOpen, setHelpDialogOpen] = useState(false);
   const [projectSettings, setProjectSettings] = useState<ProjectFormValues>({
-    projectTitle: "新しいプロンプトプロジェクト",
+    projectTitle: "",
     aiModel: "claude-4-sonnet",
     customAiModel: "",
     pricingType: "free",
@@ -1434,44 +1434,38 @@ const submitProject = async () => {
                     <>
                       <div className="mb-8">
                         {/* CodeGenerationTabは一時的に無効化 */}
-                        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+                        <div className="text-center py-12">
                           {/* アイコン */}
-                          <div className="flex justify-center mb-6">
-                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                              <Settings className="w-8 h-8 text-gray-600" />
+                          <div className="flex justify-center mb-12">
+                            <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center">
+                              <Code className="h-8 w-8 text-white" />
                             </div>
                           </div>
 
                           {/* タイトル */}
-                          <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                          <h3 className="text-3xl font-light text-black mb-4 tracking-wide">
                             Code Generator
                           </h3>
-                          
-                          {/* ステータス */}
-                          <div className="mb-6">
-                            <span className="inline-block bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
-                              開発中
-                            </span>
-                          </div>
 
-                          {/* 説明 */}
-                          <p className="text-gray-600 mb-8">
-                            現在開発中です。<br />
-                            しばらくお待ちください。
+                          {/* メッセージ */}
+                          <p className="text-gray-600 mb-12 text-lg font-light">
+                            開発中です
                           </p>
 
                           {/* ボタン */}
-                          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                          <div className="flex flex-col sm:flex-row gap-8 justify-center items-center">
                             <button 
                               onClick={() => window.open('/code-generator', '_blank')}
-                              className="bg-gray-900 text-white px-6 py-2 rounded-md text-sm hover:bg-gray-800 transition-colors"
+                              className="inline-flex items-center text-black hover:text-gray-600 transition-colors duration-200 text-sm font-medium tracking-wide"
                             >
+                              <Code className="w-4 h-4 mr-2" />
                               Code Generatorを開く
                             </button>
                             <button 
                               onClick={() => setPostMode('standard')}
-                              className="border border-gray-300 text-gray-700 px-6 py-2 rounded-md text-sm hover:bg-gray-50 transition-colors"
+                              className="inline-flex items-center text-black hover:text-gray-600 transition-colors duration-200 text-sm font-medium tracking-wide"
                             >
+                              <ArrowLeft className="w-4 h-4 mr-2" />
                               通常投稿に戻る
                             </button>
                           </div>
