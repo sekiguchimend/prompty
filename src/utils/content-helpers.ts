@@ -71,13 +71,18 @@ export function shouldShowFullContent(
 /**
  * コンテンツ文字列の正規化
  * - 文字列、配列、または未定義のコンテンツを文字列に変換
+ * - 改行や空白を保持して変換
  */
 export function normalizeContentText(content: string | string[] | undefined | null): string {
   if (!content) return '';
   
-  return typeof content === 'string' 
-    ? content 
-    : Array.isArray(content) 
-      ? content.join('\n') 
-      : '';
+  if (typeof content === 'string') {
+    // 文字列の場合はそのまま返す（改行や空白を保持）
+    return content;
+  } else if (Array.isArray(content)) {
+    // 配列の場合は改行で結合（各要素の改行も保持）
+    return content.join('\n');
+  } else {
+    return '';
+  }
 } 

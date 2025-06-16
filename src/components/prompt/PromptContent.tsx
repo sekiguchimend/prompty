@@ -293,22 +293,25 @@ const PromptContent: React.FC<PromptContentProps> = ({
       return text;
     }
     
-    // プレーンテキストの場合：改行を<br>に変換し、空行を段落区切りにする
-    return text
-      .split('\n\n') // 空行で段落を分割
-      .map(paragraph => {
-        // 各段落内の改行を<br>に変換
-        const formattedParagraph = paragraph
-          .split('\n')
-          .join('<br>');
-        
-        // 段落をpタグで囲む（空でない場合のみ）
-        return formattedParagraph.trim() 
-          ? `<p style="margin-bottom: 1em; line-height: 1.8;">${formattedParagraph}</p>` 
-          : '';
-      })
-      .filter(p => p) // 空の段落を除去
-      .join('');
+    // HTMLエスケープ
+    const escapedText = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+    
+    // 改行文字をHTMLの改行タグに変換し、連続する空白も保持
+    const formattedText = escapedText
+      .replace(/\r\n/g, '\n')  // Windows改行を統一
+      .replace(/\r/g, '\n')    // Mac改行を統一
+      .replace(/\n\n+/g, '<br><br>')  // 複数改行は段落として扱う
+      .replace(/\n/g, '<br>')  // 単一改行をbrタグに変換
+      .replace(/    /g, '&nbsp;&nbsp;&nbsp;&nbsp;')  // 4つの連続空白（インデント用）
+      .replace(/   /g, '&nbsp;&nbsp;&nbsp;')  // 3つの連続空白
+      .replace(/  /g, '&nbsp;&nbsp;');  // 2つの連続空白
+    
+    return formattedText;
   }, []);
 
   // 計算の重い処理をuseMemoで最適化
@@ -413,7 +416,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
   let basicDisplayContent;
     if (contentCalculations.isPremiumContent && !contentCalculations.showAllContent) {
       // プレビューモードの場合 - 基本コンテンツの最初の約100文字（2文程度）を表示
-      basicDisplayContent = `<div>${extractLimitedPreview(contentCalculations.contentText, 100)}</div>`;
+      basicDisplayContent = extractLimitedPreview(contentCalculations.contentText, 100);
   } else {
       // 通常表示の場合は改行と段落を保持
       basicDisplayContent = formatContentWithLineBreaks(contentCalculations.contentText);
@@ -594,9 +597,11 @@ const PromptContent: React.FC<PromptContentProps> = ({
         {/* 説明文があれば表示 */}
         {description && (
           <div className="text-gray-700 mb-6">
-            <p className="text-lg leading-relaxed font-noto font-normal">
-              {description}
-            </p>
+            <div 
+              className="text-xl leading-loose font-noto font-normal"
+              style={{ whiteSpace: 'pre-wrap' }}
+              dangerouslySetInnerHTML={{ __html: formatContentWithLineBreaks(description) }}
+            />
           </div>
         )}
 
@@ -678,7 +683,8 @@ const PromptContent: React.FC<PromptContentProps> = ({
                   {/* プロンプト内容 - 記事形式 */}
                   <div className="prose prose-lg max-w-none">
                     <div 
-                      className="text-lg leading-loose font-noto font-normal text-gray-800"
+                      className="text-xl leading-loose font-noto font-normal text-gray-800"
+                      style={{ whiteSpace: 'pre-wrap' }}
                       dangerouslySetInnerHTML={{ 
                         __html: formatContentWithLineBreaks(prompt.content) 
                       }}
@@ -699,7 +705,8 @@ const PromptContent: React.FC<PromptContentProps> = ({
             <>
               {/* 無料部分は常に表示 */}
               <div 
-                className="text-lg leading-loose font-noto font-normal text-gray-800"
+                className="text-xl leading-loose font-noto font-normal text-gray-800"
+                style={{ whiteSpace: 'pre-wrap' }}
                 dangerouslySetInnerHTML={{ __html: displayContent.basicDisplayContent }} 
               />
               
@@ -710,7 +717,8 @@ const PromptContent: React.FC<PromptContentProps> = ({
                     /* 購入済みまたは無料の場合は全文表示 */
                     <div className="mt-6">
                       <div 
-                        className="text-lg leading-loose font-noto font-normal text-gray-800"
+                        className="text-xl leading-loose font-noto font-normal text-gray-800"
+                        style={{ whiteSpace: 'pre-wrap' }}
                         dangerouslySetInnerHTML={{ __html: formatContentWithLineBreaks(premiumContent) }} 
                       />
                     </div>
@@ -720,7 +728,8 @@ const PromptContent: React.FC<PromptContentProps> = ({
                       {/* プレビューコンテンツの最初の2行を表示 */}
                       <div className="relative mb-8">
                         <div 
-                          className="text-lg leading-loose font-noto font-normal text-gray-600"
+                          className="text-xl leading-loose font-noto font-normal text-gray-600"
+                          style={{ whiteSpace: 'pre-wrap' }}
                           dangerouslySetInnerHTML={{ 
                             __html: displayContent.extractLimitedPreviewByLines(premiumContent, previewLines) 
                           }} 

@@ -31,9 +31,9 @@ const ThumbnailUploader: React.FC<ThumbnailUploaderProps> = ({
       const file = e.target.files[0];
       
       try {
-        // ファイルサイズチェック（動画は100MB、画像は10MB）
-        const maxSize = file.type.startsWith('video/') ? 100 * 1024 * 1024 : 10 * 1024 * 1024;
-        const maxSizeText = file.type.startsWith('video/') ? '100MB' : '10MB';
+        // ファイルサイズチェック（動画は5GB、画像は50MB）
+        const maxSize = file.type.startsWith('video/') ? 5 * 1024 * 1024 * 1024 : 50 * 1024 * 1024;
+        const maxSizeText = file.type.startsWith('video/') ? '5GB' : '50MB';
         if (file.size > maxSize) {
           toast({
             title: "エラー",
@@ -135,8 +135,8 @@ const ThumbnailUploader: React.FC<ThumbnailUploaderProps> = ({
         return;
       }
       
-      const maxSize = file.type.startsWith('video/') ? 100 * 1024 * 1024 : 10 * 1024 * 1024;
-      const maxSizeText = file.type.startsWith('video/') ? '100MB' : '10MB';
+      const maxSize = file.type.startsWith('video/') ? 5 * 1024 * 1024 * 1024 : 50 * 1024 * 1024;
+      const maxSizeText = file.type.startsWith('video/') ? '5GB' : '50MB';
       if (file.size > maxSize) {
         toast({
           title: "エラー",
@@ -294,11 +294,11 @@ const ThumbnailUploader: React.FC<ThumbnailUploaderProps> = ({
               <div className="flex flex-col items-center gap-2 mt-3">
                 <div className="flex items-center gap-2">
                   <Upload className="h-4 w-4 text-gray-400" />
-                  <span className="text-xs text-gray-500">画像: JPG, PNG, GIF, WebP (最大10MB)</span>
+                  <span className="text-xs text-gray-500">画像: JPG, PNG, GIF, WebP (最大50MB)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Video className="h-4 w-4 text-gray-400" />
-                  <span className="text-xs text-gray-500">動画: MP4, WebM, MOV, AVI (最大100MB)</span>
+                  <span className="text-xs text-gray-500">動画: MP4, WebM, MOV, AVI (最大5GB)</span>
                 </div>
               </div>
             </div>

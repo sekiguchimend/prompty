@@ -369,6 +369,17 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
   }
   
   try {
+    // ファイルサイズの事前チェック
+    const maxSize = file.type.startsWith('video/') ? 5 * 1024 * 1024 * 1024 : 50 * 1024 * 1024;
+    const maxSizeText = file.type.startsWith('video/') ? '5GB' : '50MB';
+    if (file.size > maxSize) {
+      toast({
+        title: "ファイルサイズエラー",
+        description: `ファイルサイズは${maxSizeText}以下にしてください（現在: ${Math.round(file.size / (1024 * 1024))}MB）`,
+        variant: "destructive",
+      });
+      return null;
+    }
     
     // 最新の認証セッションを取得
     const { data: { session: currentSession } } = await supabase.auth.getSession();
@@ -405,7 +416,19 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('サムネイルアップロードAPI応答エラー:', response.status, errorText);
-      throw new Error(`アップロードに失敗しました: ${response.status} ${errorText}`);
+      
+      // 413エラー（ファイルサイズ超過）の場合の特別処理
+      if (response.status === 413) {
+        const fileSize = Math.round(file.size / (1024 * 1024));
+        toast({
+          title: "ファイルサイズエラー",
+          description: `動画ファイルが大きすぎます（${fileSize}MB）。圧縮してから再度お試しください。`,
+          variant: "destructive",
+        });
+        throw new Error(`ファイルサイズが大きすぎます: ${fileSize}MB`);
+      }
+      
+      throw new Error(`サーバーエラー: ${response.status} - ${errorText}`);
     }
     
     const result = await response.json();

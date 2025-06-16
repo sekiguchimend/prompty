@@ -413,9 +413,19 @@ const PromptDetail = ({
   
   // コンテンツ処理（メモ化）
   const { basicContent, premiumContent } = useMemo(() => {
-    const basic = normalizeContentText(postData.content);
+    // Supabaseのデータをそのまま使用して改行・空白を保持
+    const basic = postData.content;
     const premium = postData.prompt_content || '';
-    return { basicContent: basic, premiumContent: premium };
+    
+    // contentが配列の場合のみnormalizeContentTextを使用
+    const processedBasic = Array.isArray(basic) 
+      ? normalizeContentText(basic) 
+      : (basic || '');
+      
+    return { 
+      basicContent: processedBasic, 
+      premiumContent: premium 
+    };
   }, [postData.content, postData.prompt_content]);
 
   // データ変換（メモ化）

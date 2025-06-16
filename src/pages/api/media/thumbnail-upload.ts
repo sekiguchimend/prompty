@@ -189,7 +189,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // フォームデータをパース
     const form = formidable({ 
       multiples: false,
-      keepExtensions: true
+      keepExtensions: true,
+      maxFileSize: 5 * 1024 * 1024 * 1024 // 5GB制限（標準アップロードの上限）
     });
     
     const formData = await new Promise<{ fields: formidable.Fields, files: formidable.Files }>((resolve, reject) => {
