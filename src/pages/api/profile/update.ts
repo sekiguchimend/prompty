@@ -6,17 +6,19 @@ import path from 'path';
 
 export const config = {
   api: {
-    bodyParser: false,
+    bodyParser: false, // formidableを使うため無効化
   },
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  console.log(`[${new Date().toISOString()}] プロフィール更新API呼び出し: ${req.method}`);
+  
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // FormDataをパース
+    // FormDataをパース（JSONデータもFormDataで送信するよう統一）
     const form = formidable({ 
       multiples: false,
       keepExtensions: true,
@@ -39,7 +41,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const location = Array.isArray(fields.location) ? fields.location[0] : fields.location;
     const removeAvatar = Array.isArray(fields.removeAvatar) ? fields.removeAvatar[0] : fields.removeAvatar;
 
+    console.log('FormData受信:', { 
+      userId, 
+      displayName, 
+      bio, 
+      location, 
+      removeAvatar,
+      hasAvatarFile: !!files.avatar 
+    });
+
     if (!userId) {
+      console.error('ユーザーIDが提供されていません');
       return res.status(400).json({ error: 'ユーザーIDが必要です' });
     }
 
@@ -61,10 +73,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           const fileBuffer = fs.readFileSync(avatarFile.filepath);
           const fileName = `avatar-${userId}-${Date.now()}.jpg`;
 
-          // Supabaseストレージにアップロード
+          // Supabaseストレージにアップロード（prompt-thumbnailsバケットを使用）
           const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('avatars')
-            .upload(fileName, fileBuffer, {
+            .from('prompt-thumbnails')
+            .upload(`avatars/${fileName}`, fileBuffer, {
               contentType: avatarFile.mimetype || 'image/jpeg',
               cacheControl: '3600',
               upsert: true
@@ -75,8 +87,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           } else {
             // 公開URLを取得
             const { data: { publicUrl } } = supabase.storage
-              .from('avatars')
-              .getPublicUrl(fileName);
+              .from('prompt-thumbnails')
+              .getPublicUrl(`avatars/${fileName}`);
             
             avatarUrl = publicUrl;
           }
@@ -100,16 +112,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       updateData.avatar_url = avatarUrl;
     }
 
+    console.log('データベース更新データ:', updateData);
+
     // データベースを更新
     const { error: updateError } = await supabase
-      .from('users')
+      .from('profiles')
       .update(updateData)
       .eq('id', userId);
 
     if (updateError) {
       console.error('プロフィール更新エラー:', updateError);
-      return res.status(500).json({ error: 'プロフィールの更新に失敗しました' });
+      return res.status(500).json({ 
+        error: 'プロフィールの更新に失敗しました',
+        details: updateError.message
+      });
     }
+
+    console.log('プロフィール更新成功:', userId);
 
     return res.status(200).json({ 
       success: true, 
@@ -119,9 +138,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error: any) {
     console.error('プロフィール更新API エラー:', error);
+    console.error('エラースタック:', error.stack);
     return res.status(500).json({ 
       error: '予期せぬエラーが発生しました', 
-      message: error.message 
+      message: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }

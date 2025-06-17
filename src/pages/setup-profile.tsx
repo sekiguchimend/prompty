@@ -108,18 +108,16 @@ export default function SetupProfile() {
         // プロフィール情報の初期保存
         try {
           console.log('🔄 プロフィール情報を初期保存中...');
-          const response = await fetch('/api/auth/save-profile', {
+          
+          const formData = new FormData();
+          formData.append('userId', userId);
+          if (username) {
+            formData.append('displayName', username);
+          }
+          
+          const response = await fetch('/api/profile/update', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              userId,
-              email,
-              username,
-              user_metadata: userMetadata,
-              provider
-            }),
+            body: formData,
           });
           
           if (!response.ok) {
@@ -159,17 +157,17 @@ export default function SetupProfile() {
 
       // プロフィールを更新
       try {
-        // APIエンドポイントを使用してプロフィールを更新
-        const response = await fetch('/api/users/save-profile', {
+        // 統一されたプロフィール更新APIを使用
+        const formData = new FormData();
+        formData.append('userId', userId);
+        formData.append('displayName', accountName.trim());
+        if (bio.trim()) {
+          formData.append('bio', bio.trim());
+        }
+
+        const response = await fetch('/api/profile/update', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            userId,
-            accountName: accountName.trim(),
-            bio: bio.trim() || null
-          }),
+          body: formData,
         });
         
         // レスポンスのステータスコードをチェック
