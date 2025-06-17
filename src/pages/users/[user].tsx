@@ -17,6 +17,7 @@ import { UnifiedAvatar } from '../../components/index';
 import { supabase } from '../../lib/supabaseClient';
 import FollowModal from '../../components/modals/FollowModal';
 import Head from 'next/head';
+import { generateSiteUrl, getDefaultOgImageUrl } from '../../utils/seo-helpers';
 
 // ユーザーデータの型定義
 interface UserData {
@@ -508,8 +509,8 @@ const UserPage: React.FC = () => {
   const generateSEOData = () => {
     const title = `${userData.display_name} | Prompty`;
     const description = userData.bio || `${userData.display_name}さんのプロフィールページです。${userPosts.length}件の投稿、${userData.followersCount}人のフォロワー、${userData.followingCount}人をフォロー中。`;
-    const url = `https://prompty-ai.com/users/${userData.id}`;
-    const imageUrl = userData.avatarUrl || 'https://prompty-ai.com/images/prompty_logo.jpg';
+    const url = generateSiteUrl(`/users/${userData.id}`);
+    const imageUrl = userData.avatarUrl || getDefaultOgImageUrl();
     
     return { title, description, url, imageUrl };
   };

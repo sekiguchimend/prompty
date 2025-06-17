@@ -8,6 +8,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { ChevronRight, Home } from 'lucide-react';
 import { DEFAULT_AVATAR_URL } from '../../components/index';
+import { generateSiteUrl, getDefaultOgImageUrl } from '../../utils/seo-helpers';
 
 const CategoryPage: React.FC = () => {
   const router = useRouter();
@@ -179,22 +180,22 @@ const CategoryPage: React.FC = () => {
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
-        <meta property="og:url" content={`https://prompty-ai.com/category/${slug}`} />
+        <meta property="og:url" content={generateSiteUrl(`/category/${slug}`)} />
         <meta property="og:title" content={`${categoryName}のAIプロンプト一覧 | Prompty`} />
         <meta property="og:description" content={categoryDescription || `${categoryName}に関するAIプロンプトの一覧ページです。`} />
-        <meta property="og:image" content="https://prompty-ai.com/images/prompty_logo.jpg" />
+        <meta property="og:image" content={getDefaultOgImageUrl()} />
         <meta property="og:site_name" content="Prompty" />
         
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:url" content={`https://prompty-ai.com/category/${slug}`} />
+        <meta name="twitter:url" content={generateSiteUrl(`/category/${slug}`)} />
         <meta name="twitter:title" content={`${categoryName}のAIプロンプト一覧 | Prompty`} />
         <meta name="twitter:description" content={categoryDescription || `${categoryName}に関するAIプロンプトの一覧ページです。`} />
-        <meta name="twitter:image" content="https://prompty-ai.com/images/prompty_logo.jpg" />
+        <meta name="twitter:image" content={getDefaultOgImageUrl()} />
         
         {/* Additional SEO */}
         <meta name="robots" content="index, follow" />
-        <link rel="canonical" href={`https://prompty-ai.com/category/${slug}`} />
+        <link rel="canonical" href={generateSiteUrl(`/category/${slug}`)} />
         
         {/* Structured Data */}
         <script
@@ -205,7 +206,7 @@ const CategoryPage: React.FC = () => {
               "@type": "CollectionPage",
               "name": `${categoryName}のAIプロンプト一覧`,
               "description": categoryDescription || `${categoryName}に関するAIプロンプトの一覧`,
-              "url": `https://prompty-ai.com/category/${slug}`,
+              "url": generateSiteUrl(`/category/${slug}`),
               "mainEntity": {
                 "@type": "ItemList",
                 "numberOfItems": prompts.length,
@@ -215,7 +216,7 @@ const CategoryPage: React.FC = () => {
                   "item": {
                     "@type": "CreativeWork",
                     "name": item.title,
-                    "url": `https://prompty-ai.com/prompts/${item.id}`,
+                    "url": generateSiteUrl(`/prompts/${item.id}`),
                     "author": {
                       "@type": "Person",
                       "name": item.user.name
@@ -230,19 +231,19 @@ const CategoryPage: React.FC = () => {
                     "@type": "ListItem",
                     "position": 1,
                     "name": "ホーム",
-                    "item": "https://prompty-ai.com"
+                    "item": generateSiteUrl('/')
                   },
                   {
                     "@type": "ListItem",
                     "position": 2,
                     "name": "カテゴリー",
-                    "item": "https://prompty-ai.com/category"
+                    "item": generateSiteUrl('/category')
                   },
                   {
                     "@type": "ListItem",
                     "position": 3,
                     "name": categoryName,
-                    "item": `https://prompty-ai.com/category/${slug}`
+                    "item": generateSiteUrl(`/category/${slug}`)
                   }
                 ]
               }

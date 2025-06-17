@@ -18,6 +18,7 @@ import Head from 'next/head';
 import { useAuth } from '../lib/auth-context';
 import { Badge } from '../components/ui/badge';
 import { UnifiedAvatar, DEFAULT_AVATAR_URL } from '../components/index';
+import { generateSiteUrl, getDefaultOgImageUrl } from '../utils/seo-helpers';
 
 // ページあたりの投稿数を定義
 const POSTS_PER_PAGE = 12;
@@ -662,22 +663,22 @@ const Following: React.FC = () => {
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://prompty-ai.com/following" />
+        <meta property="og:url" content={generateSiteUrl('/following')} />
         <meta property="og:title" content="フォロー中 | Prompty - フォローユーザーの最新AIプロンプト" />
         <meta property="og:description" content="フォローしているユーザーの最新AIプロンプトを表示します。ChatGPT、MidJourney、Stable Diffusionなど各種AIツールのプロンプトをタイムラインで確認できます。" />
-        <meta property="og:image" content="https://prompty-ai.com/images/prompty_logo.jpg" />
+        <meta property="og:image" content={getDefaultOgImageUrl()} />
         <meta property="og:site_name" content="Prompty" />
         
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:url" content="https://prompty-ai.com/following" />
+        <meta name="twitter:url" content={generateSiteUrl('/following')} />
         <meta name="twitter:title" content="フォロー中 | Prompty - フォローユーザーの最新AIプロンプト" />
         <meta name="twitter:description" content="フォローしているユーザーの最新AIプロンプトを表示します。" />
-        <meta name="twitter:image" content="https://prompty-ai.com/images/prompty_logo.jpg" />
+        <meta name="twitter:image" content={getDefaultOgImageUrl()} />
         
         {/* Additional SEO */}
         <meta name="robots" content="noindex, nofollow" />
-        <link rel="canonical" href="https://prompty-ai.com/following" />
+        <link rel="canonical" href={generateSiteUrl('/following')} />
         
         {/* Structured Data */}
         <script
@@ -688,11 +689,11 @@ const Following: React.FC = () => {
               "@type": "WebPage",
               "name": "フォロー中",
               "description": "フォローしているユーザーの最新AIプロンプトを表示します。",
-              "url": "https://prompty-ai.com/following",
+              "url": generateSiteUrl('/following'),
               "isPartOf": {
                 "@type": "WebSite",
                 "name": "Prompty",
-                "url": "https://prompty-ai.com"
+                "url": generateSiteUrl('/')
               }
             })
           }}

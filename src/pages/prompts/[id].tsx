@@ -55,6 +55,7 @@ interface ExtendedPostItem extends PostItem {
   stripe_price_id?: string;
   preview_lines?: number;
   mediaType?: 'image' | 'video';
+  ai_model?: string;
 }
 
 // サーバーサイドレンダリングの最適化
@@ -234,7 +235,8 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
         website: promptData.site_url || 'https://example.com'
     },
       site_url: promptData.site_url || '',
-      preview_lines: promptData.preview_lines || 0
+      preview_lines: promptData.preview_lines || 0,
+      ai_model: promptData.ai_model || ''
     };
   
   return {
@@ -513,26 +515,58 @@ prompt: |
     URL.revokeObjectURL(url);
   };
 
-  // SEO用のメタデータを生成
+  // SEO用のメタデータを生成（記事固有の詳細情報）
   const generateSEOData = () => {
-    const title = `${postData.title} | Prompty`;
-    const description = postData.description || `${postData.title}のAIプロンプトです。${isFree ? '無料' : `¥${postData.price}`}でご利用いただけます。`;
+    // より具体的で魅力的なタイトル生成
+    const title = `${postData.title} | ${postData.user.name}のAIプロンプト | Prompty`;
+    
+    // 詳細な説明文生成
+    let description = '';
+    if (postData.description) {
+      // 説明文がある場合は活用
+      description = `${postData.description.slice(0, 120)}...`;
+    } else {
+      // 説明文がない場合は自動生成
+      const priceText = isFree ? '無料' : `¥${postData.price?.toLocaleString()}`;
+      const categoryText = postData.ai_model ? `${postData.ai_model}対応` : 'AI';
+      const contentPreview = postData.prompt_content ? 
+        postData.prompt_content.replace(/\n/g, ' ').slice(0, 80) + '...' : '';
+      
+      description = `${categoryText}プロンプト「${postData.title}」を${priceText}でご利用いただけます。${contentPreview} 投稿者: ${postData.user.name}`;
+    }
+    
     const url = generateSiteUrl(`/prompts/${postData.id}`);
     
-    // 画像URLを絶対URLに変換
+    // 画像URLを絶対URLに変換（優先順位付き）
     let imageUrl = getDefaultOgImageUrl(); // デフォルト画像
+    
     if (postData.thumbnailUrl && !postData.thumbnailUrl.includes('default-thumbnail.svg')) {
       // カスタム画像がある場合
       if (postData.thumbnailUrl.startsWith('http')) {
         // 既に絶対URLの場合はそのまま使用
         imageUrl = postData.thumbnailUrl;
-      } else {
+      } else if (postData.thumbnailUrl.startsWith('/')) {
         // 相対パスの場合は絶対URLに変換
         imageUrl = generateSiteUrl(postData.thumbnailUrl);
+      } else {
+        // Supabase等の外部ストレージの場合
+        imageUrl = postData.thumbnailUrl;
       }
     }
     
-    return { title, description, url, imageUrl };
+    // キーワード生成（記事固有）
+    const keywords = [
+      'AIプロンプト',
+      postData.title,
+      postData.user.name,
+      postData.ai_model || 'AI',
+      isFree ? '無料プロンプト' : '有料プロンプト',
+      'プロンプトエンジニアリング',
+      'AI活用',
+      'Prompty'
+    ].filter(Boolean).join(',');
+    
+    return { title, description, url, imageUrl, keywords };
   };
 
   const seoData = generateSEOData();
@@ -543,7 +577,7 @@ prompt: |
       <Head>
         <title>{seoData.title}</title>
         <meta name="description" content={seoData.description} />
-        <meta name="keywords" content={`AIプロンプト,${postData.title},${postData.user.name},ChatGPT,MidJourney,Stable Diffusion`} />
+        <meta name="keywords" content={seoData.keywords} />
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="article" />
@@ -566,38 +600,60 @@ prompt: |
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href={seoData.url} />
         
-        {/* Structured Data */}
+        {/* Structured Data - 記事詳細情報付き */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
-              "@type": "Article",
+              "@type": ["Article", "Product"],
               "headline": postData.title,
+              "name": postData.title,
               "description": seoData.description,
-              "image": seoData.imageUrl,
+              "image": [seoData.imageUrl],
               "author": {
                 "@type": "Person",
-                "name": postData.user.name
+                "name": postData.user.name,
+                "url": generateSiteUrl(`/users/${postData.user.account_name || postData.user.name}`)
               },
               "publisher": {
                 "@type": "Organization",
                 "name": "Prompty",
                 "logo": {
                   "@type": "ImageObject",
-                  "url": "https://prompty-ai.com/images/logo.png"
+                  "url": generateSiteUrl("/images/prompty_logo.jpg")
                 }
               },
               "datePublished": postData.postedAt,
+              "dateModified": postData.postedAt,
               "mainEntityOfPage": {
                 "@type": "WebPage",
                 "@id": seoData.url
               },
+              "category": postData.ai_model || "AIプロンプト",
+              "keywords": seoData.keywords,
               "offers": isPremium ? {
                 "@type": "Offer",
                 "price": postData.price,
                 "priceCurrency": "JPY",
+                "availability": "https://schema.org/InStock",
+                "url": seoData.url,
+                "seller": {
+                  "@type": "Organization",
+                  "name": "Prompty"
+                }
+              } : {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "JPY",
                 "availability": "https://schema.org/InStock"
+              },
+              "aggregateRating": postData.likeCount > 0 ? {
+                "@type": "AggregateRating",
+                "ratingValue": "5",
+                "reviewCount": postData.likeCount,
+                "bestRating": "5",
+                "worstRating": "1"
               } : undefined
             })
           }}

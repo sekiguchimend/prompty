@@ -18,6 +18,7 @@ import ProfileHeader from '../components/profile/ProfileHeader';
 import ProfileTabs from '../components/profile/ProfileTabs';
 import ProfileTabContent from '../components/profile/ProfileTabContent';
 import Head from 'next/head';
+import { generateSiteUrl, getDefaultOgImageUrl } from '../utils/seo-helpers';
 
 const UserProfilePage: React.FC = () => {
   const router = useRouter();
@@ -446,19 +447,19 @@ const UserProfilePage: React.FC = () => {
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="profile" />
-        <meta property="og:url" content="https://prompty-ai.com/profile" />
+        <meta property="og:url" content={generateSiteUrl('/profile')} />
         <meta property="og:title" content={`${profileData?.display_name || 'ユーザー'}のプロフィール | Prompty`} />
         <meta property="og:description" content={profileData?.bio || `${profileData?.display_name || 'ユーザー'}のプロフィールページです。`} />
-        <meta property="og:image" content={profileData?.avatar_url || 'https://prompty-ai.com/images/prompty_logo.jpg'} />
+        <meta property="og:image" content={profileData?.avatar_url || getDefaultOgImageUrl()} />
         <meta property="og:site_name" content="Prompty" />
         <meta property="profile:username" content={profileData?.display_name || 'ユーザー'} />
         
         {/* Twitter */}
         <meta name="twitter:card" content="summary" />
-        <meta name="twitter:url" content="https://prompty-ai.com/profile" />
+        <meta name="twitter:url" content={generateSiteUrl('/profile')} />
         <meta name="twitter:title" content={`${profileData?.display_name || 'ユーザー'}のプロフィール | Prompty`} />
         <meta name="twitter:description" content={profileData?.bio || `${profileData?.display_name || 'ユーザー'}のプロフィールページです。`} />
-        <meta name="twitter:image" content={profileData?.avatar_url || 'https://prompty-ai.com/images/prompty_logo.jpg'} />
+        <meta name="twitter:image" content={profileData?.avatar_url || getDefaultOgImageUrl()} />
         
         {/* Additional SEO */}
         <meta name="robots" content="noindex, nofollow" />
@@ -473,7 +474,7 @@ const UserProfilePage: React.FC = () => {
               "name": profileData?.display_name || 'ユーザー',
               "description": profileData?.bio || '',
               "image": profileData?.avatar_url,
-              "url": "https://prompty-ai.com/profile",
+              "url": generateSiteUrl('/profile'),
               "worksFor": {
                 "@type": "Organization",
                 "name": "Prompty"

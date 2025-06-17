@@ -17,6 +17,7 @@ import {
 import { supabase } from '../lib/supabaseClient';
 import { Badge } from '../components/ui/badge';
 import Head from 'next/head';
+import { generateSiteUrl, getDefaultOgImageUrl } from '../utils/seo-helpers';
 
 // 検索オプションの型定義
 type SortOption = 'relevance' | 'title_asc' | 'title_desc' | 'latest' | 'oldest' | 'popular';
@@ -341,7 +342,7 @@ const Search = () => {
     const description = query 
       ? `「${query}」に関するAIプロンプトの検索結果です。${filteredResults.length}件のプロンプトが見つかりました。`
       : 'AIプロンプトを検索できます。ChatGPT、MidJourney、Stable Diffusionなど各種AIツールのプロンプトを見つけましょう。';
-    const url = query ? `https://prompty-ai.com/search?q=${encodeURIComponent(query)}` : 'https://prompty-ai.com/search';
+    const url = query ? generateSiteUrl(`/search?q=${encodeURIComponent(query)}`) : generateSiteUrl('/search');
     
     return { title, description, url };
   };
@@ -360,7 +361,7 @@ const Search = () => {
         <meta property="og:url" content={seoData.url} />
         <meta property="og:title" content={seoData.title} />
         <meta property="og:description" content={seoData.description} />
-        <meta property="og:image" content="https://prompty-ai.com/images/prompty_logo.jpg" />
+        <meta property="og:image" content={getDefaultOgImageUrl()} />
         <meta property="og:site_name" content="Prompty" />
         
         {/* Twitter */}
@@ -368,7 +369,7 @@ const Search = () => {
         <meta name="twitter:url" content={seoData.url} />
         <meta name="twitter:title" content={seoData.title} />
         <meta name="twitter:description" content={seoData.description} />
-        <meta name="twitter:image" content="https://prompty-ai.com/images/prompty_logo.jpg" />
+        <meta name="twitter:image" content={getDefaultOgImageUrl()} />
         
         {/* Additional SEO */}
         <meta name="robots" content="index, follow" />
@@ -393,7 +394,7 @@ const Search = () => {
                   "item": {
                     "@type": "CreativeWork",
                     "name": item.title,
-                    "url": `https://prompty-ai.com/prompts/${item.id}`,
+                    "url": generateSiteUrl(`/prompts/${item.id}`),
                     "author": {
                       "@type": "Person",
                       "name": item.user.name

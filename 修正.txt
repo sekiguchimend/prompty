@@ -186,6 +186,46 @@ Crawl-delay: 1
 
 これでプロンプト表示の一番上にあった線が削除され、より統一感のある表示になりました。
 
+# TypeScriptビルドエラー修正
+
+## 修正項目：
+- [x] ExtendedPostItemタイプのai_modelプロパティ設定エラー修正
+
+## 修正内容詳細：
+
+### ✅ 完了：TypeScriptビルドエラー修正
+
+**問題：** 
+- `src/pages/prompts/[id].tsx`でビルドエラーが発生
+- `Type error: Property 'ai_model' does not exist on type 'ExtendedPostItem'.`
+- ExtendedPostItem型にai_modelプロパティは定義されているが、postDataオブジェクトにai_modelが設定されていない
+
+**修正ファイル：**
+1. `src/pages/prompts/[id].tsx`
+
+**修正内容：**
+
+1. **postDataオブジェクトにai_model追加:**
+   - `postData`の構築部分に`ai_model: promptData.ai_model || ''`を追加
+   - データベースから取得したai_modelを正しくpostDataオブジェクトに設定
+
+**修正箇所：**
+```typescript
+const postData: ExtendedPostItem = {
+  // ... 既存のプロパティ
+  preview_lines: promptData.preview_lines || 0,
+  ai_model: promptData.ai_model || ''  // ← 追加
+};
+```
+
+**改善された動作:**
+- ✅ TypeScriptビルドエラーが解消
+- ✅ ai_modelプロパティが正しく設定される
+- ✅ プロンプト詳細ページでAIモデル情報が表示可能
+- ✅ データベースからのai_model取得処理が完全に動作
+
+これでビルドエラーが解消され、AIモデル情報が正しく表示されるようになりました。
+
 # プロンプトコピー機能UX改善
 
 ## 修正項目：
@@ -592,6 +632,144 @@ startTransition(() => {
 - より滑らかなユーザー体験を提供
 
 この修正により、Suspenseハイドレーションエラーが完全に解消されました。
+
+# 記事ページのメタデータ最適化
+
+## 修正項目：
+- [x] 記事のページで記事ごとにしっかりその記事のメタイメージやディスクリプション、タイトルなど設定
+
+## 修正内容詳細：
+
+### ✅ 完了：記事詳細ページの動的SEOメタデータ強化
+
+**修正ファイル：**
+`src/pages/prompts/[id].tsx`
+
+**修正内容：**
+
+1. **ExtendedPostItem型にai_modelプロパティ追加:**
+   ```typescript
+   interface ExtendedPostItem extends PostItem {
+     // ... 既存プロパティ
+     ai_model?: string;
+   }
+   ```
+
+2. **SEOデータ生成機能の大幅強化:**
+   - **タイトル**: `${記事名} | ${作者名}のAIプロンプト | Prompty`
+   - **説明文**: 
+     - 記事説明があれば活用（120文字制限）
+     - なければ自動生成（価格、AI対応モデル、内容プレビュー含む）
+   - **キーワード**: 記事固有の詳細キーワード配列を自動生成
+   - **OG画像**: サムネイル画像を優先使用、外部ストレージ対応
+
+3. **構造化データスキーマの強化:**
+   - `@type: ["Article", "Product"]` で記事と商品の両方に対応
+   - 作者プロフィールリンクを追加
+   - カテゴリ情報（AIモデル）を含む
+   - 価格情報（無料/有料両対応）
+   - 評価情報（いいね数ベース）を追加
+   - 画像配列形式で対応
+   - 投稿・更新日時を含む
+
+4. **メタタグの詳細設定:**
+   - 記事固有のキーワードを動的生成
+   - OGタグで詳細な記事情報を提供
+   - Twitterカード対応
+   - 正規化URLの設定
+
+**生成される詳細メタデータ例:**
+```html
+<title>効果的なChatGPTプロンプト | 田中太郎のAIプロンプト | Prompty</title>
+<meta name="description" content="ChatGPTでより良い回答を得るためのプロンプトテクニック集。実用的な例文と応用方法を解説..." />
+<meta name="keywords" content="AIプロンプト,効果的なChatGPTプロンプト,田中太郎,claude-4-20250120,無料プロンプト,プロンプトエンジニアリング,AI活用,Prompty" />
+```
+
+**改善されたSEO効果:**
+- ✅ 記事ごとの固有性を検索エンジンが認識
+- ✅ SNS共有時の表示がより魅力的
+- ✅ 構造化データによるリッチスニペット表示
+- ✅ 作者情報とプロフィールリンクの明確化
+- ✅ 商品情報（価格・評価）の構造化
+- ✅ 検索結果での詳細情報表示
+
+**その他のページのSEO状況確認済み:**
+- カテゴリページ（src/pages/category/[slug].tsx）: 既存のSEO設定を確認済み
+- 検索ページ（src/pages/search.tsx）: 検索結果特有のSEO設定を確認済み
+- ユーザープロフィールページ（src/pages/users/[user].tsx）: プロフィール特有のSEO設定を確認済み
+
+この修正により、各記事ページが独自の詳細なメタデータを持ち、検索エンジンでの表示とSNS共有での視認性が大幅に向上しました。
+
+# ドメイン設定の統一化とURL環境変数対応
+
+## 修正項目：
+- [x] ドメイン設定の確認と統一化（https://prompty-ai.com/）
+- [x] ハードコーディングされたURLの環境変数対応
+
+## 修正内容詳細：
+
+### ✅ 完了：全ページのURL設定統一化
+
+**対象ドメイン：** https://prompty-ai.com/
+
+**修正ファイル：**
+1. `src/pages/profile.tsx`
+2. `src/pages/search.tsx`
+3. `src/pages/users/[user].tsx`
+4. `src/pages/following.tsx`
+5. `src/pages/category/[slug].tsx`
+
+**修正内容：**
+
+1. **SEOヘルパー関数の活用:**
+   - `generateSiteUrl()`: 動的URL生成
+   - `getDefaultOgImageUrl()`: デフォルトOG画像URL生成
+   - 環境変数 `NEXT_PUBLIC_BASE_DOMAIN` の使用
+
+2. **各ページの統一化修正:**
+
+   **プロフィールページ（profile.tsx）:**
+   - OGタグURL: `generateSiteUrl('/profile')`
+   - 画像URL: `getDefaultOgImageUrl()`
+   - 構造化データURL: 環境変数対応
+
+   **検索ページ（search.tsx）:**
+   - SEO生成関数: `generateSiteUrl('/search')`, `generateSiteUrl('/search?q=...')`
+   - OG画像: `getDefaultOgImageUrl()`
+   - 構造化データ: プロンプトURLも動的生成
+
+   **ユーザープロフィールページ（users/[user].tsx）:**
+   - ユーザーURL: `generateSiteUrl('/users/${userId}')`
+   - 画像URL: `getDefaultOgImageUrl()`
+
+   **フォローページ（following.tsx）:**
+   - フォローURL: `generateSiteUrl('/following')`
+   - 全ての構造化データで環境変数対応
+
+   **カテゴリページ（category/[slug].tsx）:**
+   - カテゴリURL: `generateSiteUrl('/category/${slug}')`
+   - ブレッドクラム構造化データ: 全て動的生成
+
+**環境変数設定:**
+```javascript
+// src/utils/seo-helpers.ts
+const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN || 'prompty-ai.com';
+const PROTOCOL = process.env.NEXT_PUBLIC_PROTOCOL || 'https';
+```
+
+**期待される効果:**
+- ✅ **開発環境での柔軟性**: 環境に応じたドメイン自動切り替え
+- ✅ **デプロイメント対応**: 本番・ステージング・開発環境での自動適用
+- ✅ **SEO一貫性**: 全ページでの統一されたURL構造
+- ✅ **メンテナンス性向上**: 一箇所での設定変更で全体適用
+
+**確認済み設定:**
+- 静的サイトマップ（public/sitemap.xml）: 正しくhttps://prompty-ai.com/設定済み
+- robots.txt: サイトマップURL設定済み
+- 動的サイトマップAPI: 環境変数対応済み
+- next.config.js: ドメイン設定済み
+
+この修正により、全てのページが環境変数ベースの動的URL生成を使用し、開発・ステージング・本番環境での一貫したSEO対応が実現されました。
 
 
 
