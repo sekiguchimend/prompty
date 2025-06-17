@@ -1,14 +1,24 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
 Allow: /
+
+# 重要なページを優先的にクロール
+Allow: /search
+Allow: /popular
+Allow: /featured
+Allow: /category/
+Allow: /prompts/
+Allow: /users/
+
+# プライベートページの除外
+Disallow: /profile
+Disallow: /following
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /debug*
+Disallow: /api/
+
+# サイトマップの場所を指定
+Sitemap: https://prompty-ai.com/sitemap.xml
+
+# クローラーの負荷制限
+Crawl-delay: 1

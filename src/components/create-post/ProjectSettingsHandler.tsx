@@ -31,8 +31,8 @@ export const ProjectSettingsHandler: React.FC<ProjectSettingsHandlerProps> = ({
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [projectSettings, setProjectSettings] = useState<ProjectFormValues>(
     defaultSettings || {
-      projectTitle: "新しいプロンプトプロジェクト",
-      aiModel: "claude-4-sonnet",
+      projectTitle: "",
+      aiModel: "",
       pricingType: "free",
       price: 0,
       projectDescription: "",
@@ -52,18 +52,16 @@ export const ProjectSettingsHandler: React.FC<ProjectSettingsHandlerProps> = ({
         .order('name');
       
       if (error) {
-        console.error('カテゴリ取得エラー:', error);
         toast({
           title: "エラー",
           description: "カテゴリの取得に失敗しました",
           variant: "destructive",
         });
       } else if (data) {
-        console.log('カテゴリ取得成功:', data.length);
         setCategories(data);
       }
     } catch (error) {
-      console.error('カテゴリ取得例外:', error);
+      // Error handling without console logging
     } finally {
       setIsLoadingCategories(false);
     }
@@ -88,11 +86,10 @@ export const ProjectSettingsHandler: React.FC<ProjectSettingsHandlerProps> = ({
     
     // サムネイル画像があれば処理
     if (data.thumbnail && data.thumbnail.startsWith('data:')) {
-      console.log('サムネイル画像を検出、Fileオブジェクトに変換します');
       // サムネイル処理を実行
       handleThumbnailChange(data.thumbnail);
     } else if (data.thumbnail) {
-      console.log('サムネイル画像はすでに処理済みかBase64形式ではありません');
+      // サムネイル画像はすでに処理済みかBase64形式ではありません
     } else {
       // サムネイルがない場合は明示的にnullをセット
       onThumbnailFileChange(null);
@@ -103,12 +100,9 @@ export const ProjectSettingsHandler: React.FC<ProjectSettingsHandlerProps> = ({
   const handleThumbnailChange = (thumbnailDataUrl: string) => {
     try {
       if (!thumbnailDataUrl || !thumbnailDataUrl.startsWith('data:')) {
-        console.warn('無効なサムネイルデータ');
         onThumbnailFileChange(null);
         return;
       }
-      
-      console.log('サムネイルデータ処理開始');
       
       // ファイル名を生成（タイムスタンプを含める）
       const timestamp = Date.now();
@@ -117,18 +111,10 @@ export const ProjectSettingsHandler: React.FC<ProjectSettingsHandlerProps> = ({
       // データURLをFileオブジェクトに変換
       const file = dataURLtoFile(thumbnailDataUrl, filename);
       
-      console.log('サムネイルファイル作成完了:', {
-        name: file.name,
-        size: file.size,
-        type: file.type
-      });
-      
       // 親コンポーネントに通知
       onThumbnailFileChange(file);
-      console.log('thumbnailFileを更新しました');
       
     } catch (error) {
-      console.error('サムネイル処理エラー:', error);
       onThumbnailFileChange(null);
     }
   };

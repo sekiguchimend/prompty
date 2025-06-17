@@ -9,6 +9,7 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
 import { ChevronLeft, Save, Loader2 } from 'lucide-react';
+import ThumbnailUploader from '../../components/create-post/ThumbnailUploader';
 
 // プロンプトデータの型定義
 interface PromptData {
@@ -82,6 +83,9 @@ const EditPromptPage: React.FC<EditPromptPageProps> = ({ promptData }) => {
     promptContent: promptData.prompt_content || '',
     price: promptData.price || 0,
     isFree: promptData.is_free,
+    aiModel: promptData.ai_model || '',
+    thumbnailUrl: promptData.thumbnail_url || null,
+    thumbnailFile: null as File | null,
   });
 
   // 認証チェック
@@ -115,6 +119,49 @@ const EditPromptPage: React.FC<EditPromptPageProps> = ({ promptData }) => {
     }));
   };
 
+  // サムネイル変更処理
+  const handleThumbnailChange = (file: File) => {
+    setFormData(prev => ({
+      ...prev,
+      thumbnailFile: file,
+      thumbnailUrl: URL.createObjectURL(file)
+    }));
+  };
+
+  // サムネイル削除処理
+  const handleThumbnailClear = () => {
+    setFormData(prev => ({
+      ...prev,
+      thumbnailFile: null,
+      thumbnailUrl: null
+    }));
+  };
+
+  // サムネイルアップロード処理
+  const uploadThumbnail = async (file: File): Promise<string | null> => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('bucketName', 'prompt-thumbnails');
+
+      const response = await fetch('/api/media/thumbnail-upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`サムネイルアップロードに失敗しました: ${errorText}`);
+      }
+
+      const result = await response.json();
+      return result.url;
+    } catch (error) {
+      console.error('サムネイルアップロードエラー:', error);
+      throw error;
+    }
+  };
+
   // プロンプト更新処理
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,6 +178,12 @@ const EditPromptPage: React.FC<EditPromptPageProps> = ({ promptData }) => {
     try {
       setIsSubmitting(true);
 
+      // サムネイルがアップロードされている場合の処理
+      let thumbnailUrl = formData.thumbnailUrl;
+      if (formData.thumbnailFile) {
+        thumbnailUrl = await uploadThumbnail(formData.thumbnailFile);
+      }
+
       const { error } = await supabase
         .from('prompts')
         .update({
@@ -140,6 +193,8 @@ const EditPromptPage: React.FC<EditPromptPageProps> = ({ promptData }) => {
           prompt_content: formData.promptContent,
           price: formData.isFree ? 0 : formData.price,
           is_free: formData.isFree,
+          ai_model: formData.aiModel || null,
+          thumbnail_url: thumbnailUrl,
           updated_at: new Date().toISOString()
         })
         .eq('id', promptData.id);
@@ -189,6 +244,19 @@ const EditPromptPage: React.FC<EditPromptPageProps> = ({ promptData }) => {
         {/* 編集フォーム */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* サムネイル */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                サムネイル
+              </label>
+              <ThumbnailUploader
+                thumbnailPreview={formData.thumbnailUrl}
+                onThumbnailChange={handleThumbnailChange}
+                onThumbnailClear={handleThumbnailClear}
+                mediaType={formData.thumbnailUrl?.includes('.mp4') || formData.thumbnailFile?.type.startsWith('video/') ? 'video' : 'image'}
+              />
+            </div>
+
             {/* タイトル */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -239,6 +307,23 @@ const EditPromptPage: React.FC<EditPromptPageProps> = ({ promptData }) => {
                 rows={10}
                 required
               />
+            </div>
+
+            {/* AIモデル */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                AIモデル
+              </label>
+              <Input
+                value={formData.aiModel}
+                onChange={(e) => handleInputChange('aiModel', e.target.value)}
+                placeholder="claude-4-20250120, claude-3-5-sonnet-20241022, gpt-4o など"
+              />
+              <div className="text-sm text-gray-500 mt-2 space-y-1">
+                <p>• 推奨: claude-4-20250120 (最新・高性能)</p>
+                <p>• 高速: claude-3-5-haiku-20241022 (経済的)</p>
+                <p>• その他: gpt-4o, gemini-1.5-pro など</p>
+              </div>
             </div>
 
             {/* 価格設定 */}

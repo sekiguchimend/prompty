@@ -9,7 +9,7 @@ export const urlSchema = z.string().url('Invalid URL format').max(2048);
 // File upload validation
 export const fileUploadSchema = z.object({
   file: z.object({
-    size: z.number().max(5 * 1024 * 1024, 'File size must be less than 5MB'),
+    size: z.number().max(40 * 1024 * 1024 * 1024, 'File size must be less than 40GB'),
     type: z.string().refine(
       (type) => ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(type),
       'Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed'
@@ -98,10 +98,64 @@ export const sanitizeHtml = (input: string): string => {
 };
 
 export const sanitizeFilename = (filename: string): string => {
+  // セキュリティ上危険な文字のみを除去し、日本語文字や長文は保持
   return filename
-    .replace(/[^a-zA-Z0-9.-]/g, '_') // Replace special chars with underscore
-    .replace(/\.{2,}/g, '.') // Replace multiple dots with single dot
-    .substring(0, 255); // Limit length
+    .replace(/[<>:"|?*]/g, '') // Windows で無効な文字を除去
+    .replace(/\.\./g, '.') // パストラバーサル攻撃防止（.. を . に変換）
+    .replace(/[\\\/]/g, '_') // パス区切り文字をアンダースコアに変換
+    .replace(/\x00/g, '') // NULL文字を除去
+    .replace(/^\.|\.$/g, '') // 先頭・末尾のドットを除去
+    .replace(/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i, '_$1_') // Windows予約語の処理
+    .trim() // 前後の空白を除去
+    .substring(0, 250); // 長さ制限（拡張子用に5文字余裕を持たせる）
+};
+
+// MIME タイプから拡張子を取得する関数
+export const getExtensionFromMimeType = (mimeType: string): string => {
+  const mimeToExt: { [key: string]: string } = {
+    'image/jpeg': '.jpg',
+    'image/jpg': '.jpg',
+    'image/png': '.png',
+    'image/gif': '.gif',
+    'image/webp': '.webp',
+    'image/bmp': '.bmp',
+    'image/svg+xml': '.svg',
+    'video/mp4': '.mp4',
+    'video/webm': '.webm',
+    'video/ogg': '.ogg',
+    'video/avi': '.avi',
+    'video/mov': '.mov',
+    'video/wmv': '.wmv'
+  };
+  
+  return mimeToExt[mimeType] || '';
+};
+
+// ファイル名に拡張子がない場合、MIMEタイプから推測して追加する関数
+export const ensureFileExtension = (filename: string, mimeType: string): string => {
+  const sanitized = sanitizeFilename(filename);
+  
+  // 既に拡張子がある場合はそのまま返す
+  if (/\.[a-zA-Z0-9]+$/.test(sanitized)) {
+    return sanitized;
+  }
+  
+  // MIMEタイプから拡張子を取得
+  const extension = getExtensionFromMimeType(mimeType);
+  
+  // 拡張子が見つかった場合は追加、見つからない場合はデフォルトの拡張子
+  if (extension) {
+    return sanitized + extension;
+  }
+  
+  // 画像の場合はデフォルトで.jpg、その他は.bin
+  if (mimeType.startsWith('image/')) {
+    return sanitized + '.jpg';
+  } else if (mimeType.startsWith('video/')) {
+    return sanitized + '.mp4';
+  } else {
+    return sanitized + '.bin';
+  }
 };
 
 // Rate limiting validation

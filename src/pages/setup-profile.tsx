@@ -30,7 +30,6 @@ export default function SetupProfile() {
           const hashFragment = window.location.hash;
           if (hashFragment) {
             // 認証コールバックからハッシュフラグメントがある場合、セッションを処理
-            console.log('🔄 認証コールバックからのハッシュフラグメントを処理中...');
             const { data, error } = await supabase.auth.getSession();
             
             if (error) {
@@ -63,6 +62,7 @@ export default function SetupProfile() {
 
         // プロバイダー別の名前取得ロジック
         let username;
+        let isEmailProvider = false;
         
         switch (provider) {
           case 'google':
@@ -92,22 +92,34 @@ export default function SetupProfile() {
                       userMetadata.email?.split('@')[0];
             break;
             
+          case 'email':
+            // メールアドレス認証の場合は名前を空にして必須入力にする
+            username = '';
+            isEmailProvider = true;
+            break;
+            
           default:
-            username = userMetadata.name || 
-                      userMetadata.full_name || 
-                      userMetadata.preferred_username || 
-                      userMetadata.username || 
-                      userMetadata.user_name;
+            // その他のプロバイダー（メールアドレス認証含む）
+            if (!userMetadata.name && !userMetadata.full_name && !userMetadata.preferred_username) {
+              // 認証プロバイダーからの名前情報がない場合はメールアドレス認証と判定
+              username = '';
+              isEmailProvider = true;
+            } else {
+              username = userMetadata.name || 
+                        userMetadata.full_name || 
+                        userMetadata.preferred_username || 
+                        userMetadata.username || 
+                        userMetadata.user_name;
+            }
         }
         
-        // ユーザー名が取得できなかった場合はメールアドレスの @ 前を使用
-        if (!username && email) {
+        // 外部認証プロバイダーでユーザー名が取得できなかった場合のみメールアドレスの @ 前を使用
+        if (!username && email && !isEmailProvider) {
           username = email.split('@')[0];
         }
 
         // プロフィール情報の初期保存
         try {
-          console.log('🔄 プロフィール情報を初期保存中...');
           
           const formData = new FormData();
           formData.append('userId', userId);
@@ -121,20 +133,25 @@ export default function SetupProfile() {
           });
           
           if (!response.ok) {
-            console.error('🔴 プロフィール初期保存エラー:', await response.json());
           } else {
-            console.log('🟢 プロフィール情報が初期保存されました');
           }
         } catch (profileError) {
-          console.error('🔴 プロフィール初期保存中にエラーが発生:', profileError);
         }
 
         setAccountName(username || '');
         setInitialUsername(username || '');
+        
+        // メールアドレス認証かどうかの状態を保存
+        if (isEmailProvider) {
+          // メールアドレス認証の場合は必須入力を促すため、状態を保存
+          window.localStorage.setItem('isEmailProvider', 'true');
+        } else {
+          window.localStorage.removeItem('isEmailProvider');
+        }
+        
         setIsLoading(false);
 
       } catch (err) {
-        console.error('プロフィール読み込みエラー:', err);
         setError(err instanceof Error ? err.message : '予期せぬエラーが発生しました');
         setIsLoading(false);
       }
@@ -186,18 +203,15 @@ export default function SetupProfile() {
           .eq('id', userId);
           
         if (error) {
-          console.warn('Supabaseプロフィール更新の警告:', error);
           // APIでの更新が成功した場合はSupabaseでのエラーは無視する
         }
       } catch (apiError) {
-        console.error('API経由のプロフィール更新エラー:', apiError);
         throw apiError;
       }
 
       // 設定が完了したらホームに遷移
       router.push('/');
     } catch (err) {
-      console.error('プロフィール設定エラー:', err);
       // エラーオブジェクトの処理を改善
       if (err instanceof Error) {
         setError(err.message);
@@ -214,8 +228,8 @@ export default function SetupProfile() {
   // ローディング中
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-prompty-background">
-        <div className="w-full max-w-md p-8 text-center">
+      <div className="min-h-screen bg-prompty-background p-4 pt-8">
+        <div className="w-full max-w-md mx-auto p-8 text-center">
           <div className="rounded-md bg-gray-50 p-6 shadow-sm">
             <h2 className="text-lg font-medium text-gray-900">読み込み中...</h2>
             <div className="mt-4 flex justify-center">
@@ -228,9 +242,9 @@ export default function SetupProfile() {
   }
 
   return (
-    <div className="flex min-h-screen bg-prompty-background items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
+    <div className="min-h-screen bg-prompty-background p-4 pt-8">
+      <div className="w-full max-w-md mx-auto">
+        <div className="mb-4 text-center">
           <Link href="/">
           <Image 
                     src="https://qrxrulntwojimhhhnwqk.supabase.co/storage/v1/object/public/prompt-thumbnails/prompty_logo(1).png" 
@@ -271,7 +285,11 @@ export default function SetupProfile() {
                 required
                 className="border rounded-md px-4 py-2 w-full bg-gray-50"
               />
-              <p className="text-xs text-gray-500 mt-1">他のユーザーに表示される名前です</p>
+              {typeof window !== 'undefined' && window.localStorage.getItem('isEmailProvider') === 'true' ? (
+                <p className="text-xs text-orange-600 mt-1">メールアドレスでの登録のため、表示名の入力が必要です</p>
+              ) : (
+                <p className="text-xs text-gray-500 mt-1">他のユーザーに表示される名前です</p>
+              )}
             </div>
             
             <div className="mb-8">
@@ -288,17 +306,23 @@ export default function SetupProfile() {
             </div>
             
             <div className="flex justify-between items-center">
-              <button
-                type="button"
-                onClick={() => {
-                  if (window.confirm('ユーザー名を設定せずに続けますか？後からプロフィール設定で変更できます。')) {
-                    router.push('/');
-                  }
-                }}
-                className="text-gray-600 hover:text-gray-800"
-              >
-                スキップして続ける
-              </button>
+              {typeof window !== 'undefined' && window.localStorage.getItem('isEmailProvider') === 'true' ? (
+                <div className="text-xs text-gray-500">
+                  メールアドレス認証のため名前の入力は必須です
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm('ユーザー名を設定せずに続けますか？後からプロフィール設定で変更できます。')) {
+                      router.push('/');
+                    }
+                  }}
+                  className="text-gray-600 hover:text-gray-800"
+                >
+                  スキップして続ける
+                </button>
+              )}
               
               <button
                 type="submit"

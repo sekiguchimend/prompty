@@ -43,22 +43,15 @@ const checkSupabaseConfiguration = () => {
     return;
   }
 
-  console.log('Supabase設定チェック開始...');
   
   // 環境変数をチェック
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   
   // 設定情報を表示（キーは部分的に隠す）
-  console.log('Supabase設定:', {
-    url: supabaseUrl || '未設定',
-    anonKeySet: supabaseAnonKey ? '設定済み' : '未設定',
-    anonKeyLength: supabaseAnonKey?.length || 0
-  });
   
   // supabaseインスタンスの状態確認
   if (!supabase) {
-    console.error('Supabaseクライアントが初期化されていません');
     return;
   }
   
@@ -69,14 +62,11 @@ const checkSupabaseConfiguration = () => {
       const { data, error } = await supabase.storage.listBuckets();
       
       if (error) {
-        console.error('ストレージアクセスエラー:', error);
       } else {
-        console.log('利用可能なバケット一覧:', data?.map(b => b.name) || []);
         
         // prompt-thumbnailsバケットが存在するか確認
         const thumbnailBucket = data?.find(b => b.name === 'prompt-thumbnails');
         if (thumbnailBucket) {
-          console.log('サムネイル用バケットが存在します:', thumbnailBucket);
           
           // バケットのアクセス権をテスト
           try {
@@ -84,16 +74,12 @@ const checkSupabaseConfiguration = () => {
               .from('prompt-thumbnails')
               .list();
             
-            console.log('バケット内のファイル一覧取得成功:', files?.length || 0);
           } catch (e) {
-            console.error('バケットアクセスエラー:', e);
           }
         } else {
-          console.warn('サムネイル用バケットが存在しません - 自動作成が必要です');
         }
       }
     } catch (e) {
-      console.error('ストレージテストエラー:', e);
     }
   };
   
@@ -112,7 +98,7 @@ const CreatePost = () => {
   const [helpDialogOpen, setHelpDialogOpen] = useState(false);
   const [projectSettings, setProjectSettings] = useState<ProjectFormValues>({
     projectTitle: "",
-    aiModel: "claude-4-sonnet",
+    aiModel: "",
     customAiModel: "",
     pricingType: "free",
     price: 0,
@@ -151,18 +137,15 @@ const CreatePost = () => {
         .order('name');
       
       if (error) {
-        console.error('カテゴリ取得エラー:', error);
         toast({
           title: "エラー",
           description: "カテゴリの取得に失敗しました",
           variant: "destructive",
         });
       } else if (data) {
-        console.log('カテゴリ取得成功:', data.length);
         setCategories(data);
       }
     } catch (error) {
-      console.error('カテゴリ取得例外:', error);
     } finally {
       setIsLoadingCategories(false);
     }
@@ -246,7 +229,6 @@ const CreatePost = () => {
 
   // Fileオブジェクトを直接受け取る関数（ThumbnailUploaderから呼ばれる）
   const handleThumbnailFileChange = (file: File | null) => {
-    console.log('🖼️ 直接ファイル処理:', file ? { name: file.name, size: file.size, type: file.type } : 'ファイルなし');
     
     setThumbnailFile(file);
     
@@ -254,7 +236,6 @@ const CreatePost = () => {
       // メディアタイプを設定
       const isVideo = file.type.startsWith('video/');
       setUploadedMediaType(isVideo ? 'video' : 'image');
-      console.log('📁 メディアタイプ設定:', isVideo ? 'video' : 'image');
       
       // プレビュー用にdata URLを生成（projectSettingsに保存）
       const reader = new FileReader();
@@ -370,8 +351,8 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
   
   try {
     // ファイルサイズの事前チェック
-    const maxSize = file.type.startsWith('video/') ? 5 * 1024 * 1024 * 1024 : 50 * 1024 * 1024;
-    const maxSizeText = file.type.startsWith('video/') ? '5GB' : '50MB';
+    const maxSize = 40 * 1024 * 1024 * 1024; // 40GB for all files
+    const maxSizeText = '40GB';
     if (file.size > maxSize) {
       toast({
         title: "ファイルサイズエラー",
@@ -391,7 +372,6 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
       const tokenLength = authToken.length;
      
     } else {
-      console.warn('認証トークンがありません - 匿名アップロードを試みます');
     }
 
     // FormDataを作成
@@ -415,7 +395,6 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('サムネイルアップロードAPI応答エラー:', response.status, errorText);
       
       // 413エラー（ファイルサイズ超過）の場合の特別処理
       if (response.status === 413) {
@@ -434,16 +413,13 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
     const result = await response.json();
     
     if (!result.publicUrl) {
-      console.error('公開URL取得エラー:', result);
       throw new Error('公開URLの取得に失敗しました');
     }
     
     // メディアタイプ情報を保存
     if (result.mediaType) {
       setUploadedMediaType(result.mediaType);
-      console.log('📁 アップロードされたメディアタイプ:', result.mediaType);
     } else {
-      console.log('⚠️ アップロードAPIからmedia_typeが返されませんでした');
     }
     
     
@@ -601,7 +577,6 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
       
       return result;
     } catch (error) {
-      console.error('投稿エラー:', error);
       throw error;
     }
   };
@@ -721,13 +696,7 @@ const submitProject = async () => {
     // サムネイル画像のアップロード
     let thumbnailUrl = null;
     
-    // サムネイル処理のデバッグ情報
-    console.log('🖼️ サムネイル処理開始:', {
-      thumbnailFile: !!thumbnailFile,
-      projectSettingsThumbnail: !!projectSettings.thumbnail,
-      isDataUrl: projectSettings.thumbnail?.startsWith('data:'),
-      thumbnailValue: projectSettings.thumbnail?.substring(0, 50) + '...'
-    });
+    // サムネイル処理開始
     
     // サムネイル画像があれば処理
     if (thumbnailFile || (projectSettings.thumbnail && projectSettings.thumbnail.startsWith('data:'))) {
@@ -834,14 +803,8 @@ const submitProject = async () => {
           }
         }
       } else {
-        console.log('⚠️ 画像ファイルが見つかりません');
       }
     } else {
-      console.log('⚠️ サムネイル処理をスキップ - 条件に合致しません:', {
-        thumbnailFile: !!thumbnailFile,
-        hasThumbnail: !!projectSettings.thumbnail,
-        isDataUrl: projectSettings.thumbnail?.startsWith('data:')
-      });
     }
 
     // 投稿直前に認証状態を再取得
@@ -883,16 +846,10 @@ const submitProject = async () => {
       const isVideoFromUrl = videoExtensions.some(ext => thumbnailUrl.toLowerCase().includes(ext));
       if (isVideoFromUrl) {
         finalMediaType = 'video';
-        console.log('🔄 URLからメディアタイプを推定: video');
       }
     }
     
-    console.log('📝 投稿データのメディア情報:', {
-      uploadedMediaType,
-      finalMediaType,
-      thumbnailUrl,
-      hasThumbnailFile: !!thumbnailFile
-    });
+    // プロジェクト設定のデバッグ情報を追加
     
     // プロンプトプロジェクトのメインデータを保存
     const requestBody = {
@@ -940,13 +897,6 @@ const submitProject = async () => {
     }
 
     
-    
-    console.log('📤 投稿データ送信:', {
-      title: requestBody.title,
-      prompt_title: requestBody.prompt_title,
-      media_type: requestBody.media_type,
-      author_id: requestBody.author_id
-    });
 
     const mainPromptResponse = await fetch('/api/prompts', {
       method: 'POST',
@@ -954,26 +904,17 @@ const submitProject = async () => {
       body: JSON.stringify(requestBody),
     });
     
-    console.log('📨 API応答ステータス:', mainPromptResponse.status);
-    
     const responseText = await mainPromptResponse.text();
-    console.log('📨 API応答内容:', responseText);
     
     let responseData;
     try {
       responseData = JSON.parse(responseText);
     } catch (parseError) {
-      console.error('❌ JSON解析エラー:', parseError);
       throw new Error(`サーバーからの応答の解析に失敗しました: ${responseText}`);
     }
     
     if (!mainPromptResponse.ok || !responseData.success) {
       const errorMessage = responseData.message || responseData.error || 'プロンプト保存中にエラーが発生しました';
-      console.error('❌ API投稿エラー:', {
-        status: mainPromptResponse.status,
-        error: errorMessage,
-        response: responseData
-      });
       throw new Error(errorMessage);
     }
     

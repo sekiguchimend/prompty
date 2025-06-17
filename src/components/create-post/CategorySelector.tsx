@@ -46,23 +46,6 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   
-  // コンポーネントマウント時のカテゴリー確認
-  useEffect(() => {
-    if (categories && categories.length > 0) {
-      console.log('利用可能なカテゴリー:', categories.map(c => `${c.name}(${c.id})`));
-      
-      // 「生成AI」カテゴリーの存在確認
-      const genAICategory = categories.find(cat => 
-        cat.name === '生成AI' || cat.slug === 'generative-ai'
-      );
-      
-      if (genAICategory) {
-        console.log('「生成AI」カテゴリーが見つかりました:', genAICategory);
-      } else {
-        console.log('「生成AI」カテゴリーは見つかりませんでした');
-      }
-    }
-  }, [categories]);
   
   // 新規カテゴリ作成フォーム
   const createCategoryForm = useForm<NewCategoryFormValues>({
@@ -115,7 +98,6 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        console.error('カテゴリ作成APIエラー:', errorData || response.statusText);
         throw new Error(errorData?.message || 'カテゴリの作成に失敗しました');
       }
       
@@ -136,7 +118,6 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
       // カテゴリ一覧を更新
       onRefresh();
     } catch (error) {
-      console.error('カテゴリ作成例外:', error);
       toast({
         title: "エラー",
         description: error instanceof Error ? error.message : "カテゴリ作成中に問題が発生しました",
@@ -160,7 +141,6 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
                 <Select
                   value={field.value || ""}
                   onValueChange={(value) => {
-                    console.log('カテゴリー選択:', value);
                     field.onChange(value);
                   }}
                   disabled={isLoading}

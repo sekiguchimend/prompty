@@ -106,7 +106,7 @@ export const fileUploadSchema = z.object({
   }),
   
   size: z.number()
-    .max(5 * 1024 * 1024, 'ファイルサイズは5MB以下にしてください'),
+    .max(40 * 1024 * 1024 * 1024, 'ファイルサイズは40GB以下にしてください'),
 });
 
 export type CreatePromptInput = z.infer<typeof createPromptSchema>;

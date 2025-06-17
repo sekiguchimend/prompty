@@ -332,24 +332,7 @@ const HomePage: React.FC = memo(() => {
               />
             ))}
 
-            {specialCategoryContents.filter(cat => 
-              cat.category.name === '生成AI' ||
-              cat.category.slug === 'generative-ai'
-            ).length === 0 && (
-              <div className="mt-4">
-                <h2 className="text-xl font-bold flex items-center mb-6">
-                  <span className="flex-1">生成AI</span>
-                  <a href="/category/generative-ai" className="text-sm font-normal text-blue-600 hover:underline">
-                    もっと見る
-                  </a>
-                </h2>
-                <div className="p-4 bg-gray-50 rounded-md border border-gray-200">
-                  <p className="text-gray-500 text-center">
-                    生成AIカテゴリーの記事を表示できません。データ取得中にエラーが発生したか、まだ記事がありません。
-                  </p>
-                </div>
-              </div>
-            )}
+
 
             {categoryContents.map((categoryContent) => (
               <PromptSection 

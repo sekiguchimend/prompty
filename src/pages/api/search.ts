@@ -32,7 +32,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     );
       
     if (searchError) {
-      console.error('検索エラー:', searchError);
       throw searchError;
     }
     
@@ -49,7 +48,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
     
   } catch (error) {
-    console.error('検索中にエラーが発生しました:', error);
     
     // 🔒 セキュアなエラーレスポンス（内部情報を隠す）
     if (error instanceof Error && error.message.includes('validation')) {

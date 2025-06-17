@@ -4,25 +4,24 @@ export default function Document() {
   return (
     <Html lang="ja">
       <Head>
-        <link
-          rel="preconnect"
-          href="https://fonts.googleapis.com"
-        />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap"
-          rel="stylesheet"
-        />
-        <noscript>
-          <link
-            href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap"
-            rel="stylesheet"
-          />
-        </noscript>
+        {/* フォントはNext.js最適化されたものを_app.tsxで読み込み */}
+        
+        {/* SEO用基本設定 */}
+        <meta charSet="utf-8" />
+        <meta httpEquiv="x-ua-compatible" content="ie=edge" />
+        
+        {/* セキュリティヘッダー */}
+        <meta httpEquiv="Content-Security-Policy" content="upgrade-insecure-requests" />
+        <meta httpEquiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+        
+        {/* パフォーマンス最適化 */}
+        <link rel="preload" href="/fonts/NotoSansJP-Regular.woff2" as="font" type="font/woff2" crossOrigin="" />
+        <link rel="preload" href="/images/prompty_logo.jpg" as="image" />
+        
+        {/* 重要リソースのプリロード */}
+        <link rel="modulepreload" href="/_next/static/chunks/framework.js" />
+        <link rel="modulepreload" href="/_next/static/chunks/main.js" />
+        <link rel="modulepreload" href="/_next/static/chunks/webpack.js" />
 
         {/* Critical CSS - 上位表示要素のスタイルを先に読み込み */}
         <style dangerouslySetInnerHTML={{ __html: `

@@ -184,7 +184,7 @@ const Register = () => {
               <h2 className="text-2xl font-bold text-center mb-8">promptyに会員登録</h2>
               
               <div className="flex justify-end mb-2">
-                <Link href="/Business" className="text-sm text-gray-700 hover:underline">
+                <Link href="/business" className="text-sm text-gray-700 hover:underline">
                   法人の方
                 </Link>
               </div>

@@ -26,7 +26,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    console.log('📥 POST /api/prompts リクエスト受信:', JSON.stringify(req.body, null, 2));
     const promptData: CreatePromptRequest = req.body;
     
     // 必須フィールドの検証
@@ -80,49 +79,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
     
-    console.log('✅ バリデーション通過');
     
     // Supabaseクライアントの初期化
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
     
     if (!supabaseUrl || !supabaseAnonKey) {
-      console.error('❌ Supabase環境変数が設定されていません');
       return res.status(500).json({ 
         error: 'サーバー設定エラー',
         code: 'missing_env_vars'
       });
     }
     
-    // デバッグ情報
-    console.log('🔑 接続情報:', { 
-      url: supabaseUrl.substring(0, 20) + '...',
-      keyLength: supabaseAnonKey.length
-    });
     
     // Supabaseクライアントの作成
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
     
     // クライアント接続テスト
     try {
-      console.log('🔍 Supabase接続テスト開始...');
       const { data: testData, error: testError } = await supabase
         .from('profiles')
         .select('id')
         .limit(1);
       
       if (testError) {
-        console.error('❌ Supabase接続テストエラー:', testError);
         return res.status(500).json({
           error: 'データベース接続エラー',
           code: testError.code,
           message: testError.message
         });
-      } else {
-        console.log('✅ Supabase接続テスト成功:', testData);
       }
     } catch (testErr) {
-      console.error('❌ Supabase接続テスト例外:', testErr);
       return res.status(500).json({
         error: 'データベース接続中に例外が発生しました',
         message: testErr instanceof Error ? testErr.message : 'Unknown error'
@@ -147,28 +134,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       published: promptData.published !== undefined ? promptData.published : true
     };
     
-    console.log('🔄 挿入データ:', {
-      author_id: insertData.author_id,
-      title: insertData.title,
-      description: insertData.description.substring(0, 20) + '...',
-      contentLength: insertData.content.length,
-      prompt_title: insertData.prompt_title,
-      prompt_content: insertData.prompt_content.substring(0, 20) + '...'
-    });
     
     // データ挿入を試行
-    console.log('🔄 データベースへの挿入を試行中...');
     const { data, error } = await supabase
       .from('prompts')
       .insert([insertData])
       .select();
     
     if (error) {
-      console.error('❌ 挿入エラー:', JSON.stringify(error, null, 2));
-      
       if (error.code === '42501') {
-        console.error('RLSポリシー違反が発生しました:');
-        console.error('- author_id:', insertData.author_id);
         
         return res.status(403).json({
           error: '権限がありません',
@@ -201,7 +175,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
     
-    console.log('✅ 挿入成功:', data?.[0]?.id);
     
     return res.status(201).json({
       success: true,
@@ -210,7 +183,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
     
   } catch (err) {
-    console.error('🔴 サーバーエラー:', err);
     return res.status(500).json({ 
       error: '予期しないエラーが発生しました',
       message: err instanceof Error ? err.message : 'Unknown error'

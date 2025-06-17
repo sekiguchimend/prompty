@@ -101,7 +101,6 @@ function detectMimeType(buffer: Buffer, originalExt: string): string {
 // バケットの存在確認のみを行う関数（作成は行わない）
 async function ensureBucketExists(supabase: SupabaseClient) {
   try {
-    console.log('サムネイルバケットの存在を前提として処理を進めます');
     
     // バケットが既に存在するという前提で処理を進める
     // 念のため存在確認のみ行うが、ない場合もエラーとはしない
@@ -109,36 +108,25 @@ async function ensureBucketExists(supabase: SupabaseClient) {
       const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
       
       if (bucketsError) {
-        console.warn('バケット一覧取得警告:', bucketsError.message);
         // エラーがあっても続行
       } else {
         const bucketExists = buckets?.some(bucket => bucket.name === 'prompt-thumbnails');
-        console.log('prompt-thumbnailsバケット存在確認:', bucketExists ? '存在します' : '存在しませんが処理を続行します');
       }
     } catch (checkError) {
-      console.warn('バケット確認中の警告:', checkError);
       // 確認エラーでも処理を続行
     }
     
     return true;
   } catch (error) {
-    console.warn('バケット確認中の警告:', error);
     // エラーがあっても処理を続行（バケットは既に存在するという前提）
     return true;
   }
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  console.log(`[${new Date().toISOString()}] API呼び出し: ${req.method} ${req.url}`);
-  console.log('リクエストヘッダー:', {
-    authorization: req.headers.authorization ? 'Bearer ***' : 'なし',
-    'content-type': req.headers['content-type'],
-    'user-agent': req.headers['user-agent']
-  });
   
   // POSTリクエスト以外は許可しない
   if (req.method !== 'POST') {
-    console.log('❌ 許可されていないメソッド:', req.method);
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
@@ -151,7 +139,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 認証処理
     if (authHeader && authHeader.startsWith('Bearer ')) {
       sessionToken = authHeader.substring(7);
-      console.log('認証トークンの長さ:', sessionToken.length);
       
       try {
         // サービスロールキーを使用してユーザーを認証
@@ -163,18 +150,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // JWTトークンからユーザー情報を取得
         const { data: userData, error: userError } = await adminSupabase.auth.getUser(sessionToken);
         if (userError || !userData.user) {
-          console.error('ユーザー取得エラー:', userError || 'ユーザーデータなし');
           return res.status(401).json({ 
             error: '認証エラー', 
             details: 'ユーザー情報の取得に失敗しました' 
           });
         }
         
-        console.log('認証成功 - ユーザーID:', userData.user.id);
         supabase = adminSupabase; // 以降の処理でサービスロールクライアントを使用
         
       } catch (authError) {
-        console.error('認証処理エラー:', authError);
         return res.status(401).json({ 
           error: '認証エラー', 
           details: '認証処理中にエラーが発生しました' 
@@ -192,7 +176,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const form = formidable({ 
       multiples: false,
       keepExtensions: true,
-      maxFileSize: 5 * 1024 * 1024 * 1024 // 5GB制限（標準アップロードの上限）
+      maxFileSize: 40 * 1024 * 1024 * 1024 // 40GB制限（標準アップロードの上限）
     });
     
     const formData = await new Promise<{ fields: formidable.Fields, files: formidable.Files }>((resolve, reject) => {
@@ -213,33 +197,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     try {
-      console.log('サムネイルアップロード処理開始:', thumbnailFile.originalFilename);
       
       // ファイル名と拡張子の設定
       const originalExt = path.extname(thumbnailFile.originalFilename || '').substring(1) || 'jpg';
       const timestamp = Date.now();
       const fileName = `thumbnail-${timestamp}.${originalExt}`;
-      console.log('🔍 ファイル詳細情報:');
-      console.log('- 元のファイル名:', thumbnailFile.originalFilename);
-      console.log('- 抽出された拡張子:', originalExt);
-      console.log('- 生成されたファイル名:', fileName);
-      console.log('- ファイルパス:', fileName, '（バケットのルートに保存します）');
 
       // ファイルを読み込む
       const fileBuffer = fs.readFileSync(thumbnailFile.filepath);
-      console.log('ファイルサイズ:', fileBuffer.length, 'バイト');
       
       // ファイルの実際の内容からMIMEタイプを検出（より信頼性の高い方法）
       const detectedMimeType = detectMimeType(fileBuffer, originalExt);
-      console.log('検出されたMIMEタイプ:', detectedMimeType);
       
       // formidableが検出したMIMEタイプ（信頼性が低い場合があるため参考情報）
-      console.log('formidableが検出したMIMEタイプ:', thumbnailFile.mimetype);
       
       // 最終的に使用するMIMEタイプ（検出されたものを優先、次にformidable、最後にデフォルト）
       const contentType = detectedMimeType || thumbnailFile.mimetype || 'image/jpeg';
       const mediaTypeText = contentType.startsWith('video/') ? '動画' : '画像';
-      console.log(`最終的なメディアタイプ: ${mediaTypeText} (${contentType})`);
       
       // MIMEタイプが画像または動画でない場合は拒否
       const isImage = contentType.startsWith('image/');
@@ -256,14 +230,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       await ensureBucketExists(supabase);
 
       // アップロード直前に認証の状態をログに出力
-      console.log('アップロード直前の認証状態確認...');
       try {
         const { data: authData } = await supabase.auth.getSession();
         if (!authData.session || !authData.session.user) {
-          console.log('通常認証: 認証セッションが見つかりません。管理者権限で続行します。');
           
           // 管理者クライアントを使用してアップロードを試みる
-          console.log('管理者権限でのアップロードを試行します');
           const adminSupabase = createClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -279,28 +250,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             });
             
           if (adminUploadError) {
-            console.error('管理者権限でのアップロードエラー:', adminUploadError.message);
             return res.status(500).json({ 
               error: 'サムネイル画像のアップロードに失敗しました', 
               details: adminUploadError.message
             });
           }
           
-          console.log('管理者権限でのアップロード成功:', fileName);
           
           // 公開URLを取得
           const { data: { publicUrl } } = adminSupabase.storage
             .from('prompt-thumbnails')
             .getPublicUrl(fileName);
             
-          console.log('公開URL:', publicUrl);
           
           // URLパスの修正（必要に応じて）
           let finalPublicUrl = publicUrl;
           if (!finalPublicUrl.includes('/object/public/')) {
-            console.warn('公開URLパスが不正確です。修正を試みます:', finalPublicUrl);
             finalPublicUrl = finalPublicUrl.replace('/object/', '/object/public/');
-            console.log('修正後のURL:', finalPublicUrl);
           }
           
           // 結果を返す
@@ -311,10 +277,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             mediaType: isVideo ? 'video' : 'image'
           });
         } else {
-          console.log('アップロード直前の認証確認: 有効 (ユーザーID:', authData.session.user.id, ')');
         }
       } catch (authCheckError) {
-        console.error('認証確認エラー:', authCheckError);
         // エラーがあっても続行を試みる
       }
 
@@ -328,7 +292,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
 
       if (uploadError) {
-        console.error('アップロードエラー:', uploadError.message);
         
         // RLSポリシー違反の場合
         if (uploadError.message.includes('security policy')) {
@@ -344,7 +307,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-      console.log('アップロード成功:', fileName, 'MIMEタイプ:', contentType);
 
       // 公開URLを取得
       const { data: { publicUrl } } = supabase.storage
@@ -356,9 +318,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // URLパスの修正（必要に応じて）
       let finalPublicUrl = publicUrl;
       if (!finalPublicUrl.includes('/object/public/')) {
-        console.warn('公開URLパスが不正確です。修正を試みます:', finalPublicUrl);
         finalPublicUrl = finalPublicUrl.replace('/object/', '/object/public/');
-        console.log('修正後のURL:', finalPublicUrl);
       }
 
       // 結果を返す
@@ -370,14 +330,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
       
     } catch (uploadError: any) {
-      console.error('サムネイルアップロード例外:', uploadError);
       return res.status(500).json({ 
         error: 'サムネイル画像の処理中にエラーが発生しました', 
         details: uploadError.message 
       });
     }
   } catch (error: any) {
-    console.error('サムネイルアップロードエラー:', error);
     return res.status(500).json({ 
       error: '予期せぬエラーが発生しました', 
       message: error.message || 'Unknown error'

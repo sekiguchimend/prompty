@@ -9,6 +9,7 @@ import Head from 'next/head';
 import Header from '../components/Header';
 import "../styles/NotePage.css"
 import '../index.css';
+import { notoSansJP } from '../../lib/fonts';
 
 function MyApp({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -35,26 +36,52 @@ function MyApp({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head>
-        <title>Prompty - プロンプト共有・販売プラットフォーム</title>
-        <meta name="description" content="LLMを活用したプロンプト共有・販売プラットフォーム" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+        {/* 基本SEO設定 */}
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+        <meta name="theme-color" content="#ffffff" />
+        <meta name="author" content="Prompty" />
+        <meta name="language" content="Japanese" />
+        <meta name="geo.region" content="JP" />
+        <meta name="geo.country" content="Japan" />
+        
+        {/* 検索エンジン最適化 */}
+        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+        <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+        <meta name="bingbot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+        
+        {/* PWA対応 */}
+        <link rel="manifest" href="/site.webmanifest" />
+        <meta name="application-name" content="Prompty" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Prompty" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="msapplication-config" content="/browserconfig.xml" />
+        <meta name="msapplication-TileColor" content="#ffffff" />
+        <meta name="msapplication-tap-highlight" content="no" />
         
         {/* ファビコン設定 */}
         <link rel="icon" href="/favicon.ico" type="image/x-icon" />
         <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         
-        {/* OGP設定 */}
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content="Prompty - プロンプト共有・販売プラットフォーム" />
-        <meta property="og:description" content="LLMを活用したプロンプト共有・販売プラットフォーム" />
-        <meta property="og:image" content="/og-image.png" />
+        {/* DNS prefetch */}
+        <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+        <link rel="dns-prefetch" href="//www.google-analytics.com" />
+        
+        {/* Preconnect */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </Head>
       <AuthProvider>
-        <Header />
-        <div className="header-spacing">
-          <Component {...pageProps} />
+        <div className={notoSansJP.className}>
+          <Header />
+          <div className="header-spacing">
+            <Component {...pageProps} />
+          </div>
+          <Toaster />
         </div>
-        <Toaster />
       </AuthProvider>
     </>
   );

@@ -173,14 +173,11 @@ const Sidebar = () => {
           <div className="border rounded-md p-3 mb-2">
             <h3 className="text-sm font-bold mb-2">prompty公式SNS</h3>
             <div className="flex space-x-4">
-              <Link href="https://x.com/prompty_jp" className="text-gray-700 hover:text-black">
+              <Link href="https://x.com/Prompty2025" className="text-gray-700 hover:text-black">
                 <Twitter className="h-5 w-5" />
               </Link>
               <Link href="https://www.instagram.com/prompty_jp/" className="text-gray-700 hover:text-black">
                 <Instagram className="h-5 w-5" />
-              </Link>
-              <Link href="https://www.facebook.com/prompty.jp/" className="text-gray-700 hover:text-black">
-                <Facebook className="h-5 w-5" />
               </Link>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, useEffect, startTransition } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { useAuth } from '../lib/auth-context';
@@ -28,10 +28,17 @@ export default function Home() {
 
   // ホームページがロードされたら、バックグラウンドでフォローページをプリフェッチ
   useEffect(() => {
-    // ユーザーがログインしていれば、フォローページをプリフェッチ
-    if (user) {
-      router.prefetch('/following');
-    }
+    // ハイドレーション後にプリフェッチを実行
+    const timer = setTimeout(() => {
+      startTransition(() => {
+        // ユーザーがログインしていれば、フォローページをプリフェッチ
+        if (user) {
+          router.prefetch('/following');
+        }
+      });
+    }, 100); // 短い遅延でハイドレーション完了を待つ
+
+    return () => clearTimeout(timer);
   }, [router, user]);
 
   return (

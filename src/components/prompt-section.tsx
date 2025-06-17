@@ -31,6 +31,11 @@ const PromptSection: React.FC<PromptSectionProps> = ({
   showViewAll = true,
   isFeatureSection = false
 }) => {
+  // 記事がない場合は何も表示しない
+  if (!prompts || prompts.length === 0) {
+    return null;
+  }
+
   return (
     <section className={`mt-4 first:mt-0 ${className}`}>
       <SectionHeader 
@@ -42,22 +47,14 @@ const PromptSection: React.FC<PromptSectionProps> = ({
         moreLinkUrl={moreLinkUrl || categoryUrl}
       />
       <div className="mt-2">
-        {prompts && prompts.length > 0 ? (
-          <PromptGrid 
-            prompts={prompts} 
-            sectionPrefix={sectionPrefix} 
-            horizontalScroll={horizontalScroll}
-            categoryPath={categoryUrl}
-            showViewAll={showViewAll}
-            isFeatureSection={isFeatureSection}
-          />
-        ) : (
-          <div className="p-4 bg-gray-50 rounded-md border border-gray-200">
-            <p className="text-gray-500 text-center">
-              {title}の記事はまだありません。
-            </p>
-          </div>
-        )}
+        <PromptGrid 
+          prompts={prompts} 
+          sectionPrefix={sectionPrefix} 
+          horizontalScroll={horizontalScroll}
+          categoryPath={categoryUrl}
+          showViewAll={showViewAll}
+          isFeatureSection={isFeatureSection}
+        />
       </div>
     </section>
   );

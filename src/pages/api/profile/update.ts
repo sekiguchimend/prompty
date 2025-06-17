@@ -11,8 +11,6 @@ export const config = {
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  console.log(`[${new Date().toISOString()}] プロフィール更新API呼び出し: ${req.method}`);
-  
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -22,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const form = formidable({ 
       multiples: false,
       keepExtensions: true,
-      maxFileSize: 10 * 1024 * 1024, // 10MB制限
+      maxFileSize: 40 * 1024 * 1024 * 1024, // 40GB制限
     });
     
     const formData = await new Promise<{ fields: formidable.Fields, files: formidable.Files }>((resolve, reject) => {
@@ -41,17 +39,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const location = Array.isArray(fields.location) ? fields.location[0] : fields.location;
     const removeAvatar = Array.isArray(fields.removeAvatar) ? fields.removeAvatar[0] : fields.removeAvatar;
 
-    console.log('FormData受信:', { 
-      userId, 
-      displayName, 
-      bio, 
-      location, 
-      removeAvatar,
-      hasAvatarFile: !!files.avatar 
-    });
 
     if (!userId) {
-      console.error('ユーザーIDが提供されていません');
       return res.status(400).json({ error: 'ユーザーIDが必要です' });
     }
 
@@ -83,7 +72,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             });
 
           if (uploadError) {
-            console.error('アバターアップロードエラー:', uploadError);
           } else {
             // 公開URLを取得
             const { data: { publicUrl } } = supabase.storage
@@ -93,7 +81,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             avatarUrl = publicUrl;
           }
         } catch (error) {
-          console.error('アバター処理エラー:', error);
         }
       }
     }
@@ -112,7 +99,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       updateData.avatar_url = avatarUrl;
     }
 
-    console.log('データベース更新データ:', updateData);
 
     // データベースを更新
     const { error: updateError } = await supabase
@@ -121,14 +107,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq('id', userId);
 
     if (updateError) {
-      console.error('プロフィール更新エラー:', updateError);
       return res.status(500).json({ 
         error: 'プロフィールの更新に失敗しました',
         details: updateError.message
       });
     }
 
-    console.log('プロフィール更新成功:', userId);
 
     return res.status(200).json({ 
       success: true, 
@@ -137,8 +121,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
   } catch (error: any) {
-    console.error('プロフィール更新API エラー:', error);
-    console.error('エラースタック:', error.stack);
     return res.status(500).json({ 
       error: '予期せぬエラーが発生しました', 
       message: error.message,

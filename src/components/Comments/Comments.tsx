@@ -81,7 +81,7 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
               hiddenCommentsFromStorage = parsed;
             }
           } catch (error) {
-            console.error('非表示コメントの読み込みに失敗しました:', error);
+            // 非表示コメントの読み込みに失敗
           }
         }
         
@@ -94,7 +94,7 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
             .single();
             
           if (error && error.code !== 'PGRST116') { // 'PGRST116'は結果が見つからないエラー
-            console.error('設定取得エラー:', error);
+            // 設定取得エラー
           } else if (data) {
             // 設定を保存
             setUserSettings({
@@ -123,7 +123,7 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
         setHiddenComments(hiddenCommentsFromStorage);
         
       } catch (error) {
-        console.error('非表示コメント設定の読み込みエラー:', error);
+        // 非表示コメント設定の読み込みエラー
       }
     };
     
@@ -136,7 +136,6 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
     
     setIsLoading(true);
     try {
-      console.log(`コメントを取得中... (promptId: ${promptId})`);
       const { data, error, count } = await supabase
         .from('comments')
         .select(`
@@ -147,11 +146,8 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
         .order('created_at', { ascending: false });
         
       if (error) {
-        console.error('コメント取得エラー:', error);
         return;
       }
-      
-      console.log('コメントを取得しました:', data?.length || 0, '件');
       
       // データを正しい型に変換
       const typedComments: Comment[] = (data || []).map(item => {
@@ -173,7 +169,7 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
       setComments(typedComments);
       setCommentCount(count || 0);
     } catch (err) {
-      console.error('コメント取得中に例外が発生しました:', err);
+      // コメント取得中に例外が発生
     } finally {
       setIsLoading(false);
     }
@@ -190,7 +186,7 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
   useEffect(() => {
     if (!promptId) return;
     
-    console.log(`リアルタイム購読をセットアップします (promptId: ${promptId})...`);
+    // リアルタイム購読をセットアップ
     
     // チャンネル作成
     const channelName = `comments-channel-${promptId}`;
@@ -204,7 +200,6 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
         table: 'comments',
         filter: `prompt_id=eq.${promptId}`
       }, (payload) => {
-        console.log('新しいコメントが検出されました:', payload);
         fetchComments();
       })
       .on('postgres_changes', {
@@ -213,7 +208,6 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
         table: 'comments',
         filter: `prompt_id=eq.${promptId}`
       }, (payload) => {
-        console.log('コメントの更新が検出されました:', payload);
         fetchComments();
       })
       .on('postgres_changes', {
@@ -222,25 +216,15 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
         table: 'comments',
         filter: `prompt_id=eq.${promptId}`
       }, (payload) => {
-        console.log('コメントの削除が検出されました:', payload);
         fetchComments();
       })
       .subscribe((status) => {
-        console.log(`チャンネル '${channelName}' 購読ステータス:`, status);
-        
-        if (status !== 'SUBSCRIBED') {
-          console.warn('リアルタイム購読に問題があります。状態:', status);
-        } else {
-          console.log('リアルタイム購読が正常に開始されました');
-        }
+        // 購読ステータスの管理
       });
     
     // クリーンアップ関数
     return () => {
-      console.log(`チャンネル '${channelName}' の購読を解除します...`);
-      supabase.removeChannel(channel)
-        .then(() => console.log('チャンネルの購読解除が完了しました'))
-        .catch(err => console.error('チャンネルの購読解除中にエラーが発生しました:', err));
+      supabase.removeChannel(channel);
     };
   }, [fetchComments, promptId]);
 
@@ -253,11 +237,7 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
     setIsSubmitting(true);
     
     try {
-      console.log('コメントを送信します:', {
-        prompt_id: promptId,
-        user_id: currentUser.id,
-        content: newComment.trim()
-      });
+      // コメントを送信
       
       // 入力内容をローカル変数に保存（非同期処理の前に）
       const commentContent = newComment.trim();
@@ -281,7 +261,7 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
         throw error;
       }
       
-      console.log('コメント送信成功:', data);
+      // コメント送信成功
       
       // リアルタイム更新が遅れる場合に備え、手動でコメントリストを更新
       // 新しいコメントをローカルで追加
@@ -314,7 +294,6 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
       }, 300);
       
     } catch (error) {
-      console.error('コメント送信エラー:', error);
       alert('コメントの送信に失敗しました');
       // エラー時は入力内容を復元
       setNewComment(newComment);
@@ -349,7 +328,7 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
           .single();
           
         if (error && error.code !== 'PGRST116') { // 'PGRST116'は結果が見つからないエラー
-          console.error('設定取得エラー:', error);
+          // 設定取得エラー
         }
           
         // 設定をアップデートする
@@ -365,10 +344,10 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
           .upsert(updatedSettings);
           
         if (updateError) {
-          console.error('設定更新エラー:', updateError);
+          // 設定更新エラー
         }
       } catch (error) {
-        console.error('設定保存エラー:', error);
+        // 設定保存エラー
       }
     }
     

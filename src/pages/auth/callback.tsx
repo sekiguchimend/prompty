@@ -11,7 +11,6 @@ const AuthCallback = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        console.log('🔄 認証コールバック処理開始...');
         
         // クライアントサイドでのみ実行
         if (typeof window === 'undefined') {
@@ -22,23 +21,19 @@ const AuthCallback = () => {
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('❌ 認証コールバックエラー:', error);
           // エラーの場合はログインページにリダイレクト
           router.replace('/Login?error=auth_failed');
           return;
         }
 
         if (data.session) {
-          console.log('✅ 認証成功:', data.session.user.email);
           // 認証成功時はホームページにリダイレクト
           router.replace('/');
         } else {
-          console.log('⚠️ セッションが見つかりません');
           // セッションがない場合はログインページにリダイレクト
           router.replace('/Login');
         }
       } catch (error) {
-        console.error('❌ 認証コールバック処理エラー:', error);
         router.replace('/Login?error=callback_failed');
       } finally {
         setIsLoading(false);

@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { supabaseAdmin } from '../../../lib/supabaseAdminClient';
 import formidable from 'formidable';
 import fs from 'fs';
+import { ensureFileExtension } from '../../../lib/security/validation';
 
 // FormDataのパースを有効にする
 export const config = {
@@ -43,17 +44,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'ファイルが提供されていません' });
     }
     
-    console.log('ファイルアップロード処理開始:', {
-      originalFilename: file.originalFilename,
-      mimetype: file.mimetype,
-      size: file.size,
-      bucketName
-    });
     
-    // ファイル名の生成
-    const fileExt = file.originalFilename?.split('.').pop() || 'jpg';
+    // ファイル名の生成（日本語対応）
+    const originalName = file.originalFilename || 'uploaded_file';
+    const mimeType = file.mimetype || 'image/jpeg';
+    
+    // 日本語ファイル名に対応し、拡張子を確保
+    const cleanedName = ensureFileExtension(originalName, mimeType);
     const timestamp = Date.now();
-    const fileName = `thumbnail-${timestamp}.${fileExt}`;
+    const fileName = `${timestamp}_${cleanedName}`;
     
     // ファイルバッファを読み込む
     const fileBuffer = fs.readFileSync(file.filepath);
@@ -62,7 +61,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data: buckets, error: bucketsError } = await supabaseAdmin.storage.listBuckets();
     
     if (bucketsError) {
-      console.error('バケット一覧取得エラー:', bucketsError);
       return res.status(500).json({ 
         error: 'ストレージバケットの確認に失敗しました', 
         details: bucketsError 
@@ -72,22 +70,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
     
     if (!bucketExists) {
-      console.log(`バケット '${bucketName}' が存在しないため作成します`);
-      
       const { error: createBucketError } = await supabaseAdmin.storage.createBucket(bucketName, {
         public: true,
-        fileSizeLimit: 5 * 1024 * 1024 // 5MB
+        fileSizeLimit: 40 * 1024 * 1024 * 1024 // 40GB
       });
       
       if (createBucketError) {
-        console.error('バケット作成エラー:', createBucketError);
         return res.status(500).json({ 
           error: `バケット '${bucketName}' の作成に失敗しました`, 
           details: createBucketError 
         });
       }
-      
-      console.log(`バケット '${bucketName}' を作成しました`);
     }
     
     // アップロード
@@ -100,14 +93,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
       
     if (uploadError) {
-      console.error('アップロードエラー:', uploadError);
       return res.status(500).json({ 
         error: 'ファイルのアップロードに失敗しました', 
         details: uploadError 
       });
     }
     
-    console.log('アップロード成功:', data);
     
     // 公開URLを取得
     const { data: { publicUrl } } = supabaseAdmin.storage
@@ -117,10 +108,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // URLパスの検証と修正
     let finalPublicUrl = publicUrl;
     if (!finalPublicUrl.includes('/object/public/')) {
-      console.warn('公開URLパスが不正確です。修正を試みます:', finalPublicUrl);
       // 不足している「/public/」を挿入
       finalPublicUrl = finalPublicUrl.replace('/object/', '/object/public/');
-      console.log('修正後のURL:', finalPublicUrl);
     }
 
     return res.status(200).json({ 
@@ -130,7 +119,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       path: data.path
     });
   } catch (error) {
-    console.error('画像アップロードエラー:', error);
     const errorMessage = error instanceof Error ? error.message : '不明なエラーが発生しました';
     return res.status(500).json({ error: `画像アップロード中にエラーが発生しました: ${errorMessage}` });
   }

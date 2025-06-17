@@ -52,7 +52,8 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
   onThumbnailFileChange,  // 追加
   defaultValues = {
     projectTitle: "",
-    aiModel: "claude-4-20250120",
+
+    aiModel: "",
     customAiModel: "",
     pricingType: "free",
     price: 0,
@@ -101,7 +102,6 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
       // 先にファイルオブジェクトを親に渡す（即座に状態更新）
       if (onThumbnailFileChange) {
         onThumbnailFileChange(file);
-        console.log('📁 ファイルオブジェクトを親コンポーネントに送信:', file.name);
       }
       
       // メディアタイプを判定
@@ -109,12 +109,7 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
       const currentMediaType = isVideo ? 'video' : 'image';
       setMediaType(currentMediaType);
       
-      console.log('サムネイルアップロード開始...', {
-        name: file.name,
-        type: file.type,
-        mediaType: currentMediaType,
-        size: `${(file.size / 1024).toFixed(2)} KB`
-      });
+      // サムネイルアップロード開始
 
       // 動画の場合はプレビューを後で設定（data URLは使わない）
       if (!isVideo) {
@@ -139,9 +134,7 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
       
       if (session?.access_token) {
         authHeader = `Bearer ${session.access_token}`;
-        console.log('認証トークンを設定しました');
       } else {
-        console.warn('認証セッションが見つかりません');
         throw new Error('ログインしてください');
       }
 
@@ -151,11 +144,10 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
         body: formData
       });
 
-      console.log('サムネイルアップロードAPI応答:', response.status, response.statusText);
+      // API応答を処理
 
       if (!response.ok) {
         const responseText = await response.text();
-        console.error(`サムネイルアップロードAPI応答エラー: ${response.status}`, responseText);
         
         // HTMLレスポンスの場合は404ページが返されている
         if (responseText.includes('<!DOCTYPE html')) {
@@ -173,7 +165,6 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
       const result = await response.json();
       
       if (result.success && result.publicUrl) {
-        console.log('アップロード成功:', result.publicUrl);
         
         // アップロード成功時、公開URLをプレビューとフォームに設定
         setThumbnailPreview(result.publicUrl);
@@ -192,7 +183,6 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
       }
       
     } catch (error: any) {
-      console.error('サムネイルアップロードエラー:', error);
       
       // エラー時はプレビューをクリア
       setThumbnailPreview(null);

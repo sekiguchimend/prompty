@@ -45,8 +45,8 @@ const nextConfig = {
 
     // Add CSP header - 動画対応版
     const cspValue = process.env.NODE_ENV === 'production' 
-      ? "default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' data: https:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https:; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https: wss:;"
-      : "default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: data:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https: wss:;";
+      ? "default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' data: https:; style-src 'self' 'unsafe-inline' https: https://fonts.googleapis.com; font-src 'self' https: data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https: wss:;"
+      : "default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: data:; style-src 'self' 'unsafe-inline' https: https://fonts.googleapis.com; font-src 'self' https: data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https: wss:;";
     
       securityHeaders.push({
         key: 'Content-Security-Policy',
@@ -106,6 +106,44 @@ const nextConfig = {
 
   // Trailing slash configuration
   trailingSlash: false,
+
+  // SEO最適化
+  async redirects() {
+    return [
+      // WWW redirect (if needed)
+      {
+        source: '/www.:path*',
+        destination: '/:path*',
+        permanent: true,
+      },
+      // Old URLs redirect
+      {
+        source: '/prompt/:id',
+        destination: '/prompts/:id',
+        permanent: true,
+      },
+    ];
+  },
+
+  // Dynamic sitemap
+  async rewrites() {
+    return [
+      {
+        source: '/sitemap.xml',
+        destination: '/api/sitemap.xml',
+      },
+      {
+        source: '/robots.txt',
+        destination: '/api/robots',
+      },
+    ];
+  },
+
+  // Generate static pages for better SEO
+  async generateBuildId() {
+    // Use git commit hash or timestamp
+    return new Date().getTime().toString();
+  },
 };
 
 module.exports = nextConfig;

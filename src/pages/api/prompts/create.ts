@@ -21,6 +21,7 @@ interface CreatePromptRequest {
   published?: boolean;
   site_url?: string;
   preview_lines?: number | null;
+  ai_model?: string | null; // 使用されたAIモデル
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -44,7 +45,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
     
     if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('❌ Supabase環境変数が設定されていません');
       return res.status(500).json({
         error: 'サーバー設定エラー',
         code: 'missing_env_vars'
@@ -76,14 +76,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       price: req.body.price || 0
     });
 
-    console.log('✅ バリデーション通過 - ユーザー:', user.id);
     
     // 🔒 権限昇格防止 - 必ず認証済みユーザーIDを使用
     const safePromptData = {
       ...validatedData,
       thumbnail_url: req.body.thumbnail_url || null,
       site_url: req.body.site_url || null,
-      preview_lines: req.body.preview_lines || null
+      preview_lines: req.body.preview_lines || null,
+      ai_model: req.body.ai_model || null // AIモデル情報を保存
     };
 
     // media_typeはオプショナル（カラムが存在しない場合を考慮）
@@ -96,7 +96,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       const result = await secureDB.createPromptWithAuth(safePromptData, user.id);
       
-      console.log('✅ プロンプト作成成功:', result.data?.id);
       
       return res.status(200).json({
         success: true,
@@ -105,7 +104,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
       
     } catch (dbError: any) {
-      console.error('❌ データベースエラー:', dbError);
       
       if (dbError.message.includes('権限エラー')) {
         return res.status(403).json({
@@ -120,7 +118,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
   } catch (error: any) {
-    console.error('❌ 予期せぬエラー:', error);
     
     // 🔒 セキュアなエラーレスポンス（内部情報を隠す）
     if (error.name === 'ZodError') {

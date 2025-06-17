@@ -31,9 +31,9 @@ const ThumbnailUploader: React.FC<ThumbnailUploaderProps> = ({
       const file = e.target.files[0];
       
       try {
-        // ファイルサイズチェック（動画は5GB、画像は50MB）
-        const maxSize = file.type.startsWith('video/') ? 5 * 1024 * 1024 * 1024 : 50 * 1024 * 1024;
-        const maxSizeText = file.type.startsWith('video/') ? '5GB' : '50MB';
+        // ファイルサイズチェック（全ファイル40GB）
+        const maxSize = 40 * 1024 * 1024 * 1024; // 40GB for all files
+        const maxSizeText = '40GB';
         if (file.size > maxSize) {
           toast({
             title: "エラー",
@@ -67,7 +67,6 @@ const ThumbnailUploader: React.FC<ThumbnailUploaderProps> = ({
         const supportedVideoTypes = ['video/mp4', 'video/webm', 'video/mov', 'video/avi'];
         
         if (isImage && !supportedImageTypes.includes(file.type)) {
-          console.warn(`未サポートの画像形式が検出されました: ${file.type}`);
           toast({
             title: "注意",
             description: `この画像形式(${file.type})は完全にサポートされていない可能性があります。JPG、PNG、GIF、WebPの使用を推奨します。`,
@@ -77,7 +76,6 @@ const ThumbnailUploader: React.FC<ThumbnailUploaderProps> = ({
         }
         
         if (isVideo && !supportedVideoTypes.includes(file.type)) {
-          console.warn(`未サポートの動画形式が検出されました: ${file.type}`);
           toast({
             title: "注意",
             description: `この動画形式(${file.type})は完全にサポートされていない可能性があります。MP4、WebM、MOV、AVIの使用を推奨します。`,
@@ -90,7 +88,6 @@ const ThumbnailUploader: React.FC<ThumbnailUploaderProps> = ({
         onThumbnailChange(file);
         
       } catch (err) {
-        console.error('handleFileChange エラー:', err);
         toast({
           title: "エラー",
           description: "画像処理中に予期せぬエラーが発生しました",
@@ -135,8 +132,8 @@ const ThumbnailUploader: React.FC<ThumbnailUploaderProps> = ({
         return;
       }
       
-      const maxSize = file.type.startsWith('video/') ? 5 * 1024 * 1024 * 1024 : 50 * 1024 * 1024;
-      const maxSizeText = file.type.startsWith('video/') ? '5GB' : '50MB';
+      const maxSize = 40 * 1024 * 1024 * 1024; // 40GB for all files
+      const maxSizeText = '40GB';
       if (file.size > maxSize) {
         toast({
           title: "エラー",

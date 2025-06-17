@@ -87,11 +87,6 @@ const CodeGenerationTab: React.FC<CodeGenerationTabProps> = ({
         .map(([filename, content]) => `// ファイル: ${filename}\n${content}`)
         .join('\n\n');
 
-      console.log('コード改善開始:', {
-        originalFilesCount: Object.keys(generatedCode.files).length,
-        framework: generatedCode.framework,
-        improvementRequest: additionalPrompt.trim()
-      });
 
       const response = await improveCode(
         currentCode,
@@ -100,10 +95,6 @@ const CodeGenerationTab: React.FC<CodeGenerationTabProps> = ({
         model
       );
 
-      console.log('コード改善完了:', {
-        newFilesCount: Object.keys(response.files).length,
-        description: response.description
-      });
 
       // 改善されたコードで状態を更新
       setGeneratedCode(response);
@@ -113,12 +104,9 @@ const CodeGenerationTab: React.FC<CodeGenerationTabProps> = ({
       // プレビュータブに自動切り替え
       setActiveTab('preview');
       
-      // 成功通知
-      console.log('✅ コードが正常に改善されました');
       
       onCodeGenerated?.(response);
     } catch (err) {
-      console.error('❌ コード改善エラー:', err);
       const errorMessage = err instanceof Error ? err.message : 'コード改善に失敗しました';
       setError(`改善エラー: ${errorMessage}`);
       
@@ -164,10 +152,7 @@ const CodeGenerationTab: React.FC<CodeGenerationTabProps> = ({
         .join('\n\n');
       
       await navigator.clipboard.writeText(codeText);
-      // トースト通知を表示
-      console.log('コードがクリップボードにコピーされました');
     } catch (error) {
-      console.error('コピーに失敗しました:', error);
     }
   };
 

@@ -68,10 +68,10 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
       const file = e.target.files[0];
       
       // 5MB以下であることを確認
-      if (file.size > 5 * 1024 * 1024) {
+      if (file.size > 40 * 1024 * 1024 * 1024) {
         toast({
           title: "エラー",
-          description: "画像サイズは5MB以下にしてください",
+          description: "画像サイズは40GB以下にしてください",
           variant: "destructive"
         });
         return;
@@ -208,7 +208,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                 className="hidden"
               />
             </div>
-            <p className="text-xs text-gray-500">最大5MB・jpg, png, gifのみ</p>
+            <p className="text-xs text-gray-500">最大40GB・jpg, png, gifのみ</p>
           </div>
           
           {/* 表示名 */}

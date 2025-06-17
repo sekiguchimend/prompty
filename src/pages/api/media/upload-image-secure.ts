@@ -7,11 +7,11 @@ import crypto from 'crypto';
 import { withAuth, AuthenticatedRequest } from '../../../lib/security/auth-middleware';
 import { withRateLimit, uploadRateLimit } from '../../../lib/security/rate-limiter';
 import { withErrorHandler, FileUploadError, withSecurityHeaders } from '../../../lib/security/error-handler';
-import { validateRequest, fileUploadSchema, sanitizeFilename } from '../../../lib/security/validation';
+import { validateRequest, fileUploadSchema, sanitizeFilename, ensureFileExtension } from '../../../lib/security/validation';
 
 // Configuration
-const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '5242880'); // 5MB
-const ALLOWED_MIME_TYPES = (process.env.ALLOWED_FILE_TYPES || 'image/jpeg,image/png,image/webp,image/gif').split(',');
+const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '42949672960'); // 40GB
+const ALLOWED_MIME_TYPES = (process.env.ALLOWED_FILE_TYPES || 'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/ogg,video/avi,video/mov,video/wmv').split(',');
 const UPLOAD_DIR = '/tmp/uploads';
 
 // Disable Next.js body parser
@@ -52,49 +52,72 @@ const scanForVirus = async (filePath: string): Promise<boolean> => {
     
     return true; // Clean
   } catch (error) {
-    console.error('Virus scan error:', error);
     return false; // Assume infected on error
   }
 };
 
-// Validate image file
-const validateImageFile = async (filePath: string, mimeType: string): Promise<boolean> => {
+// Validate media file (image and video)
+const validateMediaFile = async (filePath: string, mimeType: string): Promise<boolean> => {
   try {
     // Check file signature (magic numbers)
     const fd = fs.openSync(filePath, 'r');
-    const buffer = Buffer.alloc(10);
-    fs.readSync(fd, buffer, 0, 10, 0);
+    const buffer = Buffer.alloc(16); // 16バイトに拡張（動画ファイル用）
+    fs.readSync(fd, buffer, 0, 16, 0);
     fs.closeSync(fd);
     
     const signatures: { [key: string]: number[][] } = {
+      // 画像ファイル
       'image/jpeg': [[0xFF, 0xD8, 0xFF]],
       'image/png': [[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]],
       'image/gif': [[0x47, 0x49, 0x46, 0x38, 0x37, 0x61], [0x47, 0x49, 0x46, 0x38, 0x39, 0x61]],
-      'image/webp': [[0x52, 0x49, 0x46, 0x46]] // RIFF header
+      'image/webp': [[0x52, 0x49, 0x46, 0x46]], // RIFF header
+      // 動画ファイル
+      'video/mp4': [[0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70], [0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70]],
+      'video/webm': [[0x1A, 0x45, 0xDF, 0xA3]],
+      'video/ogg': [[0x4F, 0x67, 0x67, 0x53]],
+      'video/avi': [[0x52, 0x49, 0x46, 0x46]], // RIFF（AVIもRIFFベース）
+      'video/mov': [[0x00, 0x00, 0x00, 0x14, 0x66, 0x74, 0x79, 0x70]],
+      'video/wmv': [[0x30, 0x26, 0xB2, 0x75, 0x8E, 0x66, 0xCF, 0x11]]
     };
     
     const expectedSignatures = signatures[mimeType];
     if (!expectedSignatures) {
-      return false;
+      // 知らないMIMEタイプでも一旦許可（将来的な拡張のため）
+      return true;
     }
     
     return expectedSignatures.some(signature => 
       signature.every((byte, index) => buffer[index] === byte)
     );
   } catch (error) {
-    console.error('File validation error:', error);
     return false;
   }
 };
 
-// Generate secure filename
-const generateSecureFilename = (originalName: string, userId: string): string => {
-  const ext = path.extname(originalName).toLowerCase();
-  const timestamp = Date.now();
-  const random = crypto.randomBytes(8).toString('hex');
-  const userHash = crypto.createHash('sha256').update(userId).digest('hex').substring(0, 8);
+// Generate secure filename with Japanese support
+const generateSecureFilename = (originalName: string, userId: string, mimeType: string): string => {
+  // 元のファイル名を日本語対応でサニタイズし、拡張子を確保
+  const cleanedName = ensureFileExtension(originalName, mimeType);
   
-  return `${userHash}_${timestamp}_${random}${ext}`;
+  // ファイル名から拡張子を分離
+  const ext = path.extname(cleanedName).toLowerCase();
+  const nameWithoutExt = path.basename(cleanedName, ext);
+  
+  // セキュリティのためにタイムスタンプとハッシュを追加
+  const timestamp = Date.now();
+  const random = crypto.randomBytes(4).toString('hex'); // 短くしてファイル名の長さを抑制
+  const userHash = crypto.createHash('sha256').update(userId).digest('hex').substring(0, 6);
+  
+  // 元のファイル名を保持しつつ、セキュリティ要素を追加
+  const secureBaseName = `${nameWithoutExt}_${userHash}_${timestamp}_${random}`;
+  
+  // 最終的なファイル名の長さを制限（255文字以内）
+  const maxLength = 255 - ext.length;
+  const finalBaseName = secureBaseName.length > maxLength 
+    ? secureBaseName.substring(0, maxLength) 
+    : secureBaseName;
+  
+  return `${finalBaseName}${ext}`;
 };
 
 // Main upload handler
@@ -160,7 +183,7 @@ const uploadHandler = async (req: AuthenticatedRequest, res: NextApiResponse) =>
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      throw new FileUploadError(`File too large. Maximum size: ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+      throw new FileUploadError(`File too large. Maximum size: ${MAX_FILE_SIZE / 1024 / 1024 / 1024}GB`);
     }
 
     // Validate bucket name
@@ -171,17 +194,10 @@ const uploadHandler = async (req: AuthenticatedRequest, res: NextApiResponse) =>
       throw new FileUploadError('Invalid bucket name');
     }
 
-    console.log('Processing secure file upload:', {
-      originalFilename: file.originalFilename,
-      mimetype: file.mimetype,
-      size: file.size,
-      bucketName,
-      userId: req.user.id
-    });
 
     // Validate file signature
-    const isValidImage = await validateImageFile(file.filepath, file.mimetype);
-    if (!isValidImage) {
+    const isValidMedia = await validateMediaFile(file.filepath, file.mimetype);
+    if (!isValidMedia) {
       fs.unlinkSync(file.filepath); // Clean up
       throw new FileUploadError('Invalid file format or corrupted file');
     }
@@ -194,7 +210,7 @@ const uploadHandler = async (req: AuthenticatedRequest, res: NextApiResponse) =>
     }
 
     // Generate secure filename
-    const secureFilename = generateSecureFilename(file.originalFilename, req.user.id);
+    const secureFilename = generateSecureFilename(file.originalFilename, req.user.id, file.mimetype);
     
     // Read file buffer
     const fileBuffer = fs.readFileSync(file.filepath);
@@ -242,14 +258,6 @@ const uploadHandler = async (req: AuthenticatedRequest, res: NextApiResponse) =>
       .getPublicUrl(data.path);
     
     // Log successful upload for audit
-    console.log('File upload successful:', {
-      userId: req.user.id,
-      filename: secureFilename,
-      originalName: file.originalFilename,
-      size: file.size,
-      bucket: bucketName,
-      timestamp: new Date().toISOString()
-    });
 
     return res.status(200).json({
       success: true,

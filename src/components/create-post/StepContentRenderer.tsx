@@ -83,6 +83,20 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
     goToNextStep();
   };
 
+  // AIモデル設定用の専用ハンドラー（自動でステップ進行しない）
+  const saveAIModelSetting = (data: Partial<ProjectFormValues>) => {
+    const updatedSettings = { ...projectSettings, ...data };
+    setProjectSettings(updatedSettings);
+    // AIモデル選択では自動でステップを進めない
+  };
+
+  // 価格設定用の専用ハンドラー（自動でステップ進行しない）
+  const savePricingSetting = (data: Partial<ProjectFormValues>) => {
+    const updatedSettings = { ...projectSettings, ...data };
+    setProjectSettings(updatedSettings);
+    // 価格設定では自動でステップを進めない
+  };
+
   // プロンプト送信時のハンドラー
   const handleStepPromptSubmit = (data: PromptFormValues) => {
     handlePromptSubmit(data);
@@ -187,7 +201,7 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
                 <ModelSelector
                   control={form.control}
                   onModelChange={(value: string) => {
-                    saveProjectSetting({ aiModel: value });
+                    saveAIModelSetting({ aiModel: value });
                   }}
                 />
               </FormProvider>
@@ -234,7 +248,7 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
                   onPricingTypeChange={(value: string) => {
                     const pricingType = value as "free" | "paid";
                     const price = pricingType === "free" ? 0 : projectSettings.price;
-                    saveProjectSetting({ pricingType, price });
+                    savePricingSetting({ pricingType, price });
                   }}
                 />
               </FormProvider>

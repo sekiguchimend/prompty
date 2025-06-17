@@ -101,7 +101,6 @@ const CodeGeneratorPage: React.FC = () => {
       await generateUI(prompt);
       setTypingCompleted(false);
     } catch (err) {
-      console.error('Generation failed:', err);
     }
   };
 
@@ -112,7 +111,6 @@ const CodeGeneratorPage: React.FC = () => {
       await improveUI(prompt);
       setTypingCompleted(false);
     } catch (err) {
-      console.error('Improvement failed:', err);
     }
   };
 

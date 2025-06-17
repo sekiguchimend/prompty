@@ -72,7 +72,6 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
   try {
     // 環境変数チェック
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.error('SUPABASE_SERVICE_ROLE_KEY is not set');
       return { notFound: true };
     }
 
@@ -95,7 +94,8 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
       is_free,
       stripe_product_id,
       stripe_price_id,
-      preview_lines
+      preview_lines,
+      ai_model
     `)
     .eq('id', formattedId)
     .single();
@@ -247,7 +247,6 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
   };
 
   } catch (error) {
-    console.error("データ取得エラー:", error);
     return { notFound: true };
   }
 };
@@ -284,7 +283,6 @@ const PromptDetail = ({
           setIsAuthor(session.user.id === postData.user.userId);
         }
       } catch (error) {
-        console.error('ユーザー取得エラー:', error);
       }
     };
     
@@ -337,7 +335,6 @@ const PromptDetail = ({
             router.replace(`/prompts/${postData.id}`, undefined, { shallow: true });
           }
       } catch (error) {
-        console.error('決済処理エラー:', error);
       }
     };
     
@@ -361,7 +358,6 @@ const PromptDetail = ({
         setIsPaid(isPurchased);
         }
       } catch (error) {
-        console.error("購入確認エラー:", error);
       }
     };
     
@@ -659,6 +655,7 @@ prompt: |
                 isPremium={isPremium}
                 reviewCount={postData.likeCount || 0}
                 canDownloadYaml={!!(isFree || isPaid || isAuthor)}
+                aiModel={postData.ai_model}
                 onDownloadYaml={() => handleDownloadYaml(postData)}
                 previewLines={postData.preview_lines || 3}
                 likes={postData.likeCount || 0}

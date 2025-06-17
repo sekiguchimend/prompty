@@ -110,6 +110,13 @@ const CategoryPage: React.FC = () => {
         
         // 記事をPromptItem形式に変換
         const formattedPrompts = data.prompts.map(transformToPromptItem);
+        
+        // 記事がない場合は404ページにリダイレクト
+        if (formattedPrompts.length === 0) {
+          router.push('/not-found');
+          return;
+        }
+        
         setPrompts(formattedPrompts);
         
       } catch (error) {
@@ -274,11 +281,7 @@ const CategoryPage: React.FC = () => {
                     horizontalScroll={false}
                     showViewAll={false}
                   />
-                ) : (
-                  <div className="text-center py-12">
-                    <p className="text-gray-500">このカテゴリーにはまだ記事がありません。</p>
-                  </div>
-                )}
+                ) : null}
               </>
             )}
           </div>

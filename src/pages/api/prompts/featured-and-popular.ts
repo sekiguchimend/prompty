@@ -6,7 +6,6 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('環境変数が設定されていません: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY');
 }
 
 // サーバーサイド用のクライアント（管理者権限）
@@ -32,7 +31,6 @@ async function addLikeCounts(prompts: any[]): Promise<any[]> {
       .in('prompt_id', promptIds);
       
     if (error) {
-      console.error('いいね数取得エラー:', error);
       return prompts;
     }
     
@@ -50,7 +48,6 @@ async function addLikeCounts(prompts: any[]): Promise<any[]> {
       like_count: likeCounts[prompt.id] || 0
     }));
   } catch (err) {
-    console.error('いいね数処理中のエラー:', err);
     return prompts;
   }
 }
@@ -82,7 +79,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .limit(limit);
 
     if (featuredError) {
-      console.error('フィーチャープロンプト取得エラー:', featuredError);
       return res.status(500).json({ error: 'フィーチャープロンプトの取得に失敗しました' });
     }
 
@@ -104,7 +100,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .limit(limit);
 
     if (popularError) {
-      console.error('人気プロンプト取得エラー:', popularError);
       return res.status(500).json({ error: '人気プロンプトの取得に失敗しました' });
     }
 
@@ -126,7 +121,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
     
   } catch (error) {
-    console.error('データ取得エラー:', error);
     return res.status(500).json({ 
       error: 'データの取得中にエラーが発生しました',
       message: error instanceof Error ? error.message : '不明なエラー'

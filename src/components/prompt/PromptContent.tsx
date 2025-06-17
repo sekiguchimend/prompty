@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef, lazy, Suspense, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense, useCallback, useMemo, startTransition } from 'react';
 import { useRouter } from 'next/router';
 import { Button } from '../ui/button';
-import { Check, Lock, FileText, Info, Eye, ExternalLink, Download } from 'lucide-react';
+import { Check, Lock, FileText, Info, Eye, ExternalLink, Download, Copy } from 'lucide-react';
 import { Badge } from '../../components/ui/badge';
 import PurchaseDialog from './PurchaseDialog';
 import Image from 'next/image';
@@ -81,6 +81,7 @@ interface PromptContentProps {
   onDownloadYaml?: () => void;
   previewLines?: number;
   likes?: number;
+  aiModel?: string; // 使用されたAIモデル
 }
 
 // 複数プロンプト解析用の型定義
@@ -175,11 +176,13 @@ const PromptContent: React.FC<PromptContentProps> = ({
   canDownloadYaml = false,
   onDownloadYaml = () => {},
   previewLines = 2,
-  likes = 0
+  likes = 0,
+  aiModel
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isPurchased, setIsPurchased] = useState(false);
+  const [copiedButtons, setCopiedButtons] = useState<Set<string>>(new Set()); // コピー状態を管理
   const router = useRouter();
   
   // プロンプトIDを取得
@@ -189,7 +192,11 @@ const PromptContent: React.FC<PromptContentProps> = ({
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) setCurrentUser(session.user);
+      if (session) {
+        startTransition(() => {
+          setCurrentUser(session.user);
+        });
+      }
     };
     fetchUser();
   }, []);
@@ -202,10 +209,13 @@ const PromptContent: React.FC<PromptContentProps> = ({
       try {
         // 新しいヘルパー関数を使用して購入状態を確認
         const isPurchased = await checkPurchaseStatus(currentUser.id, promptId);
-        setIsPurchased(isPurchased || isPaid); // 親コンポーネントからのpropsも考慮
+        startTransition(() => {
+          setIsPurchased(isPurchased || isPaid); // 親コンポーネントからのpropsも考慮
+        });
       } catch (e) {
-        console.error('購入確認エラー:', e);
-        setIsPurchased(isPaid); // エラー時は親コンポーネントの値を使用
+        startTransition(() => {
+          setIsPurchased(isPaid); // エラー時は親コンポーネントの値を使用
+        });
       }
     };
     
@@ -268,6 +278,29 @@ const PromptContent: React.FC<PromptContentProps> = ({
   // 購入ダイアログを閉じる - useCallbackで最適化
   const handleCloseDialog = useCallback(() => {
     setIsDialogOpen(false);
+  }, []);
+
+  // プロンプトをクリップボードにコピーする関数
+  const copyToClipboard = useCallback(async (text: string, buttonId: string) => {
+    try {
+      // HTMLタグを除去してプレーンテキストにする
+      const plainText = text.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+      await navigator.clipboard.writeText(plainText);
+      
+      // コピー成功時にアイコンを変更
+      setCopiedButtons(prev => new Set(prev).add(buttonId));
+      
+      // 2秒後にアイコンを元に戻す
+      setTimeout(() => {
+        setCopiedButtons(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(buttonId);
+          return newSet;
+        });
+      }, 2000);
+    } catch (err) {
+      // エラーの場合は何も表示しない（もしくは他の方法でエラー通知）
+    }
   }, []);
   
   // URLを表示用に加工する関数 - useCallbackで最適化
@@ -598,10 +631,22 @@ const PromptContent: React.FC<PromptContentProps> = ({
         {description && (
           <div className="text-gray-700 mb-6">
             <div 
-              className="text-xl leading-loose font-noto font-normal"
+
+className="text-lg leading-loose font-noto font-normal"
               style={{ whiteSpace: 'pre-wrap' }}
               dangerouslySetInnerHTML={{ __html: formatContentWithLineBreaks(description) }}
             />
+          </div>
+        )}
+
+        {/* AIモデル情報表示 */}
+        {aiModel && (
+          <div className="mb-6">
+            <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span className="text-sm font-medium text-blue-700">使用モデル:</span>
+              <span className="text-sm text-blue-600 font-mono">{aiModel}</span>
+            </div>
           </div>
         )}
 
@@ -617,34 +662,6 @@ const PromptContent: React.FC<PromptContentProps> = ({
             <span>システムを見る: {formatSystemUrl(systemUrl)}</span>
           </a>
         )}
-        
-        {/* YAMLダウンロードセクション - プロンプト表示の真上 */}
-        {/* 
-        {canDownloadYaml && premiumContent && (
-          <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-3 mb-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-start space-x-3">
-                <div className="p-1.5 bg-green-100 rounded-md">
-                  <FileText className="h-4 w-4 text-green-600" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-sm font-medium text-gray-900 mb-1">YAML形式でダウンロード</h4>
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    プロンプト内容をYAML形式で保存。AIに投げるだけで同じようなサイト、アプリを再現できます。
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={downloadAllPromptsYaml}
-                className="flex items-center space-x-1.5 bg-white hover:bg-green-50 border border-green-300 text-green-700 px-3 py-1.5 rounded-md text-sm font-medium transition-colors shadow-sm hover:shadow-md"
-              >
-                <Download className="h-3.5 w-3.5" />
-                <span>YAML</span>
-              </button>
-            </div>
-          </div>
-        )}
-        */}
         
         {/* Content section */}
         <div className="relative max-w-none">
@@ -664,31 +681,31 @@ const PromptContent: React.FC<PromptContentProps> = ({
                       プロンプト {prompt.id}
                     </h3>
                     
-                    {/* 個別プロンプトYAMLダウンロード - 小さく */}
-                    {/* 
-                    {canDownloadYaml && (
-                      <Button
-                        onClick={() => downloadIndividualYaml(prompt)}
-                        size="sm"
-                        variant="outline"
-                        className="px-2 py-1 text-xs border-gray-300 text-gray-600 hover:bg-gray-50"
-                      >
-                        <Download className="h-3 w-3 mr-1" />
-                        YAML
-                      </Button>
-                    )}
-                    */}
+                  
                   </div>
                   
                   {/* プロンプト内容 - 記事形式 */}
                   <div className="prose prose-lg max-w-none">
-                    <div 
-                      className="text-xl leading-loose font-noto font-normal text-gray-800"
-                      style={{ whiteSpace: 'pre-wrap' }}
-                      dangerouslySetInnerHTML={{ 
-                        __html: formatContentWithLineBreaks(prompt.content) 
-                      }}
-                    />
+                    <div className="relative bg-gray-100 rounded-lg p-4">
+                      <button
+                        onClick={() => copyToClipboard(prompt.content, `prompt-${prompt.id}`)}
+                        className="absolute top-3 right-3 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
+                        title="プロンプトをコピー"
+                      >
+                        {copiedButtons.has(`prompt-${prompt.id}`) ? (
+                          <Check className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </button>
+                      <div 
+                        className="text-lg leading-loose font-noto font-normal text-gray-800 pr-12"
+                        style={{ whiteSpace: 'pre-wrap' }}
+                        dangerouslySetInnerHTML={{ 
+                          __html: formatContentWithLineBreaks(prompt.content) 
+                        }}
+                      />
+                    </div>
                   </div>
                   
                   {/* 2個目以降は区切り線を追加 */}
@@ -703,32 +720,46 @@ const PromptContent: React.FC<PromptContentProps> = ({
           {/* 単一プロンプトまたは複数プロンプトがない場合の通常表示 */}
           {(!hasMultiplePrompts || !hasFullAccess) && (
             <>
-              {/* 無料部分は常に表示 */}
-              <div 
-                className="text-xl leading-loose font-noto font-normal text-gray-800"
-                style={{ whiteSpace: 'pre-wrap' }}
-                dangerouslySetInnerHTML={{ __html: displayContent.basicDisplayContent }} 
-              />
+              {/* プロンプト内容表示 - 無料部分と有料部分を統合 */}
+              <div className="relative bg-gray-100 rounded-lg p-4">
+                <button
+                  onClick={() => copyToClipboard(hasFullAccess && premiumContent ? contentCalculations.contentText + '\n\n' + premiumContent : contentCalculations.contentText, 'main-prompt')}
+                  className="absolute top-3 right-3 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
+                  title="プロンプトをコピー"
+                >
+                  {copiedButtons.has('main-prompt') ? (
+                    <Check className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </button>
+                {/* 無料部分 */}
+                <div 
+                  className="text-lg leading-loose font-noto font-normal text-gray-800 pr-12"
+                  style={{ whiteSpace: 'pre-wrap' }}
+                  dangerouslySetInnerHTML={{ __html: displayContent.basicDisplayContent }} 
+                />
+                
+                {/* 有料部分 - 条件付きで表示 */}
+                {premiumContent && hasFullAccess && (
+                  <div className="mt-4 pt-4">
+                    <div 
+                      className="text-lg leading-loose font-noto font-normal text-gray-800"
+                      style={{ whiteSpace: 'pre-wrap' }}
+                      dangerouslySetInnerHTML={{ __html: formatContentWithLineBreaks(premiumContent) }} 
+                    />
+                  </div>
+                )}
+              </div>
               
-              {/* 有料部分 - 条件付きで表示 */}
-              {premiumContent && (
+              {/* 有料部分プレビュー（未購入の場合） */}
+              {premiumContent && !hasFullAccess && shouldShowPremiumPreview && (
                 <>
-                  {hasFullAccess ? (
-                    /* 購入済みまたは無料の場合は全文表示 */
-                    <div className="mt-6">
-                      <div 
-                        className="text-xl leading-loose font-noto font-normal text-gray-800"
-                        style={{ whiteSpace: 'pre-wrap' }}
-                        dangerouslySetInnerHTML={{ __html: formatContentWithLineBreaks(premiumContent) }} 
-                      />
-                    </div>
-                  ) : shouldShowPremiumPreview ? (
-                    /* 有料で未購入の場合はプレビューと購入案内 */
                     <div className="relative">
                       {/* プレビューコンテンツの最初の2行を表示 */}
                       <div className="relative mb-8">
                         <div 
-                          className="text-xl leading-loose font-noto font-normal text-gray-600"
+                          className="text-lg leading-loose font-noto font-normal text-gray-600"
                           style={{ whiteSpace: 'pre-wrap' }}
                           dangerouslySetInnerHTML={{ 
                             __html: displayContent.extractLimitedPreviewByLines(premiumContent, previewLines) 
@@ -796,7 +827,6 @@ const PromptContent: React.FC<PromptContentProps> = ({
                         </div>
                       </div>
                     </div>
-                  ) : null}
                 </>
               )}
             </>

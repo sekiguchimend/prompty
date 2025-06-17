@@ -37,12 +37,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    console.log('🎬 VideoPlayerコンポーネントマウント:', {
-      src,
-      alt,
-      hasVideo: !!videoRef.current
-    });
-    
     // モバイルデバイス判定
     setIsMobile(/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
     
@@ -54,7 +48,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const handleEnded = () => setIsPlaying(false);
     const handleLoadedData = () => {
       setThumbnailLoaded(true);
-      console.log('🖼️ 動画サムネイル読み込み完了');
     };
 
     video.addEventListener('play', handlePlay);
