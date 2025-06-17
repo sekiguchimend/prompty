@@ -160,7 +160,7 @@ export default function SetupProfile() {
       // プロフィールを更新
       try {
         // APIエンドポイントを使用してプロフィールを更新
-        const response = await fetch('/api/auth/update-profile', {
+        const response = await fetch('/api/users/save-profile', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
