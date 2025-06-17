@@ -95,6 +95,24 @@ jobs:
           git fetch origin
           git reset --hard origin/main
           
+          # nginx設定を適用
+          echo "🔧 nginx設定を確認・適用中..."
+          if [ -f nginx-upload-config.conf ]; then
+            # nginx設定をコピー
+            sudo cp nginx-upload-config.conf /etc/nginx/conf.d/upload-config.conf || true
+            
+            # nginx設定をテスト
+            if sudo nginx -t; then
+              echo "✅ nginx設定テスト成功"
+              sudo systemctl reload nginx
+              echo "✅ nginx設定リロード完了"
+            else
+              echo "⚠️ nginx設定テスト失敗。デフォルト設定を維持します"
+            fi
+          else
+            echo "⚠️ nginx-upload-config.confが見つかりません"
+          fi
+          
           # node_modulesを完全にクリーンアップ（権限問題対策）
           echo "🧹 node_modules清理中..."
           sudo rm -rf node_modules package-lock.json || true

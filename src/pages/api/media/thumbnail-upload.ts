@@ -80,7 +80,14 @@ function detectMimeType(buffer: Buffer, originalExt: string): string {
     'mp4': 'video/mp4',
     'webm': 'video/webm',
     'mov': 'video/quicktime',
-    'avi': 'video/avi'
+    'avi': 'video/avi',
+    'm4v': 'video/m4v',
+    'ogv': 'video/ogg',
+    'ogg': 'video/ogg',
+    '3gp': 'video/3gpp',
+    'flv': 'video/x-flv',
+    'wmv': 'video/x-ms-wmv',
+    'mkv': 'video/mkv'
   };
   
   if (extensionMapping[ext]) {
@@ -147,21 +154,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log('認証トークンの長さ:', sessionToken.length);
       
       try {
-        // 認証トークンを持つクライアントを初期化する方法に変更
-        supabase = createClient(
+        // サービスロールキーを使用してユーザーを認証
+        const adminSupabase = createClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-          {
-            global: {
-              headers: {
-                Authorization: `Bearer ${sessionToken}`
-              }
-            }
-          }
+          process.env.SUPABASE_SERVICE_ROLE_KEY!
         );
         
-        // セッションが正しく設定されたことを確認
-        const { data: userData, error: userError } = await supabase.auth.getUser();
+        // JWTトークンからユーザー情報を取得
+        const { data: userData, error: userError } = await adminSupabase.auth.getUser(sessionToken);
         if (userError || !userData.user) {
           console.error('ユーザー取得エラー:', userError || 'ユーザーデータなし');
           return res.status(401).json({ 
@@ -171,6 +171,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
         
         console.log('認証成功 - ユーザーID:', userData.user.id);
+        supabase = adminSupabase; // 以降の処理でサービスロールクライアントを使用
+        
       } catch (authError) {
         console.error('認証処理エラー:', authError);
         return res.status(401).json({ 
