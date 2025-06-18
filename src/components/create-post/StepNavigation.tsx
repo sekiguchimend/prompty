@@ -31,14 +31,14 @@ interface StepInfo {
 }
 
 const stepInfoMap: Record<number, StepInfo> = {
-  1: { label: "プロジェクトタイトル", icon: Type, color: "text-blue-600", bgColor: "bg-blue-50" },
-  2: { label: "AIモデル選択", icon: Bot, color: "text-purple-600", bgColor: "bg-purple-50" },
-  3: { label: "価格設定", icon: DollarSign, color: "text-green-600", bgColor: "bg-green-50" },
-  4: { label: "プロジェクト説明", icon: FileText, color: "text-orange-600", bgColor: "bg-orange-50" },
-  5: { label: "カテゴリ選択", icon: Tag, color: "text-red-600", bgColor: "bg-red-50" },
-  6: { label: "サムネイル画像", icon: Image, color: "text-pink-600", bgColor: "bg-pink-50" },
-  7: { label: "プロンプト入力", icon: MessageSquare, color: "text-indigo-600", bgColor: "bg-indigo-50" },
-  8: { label: "確認と投稿", icon: Send, color: "text-teal-600", bgColor: "bg-teal-50" },
+  1: { label: "タイトル", icon: Type, color: "text-blue-600", bgColor: "bg-blue-50" },
+  2: { label: "AIモデル", icon: Bot, color: "text-purple-600", bgColor: "bg-purple-50" },
+  3: { label: "価格", icon: DollarSign, color: "text-green-600", bgColor: "bg-green-50" },
+  4: { label: "説明", icon: FileText, color: "text-orange-600", bgColor: "bg-orange-50" },
+  5: { label: "カテゴリ", icon: Tag, color: "text-red-600", bgColor: "bg-red-50" },
+  6: { label: "サムネイル", icon: Image, color: "text-pink-600", bgColor: "bg-pink-50" },
+  7: { label: "プロンプト", icon: MessageSquare, color: "text-indigo-600", bgColor: "bg-indigo-50" },
+  8: { label: "投稿", icon: Send, color: "text-teal-600", bgColor: "bg-teal-50" },
 };
 
 const StepNavigation: React.FC<StepNavigationProps> = ({

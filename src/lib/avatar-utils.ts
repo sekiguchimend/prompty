@@ -50,11 +50,11 @@ export function getAvatarFallback(displayName: string | null | undefined): strin
 
 /**
  * 表示名を取得する
- * nullや空の場合は「匿名」を返す
+ * nullや空の場合は「ユーザー」を返す
  */
-export function getDisplayName(displayName: string | null | undefined): string {
+export function getDisplayName(displayName: string | null | undefined, fallbackName?: string): string {
   if (!displayName || displayName.trim() === '') {
-    return '匿名';
+    return fallbackName || 'ユーザー';
   }
   return displayName.trim();
 }

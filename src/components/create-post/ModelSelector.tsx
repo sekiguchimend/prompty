@@ -29,7 +29,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
             <FormLabel className="text-base font-medium">AIモデル</FormLabel>
             <FormControl>
               <Input
-                placeholder="claude-4-20250120, claude-3-5-sonnet-20241022, claude-3-5-haiku-20241022 など"
+                placeholder="chat-gpt"
                 className="border-gray-300"
                 value={field.value}
                 onChange={(e) => {

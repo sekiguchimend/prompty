@@ -21,9 +21,9 @@ export interface UserData {
 }
 
 // ユーザー表示名を取得する関数
-// nullや空文字の場合は「匿名」を返す
-export function getDisplayName(displayName: string | null | undefined): string {
-  return displayName && displayName.trim() !== '' ? displayName : '匿名';
+// nullや空文字の場合は「ユーザー」を返す
+export function getDisplayName(displayName: string | null | undefined, fallbackName?: string): string {
+  return displayName && displayName.trim() !== '' ? displayName : (fallbackName || 'ユーザー');
 }
 
 // アバター画像URLの取得関数

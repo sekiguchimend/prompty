@@ -317,7 +317,7 @@ const EditPromptPage: React.FC<EditPromptPageProps> = ({ promptData }) => {
               <Input
                 value={formData.aiModel}
                 onChange={(e) => handleInputChange('aiModel', e.target.value)}
-                placeholder="claude-4-20250120, claude-3-5-sonnet-20241022, gpt-4o など"
+                placeholder="chat-gpt"
               />
               <div className="text-sm text-gray-500 mt-2 space-y-1">
                 <p>• 推奨: claude-4-20250120 (最新・高性能)</p>
