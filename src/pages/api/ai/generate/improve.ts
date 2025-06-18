@@ -111,11 +111,6 @@ async function callClaudeAPI(prompt: string, model: string): Promise<string> {
   // すべてClaude 4 Sonnetを使用
   const claudeModel = 'claude-4-sonnet';
 
-    model: claudeModel, 
-    requestedModel: model,
-    note: 'Claude 4 Sonnet使用'
-  });
-
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -150,10 +145,6 @@ function cleanExternalReferences(files: Record<string, string>): Record<string, 
     if (filename.endsWith('.html')) {
       let html = cleanedFiles[filename];
       
-        cssLinks: (html.match(/<link[^>]*href=["'][^"']*\.css["'][^>]*>/gi) || []).length,
-        jsScripts: (html.match(/<script[^>]*src=["'][^"']*\.js["'][^>]*>/gi) || []).length
-      });
-      
       // 🔧 CSS外部参照を徹底的に除去
       html = html.replace(/<link[^>]*rel=["']stylesheet["'][^>]*>/gi, '');
       html = html.replace(/<link[^>]*href=["']styles?\.css["'][^>]*>/gi, '');
@@ -182,18 +173,6 @@ function cleanExternalReferences(files: Record<string, string>): Record<string, 
         allLinks: (html.match(/<link[^>]*href=["'][^"']*["'][^>]*>/gi) || []).length,
         allScripts: (html.match(/<script[^>]*src=["'][^"']*["'][^>]*>/gi) || []).length
       };
-      
-        filename,
-        removedExternalRefs: true,
-        remainingReferences: remainingRefs,
-        fullyClean: remainingRefs.cssLinks === 0 && remainingRefs.jsScripts === 0
-      });
-      
-      if (remainingRefs.cssLinks > 0 || remainingRefs.jsScripts > 0) {
-          cssLinks: html.match(/<link[^>]*href=["'][^"']*\.css["'][^>]*>/gi),
-          jsScripts: html.match(/<script[^>]*src=["'][^"']*\.js["'][^>]*>/gi)
-        });
-      }
     }
   });
   
@@ -867,10 +846,6 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
       throw new Error('ファイルオブジェクトが無効');
     }
     
-      resultFiles: Object.keys(result.files),
-      existingFiles: Object.keys(existingFiles)
-    });
-    
     // ファイル内容をサニタイズ（既存ファイル以外のみ）
     Object.keys(result.files).forEach(fileName => {
       if (typeof result.files[fileName] !== 'string') {
@@ -903,10 +878,6 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
     if (result.files['index.html']) {
       result.files['index.html'] = embedFilesInHTML(result.files['index.html'], result.files);
     }
-    
-      finalFiles: Object.keys(result.files),
-      preservedExisting: Object.keys(existingFiles).length > 0
-    });
     
     return {
       files: result.files,
@@ -975,12 +946,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
 
-      model,
-      framework, 
-      language,
-      originalCodeLength: originalCode.length,
-      improvementRequest: improvementRequest.substring(0, 100) + '...'
-    });
 
     let result: CodeGenerationResponse;
     
@@ -989,11 +954,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const prompt = generateImprovementPrompt(originalCode, improvementRequest, framework, model, language);
       const claudeResponse = await callClaudeAPI(prompt, model);
       result = extractAndFixJSON(claudeResponse, originalCode);
-      
-        model,
-        filesGenerated: Object.keys(result.files).length,
-        framework: result.framework
-      });
     } catch (claudeError) {
       console.error(`❌ Claude コード改善エラー:`, claudeError);
       
@@ -1005,11 +965,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.error('❌ 最終検証失敗: ファイルが生成されていません');
       result = createFallbackResponse(framework, model, originalCode);
     }
-
-      files: Object.keys(result.files || {}),
-      framework: result.framework,
-      model: result.usedModel
-    });
 
     res.status(200).json(result);
   } catch (error) {

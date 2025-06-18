@@ -17,9 +17,6 @@ async function migrateCommentsHandler(req: NextApiRequest, res: NextApiResponse)
   
   // API キーチェック
   if (!adminKey || apiKey !== adminKey) {
-      ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-      userAgent: req.headers['user-agent']
-    });
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
@@ -59,9 +56,6 @@ async function migrateCommentsHandler(req: NextApiRequest, res: NextApiResponse)
       .single();
 
     if (profileError || !profile?.is_admin) {
-        userId: user.id,
-        email: user.email
-      });
       return res.status(403).json({ error: 'Admin privileges required' });
     }
     

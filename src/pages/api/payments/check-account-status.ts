@@ -34,13 +34,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const status = isComplete ? 'complete' : 
                    requirementsCount > 0 ? 'pending' : 'incomplete';
     
-      id: account.id,
-      charges_enabled: account.charges_enabled,
-      payouts_enabled: account.payouts_enabled,
-      requirements_count: requirementsCount,
-      status: status
-    });
-    
     res.status(200).json({
       status: status,
       charges_enabled: account.charges_enabled,

@@ -61,10 +61,11 @@ export class CodeImprovementService {
   };
 
   async improveCode(request: ImprovementRequest): Promise<ImprovementResult> {
-      preservationLevel: request.preservationLevel,
-      targetAreas: request.targetAreas,
-      codeLength: request.originalCode.length
-    });
+    // console.log('コード改善開始:', {
+    //   preservationLevel: request.preservationLevel,
+    //   targetAreas: request.targetAreas,
+    //   codeLength: request.originalCode.length
+    // });
 
     // 1. 既存コードの分析
     const originalValidation = validateCodeQuality(request.originalCode);
@@ -111,10 +112,11 @@ export class CodeImprovementService {
       recommendations: this.generateRecommendations(originalValidation, improvedValidation)
     };
 
-      preservedFunctions: result.preservedElements.functions.length,
-      improvements: result.improvements.length,
-      qualityImprovement: result.qualityMetrics.improvement
-    });
+    // console.log('コード改善完了:', {
+    //   preservedFunctions: result.preservedElements.functions.length,
+    //   improvements: result.improvements.length,
+    //   qualityImprovement: result.qualityMetrics.improvement
+    // });
 
     return result;
   }

@@ -27,13 +27,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // アカウント情報を取得して診断
     try {
       const account = await stripe.accounts.retrieve(accountId);
-        id: account.id,
-        type: account.type,  // 'express', 'standard', 'custom'のいずれか
-        email: account.email,
-        capabilities: account.capabilities,
-        requirements: account.requirements && account.requirements.currently_due ? 
-          (account.requirements.currently_due.length > 0 ? 'あり' : 'なし') : '不明'
-      });
     } catch (accountError) {
       console.error('アカウント情報取得エラー:', accountError);
     }
@@ -42,10 +35,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const loginLink = await stripe.accounts.createLoginLink(accountId);
 
     // 詳細な診断情報を記録
-      url: loginLink.url.substring(0, 50) + '...',
-      created: new Date().toISOString(),
-      headers: req.headers.origin || 'unknown origin'
-    });
     
     // クライアントに返すレスポンスを準備
     const responseData = { 

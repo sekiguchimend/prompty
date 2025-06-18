@@ -94,11 +94,12 @@ const StripeConnectSection: React.FC<StripeConnectSectionProps> = ({ userId, str
       });
       
       // 詳細なレスポンス情報をログに出力
-        status: response.status,
-        url: response.data.url ? response.data.url.substring(0, 30) + '...' : 'なし',
-        timestamp: response.data.createdAt || new Date().toISOString(),
-        accountId: response.data.accountId
-      });
+      // console.log('ログインリンク生成成功:', {
+      //   status: response.status,
+      //   url: response.data.url ? response.data.url.substring(0, 30) + '...' : 'なし',
+      //   timestamp: response.data.createdAt || new Date().toISOString(),
+      //   accountId: response.data.accountId
+      // });
       
       // 新しいタブでStripeダッシュボードを開く
       window.open(response.data.url, '_blank');
@@ -118,13 +119,13 @@ const StripeConnectSection: React.FC<StripeConnectSectionProps> = ({ userId, str
                            error.message ||
                            'ログインリンクの生成に失敗しました';
       
-      console.error('詳細エラー情報:', {
-        message: errorMessage,
-        code: errorDetails.code || error.code,
-        details: errorDetails.details || null,
-        status: error.response?.status || 'unknown',
-        timestamp: errorDetails.timestamp || new Date().toISOString()
-      });
+      // console.error('詳細エラー情報:', {
+      //   message: errorMessage,
+      //   code: errorDetails.code || error.code,
+      //   details: errorDetails.details || null,
+      //   status: error.response?.status || 'unknown',
+      //   timestamp: errorDetails.timestamp || new Date().toISOString()
+      // });
       
       toast({
         title: 'エラー',

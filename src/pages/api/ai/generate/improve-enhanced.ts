@@ -532,13 +532,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Original code and improvement request are required' });
     }
 
-      framework, 
-      model, 
-      language,
-      requestLength: improvementRequest.length,
-      codeLength: originalCode.length
-    });
-
     const prompt = generateEnhancedImprovementPrompt(
       originalCode, 
       improvementRequest, 
@@ -567,12 +560,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       result = createEnhancedFallbackResponse(originalCode, improvementRequest, framework, model);
     }
     
-      files: Object.keys(result.files || {}),
-      framework: result.framework,
-      model: result.usedModel || model,
-      descriptionLength: result.description?.length || 0
-    });
-
     res.status(200).json(result);
   } catch (error) {
     console.error('❌ Enhanced コード改善エラー:', error);

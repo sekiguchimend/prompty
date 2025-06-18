@@ -87,10 +87,11 @@ export const submitReport = async (reportData: ReportData): Promise<{ success: b
     
     // 認証トークンの取得
     const authToken = getAuthToken();
-      hasToken: !!authToken, 
-      tokenLength: authToken?.length || 0,
-      tokenPreview: authToken ? `${authToken.substring(0, 15)}...` : 'なし'
-    });
+    // console.log('認証トークン情報:', {
+    //   hasToken: !!authToken, 
+    //   tokenLength: authToken?.length || 0,
+    //   tokenPreview: authToken ? `${authToken.substring(0, 15)}...` : 'なし'
+    // });
     
     // リクエストヘッダーの設定
     const headers: HeadersInit = {

@@ -15,13 +15,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // リクエスト情報をログに出力（デバッグ用）
-      user_id: user_id.substring(0, 8) + '...',
-      prompt_id: prompt_id.substring(0, 8) + '...',
-      price,
-      currency,
-      stripe_price_id: stripe_price_id || 'なし',
-      author_id: author_id?.substring(0, 8) + '...'
-    });
 
     // 価格を整数として扱う（最小通貨単位）
     const priceAmount = typeof price === 'string' ? parseInt(price, 10) : price;

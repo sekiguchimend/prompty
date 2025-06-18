@@ -26,15 +26,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { target_id, comment_id: originalCommentId, prompt_id, reporter_id, reason, details, target_type } = req.body;
     const comment_id = target_id || originalCommentId; // target_idを優先して使用
     
-    // リクエストボディのログ
-      target_id, 
-      comment_id: originalCommentId, 
-      prompt_id, 
-      reporter_id, 
-      reason, 
-      target_type 
-    });
-    
     // 必須フィールドの検証
     if (!comment_id || !prompt_id || !reporter_id || !reason) {
       const missingFields = [

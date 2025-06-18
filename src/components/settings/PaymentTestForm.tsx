@@ -45,10 +45,11 @@ const PaymentTestForm: React.FC<PaymentTestFormProps> = ({ receiverId, stripeAcc
       // PaymentIntentのクライアントシークレットを取得してからカード決済を行います
       // 簡略化のため、コンソールにメッセージを表示するだけにしています
       
-        userId: receiverId,
-        amount: amount,
-        currency: 'jpy'
-      });
+      // const response = await axios.post('/api/payments/create-payment-intent', {
+      //   userId: receiverId,
+      //   amount: amount,
+      //   currency: 'jpy'
+      // });
       
       // PaymentIntentの作成をシミュレート
       await new Promise(resolve => setTimeout(resolve, 1500));
