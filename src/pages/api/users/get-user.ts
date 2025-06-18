@@ -8,11 +8,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    console.log('==================== GET-USER API ====================');
-    console.log('📥 get-user API呼び出し', new Date().toISOString());
     
     // 開発モード：常にデモユーザーを返す
-    console.log('⚠️ デモユーザーモード：常に有効なユーザーIDを返します');
     
     // 実際の本番環境では、Cookieからセッショントークンを取得して
     // Supabaseの認証状態を確認するべきですが、開発用に常に成功を返します

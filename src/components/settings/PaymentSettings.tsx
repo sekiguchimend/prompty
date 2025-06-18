@@ -44,7 +44,6 @@ const PaymentSettings: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // 実際の実装では、ここでAPIに登録情報を送信する処理を追加
-    console.log('送信された銀行口座情報:', bankFormData);
     // フォームを閉じる
     setShowBankForm(false);
     // 成功メッセージなどを表示

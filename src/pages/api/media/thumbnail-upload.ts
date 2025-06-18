@@ -313,7 +313,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .from('prompt-thumbnails')
         .getPublicUrl(fileName);
 
-      console.log('公開URL:', publicUrl);
 
       // URLパスの修正（必要に応じて）
       let finalPublicUrl = publicUrl;

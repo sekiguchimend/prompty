@@ -8,7 +8,6 @@ export async function isAuthenticated(req: NextApiRequest) {
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('認証トークンがありません');
       return null;
     }
     

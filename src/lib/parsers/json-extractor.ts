@@ -11,7 +11,6 @@ export function extractJSONFromResponse(claudeResponse: string): UIGenerationRes
       jsonString = jsonMatch[1] || jsonMatch[0];
     } else {
       // JSONブロックが見つからない場合、直接パースを試行
-      console.log('🔍 No JSON block found, trying direct parse...');
       jsonString = claudeResponse;
     }
     
@@ -22,8 +21,6 @@ export function extractJSONFromResponse(claudeResponse: string): UIGenerationRes
       .replace(/\r/g, '\\r')                // 復帰文字をエスケープ
       .replace(/\t/g, '\\t');               // タブをエスケープ
     
-    console.log('📦 Extracted JSON string length:', jsonString.length);
-    console.log('🧹 Sanitized JSON string length:', sanitizedJson.length);
     
     const result = JSON.parse(sanitizedJson);
     
@@ -36,7 +33,6 @@ export function extractJSONFromResponse(claudeResponse: string): UIGenerationRes
     
   } catch (parseError) {
     console.error('❌ JSON parse error:', parseError);
-    console.log('📄 Raw response (first 500 chars):', claudeResponse.substring(0, 500));
     
     throw parseError;
   }

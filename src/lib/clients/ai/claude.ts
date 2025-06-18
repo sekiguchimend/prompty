@@ -51,7 +51,6 @@ export class ClaudeClient {
       topP = 0.8
     } = options;
 
-    console.log('🔮 Claude API call:', { model, maxTokens, temperature });
 
     const response = await fetch(`${this.config.baseUrl}/messages`, {
       method: 'POST',

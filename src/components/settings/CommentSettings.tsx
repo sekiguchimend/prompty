@@ -85,7 +85,6 @@ const CommentSettingsComponent: React.FC = () => {
           .single();
         
         if (settingsError && settingsError.code !== 'PGRST116') { // 'PGRST116'は結果が見つからないエラー
-          console.warn('コメント設定取得エラー:', settingsError);
         }
         
         if (settingsData && settingsData.comment_settings) {

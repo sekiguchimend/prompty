@@ -18,8 +18,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ? `${funcUrl}handle_prompts_insert`
       : `${funcUrl}/handle_prompts_insert`;
     
-    console.log(`🔄 Edge Functionへリクエスト: ${fullUrl}`);
-    console.log(`📤 リクエストボディ:`, JSON.stringify(req.body));
 
     // 認証トークンの取得と検証
     const authHeader = req.headers.authorization;
@@ -45,7 +43,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const tokenLength = token.length;
     const tokenPrefix = token.substring(0, 20);
     const tokenSuffix = token.substring(tokenLength - 20);
-    console.log(`🔑 トークン情報: 長さ=${tokenLength}, 先頭=${tokenPrefix}..., 末尾=...${tokenSuffix}`);
 
     // フェッチオプションの設定
     const fetchOptions = {
@@ -65,7 +62,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       rsp = await fetch(fullUrl, fetchOptions);
       const endTime = Date.now();
-      console.log(`⏱️ Edge Function応答時間: ${endTime - startTime}ms`);
     } catch (fetchError) {
       console.error("❌ Edge Function通信エラー:", fetchError);
       return res.status(500).json({ 
@@ -79,7 +75,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let responseText;
     try {
       responseText = await rsp.text();
-      console.log(`📥 Edge Functionレスポンス: ${rsp.status}`, responseText);
     } catch (textError) {
       console.error("❌ レスポンステキスト取得エラー:", textError);
       return res.status(500).json({ 
@@ -89,7 +84,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // 直接レスポンスのHTTPヘッダーを検査
-    console.log("📋 レスポンスヘッダー:", {
       status: rsp.status,
       statusText: rsp.statusText,
       contentType: rsp.headers.get('content-type'),

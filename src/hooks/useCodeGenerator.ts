@@ -148,7 +148,6 @@ export const useCodeGenerator = () => {
         
         // 個別ファイルが長すぎる場合は一部のみ使用
         if (fileContent.length > maxFileLength) {
-          console.log(`⚠️ ${filename} が長すぎるため、最初の${maxFileLength}文字のみ使用`);
           fileContent = fileContent.substring(0, maxFileLength) + '\n\n// ... (ファイルが長いため省略) ...';
         }
         
@@ -156,7 +155,6 @@ export const useCodeGenerator = () => {
         
         // 合計文字数チェック
         if (totalLength + fileSection.length > maxTotalLength) {
-          console.log(`⚠️ 文字数制限により ${filename} を除外`);
           allFiles += `// ${filename}\n// (文字数制限により省略)\n\n`;
           break;
         }
@@ -165,7 +163,6 @@ export const useCodeGenerator = () => {
         totalLength += fileSection.length;
       }
       
-      console.log(`📊 コード改善送信サイズ: ${totalLength.toLocaleString()}文字 (制限: ${maxTotalLength.toLocaleString()}文字)`);
       
       // 🔧 JSONフォーマットで送信（既存コード保護強化）
       const codePackage = JSON.stringify({
@@ -199,12 +196,6 @@ export const useCodeGenerator = () => {
       setGeneratedCode(result);
       addImprovement(improvementPrompt, result);
       
-      // Log preservation success
-      console.log('✅ コード改善完了 - 既存機能保護:', {
-        preservedFeatures: result.preservedFeatures?.length || 0,
-        improvements: result.improvements?.length || 0,
-        warnings: result.warnings?.length || 0
-      });
       
       return result;
     } catch (error) {
@@ -258,7 +249,6 @@ export const useCodeGenerator = () => {
     });
 
     saveHistory(newHistory);
-    console.log('✅ プロジェクトを初期状態に戻しました');
   }, [currentProjectId, history, saveHistory]);
 
   // Revert to specific improvement state
@@ -292,7 +282,6 @@ export const useCodeGenerator = () => {
     });
 
     saveHistory(newHistory);
-    console.log(`✅ 改善 #${project.improvements.length - improvementIndex} の状態に戻しました`);
   }, [history, saveHistory]);
 
   // Get current project details (for UI display)

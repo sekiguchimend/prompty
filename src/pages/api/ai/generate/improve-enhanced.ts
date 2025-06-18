@@ -146,7 +146,6 @@ async function callClaudeAPI(prompt: string, model: string): Promise<string> {
 
 
 function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationResponse {
-  console.log('🔧 Enhanced JSON処理開始:', text.length, '文字');
   
   // Remove code blocks and clean text
   let cleanText = text.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '');
@@ -165,13 +164,11 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
   const fixes = [
     // Fix 1: Try direct parse first
     () => {
-      console.log('🔄 Enhanced修復試行 1');
       return JSON.parse(jsonString);
     },
     
     // Fix 2: Basic cleanup
     () => {
-      console.log('🔄 Enhanced修復試行 2');
       const cleaned = jsonString
         .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
         .replace(/([{,]\s*)(\w+):/g, '$1"$2":') // Quote unquoted keys
@@ -181,7 +178,6 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
     
     // Fix 3: Handle template literals and backticks
     () => {
-      console.log('🔄 Enhanced修復試行 3');
       // Replace template literals with regular strings
       let fixed = jsonString.replace(/`([^`]*)`/g, (match, content) => {
         const escaped = content
@@ -203,7 +199,6 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
     
     // Fix 4: Normalize string values
     () => {
-      console.log('🔄 Enhanced修復試行 4');
       let fixed = jsonString;
       
       // Fix string values with proper escaping
@@ -225,7 +220,6 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
     
     // Fix 5: Manual reconstruction
     () => {
-      console.log('🔄 Enhanced修復試行 5');
       const files: Record<string, string> = {};
       
       // Extract files object with improved regex
@@ -345,11 +339,9 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
       
       if (!processedFiles['script.js']) {
         processedFiles['script.js'] = `// Enhanced JavaScript functionality
-console.log("App loaded successfully");
 
 // 既存の機能を保護しながら新機能を追加
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded - ready for enhancements');
 });`;
       }
       
@@ -372,7 +364,6 @@ body {
 }`;
       }
       
-      console.log('✅ Enhanced JSON解析成功');
       return {
         files: processedFiles,
         description: result.description || 'コード改善完了',
@@ -387,7 +378,6 @@ body {
       };
     } catch (error) {
       lastError = error as Error;
-      console.log(`❌ Enhanced修復試行 ${i + 1} 失敗:`, lastError.message);
     }
   }
   
@@ -491,8 +481,6 @@ button:hover {
   // Always include script.js
   files['script.js'] = `// Enhanced error handling script
 console.error('Code improvement failed');
-console.log('Framework:', '${framework}');
-console.log('Model:', '${model}');
 
 // Debug information
 window.debugInfo = {
@@ -544,7 +532,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Original code and improvement request are required' });
     }
 
-    console.log('🚀 Enhanced コード改善開始:', { 
       framework, 
       model, 
       language,
@@ -580,7 +567,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       result = createEnhancedFallbackResponse(originalCode, improvementRequest, framework, model);
     }
     
-    console.log('✅ Enhanced コード改善完了:', {
       files: Object.keys(result.files || {}),
       framework: result.framework,
       model: result.usedModel || model,

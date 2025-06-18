@@ -68,7 +68,6 @@ const UIPreview: React.FC<UIPreviewProps> = ({
           doc.write(content);
           doc.close();
           
-          console.log('✅ Preview updated successfully');
           
           // ロード完了を待つ
           iframe.onload = () => {
@@ -105,7 +104,6 @@ const UIPreview: React.FC<UIPreviewProps> = ({
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data.type === 'navigate') {
-        console.log('Navigation message received:', event.data.page);
       }
     };
 
@@ -114,7 +112,6 @@ const UIPreview: React.FC<UIPreviewProps> = ({
   }, []);
 
   const refreshPreview = () => {
-    console.log('🔄 Manual refresh triggered');
     updatePreview(true);
   };
 

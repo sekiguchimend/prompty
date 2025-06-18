@@ -82,20 +82,11 @@ export async function uploadFileToStorage(
     
     // URLパスに「/public/」が含まれているか確認
     if (!publicUrl.includes('/object/public/')) {
-      console.warn('公開URLパスが不正確です。修正を試みます:', publicUrl);
       
       // 不足している「/public/」を挿入
       publicUrl = publicUrl.replace('/object/', '/object/public/');
-      console.log('修正後のURL:', publicUrl);
     }
     
-    console.log('公開URL取得成功:', publicUrl);
-    console.log('公開URLの詳細確認:', {
-      path: data.path,
-      originalUrl: urlData.publicUrl,
-      finalUrl: publicUrl,
-      expectedPattern: `/storage/v1/object/public/prompt-thumbnails/${fileName}`
-    });
     
     // URLが実際に有効かチェック（オプション）
     try {
@@ -110,9 +101,7 @@ export async function uploadFileToStorage(
         setTimeout(() => reject(new Error('画像URLの検証がタイムアウトしました')), 10000);
       });
       
-      console.log('画像URL検証成功');
     } catch (imageError) {
-      console.warn('画像URL検証に失敗しましたが、処理を続行します:', imageError);
       // 検証に失敗しても続行する
     }
     
@@ -177,17 +166,11 @@ export const dataURLtoFile = (dataurl: string, filename: string): File => {
     
     // MIMEタイプが画像でない場合は強制的に画像形式に変更
     if (!mimeType.startsWith('image/')) {
-      console.warn(`非画像MIMEタイプ "${mimeType}" を検出、"image/png" に変更します`);
       mimeType = 'image/png';
     } else if (!supportedImageTypes.includes(mimeType)) {
-      console.warn(`未サポートの画像形式 "${mimeType}" を検出、サポートされている形式に変更します`);
       mimeType = 'image/png'; // サポートされていない画像形式の場合もpngをデフォルトに
     }
     
-    console.log('画像データURL処理:', {
-      mimeType: mimeType,
-      filenameSuggested: filename
-    });
     
     try {
       // Base64デコード
@@ -214,11 +197,6 @@ export const dataURLtoFile = (dataurl: string, filename: string): File => {
       const blob = new Blob([uint8Array], { type: mimeType });
       const file = new File([blob], finalFilename, { type: mimeType });
       
-      console.log('データURLからファイル変換成功:', {
-        name: file.name,
-        type: file.type,
-        size: file.size
-      });
       
       return file;
     } catch (e) {
@@ -245,7 +223,6 @@ export const uploadThumbnailToStorage = async (file: File): Promise<string | nul
   }
   
   try {
-    console.log('サムネイルアップロード処理開始:', file.name);
     
     // 認証トークンを取得（認証済みユーザーの場合）
     const { data: { session } } = await supabase.auth.getSession();
@@ -256,7 +233,6 @@ export const uploadThumbnailToStorage = async (file: File): Promise<string | nul
     formData.append('thumbnailImage', file);
     
     // API経由でアップロード（アバターと同じサーバーサイド処理を使用）
-    console.log('サーバーサイドAPIを使用してアップロード開始');
     const response = await fetch('/api/thumbnail/upload', {
       method: 'POST',
       headers: {
@@ -278,7 +254,6 @@ export const uploadThumbnailToStorage = async (file: File): Promise<string | nul
       throw new Error('公開URLの取得に失敗しました');
     }
     
-    console.log('サムネイルアップロード成功:', result.publicUrl);
     return result.publicUrl;
   } catch (error) {
     console.error('サムネイルアップロードエラー:', error);

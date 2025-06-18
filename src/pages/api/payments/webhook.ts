@@ -180,7 +180,6 @@ async function handleCheckoutSessionCompleted(event: Stripe.Event) {
           checkout_session_id: session.id,
           status: 'completed'
         });
-        console.log('Purchase record created');
       } else {
       }
     } else {

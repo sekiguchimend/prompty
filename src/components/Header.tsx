@@ -427,8 +427,6 @@ const Header = () => {
                                 onClick={(e) => {
                                   if (!window.confirm('管理ページに移動しますか？')) {
                                     e.preventDefault();
-                                  } else {
-                                    console.log('管理ページへ移動します', user.email);
                                   }
                                 }}
                               >

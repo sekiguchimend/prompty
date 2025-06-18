@@ -69,7 +69,6 @@ const FollowModal: React.FC<FollowModalProps> = ({
           }
           
           const followerIds = followData.map(f => f.follower_id);
-          console.log('フォロワーIDs:', followerIds);
           
           if (followerIds.length === 0) {
             setUsers([]);
@@ -91,7 +90,6 @@ const FollowModal: React.FC<FollowModalProps> = ({
             return;
           }
           
-          console.log('プロフィールデータ:', profileData);
           
           userList = profileData?.map((profile: any) => ({
             id: profile.id,
@@ -119,7 +117,6 @@ const FollowModal: React.FC<FollowModalProps> = ({
           }
           
           const followingIds = followData.map(f => f.following_id);
-          console.log('フォローIDs:', followingIds);
           
           if (followingIds.length === 0) {
             setUsers([]);
@@ -141,7 +138,6 @@ const FollowModal: React.FC<FollowModalProps> = ({
             return;
           }
           
-          console.log('プロフィールデータ:', profileData);
           
           userList = profileData?.map((profile: any) => ({
             id: profile.id,

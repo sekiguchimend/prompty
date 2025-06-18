@@ -15,7 +15,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // リクエスト情報をログに出力（デバッグ用）
-    console.log('決済リクエスト:', {
       user_id: user_id.substring(0, 8) + '...',
       prompt_id: prompt_id.substring(0, 8) + '...',
       price,
@@ -65,7 +64,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         await stripe.prices.retrieve(promptPriceId, {
           stripeAccount: authorProfile.stripe_account_id
         });
-        console.log(`価格ID確認成功: ${promptPriceId}`);
         priceValidated = true;
       } catch (priceError: any) {
         console.error('価格ID検証エラー:', priceError);
@@ -76,7 +74,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     // 価格IDが無効または存在しない場合は、その場でStripe製品・価格を作成
     if (!priceValidated) {
-      console.log('有効な価格IDが見つからないため、Stripe製品・価格を新規作成します');
       
       try {
         // Stripe製品作成
@@ -101,7 +98,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           throw new Error('価格IDの取得に失敗しました');
         }
         
-        console.log('Stripe製品・価格作成成功:', {
           product_id: product.id,
           price_id: promptPriceId
         });
@@ -126,7 +122,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // 3. Stripe重複防止のためのidempotencyKey設定
     const idempotencyKey = `${prompt_id}:${user_id}`;
-    console.log(`Creating checkout session with idempotencyKey: ${idempotencyKey}`);
 
     // アプリケーションの手数料（10%）
     const applicationFee = Math.floor(priceAmount * 0.1);
@@ -187,7 +182,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // エラーがあってもセッションURLは返す（決済自体は進行可能）
     }
 
-    console.log('Checkout session created successfully:', session.id);
     res.status(200).json({ url: session.url });
   } catch (error: any) {
     console.error('Stripe checkout session creation error:', error);

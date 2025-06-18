@@ -88,7 +88,6 @@ const CodeSandbox: React.FC<CodeSandboxProps> = ({
       URL.revokeObjectURL(previewUrlRef.current);
     }
 
-    console.log('🎨 プレビュー生成中...', { framework, files: Object.keys(currentFiles) });
 
     try {
       const html = createPreviewHTML();
@@ -98,7 +97,6 @@ const CodeSandbox: React.FC<CodeSandboxProps> = ({
       previewUrlRef.current = url;
       setPreviewUrl(url);
       
-      console.log('✅ プレビュー完成');
     } catch (error) {
       console.error('❌ プレビュー生成エラー:', error);
     } finally {
@@ -268,7 +266,6 @@ const CodeSandbox: React.FC<CodeSandboxProps> = ({
                 setTimeout(function() {
                     const perfData = performance.getEntriesByType('navigation')[0];
                     if (perfData) {
-                        console.log('📊 ページ読み込み時間:', Math.round(perfData.loadEventEnd - perfData.fetchStart), 'ms');
                     }
                 }, 0);
             });
@@ -294,7 +291,6 @@ const CodeSandbox: React.FC<CodeSandboxProps> = ({
                 // 定義されたコンポーネントを検索
                 for (const name of componentNames) {
                     if (typeof window[name] !== 'undefined' && typeof window[name] === 'function') {
-                        console.log('🚀 コンポーネントマウント:', name);
                         
                         const root = ReactDOM.createRoot ? ReactDOM.createRoot(rootElement) : null;
                         if (root) {
@@ -309,7 +305,6 @@ const CodeSandbox: React.FC<CodeSandboxProps> = ({
                 
                 // 自動検出に失敗した場合の高度なフォールバック
                 if (!mounted) {
-                    console.log('⚠️ 標準コンポーネント名が見つかりません。自動検出を試行中...');
                     
                     // グローバルスコープから React コンポーネントを検索
                     const possibleComponents = Object.keys(window).filter(key => {
@@ -322,7 +317,6 @@ const CodeSandbox: React.FC<CodeSandboxProps> = ({
                     
                     if (possibleComponents.length > 0) {
                         const componentName = possibleComponents[0];
-                        console.log('🔍 自動検出されたコンポーネント:', componentName);
                         
                         const root = ReactDOM.createRoot ? ReactDOM.createRoot(rootElement) : null;
                         if (root) {
@@ -336,7 +330,6 @@ const CodeSandbox: React.FC<CodeSandboxProps> = ({
                 
                 // 最終フォールバック
                 if (!mounted) {
-                    console.log('❌ コンポーネントが見つかりません');
                     const errorComponent = React.createElement('div', {
                         style: {
                             padding: '60px 40px',

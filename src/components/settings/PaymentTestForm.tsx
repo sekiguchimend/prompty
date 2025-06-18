@@ -45,7 +45,6 @@ const PaymentTestForm: React.FC<PaymentTestFormProps> = ({ receiverId, stripeAcc
       // PaymentIntentのクライアントシークレットを取得してからカード決済を行います
       // 簡略化のため、コンソールにメッセージを表示するだけにしています
       
-      console.log('決済リクエスト:', {
         userId: receiverId,
         amount: amount,
         currency: 'jpy'

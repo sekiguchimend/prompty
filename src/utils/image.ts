@@ -6,7 +6,6 @@
  * @returns File オブジェクト
  */
 export function dataURLtoFile(dataUrl: string, filename: string): File {
-  console.log(`データURLからファイル変換開始: ${filename} (データURL長さ: ${dataUrl.length})`);
   
   try {
     // データURLの形式を確認
@@ -19,7 +18,6 @@ export function dataURLtoFile(dataUrl: string, filename: string): File {
     
     // MIMEタイプが画像でない場合は強制的に画像に設定
     if (!mimeType.startsWith('image/')) {
-      console.warn('不正なMIMEタイプを検出、image/pngに修正:', mimeType);
       mimeType = 'image/png';
     }
     
@@ -45,11 +43,6 @@ export function dataURLtoFile(dataUrl: string, filename: string): File {
     // Fileオブジェクトを作成
     const file = new File([blob], filename, { type: mimeType });
     
-    console.log(`データURLからファイル変換成功: ${JSON.stringify({
-      name: file.name,
-      type: file.type,
-      size: file.size
-    })}`);
     
     return file;
   } catch (error) {

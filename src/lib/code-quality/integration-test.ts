@@ -126,14 +126,12 @@ export async function runIntegrationTests(): Promise<{
   results: any[];
   summary: string;
 }> {
-  console.log('🧪 統合テスト開始...');
   
   const results = [];
   let allTestsPassed = true;
 
   try {
     // テスト1: コード検証機能
-    console.log('📋 テスト1: コード検証機能');
     const validationResult = validateCodeQuality(SAMPLE_CODE);
     results.push({
       test: 'コード検証',
@@ -147,14 +145,11 @@ export async function runIntegrationTests(): Promise<{
     });
 
     if (!validationResult.isValid) {
-      console.log('❌ コード検証でエラーが検出されました:', validationResult.errors);
       allTestsPassed = false;
     } else {
-      console.log('✅ コード検証成功');
     }
 
     // テスト2: 品質メトリクス計算
-    console.log('📊 テスト2: 品質メトリクス計算');
     const qualityMetrics = calculateQualityMetrics(SAMPLE_CODE);
     const metricsValid = Object.values(qualityMetrics).every(score => 
       typeof score === 'number' && score >= 0 && score <= 100
@@ -167,14 +162,11 @@ export async function runIntegrationTests(): Promise<{
     });
 
     if (!metricsValid) {
-      console.log('❌ 品質メトリクスの計算に問題があります');
       allTestsPassed = false;
     } else {
-      console.log('✅ 品質メトリクス計算成功');
     }
 
     // テスト3: 改善サービス（モック）
-    console.log('🔧 テスト3: 改善サービス');
     const improvementRequest = {
       originalCode: SAMPLE_CODE,
       improvementPrompt: "ダークモード対応を追加してください",
@@ -195,14 +187,11 @@ export async function runIntegrationTests(): Promise<{
     });
 
     if (!mockImprovementResult.success) {
-      console.log('❌ 改善サービスのテストに失敗');
       allTestsPassed = false;
     } else {
-      console.log('✅ 改善サービステスト成功');
     }
 
     // テスト4: 保護機能の検証
-    console.log('🛡️ テスト4: 保護機能の検証');
     const protectionTest = testCodeProtection(SAMPLE_CODE);
     
     results.push({
@@ -212,14 +201,11 @@ export async function runIntegrationTests(): Promise<{
     });
 
     if (!protectionTest.success) {
-      console.log('❌ 保護機能のテストに失敗');
       allTestsPassed = false;
     } else {
-      console.log('✅ 保護機能テスト成功');
     }
 
     // テスト5: エラーハンドリング
-    console.log('⚠️ テスト5: エラーハンドリング');
     const errorHandlingTest = testErrorHandling();
     
     results.push({
@@ -229,10 +215,8 @@ export async function runIntegrationTests(): Promise<{
     });
 
     if (!errorHandlingTest.success) {
-      console.log('❌ エラーハンドリングのテストに失敗');
       allTestsPassed = false;
     } else {
-      console.log('✅ エラーハンドリングテスト成功');
     }
 
   } catch (error) {
@@ -246,7 +230,6 @@ export async function runIntegrationTests(): Promise<{
   }
 
   const summary = generateTestSummary(results, allTestsPassed);
-  console.log(summary);
 
   return {
     success: allTestsPassed,
@@ -318,7 +301,6 @@ function testErrorHandling(): { success: boolean; details: any } {
     const testCases = [
       { input: '', expected: 'error' }, // 空のコード
       { input: '<invalid>', expected: 'warning' }, // 不正なHTML
-      { input: 'function test() { console.log("test"); }', expected: 'success' } // 正常なコード
     ];
 
     const results = testCases.map(testCase => {
@@ -374,5 +356,4 @@ ${results.map(r => `- ${r.test}: ${r.passed ? '✅' : '❌'}`).join('\n')}
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   // ブラウザ環境での手動テスト実行
   (window as any).runCodeQualityTests = runIntegrationTests;
-  console.log('🧪 コード品質テストが利用可能です。runCodeQualityTests() を実行してください。');
 }

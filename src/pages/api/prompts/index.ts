@@ -34,7 +34,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 // POST: プロンプト作成
 async function createPrompt(req: NextApiRequest, res: NextApiResponse) {
   try {
-    console.log('📥 POST /api/prompts リクエスト受信:', JSON.stringify(req.body, null, 2));
     const promptData: CreatePromptRequest = req.body;
     
     // 必須フィールドの検証
@@ -74,7 +73,6 @@ async function createPrompt(req: NextApiRequest, res: NextApiResponse) {
       });
     }
     
-    console.log('✅ バリデーション通過');
     
     // Supabaseクライアントの初期化
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -82,9 +80,6 @@ async function createPrompt(req: NextApiRequest, res: NextApiResponse) {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
     
     // デバッグ情報
-    console.log('🔑 Supabase URL:', supabaseUrl);
-    console.log('🔑 API Key 長さ:', supabaseAnonKey.length);
-    console.log('🔑 Service Role Key 長さ:', serviceRoleKey.length);
     
     // APIキーの有効性を確認
     if (!supabaseUrl || supabaseUrl === '' || !serviceRoleKey || serviceRoleKey === '') {
@@ -108,7 +103,6 @@ async function createPrompt(req: NextApiRequest, res: NextApiResponse) {
     let supabaseClient;
     try {
       if (serviceRoleKey.length > 20) {
-        console.log('✅ サービスロールキーを使用します');
         supabaseClient = createClient(supabaseUrl, serviceRoleKey, {
           ...options,
           global: {
@@ -116,7 +110,6 @@ async function createPrompt(req: NextApiRequest, res: NextApiResponse) {
           }
         });
       } else {
-        console.log('⚠️ 匿名キーを使用します (RLSポリシーが適用されます)');
         supabaseClient = createClient(supabaseUrl, supabaseAnonKey, options);
       }
     } catch (clientError) {
@@ -135,7 +128,6 @@ async function createPrompt(req: NextApiRequest, res: NextApiResponse) {
     
     // クライアント接続テスト
     try {
-      console.log('🔍 Supabase接続テスト開始...');
       const { data, error } = await supabase.from('profiles').select('id').limit(1);
       
       testData = data;
@@ -168,7 +160,6 @@ async function createPrompt(req: NextApiRequest, res: NextApiResponse) {
           details: error
         });
       } else {
-        console.log('✅ Supabase接続テスト成功:', data);
       }
     } catch (testErr) {
       console.error('❌ Supabase接続テスト例外:', testErr);
@@ -199,7 +190,6 @@ async function createPrompt(req: NextApiRequest, res: NextApiResponse) {
       published: promptData.published !== undefined ? promptData.published : true
     };
     
-    console.log('🔄 挿入データ:', {
       author_id: insertData.author_id,
       title: insertData.title,
       description: insertData.description.substring(0, 20) + '...',
@@ -211,7 +201,6 @@ async function createPrompt(req: NextApiRequest, res: NextApiResponse) {
     });
     
     // データ挿入を試行
-    console.log('🔄 データベースへの挿入を試行中...');
     const { data, error } = await supabase
       .from('prompts')
       .insert([insertData])
@@ -238,7 +227,6 @@ async function createPrompt(req: NextApiRequest, res: NextApiResponse) {
       });
     }
     
-    console.log('✅ 挿入成功:', data?.[0]?.id);
     
     return res.status(201).json({
       success: true,

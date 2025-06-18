@@ -93,7 +93,6 @@ const NotificationSettingsComponent: React.FC = memo(() => {
           .single();
         
         if (settingsError && settingsError.code !== 'PGRST116') { // 'PGRST116'は結果が見つからないエラー
-          console.warn('通知設定取得エラー:', settingsError);
         }
         
         if (settingsData && settingsData.notification_settings) {
@@ -140,7 +139,6 @@ const NotificationSettingsComponent: React.FC = memo(() => {
         .maybeSingle();
       
       if (fetchError && fetchError.code !== 'PGRST116') {
-        console.warn('既存設定取得エラー:', fetchError);
       }
       
       // upsertするデータを準備

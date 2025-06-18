@@ -21,7 +21,6 @@ if (!supabaseServiceKey) {
 const createSupabaseAdmin = () => {
   // 環境変数が設定されていない場合（ビルド時など）はダミークライアントを返す
   if (!supabaseUrl || !supabaseServiceKey) {
-    console.warn('Supabase環境変数が不足しています。ダミークライアントを使用します。');
     return createClient(
       'https://dummy.supabase.co',
       'dummy-key',

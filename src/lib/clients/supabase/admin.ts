@@ -5,7 +5,6 @@ let adminInstance: SupabaseClient | null = null;
 
 export const getSupabaseAdmin = (): SupabaseClient => {
   if (typeof window !== 'undefined') {
-    console.warn('Warning: supabaseAdmin should only be used on the server side');
   }
   
   if (adminInstance) return adminInstance;

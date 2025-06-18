@@ -37,7 +37,6 @@ export const useUIGenerator = () => {
     setError(null);
 
     try {
-      console.log('🚀 UI生成開始:', prompt.substring(0, 100) + '...');
 
       // API リクエスト作成
       const request: UIGenerationRequest = {
@@ -61,11 +60,6 @@ export const useUIGenerator = () => {
 
       const result: UIGenerationResponse = await response.json();
       
-      console.log('✅ UI生成完了:', {
-        htmlLength: result.html?.length || 0,
-        cssLength: result.css?.length || 0,
-        jsLength: result.js?.length || 0,
-      });
 
       // 単一ページモード
       const newVersion: VersionHistoryItem = {
@@ -80,10 +74,6 @@ export const useUIGenerator = () => {
       setCurrentVersionIndex(0);
       setGeneratedUI(result);
       
-      console.log('📚 Version history updated:', {
-        totalVersions: 1,
-        currentIndex: 0
-      });
 
       return result;
 
@@ -112,7 +102,6 @@ export const useUIGenerator = () => {
     setError(null);
 
     try {
-      console.log('🔄 UI改善開始:', prompt.substring(0, 100) + '...');
 
       // API リクエスト作成
       const request: UIGenerationRequest = {
@@ -141,11 +130,6 @@ export const useUIGenerator = () => {
 
       const result: UIGenerationResponse = await response.json();
       
-      console.log('✅ UI改善完了:', {
-        htmlLength: result.html?.length || 0,
-        cssLength: result.css?.length || 0,
-        jsLength: result.js?.length || 0,
-      });
 
       // 単一ページモード
       const newVersion: VersionHistoryItem = {
@@ -163,10 +147,6 @@ export const useUIGenerator = () => {
       setCurrentVersionIndex(newHistory.length - 1);
       setGeneratedUI(result);
       
-      console.log('📚 Version history updated:', {
-        totalVersions: newHistory.length,
-        currentIndex: newHistory.length - 1
-      });
 
       return result;
 
@@ -181,12 +161,10 @@ export const useUIGenerator = () => {
   }, [generatedUI, versionHistory, currentVersionIndex]);
 
   const clearUI = useCallback(() => {
-    console.log('🗑️ UI clear requested');
     setGeneratedUI(null);
     setVersionHistory([]);
     setCurrentVersionIndex(-1);
     setError(null);
-    console.log('✅ UI cleared');
   }, []);
 
   // バージョン操作関数
@@ -195,7 +173,6 @@ export const useUIGenerator = () => {
       const newIndex = currentVersionIndex - 1;
       setCurrentVersionIndex(newIndex);
       setGeneratedUI(versionHistory[newIndex]);
-      console.log('↶ Undo to version', newIndex + 1);
       return true;
     }
     return false;
@@ -206,7 +183,6 @@ export const useUIGenerator = () => {
       const newIndex = currentVersionIndex + 1;
       setCurrentVersionIndex(newIndex);
       setGeneratedUI(versionHistory[newIndex]);
-      console.log('↷ Redo to version', newIndex + 1);
       return true;
     }
     return false;
@@ -216,7 +192,6 @@ export const useUIGenerator = () => {
     if (versionIndex >= 0 && versionIndex < versionHistory.length) {
       setCurrentVersionIndex(versionIndex);
       setGeneratedUI(versionHistory[versionIndex]);
-      console.log('🔄 Switched to version', versionIndex + 1);
       return true;
     }
     return false;
@@ -226,7 +201,6 @@ export const useUIGenerator = () => {
     if (versionHistory.length > 0) {
       setCurrentVersionIndex(0);
       setGeneratedUI(versionHistory[0]);
-      console.log('⏮️ Switched to first version');
       return true;
     }
     return false;
@@ -237,7 +211,6 @@ export const useUIGenerator = () => {
       const latestIndex = versionHistory.length - 1;
       setCurrentVersionIndex(latestIndex);
       setGeneratedUI(versionHistory[latestIndex]);
-      console.log('⏭️ Switched to latest version');
       return true;
     }
     return false;

@@ -94,7 +94,6 @@ const StripeConnectSection: React.FC<StripeConnectSectionProps> = ({ userId, str
       });
       
       // 詳細なレスポンス情報をログに出力
-      console.log('ログインリンク生成結果:', {
         status: response.status,
         url: response.data.url ? response.data.url.substring(0, 30) + '...' : 'なし',
         timestamp: response.data.createdAt || new Date().toISOString(),

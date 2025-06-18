@@ -13,7 +13,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
-    console.log('🚀 Code generation request:', { prompt: prompt.substring(0, 100) + '...', model, language });
 
     const result = await codeGeneratorService.generateCode({
       prompt,
@@ -21,7 +20,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       language: language || 'ja'
     });
 
-    console.log('✅ Code generation successful');
 
     res.status(200).json(result);
   } catch (error) {

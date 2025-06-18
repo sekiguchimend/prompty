@@ -73,7 +73,6 @@ export default async function handler(
       
       // RLSポリシーに問題がある場合は管理者権限でフォールバック
       if (error.code === '42501' || error.message?.includes('permission denied')) {
-        console.log('権限エラー - 管理者権限でリトライします');
         
         // 管理者クライアントを使用（共通のsupabaseAdminを使用）
         const { data: adminResult, error: adminError } = await supabaseAdmin

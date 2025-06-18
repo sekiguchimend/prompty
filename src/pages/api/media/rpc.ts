@@ -14,7 +14,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'function_nameは必須です' });
     }
     
-    console.log(`📝 RPC関数呼び出し: ${function_name}`, params);
     
     // Supabaseクライアントの初期化（サービスロールキーを使用）
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -76,7 +75,6 @@ async function handleCreateStoragePolicy(
     // Supabaseダッシュボードから手動で設定する必要があります
     // ここではRPC呼び出しをエミュレートして成功を返すだけにします
     
-    console.log(`✅ ポリシー作成エミュレーション: ${policy_name} for ${bucket_name} (${operation})`);
     
     return res.status(200).json({
       success: true,
@@ -115,7 +113,6 @@ async function handleSetBucketPolicy(
     // 別の方法で設定する必要があります
     // ここではRPC呼び出しをエミュレートして成功を返すだけにします
     
-    console.log(`✅ バケットポリシー設定エミュレーション: ${bucket_name} (public: ${public_policy})`);
     
     // バケットの公開設定を更新
     if (public_policy) {

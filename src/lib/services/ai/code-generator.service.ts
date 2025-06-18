@@ -28,7 +28,6 @@ export interface GeneratedCode {
 export class CodeGeneratorService {
   async generateCode(request: CodeGenerationRequest): Promise<CodeGenerationResponse> {
     try {
-      console.log('🚀 Starting code generation:', request);
 
       const response = await claudeClient.generateCode(request.prompt, request.language);
       
@@ -103,7 +102,6 @@ export class CodeGeneratorService {
       if (filename.endsWith('.html')) {
         let html = cleanedFiles[filename];
         
-        console.log('🧹 Cleaning HTML:', filename);
         
         // Remove external CSS links
         html = html.replace(/<link[^>]*rel=["']stylesheet["'][^>]*href=["'][^"']*\.css["'][^>]*\/?>/gi, '');

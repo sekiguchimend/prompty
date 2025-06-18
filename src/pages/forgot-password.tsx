@@ -41,7 +41,6 @@ const ForgotPassword = () => {
   // ユーザーが既にログインしている場合はホームページにリダイレクト
   useEffect(() => {
     if (user && !isLoading) {
-      console.log('User already logged in, redirecting to home');
       router.push('/');
     }
   }, [user, isLoading, router]);

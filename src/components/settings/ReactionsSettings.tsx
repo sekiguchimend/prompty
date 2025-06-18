@@ -69,7 +69,6 @@ const ReactionsSettingsComponent: React.FC = memo(() => {
           .maybeSingle();
         
         if (settingsError && settingsError.code !== 'PGRST116') {
-          console.warn('リアクション設定取得エラー:', settingsError);
         }
         
         let mergedSettings = defaultSettings;
@@ -122,7 +121,6 @@ const ReactionsSettingsComponent: React.FC = memo(() => {
         .maybeSingle();
       
       if (fetchError && fetchError.code !== 'PGRST116') {
-        console.warn('既存設定取得エラー:', fetchError);
       }
       
       // upsertするデータを準備

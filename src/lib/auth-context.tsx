@@ -36,7 +36,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     const initializeAuth = async () => {
       try {
-        console.log('🚀 認証コンテキスト初期化開始...');
         // Supabaseから最新のセッション情報を取得
         const { data, error } = await supabase.auth.getSession();
         
@@ -46,7 +45,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         
         if (data.session) {
-          console.log('✅ 既存セッション発見:', data.session.user.email);
           setSession(data.session);
           setUser(data.session.user);
           
@@ -56,19 +54,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           
           // 有効期限が10分以内の場合はリフレッシュ
           if (expiresAt <= now + 600000) {
-            console.log('⏰ セッションの期限が近いためリフレッシュ...');
             const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
             
             if (!refreshError && refreshData.session) {
               setSession(refreshData.session);
               setUser(refreshData.session.user);
               setLastRefreshed(Date.now());
-              console.log('🔄 セッションリフレッシュ完了');
             }
           }
         } else {
           // セッションがない場合
-          console.log('🔓 セッションなし - 未ログイン状態');
           setSession(null);
           setUser(null);
         }
@@ -79,20 +74,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
       } finally {
         setIsLoading(false);
-        console.log('✅ 認証コンテキスト初期化完了');
       }
     };
     
     // URLハッシュ変更を検知して認証状態を再チェック
     const handleHashChange = () => {
-      console.log('🔄 URLハッシュ変更検知 - 認証状態を再チェック');
       if (typeof window !== 'undefined' && window.location.hash.includes('access_token') || window.location.hash.includes('refresh_token')) {
-        console.log('🔑 認証トークンを含むハッシュを検知');
         // 少し待ってから認証状態を再取得
         setTimeout(async () => {
           const { data } = await supabase.auth.getSession();
           if (data.session) {
-            console.log('✅ ハッシュ変更後の認証成功:', data.session.user.email);
             setSession(data.session);
             setUser(data.session.user);
             setIsLoading(false);
@@ -109,7 +100,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // 認証状態の変更を監視
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event: string, newSession: Session | null) => {
-        console.log('🔑 認証状態変更イベント:', event, newSession ? '有効' : '無効');
         
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           setSession(newSession);
@@ -119,20 +109,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (event === 'TOKEN_REFRESHED') {
             setLastRefreshed(Date.now());
           }
-          console.log('✅ ログイン/トークン更新:', newSession?.user?.email);
         }
         
         if (event === 'SIGNED_OUT') {
           setSession(null);
           setUser(null);
           setIsLoading(false);
-          console.log('🔴 ログアウト完了');
         }
         
         if (event === 'USER_UPDATED') {
           setSession(newSession);
           setUser(newSession?.user || null);
-          console.log('👤 ユーザー情報更新:', newSession?.user?.email);
         }
       }
     );

@@ -111,7 +111,6 @@ async function callClaudeAPI(prompt: string, model: string): Promise<string> {
   // すべてClaude 4 Sonnetを使用
   const claudeModel = 'claude-4-sonnet';
 
-  console.log('🔮 Claude API呼び出し:', { 
     model: claudeModel, 
     requestedModel: model,
     note: 'Claude 4 Sonnet使用'
@@ -151,8 +150,6 @@ function cleanExternalReferences(files: Record<string, string>): Record<string, 
     if (filename.endsWith('.html')) {
       let html = cleanedFiles[filename];
       
-      console.log('🧹 HTMLクリーンアップ開始:', filename);
-      console.log('🔍 クリーンアップ前の外部参照数:', {
         cssLinks: (html.match(/<link[^>]*href=["'][^"']*\.css["'][^>]*>/gi) || []).length,
         jsScripts: (html.match(/<script[^>]*src=["'][^"']*\.js["'][^>]*>/gi) || []).length
       });
@@ -186,7 +183,6 @@ function cleanExternalReferences(files: Record<string, string>): Record<string, 
         allScripts: (html.match(/<script[^>]*src=["'][^"']*["'][^>]*>/gi) || []).length
       };
       
-      console.log('✅ HTMLクリーンアップ完了:', {
         filename,
         removedExternalRefs: true,
         remainingReferences: remainingRefs,
@@ -194,7 +190,6 @@ function cleanExternalReferences(files: Record<string, string>): Record<string, 
       });
       
       if (remainingRefs.cssLinks > 0 || remainingRefs.jsScripts > 0) {
-        console.log('⚠️ まだ外部参照が残っています:', {
           cssLinks: html.match(/<link[^>]*href=["'][^"']*\.css["'][^>]*>/gi),
           jsScripts: html.match(/<script[^>]*src=["'][^"']*\.js["'][^>]*>/gi)
         });
@@ -209,7 +204,6 @@ function cleanExternalReferences(files: Record<string, string>): Record<string, 
 function embedFilesInHTML(html: string, files: Record<string, string>): string {
   let embeddedHTML = html;
   
-  console.log('🔧 ファイル埋め込み処理開始');
   
   // CSSの埋め込み
   const cssFiles = Object.keys(files).filter(name => name.endsWith('.css'));
@@ -230,7 +224,6 @@ function embedFilesInHTML(html: string, files: Record<string, string>): string {
         embeddedHTML = embeddedHTML.replace('<body>', `<head>${cssStyle}\n</head>\n<body>`);
       }
       
-      console.log('✅ CSS埋め込み完了:', cssFiles);
     }
   }
   
@@ -253,7 +246,6 @@ function embedFilesInHTML(html: string, files: Record<string, string>): string {
         embeddedHTML += jsScript;
       }
       
-      console.log('✅ JavaScript埋め込み完了:', jsFiles);
     }
   }
   
@@ -261,27 +253,22 @@ function embedFilesInHTML(html: string, files: Record<string, string>): string {
 }
 
 function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationResponse {
-  console.log('🔧 JSON処理開始:', text.length, '文字');
   
   // 既存コードの解析（強化版）
   let existingFiles: Record<string, string> = {};
   if (originalCode) {
-    console.log('🔍 既存コード解析開始:', originalCode.length, '文字');
     
     try {
       const parsed = JSON.parse(originalCode);
       if (parsed.files && typeof parsed.files === 'object') {
         existingFiles = parsed.files;
-        console.log('📁 JSON形式で既存ファイル検出:', Object.keys(existingFiles));
       }
     } catch {
       // JSONでない場合の詳細解析
-      console.log('📋 単一コードブロックとして解析中...');
       
       // HTMLファイルの検出
       if (originalCode.includes('<!DOCTYPE html>') || originalCode.includes('<html')) {
         existingFiles['index.html'] = originalCode;
-        console.log('🌐 HTMLファイルを検出');
       }
       
       // CSSコードの検出（HTMLに埋め込まれている場合も含む）
@@ -289,7 +276,6 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
       if (cssMatch) {
         const cssContent = cssMatch.map(match => match.replace(/<\/?style[^>]*>/gi, '')).join('\n');
         existingFiles['styles.css'] = cssContent;
-        console.log('🎨 埋め込みCSSを検出');
       } else if (originalCode.includes('{') && originalCode.includes('}') && originalCode.includes(':')) {
         // スタンドアロンCSSの検出
         const cssLines = originalCode.split('\n').filter(line => 
@@ -297,7 +283,6 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
         );
         if (cssLines.length > 3) {
           existingFiles['styles.css'] = originalCode;
-          console.log('🎨 スタンドアロンCSSを検出');
         }
       }
       
@@ -306,14 +291,11 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
       if (jsMatch) {
         const jsContent = jsMatch.map(match => match.replace(/<\/?script[^>]*>/gi, '')).join('\n');
         existingFiles['script.js'] = jsContent;
-        console.log('⚡ 埋め込みJavaScriptを検出');
       } else if (originalCode.includes('function') || originalCode.includes('const') || originalCode.includes('let') || originalCode.includes('document.')) {
         // スタンドアロンJavaScriptの検出
         existingFiles['script.js'] = originalCode;
-        console.log('⚡ スタンドアロンJavaScriptを検出');
       }
       
-      console.log('📁 単一ファイルとして解析完了:', Object.keys(existingFiles));
     }
     
     // 既存ファイルの検証
@@ -321,24 +303,19 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
       const content = existingFiles[filename];
       if (!content || content.trim().length < 10) {
         delete existingFiles[filename];
-        console.log(`⚠️ ${filename} は内容が不十分なため除外`);
       } else {
-        console.log(`✅ ${filename} を既存ファイルとして確認: ${content.length}文字`);
       }
     });
   }
   
   // レスポンス全体をログ出力（デバッグ用）
-  console.log('📋 受信レスポンス:', text.substring(0, 1000) + (text.length > 1000 ? '...' : ''));
   
   // 既存ファイルがある場合の特別処理
   if (Object.keys(existingFiles).length > 0) {
-    console.log('🛡️ 既存ファイルが存在するため、既存コード保持モードで実行');
   }
   
   // 最も堅牢なアプローチ：文字単位でJSONを解析
   function extractJSONContent(): CodeGenerationResponse {
-    console.log('🔧 堅牢なJSON抽出開始');
     
     // まず、明確なJSONブロックを探す
     let jsonStart = -1;
@@ -356,7 +333,6 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
       const match = text.match(pattern);
       if (match) {
         jsonStart = text.indexOf(match[0]) + match[0].indexOf('{');
-        console.log('📍 JSON開始位置発見:', jsonStart);
         break;
       }
     }
@@ -406,7 +382,6 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
     }
     
     let jsonString = text.slice(jsonStart, jsonEnd + 1);
-    console.log('📋 抽出されたJSON長:', jsonString.length);
     
     // 文字レベルでの修復処理
     jsonString = fixJSONString(jsonString);
@@ -416,20 +391,17 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
       const parsed = JSON.parse(jsonString);
       return validateAndSanitizeResult(parsed, existingFiles);
     } catch (error) {
-      console.log('❌ JSON直接パース失敗:', error);
       throw error;
     }
   }
   
   // JSON文字列を修復する関数
   function fixJSONString(jsonStr: string): string {
-    console.log('🔧 JSON文字列修復開始');
     
     let fixed = jsonStr;
     
     // 1. テンプレートリテラル（バッククォート）の処理
     if (fixed.includes('`')) {
-      console.log('⚠️ バッククォート検出、修復中...');
       
       // バッククォート内のコンテンツを安全に抽出して変換
       fixed = fixed.replace(/`([^`]*(?:`[^`]*)*)`/g, (match, content) => {
@@ -468,19 +440,16 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
     // 5. キーのクォート確認
     fixed = fixed.replace(/([{,]\s*)(\w+)(\s*:)/g, '$1"$2"$3');
     
-    console.log('✅ JSON文字列修復完了');
     return fixed;
   }
   
   // 手動ファイル抽出（最後の手段）
   function manualFileExtraction(): CodeGenerationResponse {
-    console.log('🔧 手動ファイル抽出開始');
     
     const files: Record<string, string> = {};
     
     // より安全なファイル抽出関数
     function extractFileContent(fileName: string): string {
-      console.log(`📄 ${fileName} 抽出中...`);
       
       // パターンマッチング: "filename": "content"
       const patterns = [
@@ -502,11 +471,9 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
       }
       
       if (startIndex === -1) {
-        console.log(`❌ ${fileName} のパターンが見つかりません`);
         return '';
       }
       
-      console.log(`📍 ${fileName} 開始位置: ${startIndex}`);
       
       // 🔧 改善: より堅牢なコンテンツ終了検出
       let content = '';
@@ -550,14 +517,12 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
         
         // 🔧 セーフティ: 200KB を超えたら強制終了
         if (content.length > 200000) {
-          console.log(`⚠️ ${fileName} が200KBを超えたため、処理を終了`);
           break;
         }
       }
       
       // 🔧 コンテンツが途中で切れている場合の修復
       if (!foundEnd && content.length > 0) {
-        console.log(`⚠️ ${fileName} が途中で切れている可能性があります - 修復を試行`);
         
         // JavaScript ファイルの場合の修復
         if (fileName.endsWith('.js')) {
@@ -569,7 +534,6 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
           if (lastLine.trim().startsWith('//') && !lastLine.includes('完了') && !lastLine.includes('終了')) {
             lines.pop();
             content = lines.join('\n');
-            console.log(`🔧 ${fileName}: 不完全な最後の行を削除`);
           }
           
           // 関数やクラスが開いたままの場合は閉じる
@@ -579,7 +543,6 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
           
           if (missingBraces > 0) {
             content += '\n' + '}'.repeat(missingBraces);
-            console.log(`🔧 ${fileName}: ${missingBraces}個の閉じ括弧を追加`);
           }
         }
         
@@ -590,7 +553,6 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
               content += '\n</body>';
             }
             content += '\n</html>';
-            console.log(`🔧 ${fileName}: HTMLタグを完了`);
           }
         }
         
@@ -602,7 +564,6 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
           
           if (missingBraces > 0) {
             content += '\n' + '}'.repeat(missingBraces);
-            console.log(`🔧 ${fileName}: ${missingBraces}個のCSSブロックを閉じる`);
           }
         }
       }
@@ -616,7 +577,6 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
         .replace(/\\'/g, "'")
             .replace(/\\\\/g, '\\');
           
-      console.log(`✅ ${fileName} 抽出完了: ${unescaped.length} 文字 (修復: ${foundEnd ? 'なし' : 'あり'})`);
       return unescaped;
     }
     
@@ -635,13 +595,11 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
     
     // 🔧 重要: 既存ファイルがある場合は、フォールバックファイル生成をスキップ
     if (Object.keys(existingFiles).length > 0) {
-      console.log('📁 既存ファイルが存在するため、フォールバック生成をスキップ');
       
       // 既存ファイルが十分でない場合のみ、最小限の補完
       Object.keys(existingFiles).forEach(filename => {
         if (!files[filename] || files[filename].trim().length === 0) {
           files[filename] = existingFiles[filename];
-          console.log(`🔄 既存ファイルを保持: ${filename}`);
         }
       });
     } else {
@@ -667,29 +625,22 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
   function mergeWithExistingFiles(newFiles: Record<string, string>, existingFiles: Record<string, string>) {
     if (Object.keys(existingFiles).length === 0) return;
     
-    console.log('🔄 既存ファイル完全保持マージ開始');
-    console.log('📁 既存ファイル:', Object.keys(existingFiles));
-    console.log('📁 新しいファイル:', Object.keys(newFiles));
     
     Object.keys(existingFiles).forEach(filename => {
       const existingContent = existingFiles[filename];
       const newContent = newFiles[filename];
       
-      console.log(`📋 ${filename}: 既存 ${existingContent.length}文字, 新規 ${newContent ? newContent.length : 0}文字`);
       
       // 🔒 最重要：既存コンテンツは絶対に保持 - 新しいコンテンツの有無は関係なし
       if (newContent && newContent.trim().length > 0 && newContent !== existingContent) {
         // 新しいコンテンツがあり、既存と異なる場合：既存 + 新規で追加
-        console.log(`🔄 ${filename}: 既存コンテンツ保持 + 新規コンテンツ追加`);
         
         if (filename.endsWith('.css')) {
           // CSSの場合：既存スタイルを完全保持し、新しいスタイルを追加
           newFiles[filename] = existingContent + '\n\n/* ✨ 改善機能で追加されたスタイル */\n' + newContent;
-          console.log(`✅ ${filename}: CSS完全保持マージ完了`);
         } else if (filename.endsWith('.js')) {
           // JavaScriptの場合：既存コードを完全保持し、新しいコードを追加
           newFiles[filename] = existingContent + '\n\n// ✨ 改善機能で追加されたコード\n' + newContent;
-          console.log(`✅ ${filename}: JS完全保持マージ完了`);
         } else if (filename.endsWith('.html')) {
           // HTMLの場合：既存HTMLを保持し、新しい要素を追加
           if (existingContent.includes('</body>')) {
@@ -706,31 +657,24 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
           } else {
             newFiles[filename] = existingContent + '\n\n<!-- ✨ 改善機能で追加されたHTML -->\n' + newContent;
           }
-          console.log(`✅ ${filename}: HTML完全保持マージ完了`);
         } else {
           // その他のファイル：既存コンテンツを保持し、新しいコンテンツを追加
           newFiles[filename] = existingContent + '\n\n' + newContent;
-          console.log(`✅ ${filename}: 完全保持マージ完了`);
         }
       } else {
         // 🔒 新しいコンテンツがない、または既存と同じ場合：既存コンテンツをそのまま保持
-        console.log(`🔒 ${filename}: 既存コンテンツを完全保持（新規なし/同一）`);
         newFiles[filename] = existingContent;
       }
       
-      console.log(`📊 ${filename}: 最終サイズ ${newFiles[filename].length}文字`);
     });
     
     // 🔒 重要：既存ファイルで新規ファイルに含まれていないものも確実に保持
     Object.keys(existingFiles).forEach(filename => {
       if (!newFiles[filename]) {
-        console.log(`🔒 ${filename}: 新規ファイルに含まれていない既存ファイルを保持`);
         newFiles[filename] = existingFiles[filename];
       }
     });
     
-    console.log('✅ 既存ファイル完全保持マージ完了');
-    console.log('📁 最終ファイル:', Object.keys(newFiles));
   }
   
   // HTMLのbodyコンテンツを抽出
@@ -769,13 +713,11 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
   
   // 必須ファイルの保証
   function ensureRequiredFiles(files: Record<string, string>) {
-    console.log('🔧 必須ファイル確認中...');
     
     // 🔧 ファイル完全性チェックと修復
     Object.keys(files).forEach(filename => {
       const content = files[filename];
       if (!content || content.trim().length === 0) {
-        console.log(`⚠️ ${filename} が空です - 削除`);
         delete files[filename];
         return;
       }
@@ -791,17 +733,14 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
     });
     
     if (!files['index.html'] || files['index.html'].trim().length === 0) {
-      console.log('⚠️ index.html が不足、生成中...');
       files['index.html'] = generateSafeHTML();
     }
     
     if (!files['script.js'] || files['script.js'].trim().length === 0) {
-      console.log('⚠️ script.js が不足、生成中...');
       files['script.js'] = generateSafeJS();
     }
     
     if (!files['styles.css'] && !files['style.css']) {
-      console.log('⚠️ styles.css が不足、生成中...');
       files['styles.css'] = generateSafeCSS();
     }
     
@@ -810,44 +749,36 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
       files['index.html'] = embedFilesInHTML(files['index.html'], files);
     }
     
-    console.log('✅ 必須ファイル確認完了:', Object.keys(files));
   }
   
   // HTML完全性保証
   function ensureCompleteHTML(content: string, filename: string): string {
     let html = content;
     
-    console.log(`🔍 HTML完全性チェック: ${filename}`);
     
     // 基本構造チェック
     if (!html.includes('<!DOCTYPE html>')) {
       html = '<!DOCTYPE html>\n' + html;
-      console.log(`🔧 ${filename}: DOCTYPE追加`);
     }
     
     if (!html.includes('<html')) {
       html = html.replace('<!DOCTYPE html>', '<!DOCTYPE html>\n<html lang="ja">');
-      console.log(`🔧 ${filename}: html要素追加`);
     }
     
     if (!html.includes('<head>')) {
       html = html.replace('<html', '<html lang="ja">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>アプリケーション</title>\n</head>\n<body');
-      console.log(`🔧 ${filename}: head要素追加`);
     }
     
     if (!html.includes('<body>') && !html.includes('<body ')) {
       html = html.replace('</head>', '</head>\n<body>');
-      console.log(`🔧 ${filename}: body要素追加`);
     }
     
     if (!html.includes('</body>')) {
       html += '\n</body>';
-      console.log(`🔧 ${filename}: body終了タグ追加`);
     }
     
     if (!html.includes('</html>')) {
       html += '\n</html>';
-      console.log(`🔧 ${filename}: html終了タグ追加`);
     }
     
     return html;
@@ -857,7 +788,6 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
   function ensureCompleteJS(content: string, filename: string): string {
     let js = content;
     
-    console.log(`🔍 JavaScript完全性チェック: ${filename} (${js.length}文字)`);
     
     // 危険なパターンチェック
     const dangerousPatterns = [
@@ -871,7 +801,6 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
     
     for (const pattern of dangerousPatterns) {
       if (pattern.test(js)) {
-        console.log(`❌ ${filename}: 危険なパターン検出 - 安全版に置換`);
         return generateSafeJS();
       }
     }
@@ -887,12 +816,10 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
     
     if (missingBraces > 0) {
       js += '\n' + '}'.repeat(missingBraces);
-      console.log(`🔧 ${filename}: ${missingBraces}個の閉じ括弧を追加`);
     }
     
     if (missingParens > 0) {
       js += ')'.repeat(missingParens);
-      console.log(`🔧 ${filename}: ${missingParens}個の閉じ括弧を追加`);
     }
     
     // 最低限のJavaScript要素があるかチェック
@@ -907,7 +834,6 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
       js.includes('addEventListener');
     
     if (!hasValidContent && js.trim().length < 100) {
-      console.log(`❌ ${filename}: 有効なJavaScriptコンテンツが不足 - 安全版に置換`);
       return generateSafeJS();
     }
     
@@ -918,7 +844,6 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
   function ensureCompleteCSS(content: string, filename: string): string {
     let css = content;
     
-    console.log(`🔍 CSS完全性チェック: ${filename}`);
     
     // 括弧バランスチェック
     const openBraces = (css.match(/\{/g) || []).length;
@@ -927,7 +852,6 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
     
     if (missingBraces > 0) {
       css += '\n' + '}'.repeat(missingBraces);
-      console.log(`🔧 ${filename}: ${missingBraces}個のCSSブロックを閉じる`);
     }
     
     return css;
@@ -943,7 +867,6 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
       throw new Error('ファイルオブジェクトが無効');
     }
     
-    console.log('🔧 ファイル検証開始:', {
       resultFiles: Object.keys(result.files),
       existingFiles: Object.keys(existingFiles)
     });
@@ -951,34 +874,26 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
     // ファイル内容をサニタイズ（既存ファイル以外のみ）
     Object.keys(result.files).forEach(fileName => {
       if (typeof result.files[fileName] !== 'string') {
-        console.log(`⚠️ ${fileName}: 文字列でないため削除`);
         delete result.files[fileName];
       } else {
         // 🔒 重要：既存ファイルは短くても削除しない
         const isExistingFile = existingFiles[fileName] && existingFiles[fileName].length > 0;
         
         if (!isExistingFile && result.files[fileName].trim().length < 10) {
-          console.log(`⚠️ ${fileName}: 新規ファイルで内容が不十分なため削除`);
           delete result.files[fileName];
         } else if (isExistingFile) {
-          console.log(`🔒 ${fileName}: 既存ファイルのため内容チェックをスキップ`);
         } else {
-          console.log(`✅ ${fileName}: 有効な新規ファイル (${result.files[fileName].length}文字)`);
         }
       }
     });
     
     // 🔒 重要：既存ファイルとのマージ（このタイミングで既存ファイルを確実に保持）
-    console.log('🔧 既存ファイルマージ前の状態:', Object.keys(result.files));
     mergeWithExistingFiles(result.files, existingFiles);
-    console.log('🔧 既存ファイルマージ後の状態:', Object.keys(result.files));
     
     // 必須ファイルの保証（既存ファイルがない場合のみ）
     if (Object.keys(existingFiles).length === 0) {
-      console.log('📝 既存ファイルなし - 必須ファイル生成実行');
       ensureRequiredFiles(result.files);
     } else {
-      console.log('🔒 既存ファイルあり - 必須ファイル生成スキップ');
     }
     
     // 🔧 外部ファイル参照をクリーンアップ
@@ -986,12 +901,9 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
     
     // 🔧 重要: 外部参照削除後に、HTMLファイルにCSSとJSを埋め込み
     if (result.files['index.html']) {
-      console.log('🔧 外部参照削除後のCSS/JS埋め込み処理開始');
       result.files['index.html'] = embedFilesInHTML(result.files['index.html'], result.files);
-      console.log('✅ 外部参照削除後のCSS/JS埋め込み完了');
     }
     
-    console.log('✅ ファイル検証完了:', {
       finalFiles: Object.keys(result.files),
       preservedExisting: Object.keys(existingFiles).length > 0
     });
@@ -1025,7 +937,6 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
     const strategy = extractionStrategies[i];
     
     try {
-      console.log(`🔄 戦略${i + 1}: ${strategy.name}`);
       const result = strategy.fn();
       
       // 結果検証
@@ -1037,13 +948,10 @@ function extractAndFixJSON(text: string, originalCode?: string): CodeGenerationR
         throw new Error('index.htmlが見つかりません');
       }
       
-      console.log(`✅ ${strategy.name} 成功`);
-      console.log('📁 生成されたファイル:', Object.keys(result.files));
       return result;
       
     } catch (error) {
       lastError = error as Error;
-      console.log(`❌ ${strategy.name} 失敗:`, lastError.message);
     }
   }
   
@@ -1066,9 +974,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Original code and improvement request are required' });
     }
 
-    console.log('🔄 コード改善開始:', { framework, model, language });
 
-    console.log(`🔧 [Claude] コード改善開始:`, {
       model,
       framework, 
       language,
@@ -1084,7 +990,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const claudeResponse = await callClaudeAPI(prompt, model);
       result = extractAndFixJSON(claudeResponse, originalCode);
       
-      console.log(`✅ [Claude] コード改善完了:`, {
         model,
         filesGenerated: Object.keys(result.files).length,
         framework: result.framework
@@ -1093,7 +998,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.error(`❌ Claude コード改善エラー:`, claudeError);
       
       // Use fallback
-      console.log('🔄 フォールバック改善コードにフォールオーバー中...');
       result = createFallbackResponse(framework, model, originalCode);
     }
 
@@ -1102,7 +1006,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       result = createFallbackResponse(framework, model, originalCode);
     }
 
-    console.log('✅ コード改善完了:', {
       files: Object.keys(result.files || {}),
       framework: result.framework,
       model: result.usedModel
@@ -1125,7 +1028,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 // ファイルの検証と補完を行う関数
 function validateAndCompleteFiles(result: CodeGenerationResponse, framework: string, model: string): CodeGenerationResponse {
-  console.log('🔍 ファイル検証開始:', Object.keys(result.files || {}));
   
   if (!result.files) {
     result.files = {};
@@ -1133,17 +1035,14 @@ function validateAndCompleteFiles(result: CodeGenerationResponse, framework: str
   
   // 必須ファイルの確認と補完
   if (!result.files['index.html']) {
-    console.log('⚠️ index.htmlが不足 - 生成中');
     result.files['index.html'] = generateSafeHTML();
   }
   
   if (!result.files['script.js']) {
-    console.log('⚠️ script.jsが不足 - 生成中');
     result.files['script.js'] = generateSafeJS();
   }
   
   if (!result.files['styles.css'] && !result.files['style.css']) {
-    console.log('⚠️ styles.cssが不足 - 生成中');
     result.files['styles.css'] = generateSafeCSS();
   }
   
@@ -1158,13 +1057,11 @@ function validateAndCompleteFiles(result: CodeGenerationResponse, framework: str
           jsContent.match(/^\s*[\{\[]/) || // ファイルがJSONで始まっている
           jsContent.includes('undefined') && jsContent.includes('syntax')
       ) {
-        console.log(`⚠️ ${fileName}に構文エラーの疑い - 安全版に置換`);
         result.files[fileName] = generateSafeJS();
       }
     }
   });
   
-  console.log('✅ ファイル検証完了:', Object.keys(result.files));
   return result;
 }
 
@@ -1870,7 +1767,6 @@ function generateSafeHTML(): string {
           }
 
           init() {
-            console.log('Modern Todo App initialized');
             this.bindEvents();
             this.render();
             this.updateStats();
@@ -1881,7 +1777,6 @@ function generateSafeHTML(): string {
               const stored = localStorage.getItem('modern-todos');
               return stored ? JSON.parse(stored) : [];
             } catch (e) {
-              console.warn('Failed to load todos from localStorage:', e);
               return [];
             }
           }
@@ -1890,7 +1785,6 @@ function generateSafeHTML(): string {
             try {
               localStorage.setItem('modern-todos', JSON.stringify(this.todos));
             } catch (e) {
-              console.warn('Failed to save todos to localStorage:', e);
             }
           }
 
@@ -2172,7 +2066,6 @@ function generateSafeHTML(): string {
 
         // Performance monitoring
         window.addEventListener('load', function() {
-          console.log('Modern Todo App loaded successfully');
         });
     </script>
 </body>
@@ -2183,7 +2076,6 @@ function generateSafeHTML(): string {
 function createFallbackResponse(framework: string, model: string, originalCode?: string): CodeGenerationResponse {
   const files: Record<string, string> = {};
   
-  console.log('🔄 フォールバック応答生成（既存コード保持）:', { framework, model, hasOriginal: !!originalCode });
   
   // 既存コードの解析と保持
   let existingFiles: Record<string, string> = {};
@@ -2192,7 +2084,6 @@ function createFallbackResponse(framework: string, model: string, originalCode?:
       const parsed = JSON.parse(originalCode);
       if (parsed.files && typeof parsed.files === 'object') {
         existingFiles = parsed.files;
-        console.log('📁 フォールバック: 既存ファイル保持:', Object.keys(existingFiles));
       }
     } catch {
       // JSONでない場合は、単一ファイルとして扱う
@@ -2203,18 +2094,15 @@ function createFallbackResponse(framework: string, model: string, originalCode?:
       } else if (originalCode.includes('{') && originalCode.includes('}') && originalCode.includes(':')) {
         existingFiles['styles.css'] = originalCode;
       }
-      console.log('📁 フォールバック: 単一ファイル保持:', Object.keys(existingFiles));
     }
   }
   
   // 🔒 重要: 既存ファイルがある場合は、絶対に置き換えない
   if (Object.keys(existingFiles).length > 0) {
-    console.log('🛡️ 既存ファイルが存在するため、フォールバック生成をスキップし既存コードを完全保持');
     
     // 既存ファイルをそのまま使用
     Object.keys(existingFiles).forEach(filename => {
       files[filename] = existingFiles[filename] + '\n\n<!-- 改善処理: フォールバック実行時も既存コードを完全保持 -->';
-      console.log(`🔄 既存ファイル保持: ${filename} (${files[filename].length}文字)`);
     });
     
     // 🔧 外部ファイル参照をクリーンアップ
@@ -2222,7 +2110,6 @@ function createFallbackResponse(framework: string, model: string, originalCode?:
     
     // 🔧 重要: 外部参照削除後に、HTMLファイルにCSSとJSを埋め込み（既存ファイル保持時）
     if (cleanedFiles['index.html']) {
-      console.log('🔧 フォールバック: 既存ファイル保持時のCSS/JS埋め込み処理開始');
       
       // 他のCSSやJSファイルを埋め込み用に準備
       const embedFiles: Record<string, string> = {};
@@ -2233,7 +2120,6 @@ function createFallbackResponse(framework: string, model: string, originalCode?:
       });
       
       cleanedFiles['index.html'] = embedFilesInHTML(cleanedFiles['index.html'], embedFiles);
-      console.log('✅ フォールバック: 既存ファイル保持時のCSS/JS埋め込み完了');
     }
     
     return {
@@ -2248,7 +2134,6 @@ function createFallbackResponse(framework: string, model: string, originalCode?:
   }
   
   // 既存ファイルがない場合のみ、新規フォールバック生成
-  console.log('📝 既存ファイルがないため、新規フォールバック生成');
   
   files['index.html'] = generateSafeHTML();
   files['script.js'] = generateSafeJS();
@@ -2259,7 +2144,6 @@ function createFallbackResponse(framework: string, model: string, originalCode?:
   
   // 🔧 重要: 外部参照削除後に、HTMLファイルにCSSとJSを埋め込み（新規生成時）
   if (cleanedFiles['index.html']) {
-    console.log('🔧 フォールバック: 新規生成時のCSS/JS埋め込み処理開始');
     
     // 他のCSSやJSファイルを埋め込み用に準備
     const embedFiles: Record<string, string> = {};
@@ -2270,7 +2154,6 @@ function createFallbackResponse(framework: string, model: string, originalCode?:
     });
     
     cleanedFiles['index.html'] = embedFilesInHTML(cleanedFiles['index.html'], embedFiles);
-    console.log('✅ フォールバック: 新規生成時のCSS/JS埋め込み完了');
   }
   
   return {
@@ -2296,7 +2179,6 @@ class ModernTodoApp {
   }
 
   init() {
-    console.log('Modern Todo App initialized');
     this.bindEvents();
     this.render();
     this.updateStats();
@@ -2307,7 +2189,6 @@ class ModernTodoApp {
       const stored = localStorage.getItem('modern-todos');
       return stored ? JSON.parse(stored) : [];
     } catch (e) {
-      console.warn('Failed to load todos from localStorage:', e);
       return [];
     }
   }
@@ -2316,7 +2197,6 @@ class ModernTodoApp {
     try {
       localStorage.setItem('modern-todos', JSON.stringify(this.todos));
     } catch (e) {
-      console.warn('Failed to save todos to localStorage:', e);
     }
   }
 
@@ -2598,7 +2478,6 @@ window.addEventListener('error', function(e) {
 
 // Performance monitoring
 window.addEventListener('load', function() {
-  console.log('Modern Todo App loaded successfully');
 });`;
 }
 

@@ -23,12 +23,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'accountId is required' });
     }
     
-    console.log(`Stripeログインリンク作成: アカウントID=${accountId}`);
     
     // アカウント情報を取得して診断
     try {
       const account = await stripe.accounts.retrieve(accountId);
-      console.log('アカウント情報診断:', {
         id: account.id,
         type: account.type,  // 'express', 'standard', 'custom'のいずれか
         email: account.email,
@@ -44,7 +42,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const loginLink = await stripe.accounts.createLoginLink(accountId);
 
     // 詳細な診断情報を記録
-    console.log('ログインリンク生成成功:', {
       url: loginLink.url.substring(0, 50) + '...',
       created: new Date().toISOString(),
       headers: req.headers.origin || 'unknown origin'

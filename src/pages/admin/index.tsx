@@ -111,34 +111,25 @@ const AdminDashboard: React.FC = () => {
   // 管理者権限チェック
   useEffect(() => {
     const checkAuth = async () => {
-      console.log('=== 管理者権限チェック開始 ===');
       
       try {
-        console.log('1. セッション確認中...');
         const { data: { session } } = await supabase.auth.getSession();
-        console.log('セッション状態:', session ? 'ログイン済み' : 'ログインなし');
-        console.log('ユーザーID:', session?.user?.id || 'なし');
         
         if (!session?.user) {
-          console.log('セッションなし - ホームにリダイレクト');
           setIsAdmin(false);
           setIsLoading(false);
           router.push('/');
           return;
         }
         
-        console.log('2. 管理者権限チェック中...');
         const adminStatus = await checkCurrentUserAdmin();
-        console.log('管理者権限結果:', adminStatus);
         
         setIsAdmin(adminStatus);
         setIsLoading(false);
         
         if (!adminStatus) {
-          console.log('管理者権限なし - ホームにリダイレクト');
           router.push('/');
         } else {
-          console.log('管理者権限確認 - ダッシュボード表示');
         }
       } catch (error) {
         console.error('権限チェック中にエラー:', error);
@@ -147,7 +138,6 @@ const AdminDashboard: React.FC = () => {
         router.push('/');
       }
       
-      console.log('=== 管理者権限チェック終了 ===');
     };
 
     checkAuth();
@@ -157,15 +147,12 @@ const AdminDashboard: React.FC = () => {
   const fetchReports = async () => {
     setReportsLoading(true);
     try {
-      console.log('=== レポート取得デバッグ開始 ===');
       
       // 1. まずテーブルの存在確認
-      console.log('1. テーブル存在確認...');
       const { data: tableCheck, error: tableError } = await supabase
         .from('reports')
         .select('count', { count: 'exact', head: true });
       
-      console.log('テーブル存在確認結果:', { tableCheck, tableError });
       
       if (tableError) {
         console.error('テーブルアクセスエラー:', tableError);
@@ -179,13 +166,11 @@ const AdminDashboard: React.FC = () => {
       }
 
       // 2. 権限確認のため、最もシンプルなクエリを実行
-      console.log('2. 基本的な権限確認...');
       const { data: simpleData, error: simpleError } = await supabase
         .from('reports')
         .select('id')
         .limit(1);
       
-      console.log('基本権限確認結果:', { simpleData, simpleError });
       
       if (simpleError) {
         console.error('権限エラー:', simpleError);
@@ -199,19 +184,16 @@ const AdminDashboard: React.FC = () => {
       }
 
       // 3. カラム構造確認のため、特定のカラムを指定してクエリ
-      console.log('3. カラム構造確認...');
       const { data: columnData, error: columnError } = await supabase
         .from('reports')
         .select('id, target_id, target_type, prompt_id, reporter_id, reason, details, status, created_at, updated_at')
         .limit(5);
       
-      console.log('カラム構造確認結果:', { columnData, columnError });
       
       if (columnError) {
         console.error('カラム構造エラー:', columnError);
         
         // 個別カラムをテスト
-        console.log('4. 個別カラムテスト...');
         const testColumns = ['id', 'target_id', 'target_type', 'prompt_id', 'reporter_id', 'reason', 'details', 'status', 'created_at', 'updated_at'];
         
         for (const column of testColumns) {
@@ -220,9 +202,7 @@ const AdminDashboard: React.FC = () => {
               .from('reports')
               .select(column)
               .limit(1);
-            console.log(`カラム ${column}:`, error ? `エラー - ${error.message}` : '正常');
           } catch (e) {
-            console.log(`カラム ${column}: 例外 - ${e}`);
           }
         }
         
@@ -236,14 +216,11 @@ const AdminDashboard: React.FC = () => {
       }
 
       // 4. 全データ取得
-      console.log('4. 全データ取得...');
       const { data: reportsData, error: reportsError } = await supabase
         .from('reports')
         .select('*')
         .order('created_at', { ascending: false });
 
-      console.log('全データ取得結果:', { reportsData, reportsError });
-      console.log('取得データ数:', reportsData?.length || 0);
 
       if (reportsError) {
         console.error('全データ取得エラー:', reportsError);
@@ -257,13 +234,10 @@ const AdminDashboard: React.FC = () => {
       }
 
       if (!reportsData || reportsData.length === 0) {
-        console.log('レポートデータが空です（テーブルは存在するがデータなし）');
         setReports([]);
         return;
       }
 
-      console.log('取得したレポート数:', reportsData.length);
-      console.log('最初のレポートデータ:', reportsData[0]);
 
       // まずは基本データのみで表示（関連データは後で追加）
       const basicReports = reportsData.map(report => ({
@@ -285,8 +259,6 @@ const AdminDashboard: React.FC = () => {
         const reporterIds = Array.from(new Set(reportsData.map(report => report.reporter_id))).filter(id => id);
         const promptIds = Array.from(new Set(reportsData.map(report => report.prompt_id))).filter(id => id);
 
-        console.log('報告者ID:', reporterIds);
-        console.log('プロンプトID:', promptIds);
 
         // 報告者の情報を取得
         let reportersData: any[] = [];
@@ -300,7 +272,6 @@ const AdminDashboard: React.FC = () => {
             console.error('報告者データ取得エラー:', error);
           } else {
             reportersData = data || [];
-            console.log('報告者データ:', reportersData);
           }
         }
 
@@ -316,7 +287,6 @@ const AdminDashboard: React.FC = () => {
             console.error('プロンプトデータ取得エラー:', error);
           } else {
             promptsData = data || [];
-            console.log('プロンプトデータ:', promptsData);
           }
         }
 
@@ -332,14 +302,12 @@ const AdminDashboard: React.FC = () => {
           }
         }));
 
-        console.log('結合後のレポートデータ:', enrichedReports);
         setReports(enrichedReports);
       } catch (relationError) {
         console.error('関連データ取得エラー:', relationError);
         // 関連データの取得に失敗しても基本データは表示する
       }
 
-      console.log('=== レポート取得デバッグ終了 ===');
 
     } catch (error) {
       console.error('レポート取得エラー:', error);
@@ -443,17 +411,13 @@ const AdminDashboard: React.FC = () => {
 
   // 初期データ読み込み
   useEffect(() => {
-    console.log('=== 初期データ読み込みチェック ===');
-    console.log('isAdmin状態:', isAdmin);
     
     if (isAdmin) {
-      console.log('管理者権限確認済み - データ取得開始');
       fetchReports();
       fetchAnnouncements();
       fetchContacts();
       fetchFeedbacks();
     } else {
-      console.log('管理者権限なし - データ取得スキップ');
     }
   }, [isAdmin]);
 
@@ -624,7 +588,6 @@ const AdminDashboard: React.FC = () => {
 
   // ローディング中
   if (isLoading) {
-    console.log('ローディング画面表示中');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
@@ -634,7 +597,6 @@ const AdminDashboard: React.FC = () => {
 
   // 管理者権限がない場合
   if (!isAdmin) {
-    console.log('権限なし画面表示中');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -646,7 +608,6 @@ const AdminDashboard: React.FC = () => {
     );
   }
 
-  console.log('管理者ダッシュボード表示中');
 
   return (
     <>

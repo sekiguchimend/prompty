@@ -24,7 +24,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { categories, sortBy } = req.query;
     
     // クエリパラメータのログ出力
-    console.log('ガチャAPI呼び出し:', { categories, sortBy });
 
     // カテゴリIDが指定されている場合の処理
     let query = supabase

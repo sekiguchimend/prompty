@@ -83,7 +83,6 @@ const HeaderAnnouncements: React.FC<{ onClose?: () => void }> = ({ onClose }) =>
         if (readError) {
           console.error('既読データの取得に失敗しました:', readError);
         } else if (readData && readData.length > 0) {
-          console.log('取得した既読データ:', readData);
           // 既読情報をMapに変換して検索を効率化
           readData.forEach(item => {
             // anyを使って型エラーを回避
@@ -177,7 +176,6 @@ const HeaderAnnouncements: React.FC<{ onClose?: () => void }> = ({ onClose }) =>
       
       if (unreadAnnouncements.length === 0) return;
       
-      console.log('Marking all announcements as read:', unreadAnnouncements.length, '件');
       
       // Mark announcements as read in the UI immediately
       setAnnouncements(prevAnnouncements => 
@@ -219,13 +217,11 @@ const HeaderAnnouncements: React.FC<{ onClose?: () => void }> = ({ onClose }) =>
         if (error) {
           console.error('お知らせの既読設定に失敗しました:', error);
         } else {
-          console.log('全お知らせ既読設定成功:', data);
           
           // 成功後に再度データを取得して表示を更新（念のため）
           fetchAnnouncements();
         }
       } else {
-        console.log('新たに既読設定が必要なお知らせはありません');
         // 既に全て既読である場合でもデータを更新（UI表示の一貫性のため）
         fetchAnnouncements();
       }
@@ -242,8 +238,6 @@ const HeaderAnnouncements: React.FC<{ onClose?: () => void }> = ({ onClose }) =>
       const announcement = announcements.find(a => a.id === announcementId);
       if (!announcement) return;
       
-      console.log('Marking announcement as read:', announcementId);
-      console.log('Current is_read status:', announcement.is_read);
       
       // すでに既読の場合でも処理を継続（データの一貫性を確保するため）
       // debugのためにあえて既読でも処理を実行
@@ -277,7 +271,6 @@ const HeaderAnnouncements: React.FC<{ onClose?: () => void }> = ({ onClose }) =>
       
       // 既存レコードがある場合は削除してから再挿入
       if (existingRead) {
-        console.log('既存の既読レコードを更新します:', existingRead);
         
         // 既存レコード削除
         const { error: deleteError } = await supabase
@@ -307,7 +300,6 @@ const HeaderAnnouncements: React.FC<{ onClose?: () => void }> = ({ onClose }) =>
       if (error) {
         console.error('お知らせの既読設定に失敗しました:', error);
       } else {
-        console.log('既読設定成功:', data);
         
         // 成功後に再度データを取得して表示を更新（念のため）
         fetchAnnouncements();

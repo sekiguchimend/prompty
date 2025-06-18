@@ -113,7 +113,6 @@ const ContestPage: React.FC = () => {
     // ハッシュタグから#を取り除く
     const tagName = tag.startsWith('#') ? tag.substring(1) : tag;
     // 現在のページにとどまる（URLは変更しない）
-    console.log(`タグをクリック: ${tagName}`);
     // router.push(`/hashtag/${encodeURIComponent(tagName)}`);
   };
 
@@ -122,7 +121,6 @@ const ContestPage: React.FC = () => {
     // タグ名を抽出（#を取り除く）
     const tagName = contest.hashtag.startsWith('#') ? contest.hashtag.substring(1) : contest.hashtag;
     // 現在のページにとどまる
-    console.log(`コンテストをクリック: ${tagName}`);
     // router.push(`/hashtag/${encodeURIComponent(tagName)}`);
   };
 

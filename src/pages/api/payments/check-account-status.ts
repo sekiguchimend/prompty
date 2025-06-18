@@ -23,7 +23,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'accountId is required' });
     }
     
-    console.log(`Stripeアカウント状態確認: アカウントID=${accountId}`);
     
     // アカウント情報を取得
     const account = await stripe.accounts.retrieve(accountId);
@@ -35,7 +34,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const status = isComplete ? 'complete' : 
                    requirementsCount > 0 ? 'pending' : 'incomplete';
     
-    console.log('アカウント状態:', {
       id: account.id,
       charges_enabled: account.charges_enabled,
       payouts_enabled: account.payouts_enabled,

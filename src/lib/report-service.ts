@@ -87,7 +87,6 @@ export const submitReport = async (reportData: ReportData): Promise<{ success: b
     
     // 認証トークンの取得
     const authToken = getAuthToken();
-    console.log('認証トークン状態:', { 
       hasToken: !!authToken, 
       tokenLength: authToken?.length || 0,
       tokenPreview: authToken ? `${authToken.substring(0, 15)}...` : 'なし'

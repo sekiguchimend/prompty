@@ -17,7 +17,6 @@ async function migrateCommentsHandler(req: NextApiRequest, res: NextApiResponse)
   
   // API キーチェック
   if (!adminKey || apiKey !== adminKey) {
-    console.warn('🚨 管理者API不正アクセス試行:', {
       ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
       userAgent: req.headers['user-agent']
     });
@@ -60,7 +59,6 @@ async function migrateCommentsHandler(req: NextApiRequest, res: NextApiResponse)
       .single();
 
     if (profileError || !profile?.is_admin) {
-      console.warn('🚨 非管理者による管理者API実行試行:', {
         userId: user.id,
         email: user.email
       });

@@ -27,7 +27,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const comment_id = target_id || originalCommentId; // target_idを優先して使用
     
     // リクエストボディのログ
-    console.log('受信したリクエストボディ:', { 
       target_id, 
       comment_id: originalCommentId, 
       prompt_id, 
@@ -67,7 +66,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     // 報告データをデータベースに保存
     try {
-      console.log('💾 コメント報告を保存します...');
       
       const { data: reportData, error: reportError } = await supabaseAdmin
         .from('comment_reports')
@@ -86,7 +84,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (reportError) {
         // 一意性制約違反（同じユーザーが同じコメントを複数回報告）
         if (reportError.code === '23505') {
-          console.log('⚠️ 既に報告済みのコメントです');
           return res.status(409).json({
             success: false,
             error: '既に報告済みです',
@@ -98,7 +95,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         throw reportError;
       }
       
-      console.log('✅ コメント報告を保存しました');
       
       // レポート数をチェックし、一定数以上ならコメントを自動的に非表示にする
       const { count, error: countError } = await supabaseAdmin
@@ -111,7 +107,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       else if (count && count >= 3) {
         // 3件以上の報告があればコメントを非表示に
-        console.log(`ℹ️ コメント ${comment_id} のレポート数が ${count} 件に達したため、非表示にします`);
         
         const { error: hideError } = await supabaseAdmin
           .from('comments')
@@ -121,7 +116,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (hideError) {
           console.error('⚠️ コメント非表示設定エラー:', hideError);
         } else {
-          console.log(`✅ コメント ${comment_id} は3件以上の報告により自動的に非表示になりました`);
         }
       }
       

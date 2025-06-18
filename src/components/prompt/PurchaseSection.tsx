@@ -538,7 +538,6 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
         )
         .subscribe((status) => {
           if (status !== 'SUBSCRIBED') {
-            console.warn('リアルタイム接続に問題が発生しました:', status);
           }
         });
 

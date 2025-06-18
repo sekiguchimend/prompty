@@ -64,7 +64,6 @@ const Login = () => {
   // ユーザーが既にログインしている場合はホームページにリダイレクト
   useEffect(() => {
     if (user && !isLoading) {
-      console.log('🟢 User already logged in, redirecting to home');
       router.push('/');
     }
   }, [user, isLoading, router]);
@@ -94,7 +93,6 @@ const Login = () => {
     setError(null);
     
     try {
-      console.log('ログイン試行:', { email, passwordLength: password.length });
       
       // クライアントサイドからSupabaseに直接接続
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
@@ -107,7 +105,6 @@ const Login = () => {
       }
 
       // ログイン成功
-      console.log('ログイン成功:', data);
       
       // 1秒待機してから遷移（セッション情報が反映されるのを待つ）
       setTimeout(() => {
@@ -126,7 +123,6 @@ const Login = () => {
     setError(null);
     
     try {
-      console.log('🔄 ソーシャルログイン開始:', provider);
       // クライアントサイドからSupabaseに直接接続
       const { data, error: signInError } = await supabase.auth.signInWithOAuth({
         provider: provider.toLowerCase() as any,
@@ -139,7 +135,6 @@ const Login = () => {
         throw new Error(signInError.message || `${provider}でのログインに失敗しました`);
       }
 
-      console.log('🔄 認証URLにリダイレクト中...');
       // リダイレクトURLがある場合はそこに遷移
       if (data?.url) {
         window.location.href = data.url;

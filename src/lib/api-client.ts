@@ -48,7 +48,6 @@ class ApiClient {
       try {
         return await cachedFetch<T>(url, fetchOptions, cacheTTL);
       } catch (error) {
-        console.warn('Cache fetch failed, falling back to direct fetch:', error);
       }
     }
 
@@ -96,7 +95,6 @@ class ApiClient {
 
       // リトライ処理
       if (retries > 0) {
-        console.warn(`Request failed, retrying... (${retries} retries left)`);
         await new Promise(resolve => setTimeout(resolve, 1000)); // 1秒待機
         return this.request<T>(endpoint, { ...options, retries: retries - 1 });
       }

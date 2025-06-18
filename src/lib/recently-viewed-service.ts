@@ -29,7 +29,6 @@ export const recordPromptView = async (promptId: string) => {
     // ログイン中のユーザー情報を取得
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      console.log('未ログイン状態では閲覧履歴を保存しません');
       return { success: false, error: new Error('未ログインユーザー') };
     }
 
@@ -66,7 +65,6 @@ export const getRecentlyViewedPrompts = async (limit: number = 5) => {
     // ログイン中のユーザー情報を取得
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      console.log('未ログイン状態では閲覧履歴を取得できません');
       return { success: false, data: [], error: new Error('未ログインユーザー') };
     }
 

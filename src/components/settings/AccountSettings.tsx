@@ -106,14 +106,12 @@ const AccountSettingsComponent: React.FC = memo(() => {
                 ...accountSettings
               };
             } catch (parseError) {
-              console.warn('account_settingsのパース失敗:', parseError);
             }
           }
         }
         
         // user_settingsで取得できない場合、account_settingsテーブルから取得を試行
         if (!settingsFound && settingsError) {
-          console.warn('user_settingsでエラー:', settingsError);
           
           try {
             const { data: accountData, error: accountError } = await supabase
@@ -123,7 +121,6 @@ const AccountSettingsComponent: React.FC = memo(() => {
               .maybeSingle();
             
             if (!accountError && accountData) {
-              console.log('account_settingsテーブルから設定を取得しました');
               
               // account_settingsテーブルの構造をAccountSettingsに変換
               const convertedSettings: Partial<AccountSettings> = {
@@ -134,7 +131,6 @@ const AccountSettingsComponent: React.FC = memo(() => {
               settingsFound = true;
             }
           } catch (fallbackError) {
-            console.warn('account_settingsテーブルからの取得も失敗:', fallbackError);
           }
         }
 
@@ -201,7 +197,6 @@ const AccountSettingsComponent: React.FC = memo(() => {
         .maybeSingle();
       
       if (fetchError && fetchError.code !== 'PGRST116') {
-        console.warn('既存設定取得エラー:', fetchError);
       }
       
       // upsertするデータを準備
@@ -231,7 +226,6 @@ const AccountSettingsComponent: React.FC = memo(() => {
         
         // 406エラーまたは権限エラーの場合はaccount_settingsテーブルに保存を試行
         if (upsertError.code === '42883' || upsertError.message?.includes('406') || upsertError.code === '42501') {
-          console.log('フォールバック: account_settingsテーブルへの保存を試行');
           
           const accountSettingsData = {
             user_id: currentUser.id,

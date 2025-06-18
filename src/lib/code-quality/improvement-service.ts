@@ -61,7 +61,6 @@ export class CodeImprovementService {
   };
 
   async improveCode(request: ImprovementRequest): Promise<ImprovementResult> {
-    console.log('🔧 コード改善開始:', {
       preservationLevel: request.preservationLevel,
       targetAreas: request.targetAreas,
       codeLength: request.originalCode.length
@@ -112,7 +111,6 @@ export class CodeImprovementService {
       recommendations: this.generateRecommendations(originalValidation, improvedValidation)
     };
 
-    console.log('✅ コード改善完了:', {
       preservedFunctions: result.preservedElements.functions.length,
       improvements: result.improvements.length,
       qualityImprovement: result.qualityMetrics.improvement
@@ -176,7 +174,6 @@ export class CodeImprovementService {
       }
 
     } catch (error) {
-      console.warn('要素特定でエラー:', error);
     }
 
     return elements;

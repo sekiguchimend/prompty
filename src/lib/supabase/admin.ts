@@ -37,7 +37,6 @@ let supabaseAdminInstance: ReturnType<typeof createClient> | null = null;
  */
 export const getSupabaseAdmin = () => {
   if (typeof window !== 'undefined') {
-    console.warn('警告: supabaseAdminクライアントはサーバーサイドでのみ使用してください');
   }
   
   if (supabaseAdminInstance) return supabaseAdminInstance;

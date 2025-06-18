@@ -18,7 +18,6 @@ const DebugMediaPage: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log('🔍 デバッグページ: データ取得開始');
         
         // featured-and-popular APIの確認
         const featuredResponse = await fetch('/api/prompts/featured-and-popular?limit=5');
@@ -26,7 +25,6 @@ const DebugMediaPage: React.FC = () => {
           throw new Error('Featured API error');
         }
         const featuredData = await featuredResponse.json();
-        console.log('📊 Featured API response:', featuredData);
         
         setFeaturedPrompts(featuredData.featuredPrompts || []);
         setPopularPrompts(featuredData.popularPrompts || []);
@@ -37,7 +35,6 @@ const DebugMediaPage: React.FC = () => {
           throw new Error('Category API error');
         }
         const categoryData = await categoryResponse.json();
-        console.log('📊 Category API response:', categoryData);
         
         setCategoryPrompts([
           ...(categoryData.specialCategories || []),

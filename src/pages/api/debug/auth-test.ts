@@ -6,7 +6,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 認証ヘッダーから認証トークンを取得
     const authHeader = req.headers.authorization;
     
-    console.log('受信したヘッダー:', {
       authorization: authHeader ? `Bearer ${authHeader.substring(7, 20)}...` : 'なし',
       userAgent: req.headers['user-agent'],
       method: req.method

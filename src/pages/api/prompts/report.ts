@@ -49,7 +49,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const cookieHeader = req.headers.cookie || '';
     const hasAuthCookie = cookieHeader.includes('supabase-auth-token') || cookieHeader.includes('sb-');
     
-    console.log('認証ヘッダー情報:', {
       hasAuthorizationHeader: !!req.headers.authorization,
       hasAuthToken,
       authHeaderLength: authHeader.length,
@@ -61,7 +60,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { target_id, prompt_id, reporter_id, reason, details, target_type } = req.body;
     
     // リクエストボディのログ
-    console.log('受信したリクエストボディ:', { target_id, prompt_id, reporter_id, reason, target_type });
     
     // 必須フィールドの検証
     if (!target_id || !prompt_id || !reporter_id || !reason || !target_type) {
@@ -115,7 +113,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     // 報告データをデータベースに保存
     try {
-      console.log('💾 コンテンツ報告を保存します...');
       const supabase = getSupabaseClient();
       
       // Supabaseクライアントに認証トークンを設定
@@ -125,9 +122,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           access_token: token,
           refresh_token: ''
         });
-        console.log('✓ 認証トークンがヘッダーから設定されました');
       } else {
-        console.warn('⚠ 認証トークンがヘッダーに見つかりませんでした');
       }
       
       // ⚠️ RLSをバイパスするために一時的にサービスロールを使用（テスト用）
@@ -159,7 +154,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           throw reportError;
         }
         
-        console.log('✅ サービスロールを使用してコンテンツ報告を保存しました');
         
         // 成功レスポンス
         return res.status(200).json({
@@ -188,7 +182,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (reportError) {
         // 一意性制約違反（同じユーザーが同じプロンプトを複数回報告）
         if (reportError.code === '23505') {
-          console.log('⚠️ 既に報告済みのコンテンツです');
           return res.status(409).json({
             success: false,
             error: '既に報告済みです',
@@ -200,7 +193,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         throw reportError;
       }
       
-      console.log('✅ コンテンツ報告を保存しました');
       
       // レポート数をチェックし、一定数以上なら自動的に非表示レビュー対象にする
       const { count, error: countError } = await supabase
@@ -214,7 +206,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       else if (count && count >= 5) {
         // 5件以上の報告があれば確認用フラグを追加
-        console.log(`ℹ️ ${target_id} のレポート数が ${count} 件に達したため、レビュー対象にします`);
         
         const { error: flagError } = await supabase
           .from('prompts')
@@ -224,7 +215,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (flagError) {
           console.error('⚠️ プロンプトレビューフラグ設定エラー:', flagError);
         } else {
-          console.log(`✅ プロンプト ${target_id} は5件以上の報告により自動的にレビュー対象になりました`);
         }
       }
       

@@ -96,7 +96,6 @@ export const PreviewMarkerOverlay: React.FC<PreviewMarkerOverlayProps> = ({
     const lines = Math.max(1, Math.min(calculatedLines, 50));
     
     if (isTouchEvent) {
-      console.log('行数計算（タッチ）:', {
         clientY,
         relativeY,
         adjustedY,

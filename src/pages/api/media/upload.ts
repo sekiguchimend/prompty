@@ -44,7 +44,6 @@ export default async function handler(
     const isVideo = contentType.startsWith('video/');
     
     if (!isImage && !isVideo) {
-      console.warn(`非対応MIMEタイプ "${contentType}" は許可されていません`);
       return res.status(400).json({ 
         error: '許可されていないContentType', 
         message: 'アップロードできるのは画像または動画ファイルのみです',
@@ -67,7 +66,6 @@ export default async function handler(
     const supportedTypes = [...supportedImageTypes, ...supportedVideoTypes];
     
     if (!supportedTypes.includes(contentType)) {
-      console.warn(`未サポートの形式 "${contentType}" を検出`);
       
       // ファイル拡張子からMIMEタイプを推測
       const fileExt = fileName.split('.').pop()?.toLowerCase();
@@ -92,14 +90,11 @@ export default async function handler(
         
         if (mimeMapping[fileExt]) {
           finalContentType = mimeMapping[fileExt];
-          console.log(`ファイル拡張子から正しいMIMEタイプを設定: ${finalContentType}`);
         } else {
           finalContentType = isVideo ? 'video/mp4' : 'image/png'; // デフォルト値
-          console.log(`不明な拡張子のため、デフォルトのMIMEタイプを使用: ${finalContentType}`);
         }
       } else {
         finalContentType = isVideo ? 'video/mp4' : 'image/png'; // デフォルト値
-        console.log(`拡張子がないため、デフォルトのMIMEタイプを使用: ${finalContentType}`);
       }
     }
 
@@ -114,7 +109,6 @@ export default async function handler(
     );
 
     const mediaTypeText = isVideo ? '動画' : '画像';
-    console.log(`${mediaTypeText}ファイルアップロード開始: ${fileName} (${finalContentType}) -> ${bucketName}`);
 
     // Supabaseストレージにアップロード
     const { data, error } = await supabase.storage
@@ -132,14 +126,12 @@ export default async function handler(
       });
     }
 
-    console.log('アップロード成功:', data.path);
 
     // アップロードされたファイルの公開URLを取得
     const { data: urlData } = supabase.storage
       .from(bucketName)
       .getPublicUrl(data.path);
 
-    console.log('公開URL生成:', urlData.publicUrl);
 
     return res.status(200).json({
       success: true,

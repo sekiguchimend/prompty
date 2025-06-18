@@ -52,7 +52,6 @@ const validateEventData = (event: Stripe.Event): void => {
 // Idempotency check
 const checkIdempotency = (eventId: string): boolean => {
   if (processedEvents.has(eventId)) {
-    console.log(`Event ${eventId} already processed, skipping`);
     return false;
   }
   processedEvents.add(eventId);
@@ -85,7 +84,6 @@ const updatePaymentStatus = async (
       throw new Error(`Failed to update payment status: ${error.message}`);
     }
 
-    console.log(`Payment ${paymentIntentId} status updated to ${status}`);
   } catch (error) {
     console.error('Payment status update failed:', error);
     throw error;
@@ -113,7 +111,6 @@ const createPurchaseRecord = async (
       .maybeSingle();
 
     if (existingPurchase) {
-      console.log('Purchase record already exists');
       return;
     }
 
@@ -150,7 +147,6 @@ const createPurchaseRecord = async (
       throw new Error(`Failed to create purchase record: ${insertError.message}`);
     }
 
-    console.log('Purchase record created successfully');
   } catch (error) {
     console.error('Purchase record creation failed:', error);
     throw error;
@@ -161,7 +157,6 @@ const createPurchaseRecord = async (
 const handlePaymentIntentSucceeded = async (event: Stripe.Event): Promise<void> => {
   const paymentIntent = event.data.object as Stripe.PaymentIntent;
   
-  console.log(`Processing PaymentIntent succeeded: ${paymentIntent.id}`);
   
   try {
     await updatePaymentStatus(paymentIntent.id, 'succeeded');
@@ -175,7 +170,6 @@ const handlePaymentIntentSucceeded = async (event: Stripe.Event): Promise<void> 
         paymentIntent.id
       );
     } else {
-      console.warn('Missing metadata in payment intent:', paymentIntent.id);
     }
   } catch (error) {
     console.error('Error handling payment intent succeeded:', error);
@@ -187,7 +181,6 @@ const handlePaymentIntentSucceeded = async (event: Stripe.Event): Promise<void> 
 const handlePaymentIntentFailed = async (event: Stripe.Event): Promise<void> => {
   const paymentIntent = event.data.object as Stripe.PaymentIntent;
   
-  console.log(`Processing PaymentIntent failed: ${paymentIntent.id}`);
   
   try {
     await updatePaymentStatus(paymentIntent.id, 'failed', {
@@ -203,7 +196,6 @@ const handlePaymentIntentFailed = async (event: Stripe.Event): Promise<void> => 
 const handleCheckoutSessionCompleted = async (event: Stripe.Event): Promise<void> => {
   const session = event.data.object as Stripe.Checkout.Session;
   
-  console.log(`Processing CheckoutSession completed: ${session.id}`);
   
   if (!session.id) {
     throw new Error('Session ID is missing');
@@ -225,7 +217,6 @@ const handleCheckoutSessionCompleted = async (event: Stripe.Event): Promise<void
         session.id
       );
     } else {
-      console.warn('Missing metadata in checkout session:', session.id);
     }
   } catch (error) {
     console.error('Error handling checkout session completed:', error);
@@ -267,7 +258,6 @@ const webhookHandler = async (req: NextApiRequest, res: NextApiResponse): Promis
       return res.status(200).json({ received: true, message: 'Event already processed' });
     }
 
-    console.log(`Processing webhook event: ${event.type}, ID: ${event.id}`);
 
     // Process event based on type
     switch (event.type) {
@@ -284,11 +274,9 @@ const webhookHandler = async (req: NextApiRequest, res: NextApiResponse): Promis
         break;
         
       default:
-        console.log(`Unhandled event type: ${event.type}`);
     }
 
     // Log successful processing
-    console.log(`Successfully processed webhook event: ${event.id}`);
     
     res.status(200).json({ 
       received: true, 

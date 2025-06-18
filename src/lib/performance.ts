@@ -34,7 +34,6 @@ class PerformanceMonitor {
 
     const metric = this.metrics.get(name);
     if (!metric) {
-      console.warn(`Performance metric "${name}" not found`);
       return null;
     }
 
@@ -45,7 +44,6 @@ class PerformanceMonitor {
     metric.duration = duration;
 
     // コンソールに出力
-    console.log(`[Performance] ${name}: ${duration.toFixed(2)}ms`, metric.metadata);
 
     return duration;
   }
@@ -159,22 +157,12 @@ export const logBundleInfo = () => {
       const navigation = window.performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
       
       if (navigation) {
-        console.group('📊 Performance Metrics');
-        console.log('DOM Content Loaded:', `${(navigation.domContentLoadedEventEnd - navigation.fetchStart).toFixed(2)}ms`);
-        console.log('Page Load Complete:', `${(navigation.loadEventEnd - navigation.fetchStart).toFixed(2)}ms`);
-        console.log('First Paint:', `${(navigation.responseStart - navigation.fetchStart).toFixed(2)}ms`);
-        console.groupEnd();
       }
     }
 
     // Log memory usage if available
     if ((window.performance as any).memory) {
       const memory = (window.performance as any).memory;
-      console.group('💾 Memory Usage');
-      console.log('Used:', `${(memory.usedJSHeapSize / 1024 / 1024).toFixed(2)} MB`);
-      console.log('Total:', `${(memory.totalJSHeapSize / 1024 / 1024).toFixed(2)} MB`);
-      console.log('Limit:', `${(memory.jsHeapSizeLimit / 1024 / 1024).toFixed(2)} MB`);
-      console.groupEnd();
     }
   }
 };
@@ -186,7 +174,6 @@ export const useRenderCount = (componentName: string) => {
   React.useEffect(() => {
     renderCount.current += 1;
     if (process.env.NODE_ENV === 'development') {
-      console.log(`🔄 ${componentName} rendered ${renderCount.current} times`);
     }
   });
 
@@ -200,13 +187,8 @@ export const debouncedPerformanceLog = () => {
   logTimeout = setTimeout(() => {
     const stats = performanceMonitor.getStats();
     if (stats.completedMetrics > 0) {
-      console.group('⚡ Performance Summary');
-      console.log('Completed Metrics:', stats.completedMetrics);
-      console.log('Average Duration:', `${stats.averageDuration.toFixed(2)}ms`);
       if (stats.slowestMetric) {
-        console.log('Slowest Operation:', `${stats.slowestMetric.name} (${stats.slowestMetric.duration?.toFixed(2)}ms)`);
       }
-      console.groupEnd();
     }
   }, 1000);
 }; 

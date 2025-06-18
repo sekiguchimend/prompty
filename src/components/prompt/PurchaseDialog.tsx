@@ -144,7 +144,6 @@ const PurchaseDialog: React.FC<PurchaseDialogProps> = ({ isOpen, onClose, prompt
               variant: 'default'
             });
           } else {
-            console.log('購入レコードを作成しました:', prompt.id);
           }
         } catch (purchaseErr) {
           console.error('購入記録処理エラー:', purchaseErr);

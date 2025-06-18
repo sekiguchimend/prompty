@@ -28,7 +28,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const actionType = isIteration ? '改善' : '生成';
-    console.log(`🚀 [Claude] 単一ページUI${actionType}開始:`, prompt.substring(0, 100) + '...');
 
     let result: UIGenerationResponse;
 
@@ -38,8 +37,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const claudeResponse = await callClaudeAPI(systemPrompt);
       
       // Claude APIからのレスポンスをログ出力（デバッグ用）
-      console.log('📥 Claude API Response length:', claudeResponse.length);
-      console.log('📄 Response preview (first 200 chars):', claudeResponse.substring(0, 200));
       
       // JSONレスポンスを抽出・解析（一時的に簡単な実装）
       try {
@@ -54,20 +51,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       
       // 抽出結果の詳細ログ
-      console.log('📋 Extracted result details:', {
-        htmlLength: result.html?.length || 0,
-        cssLength: result.css?.length || 0,
-        jsLength: result.js?.length || 0,
-        description: result.description?.substring(0, 100) + '...'
-      });
       
-      console.log(`✅ [Claude] 単一ページ${actionType}完了`);
 
     } catch (apiError) {
       console.error(`❌ Claude 単一ページ${actionType}エラー:`, apiError);
       
       // フォールバックUIを生成（一時的に簡単な実装）
-      console.log('🔄 フォールバックUIにフォールオーバー中...');
       result = {
         html: `<h1>${prompt}</h1><p>Fallback UI placeholder</p>`,
         css: 'body { font-family: Arial, sans-serif; }',

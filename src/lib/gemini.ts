@@ -64,11 +64,6 @@ async function callApi(endpoint: string, data: any): Promise<any> {
 
 // Generate code using Claude only
 export async function generateCode(request: CodeGenerationRequest): Promise<CodeGenerationResponse> {
-  console.log('🚀 Generating code with Claude:', {
-    model: request.model || 'claude-3-7-sonnet-20250219',
-    language: request.language || 'ja',
-    framework: request.targetFramework || 'react'
-  });
 
   try {
     const response = await callApi('/generate-code', {
@@ -98,12 +93,6 @@ export async function improveCode(
     enhanceOnly: true
   }
 ): Promise<CodeGenerationResponse> {
-  console.log('🔧 Improving code with Claude:', {
-    model,
-    language,
-    framework,
-    options
-  });
 
   try {
     const response = await callApi('/improve-code-enhanced', {
@@ -175,7 +164,6 @@ function analyzeCodeStructure(code: string): {
 
 // Explain code using Claude
 export const explainCode = async (code: string, language: 'ja' | 'en' = 'ja'): Promise<string> => {
-  console.log('📖 Explaining code with Claude...');
   
   try {
     // Use Claude to explain the code
@@ -223,7 +211,6 @@ export const saveProject = (project: {
     existingProjects.push(projectData);
     localStorage.setItem('claude_projects', JSON.stringify(existingProjects));
     
-    console.log('💾 Project saved:', projectId);
     return projectId;
   } catch (error) {
     console.error('❌ Failed to save project:', error);
@@ -246,7 +233,6 @@ export const deleteProject = (projectId: string): boolean => {
     const filteredProjects = projects.filter(p => p.id !== projectId);
     localStorage.setItem('claude_projects', JSON.stringify(filteredProjects));
     
-    console.log('🗑️ Project deleted:', projectId);
     return true;
   } catch (error) {
     console.error('❌ Failed to delete project:', error);
@@ -274,7 +260,6 @@ export const downloadCode = async (files: Record<string, string>, projectName: s
     link.click();
     document.body.removeChild(link);
     
-    console.log('📥 Code downloaded:', projectName);
   } catch (error) {
     console.error('❌ Download failed:', error);
     throw new Error('コードのダウンロードに失敗しました');
@@ -290,7 +275,6 @@ export const copyCode = async (files: Record<string, string>): Promise<void> => 
     });
 
     await navigator.clipboard.writeText(combinedCode);
-    console.log('📋 Code copied to clipboard');
   } catch (error) {
     console.error('❌ Copy failed:', error);
     throw new Error('コードのコピーに失敗しました');

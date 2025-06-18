@@ -119,7 +119,6 @@ const NotificationDropdown: React.FC = () => {
   // Update unread count when dropdown is opened/closed
   useEffect(() => {
     if (isOpen) {
-      console.log('Dropdown opened - refreshing unread count');
       fetchUnreadCount();
     }
   }, [isOpen, fetchUnreadCount]);
@@ -145,7 +144,6 @@ const NotificationDropdown: React.FC = () => {
     // ドロップダウンを閉じるときも最新の状態に更新
     if (!newState) {
       setTimeout(() => {
-        console.log('Dropdown closed - refreshing count after timeout');
         fetchUnreadCount();
       }, 500); // 500ms後に再取得（UIアニメーション完了後）
     }
