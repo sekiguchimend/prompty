@@ -16,7 +16,6 @@ interface CreatePromptRequest {
   price?: number;
   is_free?: boolean;
   is_premium?: boolean;
-  is_ai_generated?: boolean;
   is_featured?: boolean;
   published?: boolean;
   site_url?: string;

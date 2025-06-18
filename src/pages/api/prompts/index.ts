@@ -16,7 +16,6 @@ interface CreatePromptRequest {
   price?: number;
   is_free?: boolean;
   is_premium?: boolean;
-  is_ai_generated?: boolean;
   is_featured?: boolean;
   published?: boolean;
 }
@@ -185,20 +184,9 @@ async function createPrompt(req: NextApiRequest, res: NextApiResponse) {
       price: promptData.price || 0,
       is_free: promptData.is_free !== undefined ? promptData.is_free : true,
       is_premium: promptData.is_premium !== undefined ? promptData.is_premium : false,
-      is_ai_generated: promptData.is_ai_generated !== undefined ? promptData.is_ai_generated : false,
       is_featured: promptData.is_featured !== undefined ? promptData.is_featured : false,
       published: promptData.published !== undefined ? promptData.published : true
     };
-    
-      author_id: insertData.author_id,
-      title: insertData.title,
-      description: insertData.description.substring(0, 20) + '...',
-      contentLength: insertData.content.length,
-      prompt_title: insertData.prompt_title,
-      prompt_content: insertData.prompt_content.substring(0, 20) + '...',
-      thumbnail_url: insertData.thumbnail_url,
-      media_type: insertData.media_type
-    });
     
     // データ挿入を試行
     const { data, error } = await supabase

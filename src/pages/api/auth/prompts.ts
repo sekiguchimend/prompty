@@ -14,7 +14,6 @@ interface CreatePromptRequest {
   price?: number;
   is_free?: boolean;
   is_premium?: boolean;
-  is_ai_generated?: boolean;
   is_featured?: boolean;
   published?: boolean;
 }
@@ -129,7 +128,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       price: promptData.price || 0,
       is_free: promptData.is_free !== undefined ? promptData.is_free : true,
       is_premium: promptData.is_premium !== undefined ? promptData.is_premium : false,
-      is_ai_generated: promptData.is_ai_generated !== undefined ? promptData.is_ai_generated : false,
       is_featured: promptData.is_featured !== undefined ? promptData.is_featured : false,
       published: promptData.published !== undefined ? promptData.published : true
     };

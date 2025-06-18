@@ -41,7 +41,6 @@ export async function getBatchPrompts(limit: number = 10): Promise<{
         author_id,
         profiles!prompts_author_id_fkey(id, username, display_name, avatar_url)
       `)
-      .eq('is_ai_generated', true)
       .eq('published', true)
       .order('created_at', { ascending: false })
       .limit(limit);
