@@ -537,20 +537,29 @@ prompt: |
     
     const url = generateSiteUrl(`/prompts/${postData.id}`);
     
-    // 画像URLを絶対URLに変換（優先順位付き）
+    // 画像URLを絶対URLに変換（外部アクセス対応強化）
     let imageUrl = getDefaultOgImageUrl(); // デフォルト画像
     
     if (postData.thumbnailUrl && !postData.thumbnailUrl.includes('default-thumbnail.svg')) {
       // カスタム画像がある場合
-      if (postData.thumbnailUrl.startsWith('http')) {
+      if (postData.thumbnailUrl.startsWith('http://') || postData.thumbnailUrl.startsWith('https://')) {
         // 既に絶対URLの場合はそのまま使用
         imageUrl = postData.thumbnailUrl;
       } else if (postData.thumbnailUrl.startsWith('/')) {
         // 相対パスの場合は絶対URLに変換
         imageUrl = generateSiteUrl(postData.thumbnailUrl);
       } else {
-        // Supabase等の外部ストレージの場合
-        imageUrl = postData.thumbnailUrl;
+        // Supabase等の外部ストレージの場合（プロトコルを明示的に追加）
+        if (postData.thumbnailUrl.startsWith('//')) {
+          imageUrl = `https:${postData.thumbnailUrl}`;
+        } else if (!postData.thumbnailUrl.includes('://')) {
+          // プロトコルがない場合はSupabaseのURLとして処理
+          imageUrl = postData.thumbnailUrl.startsWith('qrxrulntwojimhhhnwqk.supabase.co') 
+            ? `https://${postData.thumbnailUrl}` 
+            : postData.thumbnailUrl;
+        } else {
+          imageUrl = postData.thumbnailUrl;
+        }
       }
     }
     

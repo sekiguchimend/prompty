@@ -18,7 +18,7 @@ import VideoPlayer from '../common/VideoPlayer';
 // 重いコンポーネントを遅延読み込み（Code Splitting）
 const ViewCounter = lazy(() => import('../view-counter'));
 
-// 安全な画像URLを取得する関数
+// 安全な画像URLを取得する関数（外部アクセス対応強化）
 const getSafeImageUrl = (url?: string): string => {
   // デフォルト画像のURL
   const defaultImage = '/images/default-thumbnail.svg';
@@ -37,6 +37,11 @@ const getSafeImageUrl = (url?: string): string => {
   // 完全なURLの場合はそのまま返す
   if (url.startsWith('http://') || url.startsWith('https://')) {
     return url;
+  }
+  
+  // Supabaseの不完全なURLの場合
+  if (url.includes('supabase.co') && !url.includes('://')) {
+    return `https://${url}`;
   }
   
   // その他の場合はデフォルト画像を返す

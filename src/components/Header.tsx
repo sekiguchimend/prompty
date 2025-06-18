@@ -14,6 +14,7 @@ import UserMenu from './user-menu';
 import { PostItem, getFollowingPosts, getTodayForYouPosts } from '../data/posts';
 import { useAuth } from '../lib/auth-context';
 import { supabase } from '../lib/supabaseClient';
+import { checkAdminStatus } from '../lib/admin-auth';
 
 // カテゴリタブMen
 const categoryTabs = [
@@ -25,8 +26,6 @@ const categoryTabs = [
   { id: 'feedback', name: 'フィードバック', path: '/feedback' },
 ];
 
-// 管理者リストを定義
-const ADMIN_EMAILS = ['queue@queuetech.jp', 'admin@queuetech.jp', 'queue@queue-tech.jp']; 
 
 // プロフィール情報の型定義
 interface UserProfile {
@@ -96,14 +95,6 @@ const useIsMobile = () => {
   return isMobile;
 };
 
-// 管理者チェック関数
-const isAdminUser = (email: string | undefined) => {
-  if (!email) return false;
-  // 特定のメールアドレスリストに含まれるかチェック
-  if (ADMIN_EMAILS.includes(email)) return true;
-  // queuetech.jpドメインのメールアドレスかチェック
-  return email.endsWith('@queuetech.jp') || email.endsWith('@queue-tech.jp');
-};
 
 const Header = () => {
   const router = useRouter();
@@ -117,6 +108,7 @@ const Header = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userProfile = useUserProfile(user?.id);
+  const [isAdmin, setIsAdmin] = useState(false);
   const tabButtonsRef = useRef<(HTMLButtonElement | null)[]>([]);
   
   const displayName = userProfile?.display_name || userProfile?.username || user?.email?.split('@')[0] || "ユーザー";
@@ -136,6 +128,26 @@ const Header = () => {
       setActiveTab(matchingTab.id);
     }
   }, [pathname]);
+
+  // 管理者権限をチェック
+  useEffect(() => {
+    const checkUserAdminStatus = async () => {
+      if (!user) {
+        setIsAdmin(false);
+        return;
+      }
+      
+      try {
+        const adminStatus = await checkAdminStatus(user.id);
+        setIsAdmin(adminStatus);
+      } catch (error) {
+        console.error('管理者権限チェックエラー:', error);
+        setIsAdmin(false);
+      }
+    };
+
+    checkUserAdminStatus();
+  }, [user]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -372,7 +384,7 @@ const Header = () => {
                               <NotificationDropdown />
                             </div>
 
-                            {user?.email && isAdminUser(user.email) && (
+                            {isAdmin && (
                               <button
                                 className="bg-red-600 text-white p-2 rounded-full flex items-center justify-center shadow-sm hover:bg-red-700 transition-colors"
                                 onClick={() => {
@@ -407,7 +419,7 @@ const Header = () => {
                             <NotificationDropdown />
                           </div>
                           
-                          {user?.email && isAdminUser(user.email) && (
+                          {isAdmin && (
                             <Link href="/admin" passHref>
                               <Button
                                 variant="outline"
