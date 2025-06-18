@@ -96,6 +96,7 @@ export const PreviewMarkerOverlay: React.FC<PreviewMarkerOverlayProps> = ({
     const lines = Math.max(1, Math.min(calculatedLines, 50));
     
     if (isTouchEvent) {
+      console.log('Touch position calculation:', {
         clientY,
         relativeY,
         adjustedY,
@@ -410,4 +411,4 @@ export const PreviewMarkerOverlay: React.FC<PreviewMarkerOverlayProps> = ({
       )}
     </div>
   );
-}; 
+};

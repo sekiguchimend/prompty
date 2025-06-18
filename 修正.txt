@@ -795,6 +795,29 @@ const PROTOCOL = process.env.NEXT_PUBLIC_PROTOCOL || 'https';
    - Supabaseドメインの自動プロトコル補完
    - デフォルト画像へのフォールバック強化
 
+### ✅ ブックマーク機能が反応しない問題修正
+1. **APIエンドポイントの修正**
+   - `bookmark-service.ts`で間違ったAPIパスを使用していた問題を修正
+   - `/api/bookmarks/add` → `/api/interactions/add` に変更
+   - `/api/bookmarks/remove` → `/api/interactions/remove` に変更
+   - `/api/bookmarks/count` → `/api/interactions/count` に変更
+
+2. **ブックマーク状態確認の改善**
+   - 一貫したAPI呼び出しの実装
+   - エラーハンドリングの強化
+   - 既存のブックマーク状態の確認機能を改善
+
+### ✅ ビルドエラー修正
+1. **PreviewMarkerOverlayコンポーネントのTypeScriptエラー修正**
+   - コンポーネントが正しくJSX要素を返すように修正
+   - React.FCの型定義問題を解決
+   - コンポーネント構文の整理
+
+2. **home-page.tsxの構文エラー修正**
+   - `transformToPromptItem`関数内の不完全なオブジェクト定義を修正
+   - 不要なconsole.logとオブジェクトリテラルを削除
+   - 動画対応のメディアタイプ判定ロジックを整理
+
 ## 未修正項目
 
 ### ・yamlボタンをフロントエンド部分だけコメントアウトしてください

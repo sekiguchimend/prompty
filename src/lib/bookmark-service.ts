@@ -16,8 +16,8 @@ export const bookmarkPrompt = async (promptId: string, userId: string) => {
       return { success: true, alreadyBookmarked: true };
     }
 
-    // MCPを使用してブックマークをデータベースに追加
-    const response = await fetch('/api/bookmarks/add', {
+    // 正しいAPIエンドポイントを使用してブックマークをデータベースに追加
+    const response = await fetch('/api/interactions/add', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -48,8 +48,8 @@ export const bookmarkPrompt = async (promptId: string, userId: string) => {
  */
 export const unbookmarkPrompt = async (promptId: string, userId: string) => {
   try {
-    // MCPを使用してブックマークを削除
-    const response = await fetch('/api/bookmarks/remove', {
+    // 正しいAPIエンドポイントを使用してブックマークを削除
+    const response = await fetch('/api/interactions/remove', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -82,19 +82,21 @@ export const checkIfBookmarked = async (promptId: string, userId: string) => {
   try {
     if (!userId) return false;
 
-    // Supabaseから直接データを取得する（API経由ではなく）
-    const { data, error } = await supabase
-      .from('bookmarks')
-      .select('id')
-      .eq('prompt_id', promptId)
-      .eq('user_id', userId);
+    // APIエンドポイントを使用してブックマーク状態を確認
+    const response = await fetch(`/api/interactions/check?promptId=${promptId}&userId=${userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-    if (error) {
-      console.error('ブックマーク確認エラー:', error);
+    if (!response.ok) {
+      console.error('ブックマーク確認エラー:', response.statusText);
       return false;
     }
 
-    return data && data.length > 0;
+    const data = await response.json();
+    return data.isBookmarked || false;
 
   } catch (error) {
     console.error('ブックマーク確認中にエラーが発生:', error);
@@ -109,8 +111,8 @@ export const checkIfBookmarked = async (promptId: string, userId: string) => {
  */
 export const getBookmarkCount = async (promptId: string) => {
   try {
-    // MCPを使用してブックマーク数を取得
-    const response = await fetch(`/api/bookmarks/count?promptId=${promptId}`, {
+    // 正しいAPIエンドポイントを使用してブックマーク数を取得
+    const response = await fetch(`/api/interactions/count?promptId=${promptId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

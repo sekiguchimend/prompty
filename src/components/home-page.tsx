@@ -108,12 +108,6 @@ const HomePage: React.FC = memo(() => {
     const thumbnailUrl = item.thumbnail_url || '/images/default-thumbnail.svg';
     let isVideo = false;
     
-      title: item.title?.substring(0, 30),
-      media_type: item.media_type,
-      thumbnail_url: item.thumbnail_url,
-      has_thumbnail: !!item.thumbnail_url
-    });
-    
     if (item.media_type) {
       // データベースにmedia_typeがある場合はそれを使用
       isVideo = item.media_type === 'video';
@@ -121,19 +115,9 @@ const HomePage: React.FC = memo(() => {
       // フォールバック: URLから拡張子を取得してメディアタイプを判定
       const videoExtensions = ['.mp4', '.webm', '.mov', '.avi', '.mkv'];
       isVideo = videoExtensions.some(ext => thumbnailUrl.toLowerCase().includes(ext));
-        isVideo,
-        thumbnailUrl,
-        title: item.title?.substring(0, 20)
-      });
     }
     
     const finalMediaType = isVideo ? 'video' : 'image';
-    
-      title: item.title?.substring(0, 30),
-      finalMediaType,
-      originalMediaType: item.media_type,
-      thumbnailUrl: item.thumbnail_url
-    });
     
     return {
       id: item.id,
