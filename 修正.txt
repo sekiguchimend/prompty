@@ -818,6 +818,11 @@ const PROTOCOL = process.env.NEXT_PUBLIC_PROTOCOL || 'https';
    - 不要なconsole.logとオブジェクトリテラルを削除
    - 動画対応のメディアタイプ判定ロジックを整理
 
+3. **prompt-card.tsxの構文エラー修正**
+   - 即座実行関数（IIFE）内の不完全なオブジェクトリテラルを削除
+   - ReactNodeを返すべき関数内でvoidを返していた問題を修正
+   - 動画・画像表示ロジックを整理
+
 ## 未修正項目
 
 ### ・yamlボタンをフロントエンド部分だけコメントアウトしてください

@@ -254,13 +254,6 @@ const PromptCard: React.FC<PromptCardProps> = ({
       <Link href={`/prompts/${promptId}`} className="block" prefetch={false}>
         <div className="relative pb-[56.25%]">
           {(() => {
-              id: promptId,
-              title: title?.substring(0, 30),
-              mediaType,
-              thumbnailUrl,
-              isVideo: mediaType === 'video'
-            });
-            
             return mediaType === 'video' ? (
               <VideoPlayer
                 src={thumbnailUrl}
