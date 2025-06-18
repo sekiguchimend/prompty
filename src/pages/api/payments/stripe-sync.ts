@@ -84,11 +84,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // 直接レスポンスのHTTPヘッダーを検査
-      status: rsp.status,
-      statusText: rsp.statusText,
-      contentType: rsp.headers.get('content-type'),
-      contentLength: rsp.headers.get('content-length')
-    });
     
     // Edge Function からのエラーレスポンスをより詳細に処理
     if (!rsp.ok) {

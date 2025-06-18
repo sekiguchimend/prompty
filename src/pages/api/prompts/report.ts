@@ -48,14 +48,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const hasAuthToken = authHeader.startsWith('Bearer ') && authHeader.length > 10;
     const cookieHeader = req.headers.cookie || '';
     const hasAuthCookie = cookieHeader.includes('supabase-auth-token') || cookieHeader.includes('sb-');
-    
-      hasAuthorizationHeader: !!req.headers.authorization,
-      hasAuthToken,
-      authHeaderLength: authHeader.length,
-      hasCookie: !!req.headers.cookie,
-      hasAuthCookie,
-      cookieExcerpt: cookieHeader.substring(0, 50) + (cookieHeader.length > 50 ? '...' : '')
-    });
 
     const { target_id, prompt_id, reporter_id, reason, details, target_type } = req.body;
     

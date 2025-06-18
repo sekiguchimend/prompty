@@ -1083,10 +1083,7 @@ const submitProject = async () => {
     }
   };
 
-  // historyの表示・非表示を切り替える
-  const toggleHistory = () => {
-    setShowHistory(!showHistory);
-  };
+ 
 
   // ボタンクリック時のハンドラー
   const handleBackButtonClick = () => {
@@ -1167,15 +1164,7 @@ const submitProject = async () => {
                         <div className="flex flex-wrap gap-2">
                           <PromptGuideDialog onApplyExample={applyPromptExample} />
                           
-                          {prompts.length > 0 && (
-                            <Button 
-                              variant="outline" 
-                              onClick={toggleHistory}
-                              className="border-gray-300 text-black text-sm"
-                            >
-                              {showHistory ? "履歴を隠す" : "履歴を表示"}
-                            </Button>
-                          )}
+                         
                         </div>
                       )}
                     </div>

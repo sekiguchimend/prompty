@@ -91,10 +91,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           throw new Error('価格IDの取得に失敗しました');
         }
         
-          product_id: product.id,
-          price_id: promptPriceId
-        });
-        
         // promptsテーブルを更新
         await supabaseAdmin.from('prompts')
           .update({
