@@ -153,6 +153,7 @@ const CategoryPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex min-h-screen flex-col">
+        <Sidebar />
         <div className="flex-1 md:ml-[240px]">
           <Breadcrumb />
           <main className="pb-12 pt-2">
@@ -174,6 +175,7 @@ const CategoryPage: React.FC = () => {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <Sidebar />
       <Head>
         <title>{categoryName ? `${categoryName}のAIプロンプト一覧 | Prompty` : 'カテゴリー | Prompty'}</title>
         <meta name="description" content={categoryDescription || `${categoryName}に関するAIプロンプトの一覧ページです。${prompts.length}件のプロンプトが投稿されています。`} />

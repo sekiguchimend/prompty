@@ -140,22 +140,30 @@ const EditPromptPage: React.FC<EditPromptPageProps> = ({ promptData }) => {
   // サムネイルアップロード処理
   const uploadThumbnail = async (file: File): Promise<string | null> => {
     try {
+      // 認証トークンを取得
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('認証が必要です');
+      }
+
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('bucketName', 'prompt-thumbnails');
+      formData.append('thumbnailImage', file);
 
       const response = await fetch('/api/media/thumbnail-upload', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        },
         body: formData,
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`サムネイルアップロードに失敗しました: ${errorText}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`サムネイルアップロードに失敗しました: ${JSON.stringify(errorData)}`);
       }
 
       const result = await response.json();
-      return result.url;
+      return result.publicUrl;
     } catch (error) {
       console.error('サムネイルアップロードエラー:', error);
       throw error;
