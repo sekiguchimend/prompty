@@ -24,7 +24,7 @@ type NewCategoryFormValues = z.infer<typeof newCategorySchema>;
 
 interface CategorySelectorProps {
   control: Control<any>;
-  setValue?: (name: string, value: any, options?: any) => void;
+  setValue?: (name: "categoryId", value: any, options?: any) => void;
   categories: Category[];
   isLoading: boolean;
   onRefresh: () => void;
