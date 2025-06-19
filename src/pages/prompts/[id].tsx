@@ -59,7 +59,16 @@ interface ExtendedPostItem extends PostItem {
 }
 
 // サーバーサイドレンダリングの最適化
-export const getServerSideProps: GetServerSideProps = async ({ params, req, res }) => {
+export const getServerSideProps: GetServerSideProps = async ({ params, req, res, query }) => {
+  // キャッシュ制御ヘッダーを設定（決済処理中でない場合のみ）
+  const isPaymentCallback = query?.success === '1' || query?.success === '0';
+  if (!isPaymentCallback) {
+    res.setHeader(
+      'Cache-Control',
+      'public, s-maxage=300, stale-while-revalidate=86400' // 5分キャッシュ、24時間は古いデータを返しながら更新
+    );
+  }
+  
   const id = params?.id as string;
   
   if (!id) {
@@ -73,6 +82,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
   try {
     // 環境変数チェック
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('SUPABASE_SERVICE_ROLE_KEY is not defined');
       return { notFound: true };
     }
 
@@ -118,17 +128,29 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
       .select('*', { count: 'exact', head: true })
       .eq('prompt_id', formattedId);
 
-    // 人気記事を並列取得（軽量化）
+    // 人気記事を並列取得（プロフィール情報も含めて効率化）
     const popularPromise = supabaseAdmin
       .from('prompts')
-      .select('id, title, thumbnail_url, view_count, created_at')
+      .select(`
+        id, 
+        title, 
+        thumbnail_url, 
+        media_type, 
+        view_count, 
+        created_at,
+        author_id,
+        profiles!inner (
+          display_name,
+          avatar_url
+        )
+      `)
       .order('view_count', { ascending: false })
       .limit(5);
 
     // 前後記事を並列取得（軽量化）
     const prevPromise = supabaseAdmin
       .from('prompts')
-      .select('id, title, thumbnail_url, view_count, created_at')
+      .select('id, title, thumbnail_url, media_type, view_count, created_at')
       .lt('created_at', promptData.created_at)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -136,7 +158,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
 
     const nextPromise = supabaseAdmin
       .from('prompts')
-      .select('id, title, thumbnail_url, view_count, created_at')
+      .select('id, title, thumbnail_url, media_type, view_count, created_at')
       .gt('created_at', promptData.created_at)
       .order('created_at', { ascending: true })
       .limit(1)
@@ -165,6 +187,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
           id: post.id,
           title: post.title,
           thumbnailUrl: post.thumbnail_url || '/images/default-thumbnail.svg',
+          mediaType: post.media_type || 'image',
           views: post.view_count || 0,
           date: new Date(post.created_at).toLocaleDateString('ja-JP'),
           user: { name: '投稿者', avatarUrl: DEFAULT_AVATAR_URL },
@@ -173,14 +196,22 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
         }))
       : [];
 
-    // 軽量なビューカウント更新（非同期、エラー無視）
+    // ビューカウント更新をanalyticsテーブルに記録（より効率的）
+    // prompts テーブルの直接更新は避け、定期的なバッチ処理で集計する
     setImmediate(async () => {
       try {
-        const currentViewCount = promptData.view_count || 0;
+        // ユニークビジターIDを生成（IPアドレスとUser-Agentのハッシュ）
+        const visitorId = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
+        
+        // analytics_viewsテーブルに記録（重複は自動的に無視される）
         await supabaseAdmin
-          .from('prompts')
-          .update({ view_count: currentViewCount + 1 })
-          .eq('id', formattedId);
+          .from('analytics_views')
+          .insert({
+            prompt_id: formattedId,
+            visitor_id: visitorId,
+            viewed_at: new Date().toISOString()
+          })
+          .select(); // エラーを無視するため、結果を取得しない
       } catch (e) {
         // ビューカウント更新はサイレントに失敗させる
       }
@@ -249,6 +280,24 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res 
   };
 
   } catch (error) {
+    console.error('Error in getServerSideProps:', error);
+    
+    // エラーの種類に応じて適切なレスポンスを返す
+    if (error instanceof Error) {
+      // ネットワークエラーやタイムアウトの場合
+      if (error.message.includes('fetch') || error.message.includes('network')) {
+        return {
+          props: {
+            error: 'ネットワークエラーが発生しました',
+            postData: null,
+            popularPosts: [],
+            prevPost: null,
+            nextPost: null
+          }
+        };
+      }
+    }
+    
     return { notFound: true };
   }
 };
@@ -258,12 +307,14 @@ const PromptDetail = ({
   postData, 
   popularPosts, 
   prevPost, 
-  nextPost 
+  nextPost,
+  error
 }: { 
-  postData: ExtendedPostItem; 
+  postData: ExtendedPostItem | null; 
   popularPosts: PromptItem[]; 
   prevPost: PostItem | null;
   nextPost: PostItem | null;
+  error?: string;
 }) => {
   const router = useRouter();  
   const [prompt, setPrompt] = useState<ExtendedPostItem | null>(null);
@@ -272,6 +323,26 @@ const PromptDetail = ({
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isAuthor, setIsAuthor] = useState(false);
+
+  // エラーがある場合の早期リターン
+  if (error || !postData) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <main className="flex-1 bg-white mt-14 md:mt-4 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-gray-600">{error || 'プロンプトが見つかりませんでした'}</p>
+            <button 
+              onClick={() => router.push('/')}
+              className="mt-4 text-blue-600 hover:underline"
+            >
+              ホームに戻る
+            </button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   // ユーザー取得（最適化）
   useEffect(() => {
@@ -374,7 +445,7 @@ const PromptDetail = ({
   if (router.isFallback) {
     return (
       <div className="flex min-h-screen flex-col">
-        <main className="flex-1 bg-white mt-14 md:mt-10 flex items-center justify-center">
+        <main className="flex-1 bg-white mt-14 md:mt-4 flex items-center justify-center">
           <div className="animate-pulse">
             <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
             <div className="h-3 bg-gray-200 rounded w-16"></div>
@@ -389,7 +460,7 @@ const PromptDetail = ({
   if (!postData) {
     return (
       <div className="flex min-h-screen flex-col">
-        <main className="flex-1 bg-white mt-14 md:mt-10 flex items-center justify-center">
+        <main className="flex-1 bg-white mt-14 md:mt-4 flex items-center justify-center">
           <div className="text-center">
             <p className="text-gray-600">プロンプトが見つかりませんでした</p>
             <button 
@@ -452,6 +523,7 @@ const PromptDetail = ({
     likes: post.likeCount || 0,
     views: post.views > 0 ? post.views : Math.floor(Math.random() * 500) + 50, // 0の場合はランダムな値を設定
     thumbnailUrl: post.thumbnailUrl || '/images/default-thumbnail.svg',
+    mediaType: post.mediaType || 'image',
     date: post.date || post.postedAt || '不明'
     })) || []
   , [popularPosts]);

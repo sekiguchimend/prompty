@@ -206,7 +206,7 @@ export const getTodayForYouPosts = (): PostItem[] => {
 // 人気記事を取得
 export const getPopularPosts = async (): Promise<PostItem[]> => {
   try {
-    // Supabaseからいいね数が多い順に記事を取得
+    // Supabaseから閲覧数が多い順に記事を取得（nullsは最後に）
     const { data, error } = await supabase
       .from('prompts')
       .select(`
@@ -214,18 +214,26 @@ export const getPopularPosts = async (): Promise<PostItem[]> => {
         title,
         thumbnail_url,
         created_at,
+        view_count,
         profiles:profiles(id, username, display_name, avatar_url)
       `)
-      .order('view_count', { ascending: false }) // 閲覧数が多い順
-      .limit(6); // 最大6件取得
+      .order('view_count', { ascending: false, nullsFirst: false }) // 閲覧数が多い順、nullは最後
+      .limit(20); // 最大20件取得（もっと見るボタンを表示するため）
+      
+    console.log('🔍 getPopularPosts: データベースから取得した件数:', data?.length);
       
     if (error) {
       console.error('人気記事取得エラー:', error);
-      return allPosts.filter(post => post.status === 'popular');
+      const fallbackData = allPosts.filter(post => post.status === 'popular');
+      console.log('🔍 getPopularPosts: フォールバックデータ件数:', fallbackData.length);
+      return fallbackData;
     }
     
     if (!data || data.length === 0) {
-      return allPosts.filter(post => post.status === 'popular');
+      console.log('🔍 getPopularPosts: データベースからデータが取得できないため、フォールバックデータを使用');
+      const fallbackData = allPosts.filter(post => post.status === 'popular');
+      console.log('🔍 getPopularPosts: フォールバックデータ件数:', fallbackData.length);
+      return fallbackData;
     }
     
     // いいね数を取得
@@ -252,6 +260,7 @@ export const getPopularPosts = async (): Promise<PostItem[]> => {
       })
     );
     
+    console.log('🔍 getPopularPosts: 最終的に返すデータ件数:', postsWithLikes.length);
     return postsWithLikes;
   } catch (error) {
     console.error('人気記事取得中にエラーが発生しました:', error);

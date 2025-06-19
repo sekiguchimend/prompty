@@ -43,6 +43,19 @@ const SettingsPage: React.FC = () => {
   const router = useRouter();
   const { tab } = router.query;
   
+  // ルーター変更時にモバイルメニューを閉じる
+  useEffect(() => {
+    const handleRouteChange = () => {
+      setMobileMenuOpen(false);
+    };
+    
+    router.events.on('routeChangeStart', handleRouteChange);
+    
+    return () => {
+      router.events.off('routeChangeStart', handleRouteChange);
+    };
+  }, [router]);
+  
   useEffect(() => {
     // URLクエリパラメータからタブを取得
     if (tab && typeof tab === 'string') {
@@ -178,8 +191,14 @@ const SettingsPage: React.FC = () => {
           
           {/* モバイルメニュー */}
           {mobileMenuOpen && (
-            <div className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40">
-              <div className="bg-white h-full w-80 shadow-xl">
+            <div 
+              className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-[100]" 
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <div 
+                className="bg-white h-full w-80 shadow-xl" 
+                onClick={(e) => e.stopPropagation()}
+              >
                 <div className="p-4 border-b">
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-semibold">設定</h2>

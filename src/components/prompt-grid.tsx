@@ -413,9 +413,9 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
   // モバイル表示の場合（リスト形式）
   if (isMobile && !isFeatureSection) {
     return (
-      <div className="flex items-center border-b border-gray-300 py-3 relative">
+      <div className="flex items-center border-b border-gray-300 py-2 relative">
         {/* カード左側：テキスト情報 */}
-        <div className="flex-1 pr-3">
+        <div className="flex-1 pr-2">
           <h3 className="text-base font-medium line-clamp-2 mb-1">
             <Link href={`/prompts/${id}`} passHref legacyBehavior prefetch={false}>
               <a className="cursor-pointer hover:text-blue-600">{title}</a>
@@ -446,7 +446,7 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
         </div>
         
         {/* カード右側：サムネイル画像/動画 - Next.js Imageコンポーネントで最適化 */}
-        <div className="w-20 h-16 flex-shrink-0">
+        <div className="w-24 h-14 flex-shrink-0">
           <Link href={`/prompts/${id}`} passHref legacyBehavior prefetch={false}>
             <div className="w-full h-full rounded overflow-hidden relative">
               {mediaType === 'video' ? (
@@ -459,6 +459,7 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
                   muted={true}
                   loop={false}
                   showThumbnail={true}
+                  minimumOverlay={true} // カテゴリー投稿では再生ボタンのみ表示
                   onLinkClick={() => {
                     window.location.href = `/prompts/${id}`;
                   }}

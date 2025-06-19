@@ -31,14 +31,24 @@ export default async function handler(
       return res.status(401).json({ message: '認証に失敗しました。再度ログインしてください。' });
     }
 
-    const { name, slug, description } = req.body;
+    const { name } = req.body;
 
-    // 必須フィールドの検証
-    if (!name || !slug) {
-      return res.status(400).json({ message: 'カテゴリ名とスラッグは必須です' });
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      return res.status(400).json({ message: 'カテゴリ名は必須です' });
     }
 
-    // スラッグの重複チェック
+    // カテゴリ名から slug を自動生成
+    const slug = name
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\-]+/g, '')
+      .replace(/\-\-+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '');
+
+    const description = null;
+
+    // スラッグの重複チェック（自動生成した slug が既に存在するか）
     const { data: existingCategory, error: checkError } = await supabase
       .from('categories')
       .select('id')

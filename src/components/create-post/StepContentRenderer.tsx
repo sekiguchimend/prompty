@@ -155,13 +155,13 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
                       <FormControl>
                         <Input
                           {...field}
-                            placeholder="例: ChatGPTを活用した営業メール作成ツール"
+                            placeholder="例:かわいい猫を生成する方法"
                             className="border-gray-300 focus:border-gray-500 focus:ring-gray-500"
                         />
                       </FormControl>
                         <FormMessage />
                         <p className="text-sm text-gray-500 mt-1">
-                          分かりやすく魅力的なタイトルを付けてください
+                          タイトルを付けてください
                         </p>
                     </FormItem>
                   )}
@@ -195,9 +195,7 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
               
             <div className="mb-6">
               <FormProvider {...form}>
-                  <FormLabel className="text-base font-medium text-gray-900 mb-3 block">
-                    AIモデル <span className="text-red-500">*</span>
-                  </FormLabel>
+                  
                 <ModelSelector
                   control={form.control}
                   onModelChange={(value: string) => {
@@ -354,6 +352,7 @@ const StepContentRenderer: React.FC<StepContentRendererProps> = ({
                   </FormLabel>
                 <CategorySelector
                   control={form.control}
+                  setValue={form.setValue}
                   categories={categories}
                   isLoading={isLoadingCategories}
                   onRefresh={onRefreshCategories}

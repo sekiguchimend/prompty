@@ -44,7 +44,10 @@ interface Notification {
 
 type TabType = '通知' | 'お知らせ';
 
-const HeaderAnnouncements: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
+const HeaderAnnouncements: React.FC<{ 
+  onClose?: () => void;
+  onUnreadCountChange?: (count: number) => void;
+}> = ({ onClose, onUnreadCountChange }) => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('お知らせ');
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -125,6 +128,11 @@ const HeaderAnnouncements: React.FC<{ onClose?: () => void }> = ({ onClose }) =>
       setUnreadAnnouncements(unreadCount);
       setAnnouncements(processedAnnouncements);
       
+      // 親コンポーネントに未読数を通知
+      if (onUnreadCountChange) {
+        onUnreadCountChange(unreadCount);
+      }
+      
       // TODO: In the future, fetch real notifications
       // For now, we'll use dummy data for notifications
       const dummyNotifications: Notification[] = [];
@@ -135,12 +143,19 @@ const HeaderAnnouncements: React.FC<{ onClose?: () => void }> = ({ onClose }) =>
     } finally {
       setLoading(false);
     }
-  }, [user]);  // user依存関係を追加
+  }, [user, onUnreadCountChange]);  // user, onUnreadCountChange依存関係を追加
 
   // useEffectで初回マウント時にデータを取得
   useEffect(() => {
     fetchAnnouncements();
   }, [fetchAnnouncements]);
+
+  // コンポーネントがマウントされた時（通知を開いた時）に即座に既読にする
+  useEffect(() => {
+    if (announcements.length > 0 && unreadAnnouncements > 0 && user) {
+      markAllAnnouncementsRead();
+    }
+  }, [announcements.length, user]); // announcements.lengthが変わった時（初回データ取得時）に実行
 
   useEffect(() => {
     // Add click outside handler
@@ -183,6 +198,11 @@ const HeaderAnnouncements: React.FC<{ onClose?: () => void }> = ({ onClose }) =>
       );
       setUnreadAnnouncements(0);
       
+      // 親コンポーネントに未読数を通知
+      if (onUnreadCountChange) {
+        onUnreadCountChange(0);
+      }
+      
       // 一旦既存の既読レコードを取得
       const { data: existingReads, error: checkError } = await supabase
         .from('announcement_reads')
@@ -217,13 +237,10 @@ const HeaderAnnouncements: React.FC<{ onClose?: () => void }> = ({ onClose }) =>
         if (error) {
           console.error('お知らせの既読設定に失敗しました:', error);
         } else {
-          
-          // 成功後に再度データを取得して表示を更新（念のため）
-          fetchAnnouncements();
+          console.log('お知らせの既読設定が完了しました:', data);
         }
       } else {
-        // 既に全て既読である場合でもデータを更新（UI表示の一貫性のため）
-        fetchAnnouncements();
+        console.log('全てのお知らせは既に既読です');
       }
     } catch (error) {
       console.error('お知らせの既読処理に失敗しました:', error);
@@ -251,7 +268,14 @@ const HeaderAnnouncements: React.FC<{ onClose?: () => void }> = ({ onClose }) =>
       
       // Update unread count if it was unread
       if (!announcement.is_read) {
-        setUnreadAnnouncements(prev => Math.max(0, prev - 1));
+        setUnreadAnnouncements(prev => {
+          const newCount = Math.max(0, prev - 1);
+          // 親コンポーネントに未読数を通知
+          if (onUnreadCountChange) {
+            onUnreadCountChange(newCount);
+          }
+          return newCount;
+        });
       }
       
       // 既存の既読レコードを確認
@@ -300,9 +324,7 @@ const HeaderAnnouncements: React.FC<{ onClose?: () => void }> = ({ onClose }) =>
       if (error) {
         console.error('お知らせの既読設定に失敗しました:', error);
       } else {
-        
-        // 成功後に再度データを取得して表示を更新（念のため）
-        fetchAnnouncements();
+        console.log('お知らせの既読設定が完了しました:', data);
       }
     } catch (error) {
       console.error('お知らせの既読処理に失敗しました:', error);

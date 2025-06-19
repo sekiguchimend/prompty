@@ -141,11 +141,9 @@ const NotificationDropdown: React.FC = () => {
     const newState = !isOpen;
     setIsOpen(newState);
     
-    // ドロップダウンを閉じるときも最新の状態に更新
-    if (!newState) {
-      setTimeout(() => {
-        fetchUnreadCount();
-      }, 500); // 500ms後に再取得（UIアニメーション完了後）
+    // 開いた瞬間に未読数を 0 にリセット（楽観的更新）
+    if (newState) {
+      setUnreadCount(0);
     }
   };
 
@@ -178,7 +176,10 @@ const NotificationDropdown: React.FC = () => {
             className="w-screen max-w-[90vw] md:max-w-sm sm:max-w-md mx-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <HeaderAnnouncements onClose={() => setIsOpen(false)} />
+            <HeaderAnnouncements 
+              onClose={() => setIsOpen(false)} 
+              onUnreadCountChange={(count) => setUnreadCount(count)}
+            />
           </div>
         </div>
       )}

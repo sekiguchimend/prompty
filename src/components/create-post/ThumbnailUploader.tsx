@@ -53,7 +53,7 @@ const ThumbnailUploader: React.FC<ThumbnailUploaderProps> = ({
         if (!isImage && !isVideo) {
           toast({
             title: "エラー",
-            description: "画像または動画ファイルのみアップロードできます",
+            description: "画像または動画ファイルを選択してください",
             variant: "destructive",
           });
           if (fileInputRef.current) {
@@ -62,27 +62,6 @@ const ThumbnailUploader: React.FC<ThumbnailUploaderProps> = ({
           return;
         }
 
-        // 対応形式チェック
-        const supportedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        const supportedVideoTypes = ['video/mp4', 'video/webm', 'video/mov', 'video/avi'];
-        
-        if (isImage && !supportedImageTypes.includes(file.type)) {
-          toast({
-            title: "注意",
-            description: `この画像形式(${file.type})は完全にサポートされていない可能性があります。JPG、PNG、GIF、WebPの使用を推奨します。`,
-            variant: "destructive",
-            duration: 5000,
-          });
-        }
-        
-        if (isVideo && !supportedVideoTypes.includes(file.type)) {
-          toast({
-            title: "注意",
-            description: `この動画形式(${file.type})は完全にサポートされていない可能性があります。MP4、WebM、MOV、AVIの使用を推奨します。`,
-            variant: "destructive",
-            duration: 5000,
-          });
-        }
         
         // 親コンポーネントに通知（ファイルオブジェクト自体を渡す）
         onThumbnailChange(file);
@@ -90,7 +69,7 @@ const ThumbnailUploader: React.FC<ThumbnailUploaderProps> = ({
       } catch (err) {
         toast({
           title: "エラー",
-          description: "画像処理中に予期せぬエラーが発生しました",
+          description: "ファイルの処理に失敗しました",
           variant: "destructive",
         });
         if (fileInputRef.current) {
@@ -277,27 +256,10 @@ const ThumbnailUploader: React.FC<ThumbnailUploaderProps> = ({
               </div>
             </div>
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-gray-900">記事のメイン画像・動画</h3>
+              <h3 className="text-lg font-semibold text-gray-900">サムネ画像・動画</h3>
               <p className="text-sm text-gray-600 max-w-xs">
-                クリックして画像・動画を選択するか、<br />
-                ここにファイルをドラッグ&ドロップしてください
+                ファイルを選択またはドロップ
               </p>
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mt-3 max-w-xs mx-auto">
-                <p className="text-xs text-orange-700 font-medium flex items-center gap-1">
-                  <span className="text-orange-500">⚠️</span>
-                  1つのファイルのみアップロード可能です
-                </p>
-              </div>
-              <div className="flex flex-col items-center gap-2 mt-3">
-                <div className="flex items-center gap-2">
-                  <Upload className="h-4 w-4 text-gray-400" />
-                  <span className="text-xs text-gray-500">画像: JPG, PNG, GIF, WebP (最大50MB)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Video className="h-4 w-4 text-gray-400" />
-                  <span className="text-xs text-gray-500">動画: MP4, WebM, MOV, AVI (最大5GB)</span>
-                </div>
-              </div>
             </div>
           </div>
         )}

@@ -14,7 +14,6 @@ export default function Document() {
         <meta httpEquiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
         
         {/* パフォーマンス最適化 - 実在するファイルのみプリロード */}
-        <link rel="preload" href="/images/prompty_logo.jpg" as="image" />
         <link rel="preload" href="/images/default-thumbnail.svg" as="image" />
 
         {/* Critical CSS - 上位表示要素のスタイルを先に読み込み */}

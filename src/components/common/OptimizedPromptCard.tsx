@@ -242,7 +242,7 @@ const OptimizedPromptCard: React.FC<OptimizedPromptCardProps> = memo(({
       >
         <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200 h-full flex flex-col">
           {/* サムネイル */}
-          <div className="relative aspect-video overflow-hidden">
+          <div className="relative aspect-[16/9] overflow-hidden">
             {mediaType === 'video' ? (
               <VideoPlayer
                 src={thumbnailUrl}

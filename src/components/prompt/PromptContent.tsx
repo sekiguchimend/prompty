@@ -571,7 +571,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
         </div>
         {/* メイン画像/動画（あれば表示） */}
         {imageUrl && (
-          <div className="rounded-md overflow-hidden aspect-video mb-2 relative bg-gray-100">
+          <div className="rounded-md overflow-hidden aspect-[16/9] mb-2 relative bg-gray-100">
             {(() => {
               // mediaTypeまたはファイル拡張子から動画かどうかを判定
               const isVideo = mediaType === 'video' || /\.(mp4|mov|avi|mkv|webm|ogv)$/i.test(imageUrl);
@@ -691,18 +691,31 @@ className="text-lg leading-loose font-noto font-normal"
                   
                   {/* プロンプト内容 - 記事形式 */}
                   <div className="prose prose-lg max-w-none">
-                    <div className="relative bg-gray-100 rounded-lg p-4">
-                      <button
-                        onClick={() => copyToClipboard(prompt.content, `prompt-${prompt.id}`)}
-                        className="absolute top-3 right-3 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
-                        title="プロンプトをコピー"
-                      >
-                        {copiedButtons.has(`prompt-${prompt.id}`) ? (
-                          <Check className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </button>
+                    <div className={`relative rounded-lg p-4 ${!hasFullAccess && contentCalculations.isPremiumContent ? 'bg-gradient-to-b from-gray-100 via-gray-100 to-white' : 'bg-gray-100'}`}>
+                      {/* コピーボタン - 有料記事で未購入の場合は非表示 */}
+                      {(hasFullAccess || !contentCalculations.isPremiumContent) && (
+                        <button
+                          onClick={() => copyToClipboard(prompt.content, `prompt-${prompt.id}`)}
+                          className="absolute top-3 right-3 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
+                          title="プロンプトをコピー"
+                        >
+                          {copiedButtons.has(`prompt-${prompt.id}`) ? (
+                            <Check className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </button>
+                      )}
+                      {/* 有料記事で未購入の場合の文字フェード効果 */}
+                      {!hasFullAccess && contentCalculations.isPremiumContent && (
+                        <div 
+                          className="absolute left-0 right-0 bottom-0 pointer-events-none rounded-lg"
+                          style={{
+                            height: `${1.8 * 1.5}em`, // プレビュー部分と同じ高さ
+                            background: 'linear-gradient(to top, rgba(247,247,247,1) 0%, rgba(247,247,247,0.8) 20%, rgba(247,247,247,0.4) 50%, rgba(247,247,247,0) 80%)'
+                          }}
+                        />
+                      )}
                       <div 
                         className="text-lg leading-loose font-noto font-normal text-gray-800 pr-12"
                         style={{ whiteSpace: 'pre-wrap' }}
@@ -726,18 +739,22 @@ className="text-lg leading-loose font-noto font-normal"
           {(!hasMultiplePrompts || !hasFullAccess) && (
             <>
               {/* プロンプト内容表示 - 無料部分と有料部分を統合 */}
-              <div className="relative bg-gray-100 rounded-lg p-4">
-                <button
-                  onClick={() => copyToClipboard(hasFullAccess && premiumContent ? contentCalculations.contentText + '\n\n' + premiumContent : contentCalculations.contentText, 'main-prompt')}
-                  className="absolute top-3 right-3 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
-                  title="プロンプトをコピー"
-                >
-                  {copiedButtons.has('main-prompt') ? (
-                    <Check className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </button>
+              <div className="relative rounded-lg p-4 bg-gray-100">
+                {/* コピーボタン - 有料記事で未購入の場合は非表示 */}
+                {(hasFullAccess || !contentCalculations.isPremiumContent) && (
+                  <button
+                    onClick={() => copyToClipboard(hasFullAccess && premiumContent ? contentCalculations.contentText + '\n\n' + premiumContent : contentCalculations.contentText, 'main-prompt')}
+                    className="absolute top-3 right-3 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
+                    title="プロンプトをコピー"
+                  >
+                    {copiedButtons.has('main-prompt') ? (
+                      <Check className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </button>
+                )}
+                
                 {/* 無料部分 */}
                 <div 
                   className="text-lg leading-loose font-noto font-normal text-gray-800 pr-12"
@@ -745,7 +762,7 @@ className="text-lg leading-loose font-noto font-normal"
                   dangerouslySetInnerHTML={{ __html: displayContent.basicDisplayContent }} 
                 />
                 
-                {/* 有料部分 - 条件付きで表示 */}
+                {/* 有料部分 - 購入済みの場合は全文表示 */}
                 {premiumContent && hasFullAccess && (
                   <div className="mt-4 pt-4">
                     <div 
@@ -755,84 +772,87 @@ className="text-lg leading-loose font-noto font-normal"
                     />
                   </div>
                 )}
+                
+                {/* 有料部分プレビュー（未購入の場合） */}
+                {premiumContent && !hasFullAccess && shouldShowPremiumPreview && (
+                  <div className="mt-4">
+                    <div 
+                      className="text-lg leading-loose font-noto font-normal text-gray-800 pr-12"
+                      style={{ whiteSpace: 'pre-wrap' }}
+                      dangerouslySetInnerHTML={{ 
+                        __html: displayContent.extractLimitedPreviewByLines(premiumContent, previewLines) 
+                      }} 
+                    />
+                  </div>
+                )}
+                
+                {/* プロンプト表示のフェイドアウト効果（有料記事で未購入の場合） */}
+                {!hasFullAccess && contentCalculations.isPremiumContent && (
+                  <div 
+                    className="absolute left-0 right-0 bottom-0 pointer-events-none rounded-b-lg"
+                    style={{
+                      height: '6em',
+                      background: 'linear-gradient(to top, rgba(255,255,255,1) 0%, rgba(255,255,255,0.95) 10%, rgba(255,255,255,0.8) 25%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.2) 75%, rgba(255,255,255,0) 100%)'
+                    }}
+                  />
+                )}
               </div>
               
-              {/* 有料部分プレビュー（未購入の場合） */}
+              {/* 「ここから先は」テキスト（プロンプト表示の外側） */}
               {premiumContent && !hasFullAccess && shouldShowPremiumPreview && (
-                <>
-                    <div className="relative">
-                      {/* プレビューコンテンツの最初の2行を表示 */}
-                      <div className="relative mb-8">
-                        <div 
-                          className="text-lg leading-loose font-noto font-normal text-gray-600"
-                          style={{ whiteSpace: 'pre-wrap' }}
-                          dangerouslySetInnerHTML={{ 
-                            __html: displayContent.extractLimitedPreviewByLines(premiumContent, previewLines) 
-                          }} 
-                        />
-                        {/* 強化されたグラデーション効果 - 指定行数の位置で完全に隠す */}
-                        <div 
-                          className="absolute left-0 right-0 pointer-events-none"
-                          style={{
-                            bottom: 0,
-                            height: `${1.8 * 4}em`, // 4行分の高さに増加
-                            background: 'linear-gradient(to top, #ffffff 0%, #ffffff 25%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0.6) 75%, transparent 100%)'
-                          }}
-                        ></div>
-                        </div>
+                <div className="text-center w-full mt-4 mb-4 flex items-center justify-center">
+                  <div className="border-t border-dashed border-gray-300 w-1/4"></div>
+                  <p className="text-gray-700 font-bold mx-4 bg-white px-2">ここから先は</p>
+                  <div className="border-t border-dashed border-gray-300 w-1/4"></div>
+                </div>
+              )}
+              
+              {/* 購入セクション（プロンプト表示の外側） */}
+              {premiumContent && !hasFullAccess && shouldShowPremiumPreview && (
+                <div className="flex flex-col items-center justify-center py-1 relative mt-4">
+                  <Badge variant="outline" className="mb-1 rounded-sm border-gray-400 text-gray-600 bg-white">
+                    セール中
+                  </Badge>
+                  <div className="space-y-2 py-2"></div>
 
-                        <div className="flex flex-col items-center justify-center py-2 relative">
-                          {/* 「ここから先は」テキストを点線の中に配置 */}
-                          <div className="text-center w-full my-6 flex items-center justify-center">
-                            <div className="border-t border-dashed border-gray-300 w-1/4"></div>
-                          <p className="text-gray-700 font-bold mx-4 bg-white px-2">ここから先は</p>
-                            <div className="border-t border-dashed border-gray-300 w-1/4"></div>
-                          </div>
-                        <Badge variant="outline" className="mb-1 rounded-sm border-gray-400 text-gray-600">
-                          セール中
-                        </Badge>
-                          <div className="space-y-2 py-2"></div>
-
-                          <div className="flex flex-col items-center justify-center py-2 relative w-full max-w-md">
-                            {/* 購入セクション */}
-                            <div className="text-center mb-1 w-full">
-                            <h3 className="text-xl font-medium text-gray-800 mb-2">{title}</h3>
-                            <p className="text-sm text-gray-600 mb-4">のヒントが詰まっています。</p>
-                              
-                            {/* 文字数の表示（動的） */}
-                            <div className="flex items-center justify-center space-x-4 mb-4">
-                              <div className="text-sm text-gray-600">
-                                {contentCalculations.premiumCharCount}字
-                              </div>
-                                </div>
-                            
-                            {/* 価格表示エリア */}
-                            <div className="flex items-center justify-center space-x-3 mb-6">
-                              <span className="text-3xl font-bold text-red-600">¥{price.toLocaleString()}</span>
-                              </div>
-                              
-                              {/* 購入ボタン */}
-                              <Button
-                              className="w-full bg-gray-900 text-white hover:bg-gray-800 rounded-sm py-3 text-lg font-medium shadow-sm transition-colors"
-                                onClick={handlePurchase}
-                              >
-                                購入手続きへ
-                              </Button>
-                            
-                            {/* 評価情報 - 動的表示 */}
-                            {reviewCount > 0 && (
-                              <div className="flex items-center justify-center mt-4 space-x-2">
-                                <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
-                                  <Check className="h-4 w-4 text-green-600" />
-                                </div>
-                                <span className="text-sm text-gray-600">{reviewCount}人が高評価</span>
-                            </div>
-                            )}
-                          </div>
+                  <div className="flex flex-col items-center justify-center py-2 relative w-full max-w-md">
+                    {/* 購入セクション */}
+                    <div className="text-center mb-1 w-full">
+                      <h3 className="text-xl font-medium text-gray-800 mb-2">{title}</h3>
+                      <p className="text-sm text-gray-600 mb-4">のヒントが詰まっています。</p>
+                      
+                      {/* 文字数の表示（動的） */}
+                      <div className="flex items-center justify-center space-x-4 mb-4">
+                        <div className="text-sm text-gray-600">
+                          {contentCalculations.premiumCharCount}字
                         </div>
                       </div>
+                      
+                      {/* 価格表示エリア */}
+                      <div className="flex items-center justify-center space-x-3 mb-6">
+                        <span className="text-3xl font-bold text-red-600">¥{price.toLocaleString()}</span>
+                      </div>
+                      
+                      {/* 購入ボタン */}
+                      <Button
+                        className="w-full bg-gray-900 text-white hover:bg-gray-800 rounded-sm py-3 text-lg font-medium shadow-sm transition-colors"
+                        onClick={handlePurchase}
+                      >
+                        購入手続きへ
+                      </Button>
+                      
+                      {/* 評価情報 - 動的表示 */}
+                      {reviewCount > 0 && (
+                        <div className="flex items-center justify-center mt-4 space-x-2">
+                          <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
+                            <Check className="h-4 w-4 text-green-600" />
+                          </div>
+                          <span className="text-sm text-gray-600">{reviewCount}人が高評価</span>
+                        </div>
+                      )}
                     </div>
-                </>
+                  </div>
+                </div>
               )}
             </>
           )}

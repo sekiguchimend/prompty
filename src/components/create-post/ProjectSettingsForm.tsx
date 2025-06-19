@@ -259,20 +259,24 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
   
   // フォームの値が変更されたら自動保存する
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
     const subscription = projectForm.watch((value) => {
       // 値が変更されるたびに自動保存（ただしdebounce処理をする）
       // 連続した変更の場合、最後の変更から500ms後に保存する
-      const timeoutId = setTimeout(() => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
         if (Object.keys(value).length > 0) {
           autoSaveChanges(projectForm.getValues());
         }
       }, 500);
-      
-      return () => clearTimeout(timeoutId);
     });
     
-    return () => subscription.unsubscribe();
-  }, [projectForm.watch]);
+    return () => {
+      clearTimeout(timeoutId);
+      subscription.unsubscribe();
+    };
+  }, []);
 
   return (
     <div className="space-y-8">
@@ -369,6 +373,7 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
                         <FormLabel className="text-sm font-medium text-gray-900">カテゴリ</FormLabel>
                         <CategorySelector
                           control={projectForm.control}
+                          setValue={projectForm.setValue}
                           categories={categories}
                           isLoading={isLoadingCategories}
                           onRefresh={refreshCategories}

@@ -37,7 +37,7 @@ const PromptGuideDialog: React.FC<PromptGuideDialogProps> = ({ onApplyExample, c
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl mx-4 w-auto left-0 right-0 translate-x-0 sm:left-1/2 sm:-translate-x-1/2">
         <DialogHeader>
           <DialogTitle className="flex items-center">
             <HelpCircle className="h-5 w-5 mr-2" />

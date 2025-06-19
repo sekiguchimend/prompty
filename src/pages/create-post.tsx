@@ -25,16 +25,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/
 import { useAuth } from "../lib/auth-context";
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '../lib/supabaseClient';
-
-// カテゴリの型定義
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  icon: string | null;
-  parent_id: string | null;
-}
+import { categoryCache, type Category } from '../lib/cache/category-cache';
 
 // Supabase接続情報をチェックする関数（開発中のみ使用）
 const checkSupabaseConfiguration = () => {
@@ -127,25 +118,18 @@ const CreatePost = () => {
   // コード生成用の状態を追加
   const [generatedCodeProjects, setGeneratedCodeProjects] = useState<GeneratedCodeProject[]>([]);
   
-  // カテゴリ一覧を取得
+  // カテゴリ一覧を取得（キャッシュを使用）
   const fetchCategories = async () => {
     setIsLoadingCategories(true);
     try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('name');
-      
-      if (error) {
-        toast({
-          title: "エラー",
-          description: "カテゴリの取得に失敗しました",
-          variant: "destructive",
-        });
-      } else if (data) {
-        setCategories(data);
-      }
+      const data = await categoryCache.get();
+      setCategories(data);
     } catch (error) {
+      toast({
+        title: "エラー",
+        description: "カテゴリの取得に失敗しました",
+        variant: "destructive",
+      });
     } finally {
       setIsLoadingCategories(false);
     }
@@ -1124,7 +1108,7 @@ const submitProject = async () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <main className="flex-1 container max-w-4xl mx-auto px-4 py-8 mt-10">
+      <main className="flex-1 container max-w-4xl mx-auto px-4 py-8 mt-4">
         {/* 投稿モード選択か、入力フォームかを表示 */}
         {(() => {
           // 投稿モードに応じて表示を切り替え
@@ -1436,7 +1420,7 @@ const submitProject = async () => {
       
       {/* ヘルプダイアログ */}
       <Dialog open={helpDialogOpen} onOpenChange={setHelpDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto rounded-xl mx-4 w-[calc(100vw-2rem)] sm:w-full">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <HelpCircle className="h-5 w-5 text-blue-600" />
