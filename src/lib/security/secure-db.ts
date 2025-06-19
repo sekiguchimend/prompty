@@ -20,6 +20,7 @@ export class SecureDB {
         title,
         description,
         thumbnail_url,
+        media_type,
         view_count,
         like_count,
         created_at,

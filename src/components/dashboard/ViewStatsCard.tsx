@@ -57,8 +57,8 @@ const ViewStatsCard: React.FC<ViewStatsCardProps> = ({
         }
         
         // トレンド計算のサンプル（本来は日付範囲で比較するロジックが必要）
-        // 現状はダミーデータを設定
-        setTrend(Math.floor(Math.random() * 21) - 10); // -10%～+10%
+        // 現状は固定値を設定
+        setTrend(0); // 変化なし
         
       } catch (error) {
         console.error('閲覧統計の取得中にエラーが発生しました:', error);

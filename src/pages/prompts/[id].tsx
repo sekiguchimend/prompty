@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import Footer from '../../components/footer';
 import { ChevronLeft, Edit, Download } from 'lucide-react';
 import { Separator } from '../../components/ui/separator';
@@ -196,26 +196,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res,
         }))
       : [];
 
-    // ビューカウント更新をanalyticsテーブルに記録（より効率的）
-    // prompts テーブルの直接更新は避け、定期的なバッチ処理で集計する
-    setImmediate(async () => {
-      try {
-        // ユニークビジターIDを生成（IPアドレスとUser-Agentのハッシュ）
-        const visitorId = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
-        
-        // analytics_viewsテーブルに記録（重複は自動的に無視される）
-        await supabaseAdmin
-          .from('analytics_views')
-          .insert({
-            prompt_id: formattedId,
-            visitor_id: visitorId,
-            viewed_at: new Date().toISOString()
-          })
-          .select(); // エラーを無視するため、結果を取得しない
-      } catch (e) {
-        // ビューカウント更新はサイレントに失敗させる
-      }
-    });
+    // ビューカウントはクライアントサイドで処理（二重カウント防止）
 
     // 前後記事データ処理
     const prevPost = prevResult.status === 'fulfilled' && prevResult.value.data
@@ -521,7 +502,7 @@ const PromptDetail = ({
     id: post.id || '',
     title: post.title || 'タイトルなし',
     likes: post.likeCount || 0,
-    views: post.views > 0 ? post.views : Math.floor(Math.random() * 500) + 50, // 0の場合はランダムな値を設定
+    views: post.views || 0, // 実際のビュー数を使用
     thumbnailUrl: post.thumbnailUrl || '/images/default-thumbnail.svg',
     mediaType: post.mediaType || 'image',
     date: post.date || post.postedAt || '不明'
@@ -553,8 +534,12 @@ const PromptDetail = ({
   }, [postData]);
   
   // 閲覧履歴記録（一回のみ実行）
+  const viewRecordedRef = useRef(false);
+  
   useEffect(() => {
-    if (postData?.id) {
+    if (postData?.id && !viewRecordedRef.current) {
+      viewRecordedRef.current = true;
+      console.log('🎯 Recording view for prompt:', postData.id);
       recordPromptView(postData.id).catch(() => {
         // エラーは無視
       });

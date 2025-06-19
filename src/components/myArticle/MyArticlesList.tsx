@@ -44,6 +44,7 @@ interface MyArticle {
   bookmark_count: number;
   price: number;
   thumbnail_url: string | null;
+  media_type?: 'image' | 'video';
 }
 
 const MyArticlesList = () => {
@@ -72,6 +73,7 @@ const MyArticlesList = () => {
             published,
             price,
             view_count,
+            media_type,
             profiles:author_id (
               id,
               display_name,
@@ -108,7 +110,8 @@ const MyArticlesList = () => {
                 like_count: likeCount || 0,
                 bookmark_count: bookmarkCount || 0,
                 price: article.price || 0,
-                thumbnail_url: article.thumbnail_url
+                thumbnail_url: article.thumbnail_url,
+                media_type: article.media_type || 'image'
               };
             })
           );
@@ -196,14 +199,31 @@ const MyArticlesList = () => {
                 <div className="flex-shrink-0">
                   {article.thumbnail_url ? (
                     <div className="relative w-16 h-12 md:w-24 md:h-16 rounded-md overflow-hidden">
-                      <Image 
-                        src={article.thumbnail_url}
-                        alt={article.title}
-                        fill
-                        sizes="(max-width: 768px) 64px, 96px"
-                        style={{ objectFit: 'cover' }}
-                        className="w-full h-full"
-                      />
+                      {article.media_type === 'video' ? (
+                        <div className="w-full h-full relative">
+                          <video
+                            src={article.thumbnail_url}
+                            className="w-full h-full object-cover"
+                            muted
+                            playsInline
+                            preload="metadata"
+                            poster=""
+                          />
+                          <div className="absolute bottom-1 left-1 bg-black/70 text-white px-1 py-0.5 rounded text-xs flex items-center gap-1">
+                            <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                            動画
+                          </div>
+                        </div>
+                      ) : (
+                        <Image 
+                          src={article.thumbnail_url}
+                          alt={article.title}
+                          fill
+                          sizes="(max-width: 768px) 64px, 96px"
+                          style={{ objectFit: 'cover' }}
+                          className="w-full h-full"
+                        />
+                      )}
                     </div>
                   ) : (
                     <div className="w-16 h-12 md:w-24 md:h-16 bg-gray-100 rounded-md flex items-center justify-center">

@@ -23,6 +23,11 @@ const Popular: React.FC = () => {
         
         // Supabaseから人気の記事を取得（制限を大きく設定して実質すべて表示）
         const popularPrompts = await getPopularPrompts(50); // 100件まで表示可能に変更
+        
+        // デバッグ用：取得したデータをコンソールに出力
+        console.log('🔍 人気記事ページ - 取得したデータ:', popularPrompts);
+        console.log('🔍 最初の記事のmediaType:', popularPrompts[0]?.mediaType);
+        
         setPrompts(popularPrompts);
         
       } catch (error) {

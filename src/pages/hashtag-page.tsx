@@ -113,7 +113,7 @@ const HashtagPage: React.FC = () => {
   // ハッシュタグ情報を取得（存在しない場合はデフォルト値）
   const hashtagData = hashtagInfo[decodedTag] || {
     description: 'このハッシュタグに関連する投稿を探索しましょう。',
-    entryCount: Math.floor(Math.random() * 10000),
+    entryCount: 0,
     backgroundColor: 'bg-gray-500'
   };
 

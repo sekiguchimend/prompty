@@ -230,45 +230,18 @@ const PromptContent: React.FC<PromptContentProps> = ({
   // トラッキングが完了したかを追跡するref
   const trackingCompletedRef = useRef(false);
 
-  // ビュートラッキング
+  // ビュートラッキング（サーバーサイドで処理されるため、クライアントサイドでは無効化）
   useEffect(() => {
+    // ビュートラッキングはSSRで処理されるため、クライアントサイドでは実行しない
+    // これにより二重カウントを防ぐ
     if (!promptId) return;
     
-    // 既にこのコンポーネントでトラッキングが完了している場合はスキップ
+    // トラッキング完了のマークのみ設定（実際のトラッキングはしない）
     if (trackingCompletedRef.current) {
       return;
     }
     
-    // windowのグローバル変数でこのIDが追跡済みかチェック
-    if (typeof window !== 'undefined' && window._trackedPromptIds && window._trackedPromptIds[promptId]) {
-      trackingCompletedRef.current = true;
-      return;
-    }
-    
-    // ローカルストレージでこのIDが追跡済みかチェック
-    const trackingKey = `tracked_${promptId}`;
-    const hasTracked = localStorage.getItem(trackingKey);
-    
-    if (hasTracked) {
-      // グローバル変数にも記録
-      if (typeof window !== 'undefined') {
-        window._trackedPromptIds[promptId] = true;
-      }
-      trackingCompletedRef.current = true;
-      return;
-    }
-    
-    // 新規閲覧なのでトラッキング実行
-    trackView(promptId).then(success => {
-      if (success) {
-        // 全ての記録先に保存
-        localStorage.setItem(trackingKey, 'true');
-        if (typeof window !== 'undefined') {
-          window._trackedPromptIds[promptId] = true;
-        }
-        trackingCompletedRef.current = true;
-      }
-    });
+    trackingCompletedRef.current = true;
     
     return () => {
       trackingCompletedRef.current = false;

@@ -77,6 +77,7 @@ const CategoryPage: React.FC = () => {
       id: item.id,
       title: item.title,
       thumbnailUrl: item.thumbnail_url || '/images/default-thumbnail.svg',
+      mediaType: item.media_type || 'image',
       user: {
         name: displayName,
         account_name: displayName,

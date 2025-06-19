@@ -16,6 +16,7 @@ export async function getBatchPrompts(limit: number = 10): Promise<{
         id,
         title,
         thumbnail_url,
+        media_type,
         created_at,
         author_id,
         profiles!prompts_author_id_fkey(id, username, display_name, avatar_url)
@@ -37,6 +38,7 @@ export async function getBatchPrompts(limit: number = 10): Promise<{
         id,
         title,
         thumbnail_url,
+        media_type,
         created_at,
         author_id,
         profiles!prompts_author_id_fkey(id, username, display_name, avatar_url)
@@ -61,6 +63,7 @@ export async function getBatchPrompts(limit: number = 10): Promise<{
         id,
         title,
         thumbnail_url,
+        media_type,
         created_at,
         author_id,
         view_count,
@@ -147,6 +150,7 @@ export async function getFeaturedPrompts(limit: number = 10): Promise<PromptItem
       id,
       title,
       thumbnail_url,
+      media_type,
       created_at,
       author_id,
       profiles!prompts_author_id_fkey(id, username, display_name, avatar_url)
@@ -175,6 +179,7 @@ export async function getAIGeneratedPrompts(limit: number = 10): Promise<PromptI
       id,
       title,
       thumbnail_url,
+      media_type,
       created_at,
       author_id,
       profiles!prompts_author_id_fkey(id, username, display_name, avatar_url)
@@ -205,6 +210,7 @@ export async function getPopularPrompts(limit: number = 10): Promise<PromptItem[
       id,
       title,
       thumbnail_url,
+      media_type,
       created_at,
       author_id,
       view_count,
@@ -214,6 +220,8 @@ export async function getPopularPrompts(limit: number = 10): Promise<PromptItem[
     .order('view_count', { ascending: false })
     .limit(limit);
 
+  console.log('🔍 getPopularPrompts - 生データ:', data);
+  console.log('🔍 最初の記事の生データmedia_type:', data?.[0]?.media_type);
 
   if (error) {
     console.error('人気プロンプト取得エラー:', error);
@@ -222,7 +230,14 @@ export async function getPopularPrompts(limit: number = 10): Promise<PromptItem[
 
   // いいね数を取得して結果に追加
   const promptsWithLikes = await addLikeCounts(data || []);
-  return promptsWithLikes.map(item => transformToPromptItem(item));
+  console.log('🔍 いいね数追加後:', promptsWithLikes);
+  console.log('🔍 最初の記事のmedia_type (いいね数追加後):', promptsWithLikes[0]?.media_type);
+  
+  const transformedPrompts = promptsWithLikes.map(item => transformToPromptItem(item));
+  console.log('🔍 変換後のPromptItem:', transformedPrompts);
+  console.log('🔍 最初の記事のmediaType (変換後):', transformedPrompts[0]?.mediaType);
+  
+  return transformedPrompts;
 }
 
 // 各プロンプトのいいね数を取得して追加する関数
@@ -291,10 +306,19 @@ function transformToPromptItem(item: any): PromptItem {
   // 日付の相対表示
   const postedAt = getRelativeTimeString(new Date(item.created_at));
 
-  return {
+  // デバッグ用：変換前のデータを確認
+  console.log('🔍 transformToPromptItem - 入力データ:', {
+    id: item.id,
+    title: item.title,
+    media_type: item.media_type,
+    thumbnail_url: item.thumbnail_url
+  });
+
+  const transformedItem = {
     id: item.id,
     title: item.title,
     thumbnailUrl: item.thumbnail_url || '/images/default-thumbnail.svg',
+    mediaType: item.media_type || 'image',
     user: {
       name: displayName,
       account_name: displayName,
@@ -304,6 +328,16 @@ function transformToPromptItem(item: any): PromptItem {
     // like_countが設定されていればそれを使用（likesテーブルから取得した値）
     likeCount: item.like_count ?? 0,
   };
+
+  // デバッグ用：変換後のデータを確認
+  console.log('🔍 transformToPromptItem - 出力データ:', {
+    id: transformedItem.id,
+    title: transformedItem.title,
+    mediaType: transformedItem.mediaType,
+    thumbnailUrl: transformedItem.thumbnailUrl
+  });
+
+  return transformedItem;
 }
 
 // 相対的な時間表示を計算する関数

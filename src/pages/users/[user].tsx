@@ -43,6 +43,7 @@ interface PostData {
   description?: string;
   price: number;
   isFree: boolean;
+  mediaType?: 'image' | 'video';
 }
 
 const UserPage: React.FC = () => {
@@ -179,7 +180,8 @@ const UserPage: React.FC = () => {
             is_free,
             published,
             view_count,
-            like_count
+            like_count,
+            media_type
           `)
           .eq('author_id', actualUserId)
           .eq('published', true)
@@ -198,6 +200,7 @@ const UserPage: React.FC = () => {
             comments: 0, // コメント数は別途取得が必要な場合は実装
             description: post.description,
             price: post.price || 0,
+            mediaType: (post as any).media_type || 'image',
             isFree: post.is_free || post.price === 0
           }));
 
@@ -386,12 +389,29 @@ const UserPage: React.FC = () => {
       <article className="mb-6 pb-6 border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200 rounded-lg p-4 -m-4 cursor-pointer">
         <div className="flex flex-col md:flex-row gap-4">
           {post.thumbnailUrl && (
-            <div className="md:w-40 h-40 md:h-28 rounded-md overflow-hidden flex-shrink-0 bg-gray-100">
-              <img 
-                src={post.thumbnailUrl} 
-                alt={post.title} 
-                className="w-full h-full object-cover"
-              />
+            <div className="md:w-40 h-40 md:h-28 rounded-md overflow-hidden flex-shrink-0 bg-gray-100 relative">
+              {post.mediaType === 'video' ? (
+                <div className="w-full h-full relative">
+                  <video
+                    src={post.thumbnailUrl}
+                    className="w-full h-full object-cover"
+                    muted
+                    playsInline
+                    preload="metadata"
+                    poster=""
+                  />
+                  <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    動画
+                  </div>
+                </div>
+              ) : (
+                <img 
+                  src={post.thumbnailUrl} 
+                  alt={post.title} 
+                  className="w-full h-full object-cover"
+                />
+              )}
             </div>
           )}
           

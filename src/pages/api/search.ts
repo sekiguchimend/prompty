@@ -75,6 +75,7 @@ const transformPromptsData = (promptsData: any[]) => {
       id: prompt.id,
       title: prompt.title || '無題',
       thumbnailUrl: prompt.thumbnail_url || '/images/default-thumbnail.svg',
+      mediaType: prompt.media_type || 'image',
       postedAt: new Date(prompt.created_at).toLocaleDateString('ja-JP'),
       likeCount: prompt.like_count || 0,
       user: {

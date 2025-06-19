@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
 import { DEFAULT_AVATAR_URL } from '../components/index';
+import { trackView } from './analytics';
 
 // 型定義
 interface PromptData {
@@ -8,6 +9,7 @@ interface PromptData {
   thumbnail_url: string | null;
   created_at: string;
   author_id: string;
+  media_type?: 'image' | 'video';
   profiles?: {
     id: string;
     username: string | null;
@@ -23,9 +25,16 @@ interface ViewedPromptData {
   prompts: PromptData;
 }
 
-// 閲覧履歴を保存する関数
+// 閲覧履歴を保存する関数（ビューカウントも同時に増加）
 export const recordPromptView = async (promptId: string) => {
+  console.log('📝 recordPromptView called with promptId:', promptId);
+  
   try {
+    // ビューカウントを増加（ログイン有無に関係なく実行）
+    console.log('📊 Calling trackView from recordPromptView');
+    const trackResult = await trackView(promptId);
+    console.log('📊 trackView result:', trackResult);
+
     // ログイン中のユーザー情報を取得
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
@@ -82,6 +91,7 @@ export const getRecentlyViewedPrompts = async (limit: number = 5) => {
           thumbnail_url,
           created_at,
           author_id,
+          media_type,
           profiles:profiles (
             id,
             username,
@@ -101,6 +111,7 @@ export const getRecentlyViewedPrompts = async (limit: number = 5) => {
       id: item.prompts.id,
       title: item.prompts.title,
       thumbnailUrl: item.prompts.thumbnail_url,
+      mediaType: item.prompts.media_type || 'image',
       postedAt: new Date(item.prompts.created_at).toLocaleDateString('ja-JP'),
       viewedAt: new Date(item.viewed_at).toLocaleDateString('ja-JP'),
       likeCount: 0, // この情報は別途取得が必要

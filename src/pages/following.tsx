@@ -19,6 +19,7 @@ import { useAuth } from '../lib/auth-context';
 import { Badge } from '../components/ui/badge';
 import { UnifiedAvatar, DEFAULT_AVATAR_URL } from '../components/index';
 import { generateSiteUrl, getDefaultOgImageUrl } from '../utils/seo-helpers';
+import VideoPlayer from '../components/common/VideoPlayer';
 
 // ページあたりの投稿数を定義
 const POSTS_PER_PAGE = 12;
@@ -67,6 +68,7 @@ const fetchFollowingPostsData = async (
         created_at,
         view_count,
         author_id,
+        media_type,
         profiles!prompts_author_id_fkey(id, username, display_name, avatar_url, bio)
       `)
       .in('author_id', followingIds)
@@ -142,6 +144,7 @@ const fetchFollowingPostsData = async (
         likeCount: likeCountMap[postId] || 0,
         isLiked: likedMap[postId] || false,
         viewCount: post.view_count as number || 0,
+        mediaType: (post as any).media_type || 'image',
         user: {
           userId: post.author_id as string,
           username: profile?.username as string,
@@ -483,16 +486,33 @@ const Following: React.FC = () => {
           </div>
           <div className="flex items-start">
             <div className="w-[104px] h-[58px] flex-shrink-0 bg-gray-100 rounded-md overflow-hidden shadow-sm">
-              <img src={post.thumbnailUrl} 
-                  alt={post.title} 
-                  className="w-full h-full object-cover" 
-                  loading="lazy" 
-                  fetchPriority="low" 
-                  onError={(e) => {
-                    // 画像読み込みエラー時にデフォルト画像を表示
-                    (e.target as HTMLImageElement).src = '/images/default-thumbnail.svg';
-                  }}
+                        {post.mediaType === 'video' ? (
+            <div className="w-full h-full relative">
+              <video
+                src={post.thumbnailUrl}
+                className="w-full h-full object-cover"
+                muted
+                playsInline
+                preload="metadata"
+                poster=""
               />
+              <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                動画
+              </div>
+            </div>
+          ) : (
+                <img src={post.thumbnailUrl} 
+                    alt={post.title} 
+                    className="w-full h-full object-cover" 
+                    loading="lazy" 
+                    fetchPriority="low" 
+                    onError={(e) => {
+                      // 画像読み込みエラー時にデフォルト画像を表示
+                      (e.target as HTMLImageElement).src = '/images/default-thumbnail.svg';
+                    }}
+                />
+              )}
             </div>
             
             {/* 三点メニュー */}
@@ -518,23 +538,38 @@ const Following: React.FC = () => {
   }, [handleFollowingLike, openReportDialog, hidePost]);
 
   const DesktopArticleItem = useCallback(({ post }: { post: PostItem }) => (
-    <div key={post.id} className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm transform transition-transform duration-200 hover:translate-y-[-3px]">
+    <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm h-full">
       <Link href={`/prompts/${post.id}`} className="block">
-        <div className="relative pb-[56.25%]">
-          <img 
-            src={post.thumbnailUrl} 
-            alt={post.title} 
-            className="absolute inset-0 h-full w-full object-cover"
-            loading="lazy"
-            fetchPriority="low"
-            onError={(e) => {
-              // 画像読み込みエラー時にデフォルト画像を表示
-              (e.target as HTMLImageElement).src = '/images/default-thumbnail.svg';
-            }}
-          />
+        <div className="relative pb-[56.25%] bg-gray-100">
+          {post.mediaType === 'video' ? (
+            <div className="absolute inset-0 h-full w-full">
+              <video
+                src={post.thumbnailUrl}
+                className="w-full h-full object-cover"
+                muted
+                playsInline
+                preload="metadata"
+                poster=""
+              />
+              <div className="absolute bottom-3 left-3 bg-black/70 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                動画
+              </div>
+            </div>
+          ) : (
+            <img 
+              src={post.thumbnailUrl} 
+              alt={post.title} 
+              className="absolute inset-0 h-full w-full object-cover"
+              loading="lazy"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/images/default-thumbnail.svg';
+              }}
+            />
+          )}
         </div>
       </Link>
-      <div className="flex flex-col p-3">
+      <div className="flex flex-col p-3 flex-1">
         <div className="flex justify-between items-start mb-2">
           <Link href={`/prompts/${post.id}`} className="line-clamp-2 font-medium hover:text-prompty-primary flex-1 mr-2">
             {post.title}
@@ -542,7 +577,7 @@ const Following: React.FC = () => {
           
           {/* 三点メニュー */}
           <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center justify-center p-1 rounded-full text-gray-400 hover:bg-gray-100">
+            <DropdownMenuTrigger className="flex items-center justify-center p-1 rounded-full text-gray-400 hover:bg-gray-100 flex-shrink-0">
               <MoreVertical className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -557,7 +592,7 @@ const Following: React.FC = () => {
         </div>
         
         <div className="mt-auto">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mb-2">
             <Link href={`/users/${post.user.userId}`} className="block">
               <UnifiedAvatar
                 src={post.user.avatarUrl}
@@ -565,24 +600,34 @@ const Following: React.FC = () => {
                 size="xs"
               />
             </Link>
-            <Link href={`/users/${post.user.userId}`} className="text-xs text-gray-600 hover:underline">
+            <Link href={`/users/${post.user.userId}`} className="text-xs text-gray-600 hover:underline truncate">
               {post.user.name}
             </Link>
-            <span className="text-xs text-gray-500">{post.postedAt}</span>
+            <span className="text-xs text-gray-500 flex-shrink-0">{post.postedAt}</span>
           </div>
           <div className="flex items-center">
-            <div className="flex items-center text-gray-500 mt-4">
+            <div className="flex items-center text-gray-500">
               <button 
                 className={`like-button flex items-center ${post.isLiked ? 'text-red-500' : 'text-gray-500'}`}
-                onClick={() => handleFollowingLike(post.id)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleFollowingLike(post.id);
+                }}
               >
                 <Heart className={`mr-1 h-4 w-4 ${post.isLiked ? 'fill-red-500' : ''}`} />
               </button>
-              <span className="text-xs">{post.likeCount}</span>
+              <span className="text-xs mr-4">{post.likeCount}</span>
             </div>
-            <div className="flex items-center text-gray-500 mt-4 ml-2">
-              <button className="like-button flex items-center">
-                <Bookmark className="mr-1 h-4 w-4" />
+            <div className="flex items-center text-gray-500">
+              <button 
+                className="like-button flex items-center"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+              >
+                <Bookmark className="h-4 w-4" />
               </button>
             </div>
           </div>
@@ -602,10 +647,12 @@ const Following: React.FC = () => {
 
   // PC表示のグリッドレイアウトをメモ化
   const DesktopArticleGrid = useMemo(() => (
-    <div className="hidden md:grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 px-4">
-      {followingPosts.map((post) => (
-        <DesktopArticleItem key={post.id} post={post} />
-      ))}
+    <div className="hidden md:block px-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {followingPosts.map((post) => (
+          <DesktopArticleItem key={post.id} post={post} />
+        ))}
+      </div>
     </div>
   ), [followingPosts, DesktopArticleItem]);
   

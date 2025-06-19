@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Eye } from 'lucide-react';
 import { getViewCount } from '../lib/analytics';
 
@@ -17,20 +17,31 @@ const ViewCounter: React.FC<ViewCounterProps> = ({ promptId, className = '' }) =
     const fetchViewCount = async () => {
       setIsLoading(true);
       try {
+        console.log('🔍 ViewCounter: Fetching view count for:', promptId);
+        
+        // データベースから常に最新の値を取得（キャッシュなし）
         const count = await getViewCount(promptId);
+        
+        console.log('📊 ViewCounter: Retrieved count:', count);
         setViewCount(count);
       } catch (error) {
-        console.error('閲覧数の取得中にエラーが発生しました:', error);
+        console.error('❌ 閲覧数の取得中にエラーが発生しました:', error);
+        setViewCount(0);
       } finally {
         setIsLoading(false);
       }
     };
 
+    // 初回取得
     fetchViewCount();
+    
+    // ビュー数更新を待ってから再取得
+    const timer = setTimeout(() => {
+      console.log('🔄 ViewCounter: Refetching view count after delay');
+      fetchViewCount();
+    }, 3000); // 3秒後に再取得（DB更新の確実な反映を待つ）
 
-    // オプション: 定期的に更新したい場合はインターバルを設定
-    // const interval = setInterval(fetchViewCount, 60000); // 1分ごとに更新
-    // return () => clearInterval(interval);
+    return () => clearTimeout(timer);
   }, [promptId]);
 
   return (

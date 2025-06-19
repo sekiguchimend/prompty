@@ -31,6 +31,7 @@ export interface PostItem {
   reviewCount?: number;
   status?: 'normal' | 'following' | 'popular' | 'featured' | 'recommendation';
   isLiked?: boolean;
+  mediaType?: 'image' | 'video';
 }
 
 // すべての投稿データ
