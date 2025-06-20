@@ -47,6 +47,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [connectionType, setConnectionType] = useState<string>('');
   const [retryCount, setRetryCount] = useState(0);
   const [userInteracted, setUserInteracted] = useState(false);
+  const [firstFrameLoaded, setFirstFrameLoaded] = useState(false);
 
   useEffect(() => {
     // より詳細なモバイルデバイス判定
@@ -79,6 +80,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       setIsLoading(false);
       setHasError(false);
       setRetryCount(0);
+      setFirstFrameLoaded(true);
       
       // タイムアウトをクリア
       if (loadTimeout) {
@@ -92,6 +94,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       setIsLoading(false);
       setHasError(false);
       setRetryCount(0);
+      setFirstFrameLoaded(true);
       
       if (loadTimeout) {
         clearTimeout(loadTimeout);
@@ -101,8 +104,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
     const handleLoadedMetadata = () => {
       // メタデータが読み込まれた時点でローディングを停止（モバイル対応）
+      setThumbnailLoaded(true);
+      setFirstFrameLoaded(true);
       if (isMobileDevice) {
-        setThumbnailLoaded(true);
         setIsLoading(false);
         setHasError(false);
         setRetryCount(0);
@@ -112,6 +116,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           setLoadTimeout(null);
         }
       }
+    };
+
+    const handleSeeked = () => {
+      // シーク完了時に最初のフレームが表示される
+      setFirstFrameLoaded(true);
     };
     
     const handleError = (e: Event) => {
@@ -160,7 +169,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       setHasError(false);
       
       // モバイルの場合はタイムアウトを短めに設定
-      const timeoutDuration = isMobileDevice ? 15000 : 20000;
+      const timeoutDuration = isMobileDevice ? 10000 : 15000;
       
       // タイムアウトを設定
       if (loadTimeout) {
@@ -242,6 +251,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const handleCanPlayThrough = () => {
       // 十分にバッファリングされて再生可能
       setIsLoading(false);
+      setFirstFrameLoaded(true);
     };
 
     video.addEventListener('play', handlePlay);
@@ -251,6 +261,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
     video.addEventListener('canplay', handleCanPlay);
     video.addEventListener('canplaythrough', handleCanPlayThrough);
+    video.addEventListener('seeked', handleSeeked);
     video.addEventListener('error', handleError);
     video.addEventListener('loadstart', handleLoadStart);
     video.addEventListener('suspend', handleSuspend);
@@ -265,6 +276,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       video.removeEventListener('loadedmetadata', handleLoadedMetadata);
       video.removeEventListener('canplay', handleCanPlay);
       video.removeEventListener('canplaythrough', handleCanPlayThrough);
+      video.removeEventListener('seeked', handleSeeked);
       video.removeEventListener('error', handleError);
       video.removeEventListener('loadstart', handleLoadStart);
       video.removeEventListener('suspend', handleSuspend);
@@ -352,12 +364,32 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   const handleVideoAreaClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+    // モバイルでのダブルタップ防止
+    if (isMobile) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      setUserInteracted(true);
+      
+      // 再生中の場合は一時停止、停止中は再生
+      if (videoRef.current) {
+        if (isPlaying) {
+          videoRef.current.pause();
+        } else {
+          const playPromise = videoRef.current.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(error => {
+              console.error('Play failed:', error);
+              // 再生に失敗した場合、動画を再読み込み
+              videoRef.current?.load();
+            });
+          }
+        }
+      }
+      return;
+    }
     
-    setUserInteracted(true);
-    
-    // 再生中の場合は一時停止、停止中は再生
+    // PC用の処理
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
@@ -366,10 +398,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         if (playPromise !== undefined) {
           playPromise.catch(error => {
             console.error('Play failed:', error);
-            // 再生に失敗した場合、動画を再読み込み
-            if (isMobile) {
-              videoRef.current?.load();
-            }
           });
         }
       }
@@ -390,7 +418,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   // モバイルとネットワーク状況に応じたpreload設定
   const getPreloadSetting = () => {
     if (isMobile) {
-      // モバイルでは最小限の読み込み
+      // モバイルでは最初のフレームを表示するためmetadataを読み込み
       return 'metadata';
     }
     return 'metadata';
@@ -470,17 +498,17 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         </div>
       )}
       
-      {/* ローディング表示 - モバイルでは短時間のみ表示 */}
-      {!hasError && isLoading && showThumbnail && !(isMobile && userInteracted) && (
-        <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
+      {/* ローディング表示 - 最初のフレームが読み込まれるまでのみ表示 */}
+      {!hasError && isLoading && showThumbnail && !firstFrameLoaded && (
+        <div className="absolute inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center">
           <div className="text-center">
-            <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-            <p className="text-sm text-gray-600">動画を読み込み中...</p>
+            <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+            <p className="text-sm text-white">動画を読み込み中...</p>
             {retryCount > 0 && !isMobile && (
-              <p className="text-xs text-gray-500 mt-1">再試行中... ({retryCount}/2)</p>
+              <p className="text-xs text-white/80 mt-1">再試行中... ({retryCount}/2)</p>
             )}
             {isMobile && (
-              <p className="text-xs text-gray-500 mt-1">タップして再生</p>
+              <p className="text-xs text-white/80 mt-1">タップして再生</p>
             )}
           </div>
         </div>
@@ -489,38 +517,40 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {/* カスタムコントロール */}
       {!controls && (
         <>
-          {/* 再生/一時停止オーバーレイ */}
-          <div 
-            className={`absolute inset-0 transition-all duration-300 flex items-center justify-center ${
-              !isMobile ? 'bg-black bg-opacity-0 hover:bg-opacity-20' : ''
-            }`}
-            onClick={!isMobile ? handleClick : undefined}
-          >
-            {/* デスクトップ: ホバーで表示（再生中は非表示） */}
-            {!isMobile && (!isPlaying || showControls) && !isPlaying && (
-              <button 
+          {/* 再生/一時停止オーバーレイ - モバイルでは別のイベントハンドラーを使用 */}
+          {!isMobile && (
+            <div 
+              className="absolute inset-0 transition-all duration-300 flex items-center justify-center bg-black bg-opacity-0 hover:bg-opacity-20"
+              onClick={handleClick}
+            >
+              {/* デスクトップ: ホバーで表示（再生中は非表示） */}
+              {(!isPlaying || showControls) && !isPlaying && (
+                <button 
+                  onClick={handlePlayButtonClick}
+                  className={`bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg transition-all duration-300 hover:bg-white hover:scale-110 ${
+                    showControls || !hoverToPlay ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                  }`}
+                >
+                  <Play className="h-6 w-6 text-gray-700" />
+                </button>
+              )}
+            </div>
+          )}
+          
+          {/* モバイル: 再生ボタンオーバーレイ */}
+          {isMobile && !isPlaying && firstFrameLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div 
+                className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg opacity-100 pointer-events-auto"
                 onClick={handlePlayButtonClick}
-                className={`bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg transition-all duration-300 hover:bg-white hover:scale-110 ${
-                  showControls || !hoverToPlay ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                }`}
-              >
-                <Play className="h-6 w-6 text-gray-700" />
-              </button>
-            )}
-            
-            {/* モバイル: 再生中は非表示、ローディング中でなければ表示 */}
-            {isMobile && !isPlaying && (!isLoading || userInteracted) && (
-              <button 
-                onClick={handlePlayButtonClick}
-                className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg transition-all duration-300 hover:bg-white hover:scale-110 opacity-100"
               >
                 <Play className="h-5 w-5 text-gray-700" />
-              </button>
-            )}
-          </div>
+              </div>
+            </div>
+          )}
 
           {/* 音声コントロール（再生中は非表示）- minimumOverlayの場合は非表示 */}
-          {!isPlaying && !minimumOverlay && (!isLoading || userInteracted) && (
+          {!isPlaying && !minimumOverlay && firstFrameLoaded && (
             <button
               onClick={handleMuteToggle}
               className={`absolute top-3 right-3 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-300 ${
@@ -536,7 +566,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           )}
 
           {/* 動画インジケーター（再生中は非表示）- minimumOverlayの場合は非表示 */}
-          {!isPlaying && !minimumOverlay && (!isLoading || userInteracted) && (
+          {!isPlaying && !minimumOverlay && firstFrameLoaded && (
             <div className="absolute bottom-3 left-3 bg-black/70 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
               <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
               動画
