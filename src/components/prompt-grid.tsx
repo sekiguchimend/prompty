@@ -10,7 +10,7 @@ import { useAuth } from '../lib/auth-context';
 import { checkIfLiked } from '../lib/like-service';
 import { checkIfBookmarked } from '../lib/bookmark-service';
 import ReportDialog from './shared/ReportDialog';
-import { notoSansJP } from '../../lib/fonts';
+import { notoSansJP } from '../lib/fonts';
 import { UnifiedAvatar, DEFAULT_AVATAR_URL } from './index';
 import VideoPlayer from './common/VideoPlayer';
 

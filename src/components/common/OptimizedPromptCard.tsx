@@ -11,7 +11,7 @@ import VideoPlayer from './VideoPlayer';
 import { Avatar } from '../shared/Avatar';
 import { getDisplayName } from '../../lib/avatar-utils';
 import ReportDialog from '../shared/ReportDialog';
-import { notoSansJP } from '../../../lib/fonts';
+import { notoSansJP } from '../../lib/fonts';
 
 interface OptimizedPromptCardProps {
   id: string;

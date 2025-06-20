@@ -7,7 +7,7 @@ import { useRouter } from 'next/router';
 import { createClient } from '@supabase/supabase-js';
 import { useUser } from '../hooks/useUser';
 import { bookmarkPrompt, unbookmarkPrompt, checkIfBookmarked } from '../lib/bookmark-service';
-import { notoSansJP } from '../../lib/fonts';
+import { notoSansJP } from '../lib/fonts';
 import { HeartIcon, EyeIcon } from './ui/icons';
 import LazyImage from './common/LazyImage';
 import VideoPlayer from './common/VideoPlayer';

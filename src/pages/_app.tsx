@@ -9,7 +9,7 @@ import Head from 'next/head';
 import Header from '../components/Header';
 import "../styles/NotePage.css"
 import '../index.css';
-import { notoSansJP } from '../../lib/fonts';
+import { notoSansJP } from '../lib/fonts';
 
 function MyApp({ Component, pageProps }: AppProps) {
   const router = useRouter();

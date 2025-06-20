@@ -1,7 +1,7 @@
 import React from 'react';
 import { ChevronRight, Rss, Search } from 'lucide-react';
 import Link from 'next/link';
-import { notoSansJP } from '../../lib/fonts'; // パスは調整
+import { notoSansJP } from '../lib/fonts';
 
 interface SectionHeaderProps {
   title: string;
