@@ -52,7 +52,7 @@ export interface SEOMetadata {
 export const generateSEOMetadata = (options: Partial<SEOMetadata> & { path?: string }): SEOMetadata => {
   const {
     title = 'Prompty｜プロンプトを売って、広めて、稼げる。新しいAI時代のマーケットプレイス',
-    description = 'Promptyでは、業務効率化・自動返信・デザイン生成など、すぐ使えるプロンプトを多数掲載。コストを抑えて、スモールスタートでAI活用を始められる、中小企業のための新ツールです。',
+    description = '業務効率化・自動返信・デザイン生成など、すぐに使えるプロンプトを多数掲載。誰でも気軽にAI活用を始められる、新しいプロンプト共有・販売プラットフォームです。',
     path = '',
     imageUrl,
     type = 'website',

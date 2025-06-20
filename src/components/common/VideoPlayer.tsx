@@ -31,7 +31,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   onLinkClick,
   minimumOverlay = false,
   fallbackSources = []
-}) => {
+}): JSX.Element => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -44,21 +44,41 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [loadTimeout, setLoadTimeout] = useState<NodeJS.Timeout | null>(null);
   const [currentSrcIndex, setCurrentSrcIndex] = useState(0);
   const [allSources] = useState([src, ...fallbackSources]);
+  const [connectionType, setConnectionType] = useState<string>('');
+  const [retryCount, setRetryCount] = useState(0);
+  const [userInteracted, setUserInteracted] = useState(false);
 
   useEffect(() => {
-    // モバイルデバイス判定
-    setIsMobile(/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    // より詳細なモバイルデバイス判定
+    const userAgent = navigator.userAgent;
+    const isMobileDevice = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(userAgent) ||
+      (navigator.maxTouchPoints && navigator.maxTouchPoints > 2) ||
+      window.innerWidth <= 768;
+    
+    setIsMobile(isMobileDevice);
+    
+    // ネットワーク状況の検出
+    if ('connection' in navigator) {
+      const connection = (navigator as any).connection;
+      setConnectionType(connection?.effectiveType || '');
+    }
     
     const video = videoRef.current;
     if (!video) return;
 
-    const handlePlay = () => setIsPlaying(true);
+    const handlePlay = () => {
+      setIsPlaying(true);
+      setIsLoading(false);
+    };
+    
     const handlePause = () => setIsPlaying(false);
     const handleEnded = () => setIsPlaying(false);
+    
     const handleLoadedData = () => {
       setThumbnailLoaded(true);
       setIsLoading(false);
       setHasError(false);
+      setRetryCount(0);
       
       // タイムアウトをクリア
       if (loadTimeout) {
@@ -66,8 +86,36 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         setLoadTimeout(null);
       }
     };
+
+    const handleCanPlay = () => {
+      setThumbnailLoaded(true);
+      setIsLoading(false);
+      setHasError(false);
+      setRetryCount(0);
+      
+      if (loadTimeout) {
+        clearTimeout(loadTimeout);
+        setLoadTimeout(null);
+      }
+    };
+
+    const handleLoadedMetadata = () => {
+      // メタデータが読み込まれた時点でローディングを停止（モバイル対応）
+      if (isMobileDevice) {
+        setThumbnailLoaded(true);
+        setIsLoading(false);
+        setHasError(false);
+        setRetryCount(0);
+        
+        if (loadTimeout) {
+          clearTimeout(loadTimeout);
+          setLoadTimeout(null);
+        }
+      }
+    };
+    
     const handleError = (e: Event) => {
-      console.error('Video loading error:', e, 'Current source:', allSources[currentSrcIndex]);
+      console.error('Video loading error:', e, 'Current source:', allSources[currentSrcIndex], 'Retry count:', retryCount);
       
       // タイムアウトをクリア
       if (loadTimeout) {
@@ -75,10 +123,27 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         setLoadTimeout(null);
       }
       
+      // リトライ回数が2回未満の場合は同じソースで再試行
+      if (retryCount < 2) {
+        console.log('Retrying same source:', allSources[currentSrcIndex], 'Attempt:', retryCount + 1);
+        setRetryCount(prev => prev + 1);
+        setIsLoading(true);
+        setHasError(false);
+        
+        // 少し待ってから再試行
+        setTimeout(() => {
+          if (video) {
+            video.load();
+          }
+        }, 1000 * (retryCount + 1));
+        return;
+      }
+      
       // 次のソースを試す
       if (currentSrcIndex < allSources.length - 1) {
         console.log('Trying next source:', allSources[currentSrcIndex + 1]);
         setCurrentSrcIndex(prev => prev + 1);
+        setRetryCount(0);
         setIsLoading(true);
         setHasError(false);
       } else {
@@ -86,61 +151,137 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         console.error('All video sources failed to load');
         setHasError(true);
         setIsLoading(false);
+        setRetryCount(0);
       }
     };
+    
     const handleLoadStart = () => {
       setIsLoading(true);
       setHasError(false);
       
-      // 20秒のタイムアウトを設定（より長めに）
+      // モバイルの場合はタイムアウトを短めに設定
+      const timeoutDuration = isMobileDevice ? 15000 : 20000;
+      
+      // タイムアウトを設定
       if (loadTimeout) {
         clearTimeout(loadTimeout);
       }
       const timeout = setTimeout(() => {
-        console.warn('Video loading timeout:', allSources[currentSrcIndex]);
+        console.warn('Video loading timeout:', allSources[currentSrcIndex], 'Timeout duration:', timeoutDuration);
         
-        // 次のソースを試す
+        // モバイルの場合は即座に次のソースまたはエラー状態に移行
+        if (isMobileDevice) {
+          if (currentSrcIndex < allSources.length - 1) {
+            console.log('Mobile timeout - trying next source:', allSources[currentSrcIndex + 1]);
+            setCurrentSrcIndex(prev => prev + 1);
+            setRetryCount(0);
+            setIsLoading(true);
+            setHasError(false);
+          } else {
+            console.log('Mobile timeout - stopping loading, allowing user interaction');
+            setIsLoading(false);
+            setHasError(false); // エラーではなく、ユーザーの操作を待つ
+          }
+          return;
+        }
+        
+        // PC用の処理
+        if (retryCount < 2) {
+          console.log('Timeout - retrying same source:', allSources[currentSrcIndex], 'Attempt:', retryCount + 1);
+          setRetryCount(prev => prev + 1);
+          setIsLoading(true);
+          setHasError(false);
+          
+          setTimeout(() => {
+            if (video) {
+              video.load();
+            }
+          }, 2000);
+          return;
+        }
+        
         if (currentSrcIndex < allSources.length - 1) {
           console.log('Timeout - trying next source:', allSources[currentSrcIndex + 1]);
           setCurrentSrcIndex(prev => prev + 1);
+          setRetryCount(0);
           setIsLoading(true);
           setHasError(false);
         } else {
-          // 全てのソースでタイムアウト
           console.error('All video sources timed out');
           setIsLoading(false);
           setHasError(true);
+          setRetryCount(0);
         }
-      }, 20000); // 20秒でタイムアウト
+      }, timeoutDuration);
       setLoadTimeout(timeout);
+    };
+
+    const handleSuspend = () => {
+      console.warn('Video loading suspended');
+      // モバイルでsuspendが発生した場合、ローディング状態を解除
+      if (isMobileDevice) {
+        setIsLoading(false);
+      }
+    };
+
+    const handleStalled = () => {
+      console.warn('Video loading stalled');
+      // モバイルでstalledが発生した場合、ローディング状態を解除
+      if (isMobileDevice) {
+        setIsLoading(false);
+      }
+    };
+
+    const handleWaiting = () => {
+      // バッファリング中
+      if (!isMobileDevice) {
+        setIsLoading(true);
+      }
+    };
+
+    const handleCanPlayThrough = () => {
+      // 十分にバッファリングされて再生可能
+      setIsLoading(false);
     };
 
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
     video.addEventListener('ended', handleEnded);
     video.addEventListener('loadeddata', handleLoadedData);
+    video.addEventListener('loadedmetadata', handleLoadedMetadata);
+    video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('canplaythrough', handleCanPlayThrough);
     video.addEventListener('error', handleError);
     video.addEventListener('loadstart', handleLoadStart);
+    video.addEventListener('suspend', handleSuspend);
+    video.addEventListener('stalled', handleStalled);
+    video.addEventListener('waiting', handleWaiting);
 
     return () => {
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
       video.removeEventListener('ended', handleEnded);
       video.removeEventListener('loadeddata', handleLoadedData);
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('canplaythrough', handleCanPlayThrough);
       video.removeEventListener('error', handleError);
       video.removeEventListener('loadstart', handleLoadStart);
+      video.removeEventListener('suspend', handleSuspend);
+      video.removeEventListener('stalled', handleStalled);
+      video.removeEventListener('waiting', handleWaiting);
       
       // クリーンアップ時にタイムアウトをクリア
       if (loadTimeout) {
         clearTimeout(loadTimeout);
       }
     };
-  }, [allSources, currentSrcIndex, loadTimeout]);
+  }, [allSources, currentSrcIndex, loadTimeout, retryCount]);
 
   const handleMouseEnter = () => {
     setIsHovered(true);
     setShowControls(true);
-    if (hoverToPlay && videoRef.current) {
+    if (hoverToPlay && videoRef.current && !isMobile) {
       videoRef.current.play();
     }
   };
@@ -148,13 +289,16 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const handleMouseLeave = () => {
     setIsHovered(false);
     setShowControls(false);
-    if (hoverToPlay && videoRef.current) {
+    if (hoverToPlay && videoRef.current && !isMobile) {
       videoRef.current.pause();
       videoRef.current.currentTime = 0;
     }
   };
 
   const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (!tapToPlay || !videoRef.current) {
       // 動画再生機能が無効の場合はリンクに飛ぶ
       if (onLinkClick) {
@@ -163,32 +307,71 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       return;
     }
     
-    // 再生中の場合は一時停止（UI要素が非表示なので動画エリアクリックで一時停止）
+    setUserInteracted(true);
+    
+    // 再生中の場合は一時停止
     if (isPlaying) {
       videoRef.current.pause();
     } else {
-      videoRef.current.play();
+      // 停止中の場合は再生
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.error('Play failed:', error);
+          // 再生に失敗した場合、動画を再読み込み
+          if (isMobile) {
+            videoRef.current?.load();
+          }
+        });
+      }
     }
   };
 
   const handlePlayButtonClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // イベント伝播を停止してリンクに飛ばない
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (!videoRef.current) return;
+    
+    setUserInteracted(true);
     
     if (isPlaying) {
       videoRef.current.pause();
     } else {
-      videoRef.current.play();
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.error('Play failed:', error);
+          // 再生に失敗した場合、動画を再読み込み
+          if (isMobile) {
+            videoRef.current?.load();
+          }
+        });
+      }
     }
   };
 
   const handleVideoAreaClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    setUserInteracted(true);
+    
     // 再生中の場合は一時停止、停止中は再生
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
       } else {
-        videoRef.current.play();
+        const playPromise = videoRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.error('Play failed:', error);
+            // 再生に失敗した場合、動画を再読み込み
+            if (isMobile) {
+              videoRef.current?.load();
+            }
+          });
+        }
       }
     } else if (onLinkClick) {
       // 動画が利用できない場合はリンクに飛ぶ
@@ -204,26 +387,36 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   };
 
+  // モバイルとネットワーク状況に応じたpreload設定
+  const getPreloadSetting = () => {
+    if (isMobile) {
+      // モバイルでは最小限の読み込み
+      return 'metadata';
+    }
+    return 'metadata';
+  };
+
   return (
     <div 
       className={`relative overflow-hidden group ${className}`}
       onMouseEnter={!isMobile ? handleMouseEnter : undefined}
       onMouseLeave={!isMobile ? handleMouseLeave : undefined}
-      onClick={isMobile ? handleVideoAreaClick : undefined}
+      onClick={isMobile ? handleVideoAreaClick : handleClick}
     >
       {!hasError ? (
         <video
           ref={videoRef}
           src={allSources[currentSrcIndex]}
           className="w-full h-full object-cover"
-          autoPlay={autoPlay}
+          autoPlay={false} // モバイル対応のため常に無効
           muted={isMuted}
           loop={loop}
           controls={controls}
           playsInline
-          preload="metadata" // メタデータを事前読み込みして対応状況を確認
-          poster="" // ポスター画像は使わずに最初のフレームを表示
-          crossOrigin="anonymous" // CORS対応
+          preload={getPreloadSetting()}
+          poster=""
+          // crossOriginはモバイルで問題を起こす可能性があるため条件付きで設定
+          {...(!isMobile && { crossOrigin: "anonymous" })}
         >
           {/* 複数のソースを提供してブラウザに最適なものを選ばせる */}
           {allSources.map((source, index) => {
@@ -261,7 +454,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           <div className="text-center p-4">
             <div className="text-gray-500 mb-2">
               <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
             </div>
             <p className="text-sm text-gray-600">動画を読み込めませんでした</p>
@@ -277,12 +470,18 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         </div>
       )}
       
-      {/* ローディング表示 */}
-      {!hasError && isLoading && showThumbnail && (
+      {/* ローディング表示 - モバイルでは短時間のみ表示 */}
+      {!hasError && isLoading && showThumbnail && !(isMobile && userInteracted) && (
         <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
           <div className="text-center">
             <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
             <p className="text-sm text-gray-600">動画を読み込み中...</p>
+            {retryCount > 0 && !isMobile && (
+              <p className="text-xs text-gray-500 mt-1">再試行中... ({retryCount}/2)</p>
+            )}
+            {isMobile && (
+              <p className="text-xs text-gray-500 mt-1">タップして再生</p>
+            )}
           </div>
         </div>
       )}
@@ -309,8 +508,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
               </button>
             )}
             
-            {/* モバイル: 再生中は非表示 */}
-            {isMobile && !isPlaying && (
+            {/* モバイル: 再生中は非表示、ローディング中でなければ表示 */}
+            {isMobile && !isPlaying && (!isLoading || userInteracted) && (
               <button 
                 onClick={handlePlayButtonClick}
                 className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg transition-all duration-300 hover:bg-white hover:scale-110 opacity-100"
@@ -321,7 +520,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           </div>
 
           {/* 音声コントロール（再生中は非表示）- minimumOverlayの場合は非表示 */}
-          {!isPlaying && !minimumOverlay && (
+          {!isPlaying && !minimumOverlay && (!isLoading || userInteracted) && (
             <button
               onClick={handleMuteToggle}
               className={`absolute top-3 right-3 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-300 ${
@@ -337,7 +536,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           )}
 
           {/* 動画インジケーター（再生中は非表示）- minimumOverlayの場合は非表示 */}
-          {!isPlaying && !minimumOverlay && (
+          {!isPlaying && !minimumOverlay && (!isLoading || userInteracted) && (
             <div className="absolute bottom-3 left-3 bg-black/70 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
               <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
               動画

@@ -45,7 +45,7 @@ export default function Home() {
     <>
       <Head>
         <title>Prompty｜プロンプトを売って、広めて、稼げる。新しいAI時代のマーケットプレイス</title>
-        <meta name="description" content="Promptyでは、業務効率化・自動返信・デザイン生成など、すぐ使えるプロンプトを多数掲載。コストを抑えて、スモールスタートでAI活用を始められる、中小企業のための新ツールです。" />
+        <meta name="description" content="業務効率化・自動返信・デザイン生成など、すぐに使えるプロンプトを多数掲載。誰でも気軽にAI活用を始められる、新しいプロンプト共有・販売プラットフォームです。" />
         <meta name="keywords" content="AIプロンプト,プロンプト販売,プロンプトマーケットプレイス,AI収益化,プロンプトエンジニアリング,AI副業,クリエイター収入,プロンプト共有,AI活用,デジタルコンテンツ販売" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
         <meta name="theme-color" content="#ffffff" />
@@ -54,7 +54,7 @@ export default function Home() {
         <meta property="og:type" content="website" />
         <meta property="og:url" content={generateSiteUrl('/')} />
         <meta property="og:title" content="Prompty｜プロンプトを売って、広めて、稼げる。新しいAI時代のマーケットプレイス" />
-        <meta property="og:description" content="業務効率化・自動返信・デザイン生成など、すぐ使えるプロンプトを多数掲載。コストを抑えて、スモールスタートでAI活用を始められる、中小企業のための新ツールです。" />
+        <meta property="og:description" content="業務効率化・自動返信・デザイン生成など、すぐに使えるプロンプトを多数掲載。誰でも気軽にAI活用を始められる、新しいプロンプト共有・販売プラットフォームです。" />
         <meta property="og:image" content={getDefaultOgImageUrl()} />
         <meta property="og:site_name" content="Prompty" />
         <meta property="og:locale" content="ja_JP" />
@@ -63,7 +63,7 @@ export default function Home() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:url" content={generateSiteUrl('/')} />
         <meta name="twitter:title" content="Prompty｜プロンプトを売って、広めて、稼げる。新しいAI時代のマーケットプレイス" />
-        <meta name="twitter:description" content="業務効率化・自動返信・デザイン生成など、すぐ使えるプロンプトを多数掲載。コストを抑えて、スモールスタートでAI活用を始められる、中小企業のための新ツールです。" />
+        <meta name="twitter:description" content="業務効率化・自動返信・デザイン生成など、すぐに使えるプロンプトを多数掲載。誰でも気軽にAI活用を始められる、新しいプロンプト共有・販売プラットフォームです。" />
         <meta name="twitter:image" content={getDefaultOgImageUrl()} />
         
         {/* Additional SEO */}
@@ -79,7 +79,7 @@ export default function Home() {
               "@context": "https://schema.org",
               "@type": "WebSite",
               "name": "Prompty",
-              "description": "業務効率化・自動返信・デザイン生成など、すぐ使えるプロンプトを多数掲載。コストを抑えて、スモールスタートでAI活用を始められる、中小企業のための新ツールです。",
+              "description": "業務効率化・自動返信・デザイン生成など、すぐに使えるプロンプトを多数掲載。誰でも気軽にAI活用を始められる、新しいプロンプト共有・販売プラットフォームです。",
               "url": generateSiteUrl(),
               "potentialAction": {
                 "@type": "SearchAction",
