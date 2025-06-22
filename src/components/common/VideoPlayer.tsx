@@ -343,6 +343,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const handlePlayButtonClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    e.nativeEvent.stopImmediatePropagation(); // より確実にイベント伝播を止める
     
     if (!videoRef.current) return;
     
@@ -362,6 +363,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   const handleVideoAreaClick = (e: React.MouseEvent) => {
+    // イベントがボタンから発生した場合は処理しない
+    if ((e.target as HTMLElement).closest('[data-play-button="true"]')) {
+      return;
+    }
+    
     if (isMobile) {
       e.preventDefault();
       e.stopPropagation();
@@ -417,7 +423,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       className={`relative overflow-hidden group ${className}`}
       onMouseEnter={!isMobile ? handleMouseEnter : undefined}
       onMouseLeave={!isMobile ? handleMouseLeave : undefined}
-      onClick={isMobile ? handleVideoAreaClick : handleClick}
+      onClick={!isMobile ? handleClick : undefined}
     >
       {!hasError ? (
         <video
@@ -515,6 +521,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   className={`bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg transition-all duration-300 hover:bg-white hover:scale-110 ${
                     showControls || !hoverToPlay ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                   }`}
+                  data-play-button="true"
                 >
                   <Play className="h-6 w-6 text-gray-700" />
                 </button>
@@ -522,12 +529,21 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             </div>
           )}
           
+          {/* モバイル: 動画エリアクリック領域（再生ボタン以外の部分） */}
+          {isMobile && (
+            <div 
+              className="absolute inset-0"
+              onClick={handleVideoAreaClick}
+            />
+          )}
+          
           {/* モバイル: 再生ボタンオーバーレイ */}
           {isMobile && !isPlaying && (firstFrameLoaded || thumbnailLoaded) && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div 
-                className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg opacity-100 pointer-events-auto"
+                className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg opacity-100 pointer-events-auto z-10"
                 onClick={handlePlayButtonClick}
+                data-play-button="true"
               >
                 <Play className="h-5 w-5 text-gray-700" />
               </div>
