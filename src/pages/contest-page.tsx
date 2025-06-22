@@ -34,7 +34,7 @@ const ContestPage: React.FC = () => {
     {
       id: '1',
       hashtag: '#決算発表前に語ろう',
-      description: '多くの企業が決算を迎える春に、業界や企業の展開を予想する記事を広く募集します。投稿に役立つすぐさま効果的な機能は、noteマネーTOP、最新技術ページに掲載されやすくなる条件、メルマガやnoteマネー公式SNSでご紹介します。',
+      description: '多くの企業が決算を迎える春に、業界や企業の展開を予想する記事を広く募集します。投稿に役立つすぐさま効果的な機能は、promptyマネーTOP、最新技術ページに掲載されやすくなる条件、メルマガやprompty公式SNSでご紹介します。',
       entryCount: 720,
       link: '/contest/financial-report'
     },
