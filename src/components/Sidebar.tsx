@@ -14,59 +14,66 @@ const popularTags = [
   'API連携'
 ];
 
-const categories = [
+type Category = {
+  id: string;
+  name: string;
+  active: boolean;
+  children?: { id: string; name: string; active: boolean }[];
+};
+
+const categories: Category[] = [
   { id: 'all', name: 'すべて', active: true },
   { id: 'following', name: 'フォロー中', active: false },
   { id: 'posts', name: '投稿企画', active: false },
-  { id: 'erp', name: 'ERPシステム', active: false, children: [
-    { id: 'sap', name: 'SAP', active: false },
-    { id: 'oracle', name: 'Oracle ERP', active: false },
-    { id: 'dynamics', name: 'Microsoft Dynamics', active: false },
-    { id: 'odoo', name: 'Odoo', active: false },
-    { id: 'salesforce', name: 'Salesforce', active: false },
-    { id: 'workday', name: 'Workday', active: false },
-    { id: 'custom-erp', name: 'カスタムERP開発', active: false },
-  ]},
-  { id: 'scraping', name: 'スクレイピング・自動化', active: false, children: [
-    { id: 'web-scraping', name: 'Webスクレイピング', active: false },
-    { id: 'data-extraction', name: 'データ抽出', active: false },
-    { id: 'automation', name: '自動化ツール', active: false },
-    { id: 'selenium', name: 'Selenium', active: false },
-    { id: 'puppeteer', name: 'Puppeteer', active: false },
-    { id: 'beautifulsoup', name: 'BeautifulSoup', active: false },
-    { id: 'scrapy', name: 'Scrapy', active: false },
-    { id: 'rpa', name: 'RPA', active: false },
-  ]},
-  { id: 'data-integration', name: 'データ連携', active: false, children: [
-    { id: 'etl', name: 'ETL', active: false },
-    { id: 'api-integration', name: 'API連携', active: false },
-    { id: 'data-pipeline', name: 'データパイプライン', active: false },
-    { id: 'webhooks', name: 'Webhooks', active: false },
-    { id: 'database', name: 'データベース連携', active: false },
-  ]},
-  { id: 'enterprise-systems', name: '業務システム', active: false, children: [
-    { id: 'accounting', name: '会計システム', active: false },
-    { id: 'hr', name: '人事給与', active: false },
-    { id: 'crm', name: 'CRM', active: false },
-    { id: 'inventory', name: '在庫管理', active: false },
-    { id: 'scm', name: 'サプライチェーン', active: false },
-    { id: 'bi', name: 'BI・分析', active: false },
-  ]},
+  // { id: 'erp', name: 'ERPシステム', active: false, children: [
+  //   { id: 'sap', name: 'SAP', active: false },
+  //   { id: 'oracle', name: 'Oracle ERP', active: false },
+  //   { id: 'dynamics', name: 'Microsoft Dynamics', active: false },
+  //   { id: 'odoo', name: 'Odoo', active: false },
+  //   { id: 'salesforce', name: 'Salesforce', active: false },
+  //   { id: 'workday', name: 'Workday', active: false },
+  //   { id: 'custom-erp', name: 'カスタムERP開発', active: false },
+  // ]},
+  // { id: 'scraping', name: 'スクレイピング・自動化', active: false, children: [
+  //   { id: 'web-scraping', name: 'Webスクレイピング', active: false },
+  //   { id: 'data-extraction', name: 'データ抽出', active: false },
+  //   { id: 'automation', name: '自動化ツール', active: false },
+  //   { id: 'selenium', name: 'Selenium', active: false },
+  //   { id: 'puppeteer', name: 'Puppeteer', active: false },
+  //   { id: 'beautifulsoup', name: 'BeautifulSoup', active: false },
+  //   { id: 'scrapy', name: 'Scrapy', active: false },
+  //   { id: 'rpa', name: 'RPA', active: false },
+  // ]},
+  // { id: 'data-integration', name: 'データ連携', active: false, children: [
+  //   { id: 'etl', name: 'ETL', active: false },
+  //   { id: 'api-integration', name: 'API連携', active: false },
+  //   { id: 'data-pipeline', name: 'データパイプライン', active: false },
+  //   { id: 'webhooks', name: 'Webhooks', active: false },
+  //   { id: 'database', name: 'データベース連携', active: false },
+  // ]},
+  // { id: 'enterprise-systems', name: '業務システム', active: false, children: [
+  //   { id: 'accounting', name: '会計システム', active: false },
+  //   { id: 'hr', name: '人事給与', active: false },
+  //   { id: 'crm', name: 'CRM', active: false },
+  //   { id: 'inventory', name: '在庫管理', active: false },
+  //   { id: 'scm', name: 'サプライチェーン', active: false },
+  //   { id: 'bi', name: 'BI・分析', active: false },
+  // ]},
   { id: 'popular-tags', name: '人気タグ', active: false },
 ];
 
 const Sidebar = () => {
   const router = useRouter();
   const [expandedCategories, setExpandedCategories] = React.useState<Record<string, boolean>>({
-    erp: false,
-    scraping: false,
-    'data-integration': false,
-    'enterprise-systems': false,
+    // erp: false,
+    // scraping: false,
+    // 'data-integration': false,
+    // 'enterprise-systems': false,
     'popular-tags': false,
   });
 
   const toggleCategory = (categoryId: string) => {
-    setExpandedCategories(prev => ({
+    setExpandedCategories((prev: Record<string, boolean>) => ({
       ...prev,
       [categoryId]: !prev[categoryId]
     }));
