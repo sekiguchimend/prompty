@@ -72,23 +72,42 @@ export class SecureDB {
 
   // プロンプト作成時の権限チェック
   async createPromptWithAuth(promptData: any, userId: string) {
-    // 必ず現在のユーザーIDを使用（権限昇格防止）
-    const secureData = {
-      ...promptData,
-      author_id: userId, // 絶対に上書き
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
     // author_idが改ざんされていないか確認
     if (promptData.author_id && promptData.author_id !== userId) {
       throw new Error('権限エラー: 他のユーザーとしてコンテンツを作成することはできません');
     }
 
-    // media_typeカラムが存在するかチェックしてから追加（エラーを避けるため一時的にコメントアウト）
-    // if (promptData.media_type) {
-    //   secureData.media_type = promptData.media_type;
-    // }
+    // データベース制約に合わせたデータ準備
+    const secureData = {
+      author_id: userId, // 絶対に上書き
+      title: promptData.title || promptData.prompt_title, // titleは必須で5文字以上
+      description: promptData.description || '',
+      content: promptData.content || promptData.prompt_content, // contentは必須で10文字以上
+      prompt_title: promptData.prompt_title || promptData.title,
+      prompt_content: promptData.prompt_content || promptData.content,
+      thumbnail_url: promptData.thumbnail_url || null,
+      ai_model: promptData.ai_model || null, // AIモデル情報を保存
+      media_type: promptData.media_type || 'image',
+      category_id: promptData.category_id || null,
+      price: promptData.price || 0,
+      is_free: promptData.is_free !== undefined ? promptData.is_free : true,
+      is_premium: promptData.is_premium !== undefined ? promptData.is_premium : false,
+      is_featured: promptData.is_featured !== undefined ? promptData.is_featured : false,
+      published: promptData.published !== undefined ? promptData.published : true,
+      site_url: promptData.site_url || null,
+      preview_lines: promptData.preview_lines || 3,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    // データベース制約の事前チェック
+    if (!secureData.title || secureData.title.length < 5) {
+      throw new Error('タイトルは5文字以上である必要があります');
+    }
+
+    if (!secureData.content || secureData.content.length < 10) {
+      throw new Error('コンテンツは10文字以上である必要があります');
+    }
 
     return this.db
       .from('prompts')

@@ -37,8 +37,8 @@ export default async function handler(
       return res.status(400).json({ message: 'カテゴリ名は必須です' });
     }
 
-    // カテゴリ名から slug を自動生成
-    const slug = name
+    // カテゴリ名から基本的な slug を自動生成
+    const baseSlug = name
       .toLowerCase()
       .replace(/\s+/g, '-')
       .replace(/[^\w\-]+/g, '')
@@ -48,20 +48,34 @@ export default async function handler(
 
     const description = null;
 
-    // スラッグの重複チェック（自動生成した slug が既に存在するか）
-    const { data: existingCategory, error: checkError } = await supabase
-      .from('categories')
-      .select('id')
-      .eq('slug', slug)
-      .maybeSingle();
+    // ユニークなスラッグを生成（重複がある場合は番号を付加）
+    let finalSlug = baseSlug;
+    let counter = 1;
+    let isUnique = false;
 
-    if (checkError) {
-      console.error('カテゴリ重複チェックエラー:', checkError);
-      return res.status(500).json({ message: '重複チェック中にエラーが発生しました' });
-    }
+    while (!isUnique) {
+      const { data: existingCategory, error: checkError } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('slug', finalSlug)
+        .maybeSingle();
 
-    if (existingCategory) {
-      return res.status(400).json({ message: '同じスラッグのカテゴリが既に存在します' });
+      if (checkError) {
+        console.error('カテゴリ重複チェックエラー:', checkError);
+        return res.status(500).json({ message: '重複チェック中にエラーが発生しました' });
+      }
+
+      if (!existingCategory) {
+        isUnique = true;
+      } else {
+        finalSlug = `${baseSlug}-${counter}`;
+        counter++;
+        
+        // 無限ループ防止（最大100回試行）
+        if (counter > 100) {
+          return res.status(500).json({ message: 'ユニークなスラッグの生成に失敗しました' });
+        }
+      }
     }
 
     // カテゴリをデータベースに追加（認証済みユーザーのIDを含める）
@@ -69,7 +83,7 @@ export default async function handler(
       .from('categories')
       .insert([{
         name,
-        slug,
+        slug: finalSlug,
         description,
         icon: null,
         parent_id: null,
@@ -89,7 +103,7 @@ export default async function handler(
           .from('categories')
           .insert([{
             name,
-            slug,
+            slug: finalSlug,
             description,
             icon: null,
             parent_id: null,

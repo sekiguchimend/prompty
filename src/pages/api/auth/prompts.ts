@@ -10,6 +10,7 @@ interface CreatePromptRequest {
   prompt_title: string; // プロンプトタイトル
   prompt_content: string; // プロンプト内容
   thumbnail_url?: string | null;
+  ai_model?: string | null; // 使用されたAIモデル
   category_id?: string | null;
   price?: number;
   is_free?: boolean;
@@ -118,12 +119,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // データの準備
     const insertData = {
       author_id: promptData.author_id,
-      title: promptData.title, // プロジェクトタイトル
+      title: promptData.prompt_title || promptData.title, // プロンプトタイトルを優先
       description: promptData.description || '',
-      content: promptData.content, // プロジェクト説明
+      content: promptData.prompt_content || promptData.content, // プロンプト内容を優先
       prompt_title: promptData.prompt_title, // プロンプトタイトル
       prompt_content: promptData.prompt_content, // プロンプト内容
       thumbnail_url: promptData.thumbnail_url || null,
+      ai_model: promptData.ai_model || null, // AIモデルを追加
       category_id: promptData.category_id || null,
       price: promptData.price || 0,
       is_free: promptData.is_free !== undefined ? promptData.is_free : true,

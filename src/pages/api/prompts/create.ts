@@ -12,6 +12,7 @@ interface CreatePromptRequest {
   prompt_title: string; // プロンプトタイトル
   prompt_content: string; // プロンプト内容
   thumbnail_url?: string | null;
+  media_type?: 'image' | 'video'; // メディアタイプを追加
   category_id?: string | null;
   price?: number;
   is_free?: boolean;
