@@ -448,7 +448,7 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
       // 新しいプロンプトを追加
       const newPrompt: Prompt = {
         id: nextId,
-        prompt_title: `プロンプト #${nextId}`, // 自動生成タイトル
+        prompt_title: data.promptTitle || `プロンプト #${nextId}`, // ユーザー入力タイトルを使用
         prompt_content: data.fullPrompt, // プロンプト本文を使用
         createdAt: new Date()
       };
@@ -468,7 +468,7 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
       // 新しいプロンプトを追加
       const newPrompt: Prompt = {
         id: uniqueId,
-        prompt_title: `プロンプト #${uniqueId}`, // 自動生成タイトル
+        prompt_title: data.promptTitle || `プロンプト #${uniqueId}`, // ユーザー入力タイトルを使用
         prompt_content: data.fullPrompt, // プロンプト本文を使用
         createdAt: new Date()
       };

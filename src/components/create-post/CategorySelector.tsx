@@ -102,6 +102,12 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
+        
+        // 重複エラーの場合は詳細なメッセージを表示
+        if (response.status === 409) {
+          throw new Error(errorData?.message || 'すでに存在するカテゴリです');
+        }
+        
         throw new Error(errorData?.message || 'カテゴリの作成に失敗しました');
       }
       

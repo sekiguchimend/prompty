@@ -37,8 +37,28 @@ export default async function handler(
       return res.status(400).json({ message: 'カテゴリ名は必須です' });
     }
 
+    // カテゴリ名の重複チェック（大文字小文字を区別しない）
+    const trimmedName = name.trim();
+    const { data: existingCategoryByName, error: nameCheckError } = await supabase
+      .from('categories')
+      .select('id, name')
+      .ilike('name', trimmedName)
+      .maybeSingle();
+
+    if (nameCheckError) {
+      console.error('カテゴリ名重複チェックエラー:', nameCheckError);
+      return res.status(500).json({ message: 'カテゴリ名の重複チェック中にエラーが発生しました' });
+    }
+
+    if (existingCategoryByName) {
+      return res.status(409).json({ 
+        message: 'すでに存在するカテゴリです',
+        existingCategory: existingCategoryByName.name
+      });
+    }
+
     // カテゴリ名から基本的な slug を自動生成
-    const baseSlug = name
+    const baseSlug = trimmedName
       .toLowerCase()
       .replace(/\s+/g, '-')
       .replace(/[^\w\-]+/g, '')
@@ -82,7 +102,7 @@ export default async function handler(
     const { data: newCategory, error } = await supabase
       .from('categories')
       .insert([{
-        name,
+        name: trimmedName,
         slug: finalSlug,
         description,
         icon: null,
@@ -102,7 +122,7 @@ export default async function handler(
         const { data: adminResult, error: adminError } = await supabaseAdmin
           .from('categories')
           .insert([{
-            name,
+            name: trimmedName,
             slug: finalSlug,
             description,
             icon: null,
