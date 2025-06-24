@@ -12,7 +12,7 @@ import { PreviewMarkerOverlay } from "./PreviewMarkerOverlay";
 
 // シンプル化したプロンプトフォームスキーマ
 const promptFormSchema = z.object({
-  promptTitle: z.string().min(5, "プロンプトタイトルは最低5文字以上入力してください"),
+  promptTitle: z.string().default(""), // タイトルは任意（自動生成されるため）
   fullPrompt: z.string().min(5, "プロンプトは最低5文字以上入力してください"),
   promptNumber: z.number().min(1, "プロンプト番号は1以上である必要があります"),
 });
@@ -150,9 +150,25 @@ const SimplifiedPromptForm: React.FC<PromptFormProps> = ({
     };
   }, [promptForm]);
 
+  // プロンプト内容からタイトルを自動生成する関数
+  const generateTitleFromPrompt = (promptContent: string): string => {
+    if (!promptContent.trim()) return "";
+    
+    // プロンプト内容の最初の50文字程度を取得
+    const firstLine = promptContent.trim().split('\n')[0];
+    const truncated = firstLine.length > 50 ? firstLine.substring(0, 50) + "..." : firstLine;
+    
+    return truncated || "新しいプロンプト";
+  };
+
   const handleSubmitForm = (data: PromptFormValues) => {
-    // ユーザーが入力したタイトルを使用
-    onSubmit(data);
+    // タイトルが入力されていない場合は自動生成
+    const finalData = {
+      ...data,
+      promptTitle: data.promptTitle.trim() || generateTitleFromPrompt(data.fullPrompt)
+    };
+    
+    onSubmit(finalData);
     
     // フォーム送信後にフォームをリセット
     promptForm.reset({
@@ -201,17 +217,17 @@ const SimplifiedPromptForm: React.FC<PromptFormProps> = ({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-base font-medium text-gray-900">
-                          プロンプトタイトル <span className="text-red-500">*</span>
+                          プロンプトタイトル <span className="text-gray-400 text-sm">(任意)</span>
                         </FormLabel>
                         <FormControl>
                           <Input
                             {...field}
-                            placeholder="例：SEO最適化された商品説明文を作成するプロンプト"
+                            placeholder="例：SEO最適化された商品説明文を作成するプロンプト（空欄の場合は自動生成されます）"
                             className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                           />
                         </FormControl>
                         <div className="text-sm text-gray-500 mt-1">
-                          プロンプトの目的や用途が分かりやすいタイトルを入力してください（5文字以上）
+                          プロンプトの目的や用途が分かりやすいタイトルを入力してください。空欄の場合は、プロンプト内容から自動的にタイトルが生成されます。
                         </div>
                       </FormItem>
                     )}
@@ -380,7 +396,7 @@ const SimplifiedPromptForm: React.FC<PromptFormProps> = ({
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-1">プロンプトを保存</h4>
                     <p className="text-sm text-gray-600">
-                      入力したプロンプトがプロジェクトに追加されます。
+                      プロンプト内容を入力すれば、タイトルは自動生成されます。
                       <br className="hidden sm:block" />
                       後から編集や削除も可能です。
                     </p>
@@ -390,9 +406,7 @@ const SimplifiedPromptForm: React.FC<PromptFormProps> = ({
                   type="submit" 
                   className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-2 rounded-lg font-medium shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 whitespace-nowrap"
                   disabled={
-                    !promptForm.watch("promptTitle") || 
                     !promptForm.watch("fullPrompt") || 
-                    promptForm.watch("promptTitle").length < 5 || 
                     promptForm.watch("fullPrompt").length < 5
                   }
                 >
