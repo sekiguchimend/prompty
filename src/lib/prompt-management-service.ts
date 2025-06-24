@@ -165,7 +165,7 @@ export class PromptManagementService {
         throw new Error('ログインが必要です');
       }
 
-      let query = supabase
+             let query = supabase
         .from('prompts')
         .select(`
           id,
@@ -180,7 +180,8 @@ export class PromptManagementService {
           like_count,
           created_at,
           updated_at,
-          categories (
+          category_id,
+          categories!prompts_category_id_fkey (
             id,
             name,
             slug
@@ -196,13 +197,21 @@ export class PromptManagementService {
 
       const { data, error } = await query;
 
-      if (error) {
+             if (error) {
         throw error;
       }
 
+      // データの変換処理（categoriesが配列の場合は最初の要素を取得）
+      const transformedData = (data || []).map(prompt => ({
+        ...prompt,
+        categories: Array.isArray(prompt.categories) 
+          ? (prompt.categories.length > 0 ? prompt.categories[0] : null)
+          : prompt.categories
+      }));
+
       return {
         success: true,
-        data: data || []
+        data: transformedData
       };
 
     } catch (error) {

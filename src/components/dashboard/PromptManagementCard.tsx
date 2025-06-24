@@ -34,29 +34,10 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { PromptManagementService } from '../../lib/prompt-management-service';
-
-interface PromptData {
-  id: string;
-  title: string;
-  description: string | null;
-  thumbnail_url: string | null;
-  media_type: 'image' | 'video';
-  published: boolean;
-  is_free: boolean;
-  price: number;
-  view_count: number;
-  like_count: number;
-  created_at: string;
-  updated_at: string | null;
-  categories?: {
-    id: string;
-    name: string;
-    slug: string;
-  } | null;
-}
+import { PromptManagementData } from '../../types/prompt-management';
 
 interface PromptManagementCardProps {
-  prompt: PromptData;
+  prompt: PromptManagementData;
   onUpdate: () => void; // データ更新時のコールバック
 }
 

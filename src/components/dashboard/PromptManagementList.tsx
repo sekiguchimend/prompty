@@ -14,30 +14,11 @@ import { useToast } from '../ui/use-toast';
 import Link from 'next/link';
 import PromptManagementCard from './PromptManagementCard';
 import { PromptManagementService } from '../../lib/prompt-management-service';
-
-interface PromptData {
-  id: string;
-  title: string;
-  description: string | null;
-  thumbnail_url: string | null;
-  media_type: 'image' | 'video';
-  published: boolean;
-  is_free: boolean;
-  price: number;
-  view_count: number;
-  like_count: number;
-  created_at: string;
-  updated_at: string | null;
-  categories?: {
-    id: string;
-    name: string;
-    slug: string;
-  } | null;
-}
+import { PromptManagementData } from '../../types/prompt-management';
 
 const PromptManagementList: React.FC = () => {
   const { toast } = useToast();
-  const [prompts, setPrompts] = useState<PromptData[]>([]);
+  const [prompts, setPrompts] = useState<PromptManagementData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'unpublished'>('all');
@@ -73,7 +54,7 @@ const PromptManagementList: React.FC = () => {
   }, []);
 
   // フィルタリング処理
-  const filteredPrompts = prompts.filter(prompt => {
+  const filteredPrompts = prompts.filter((prompt: PromptManagementData) => {
     // 検索フィルタ
     const matchesSearch = prompt.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (prompt.description?.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -89,10 +70,10 @@ const PromptManagementList: React.FC = () => {
   // 統計データ
   const stats = {
     total: prompts.length,
-    published: prompts.filter(p => p.published).length,
-    unpublished: prompts.filter(p => !p.published).length,
-    totalViews: prompts.reduce((sum, p) => sum + p.view_count, 0),
-    totalLikes: prompts.reduce((sum, p) => sum + p.like_count, 0),
+    published: prompts.filter((p: PromptManagementData) => p.published).length,
+    unpublished: prompts.filter((p: PromptManagementData) => !p.published).length,
+    totalViews: prompts.reduce((sum: number, p: PromptManagementData) => sum + p.view_count, 0),
+    totalLikes: prompts.reduce((sum: number, p: PromptManagementData) => sum + p.like_count, 0),
   };
 
   if (isLoading) {
