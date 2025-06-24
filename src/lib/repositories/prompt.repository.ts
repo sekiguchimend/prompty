@@ -1,66 +1,61 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Prompt, PromptWithRelations } from '../../types/entities/prompt';
 import { PromptFilterDTO } from '../../types/dto/prompt.dto';
-import { safeSupabaseOperation } from '../clients/supabase/client';
 
 export class PromptRepository {
   constructor(private db: SupabaseClient) {}
 
   async findFeatured(limit: number = 10): Promise<PromptWithRelations[]> {
-    const { data, error } = await safeSupabaseOperation(() =>
-      this.db
-        .from('prompts')
-        .select(`
-          *,
-          profiles:author_id (
-            id,
-            username,
-            display_name,
-            avatar_url
-          ),
-          categories:category_id (
-            id,
-            name,
-            slug
-          )
-        `)
-        .eq('is_featured', true)
-        .eq('published', true)
-        .eq('is_public', true)
-        .order('created_at', { ascending: false })
-        .limit(limit)
-    );
+    const { data, error } = await this.db
+      .from('prompts')
+      .select(`
+        *,
+        profiles:author_id (
+          id,
+          username,
+          display_name,
+          avatar_url
+        ),
+        categories:category_id (
+          id,
+          name,
+          slug
+        )
+      `)
+      .eq('is_featured', true)
+      .eq('published', true)
+      .eq('is_public', true)
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
-    if (error) throw new Error(error);
+    if (error) throw new Error(error.message);
     return data || [];
   }
 
   async findPopular(limit: number = 10): Promise<PromptWithRelations[]> {
-    const { data, error } = await safeSupabaseOperation(() =>
-      this.db
-        .from('prompts')
-        .select(`
-          *,
-          profiles:author_id (
-            id,
-            username,
-            display_name,
-            avatar_url
-          ),
-          categories:category_id (
-            id,
-            name,
-            slug
-          )
-        `)
-        .eq('published', true)
-        .eq('is_public', true)
-        .order('view_count', { ascending: false })
-        .order('like_count', { ascending: false })
-        .limit(limit)
-    );
+    const { data, error } = await this.db
+      .from('prompts')
+      .select(`
+        *,
+        profiles:author_id (
+          id,
+          username,
+          display_name,
+          avatar_url
+        ),
+        categories:category_id (
+          id,
+          name,
+          slug
+        )
+      `)
+      .eq('published', true)
+      .eq('is_public', true)
+      .order('view_count', { ascending: false })
+      .order('like_count', { ascending: false })
+      .limit(limit);
 
-    if (error) throw new Error(error);
+    if (error) throw new Error(error.message);
     return data || [];
   }
 
@@ -100,14 +95,14 @@ export class PromptRepository {
       query = query.limit(filters.limit);
     }
 
-    const { data, error } = await safeSupabaseOperation(() => query);
+    const { data, error } = await query;
 
-    if (error) throw new Error(error);
+    if (error) throw new Error(error.message);
     return data || [];
   }
 
   async findById(id: string, userId?: string): Promise<PromptWithRelations | null> {
-    let query = this.db
+    const { data, error } = await this.db
       .from('prompts')
       .select(`
         *,
@@ -126,8 +121,6 @@ export class PromptRepository {
       .eq('id', id)
       .eq('published', true)
       .single();
-
-    const { data, error } = await safeSupabaseOperation(() => query);
 
     if (error) return null;
     
@@ -148,43 +141,37 @@ export class PromptRepository {
   }
 
   async create(data: Partial<Prompt>): Promise<Prompt> {
-    const { data: prompt, error } = await safeSupabaseOperation(() =>
-      this.db
-        .from('prompts')
-        .insert(data)
-        .select()
-        .single()
-    );
+    const { data: prompt, error } = await this.db
+      .from('prompts')
+      .insert(data)
+      .select()
+      .single();
 
-    if (error) throw new Error(error);
+    if (error) throw new Error(error.message);
     if (!prompt) throw new Error('Failed to create prompt - no data returned');
     return prompt;
   }
 
   async update(id: string, data: Partial<Prompt>): Promise<Prompt> {
-    const { data: prompt, error } = await safeSupabaseOperation(() =>
-      this.db
-        .from('prompts')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single()
-    );
+    const { data: prompt, error } = await this.db
+      .from('prompts')
+      .update(data)
+      .eq('id', id)
+      .select()
+      .single();
 
-    if (error) throw new Error(error);
+    if (error) throw new Error(error.message);
     if (!prompt) throw new Error('Failed to update prompt - no data returned');
     return prompt;
   }
 
   async delete(id: string): Promise<void> {
-    const { error } = await safeSupabaseOperation(() =>
-      this.db
-        .from('prompts')
-        .delete()
-        .eq('id', id)
-    );
+    const { error } = await this.db
+      .from('prompts')
+      .delete()
+      .eq('id', id);
 
-    if (error) throw new Error(error);
+    if (error) throw new Error(error.message);
   }
 
   async search(query: string, filters?: PromptFilterDTO): Promise<PromptWithRelations[]> {
@@ -222,9 +209,9 @@ export class PromptRepository {
       dbQuery = dbQuery.limit(filters.limit);
     }
 
-    const { data, error } = await safeSupabaseOperation(() => dbQuery);
+    const { data, error } = await dbQuery;
 
-    if (error) throw new Error(error);
+    if (error) throw new Error(error.message);
     return data || [];
   }
 
@@ -260,16 +247,14 @@ export class PromptRepository {
       query = query.limit(filters.limit);
     }
 
-    const { data, error } = await safeSupabaseOperation(() => query);
+    const { data, error } = await query;
 
-    if (error) throw new Error(error);
+    if (error) throw new Error(error.message);
     return data || [];
   }
 
   async incrementViewCount(id: string): Promise<void> {
-    const { error } = await safeSupabaseOperation(() =>
-      this.db.rpc('increment_view_count', { prompt_id: id })
-    );
+    const { error } = await this.db.rpc('increment_view_count', { prompt_id: id });
 
     if (error) {
       console.error('Error incrementing view count:', error);
@@ -277,15 +262,13 @@ export class PromptRepository {
   }
 
   async getStats(id: string) {
-    const { data, error } = await safeSupabaseOperation(() =>
-      this.db
-        .from('prompts')
-        .select('view_count, like_count, bookmark_count, comment_count')
-        .eq('id', id)
-        .single()
-    );
+    const { data, error } = await this.db
+      .from('prompts')
+      .select('view_count, like_count, bookmark_count, comment_count')
+      .eq('id', id)
+      .single();
 
-    if (error) throw new Error(error);
+    if (error) throw new Error(error.message);
     if (!data) throw new Error('Failed to get stats - no data returned');
     return data;
   }

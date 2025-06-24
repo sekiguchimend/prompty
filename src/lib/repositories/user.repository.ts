@@ -1,125 +1,110 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { User, UserProfile } from '../../types/entities/user';
-import { safeSupabaseOperation } from '../clients/supabase/client';
 
 export class UserRepository {
   constructor(private db: SupabaseClient) {}
 
   async findById(id: string): Promise<UserProfile | null> {
-    const { data, error } = await safeSupabaseOperation(() =>
-      this.db
-        .from('profiles')
-        .select('*')
-        .eq('id', id)
-        .single()
-    );
+    const { data, error } = await this.db
+      .from('profiles')
+      .select('*')
+      .eq('id', id)
+      .single();
 
     if (error) return null;
     return data;
   }
 
   async findByUsername(username: string): Promise<UserProfile | null> {
-    const { data, error } = await safeSupabaseOperation(() =>
-      this.db
-        .from('profiles')
-        .select('*')
-        .eq('username', username)
-        .single()
-    );
+    const { data, error } = await this.db
+      .from('profiles')
+      .select('*')
+      .eq('username', username)
+      .single();
 
     if (error) return null;
     return data;
   }
 
   async update(id: string, data: Partial<User>): Promise<User> {
-    const { data: user, error } = await safeSupabaseOperation(() =>
-      this.db
-        .from('profiles')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single()
-    );
+    const { data: user, error } = await this.db
+      .from('profiles')
+      .update(data)
+      .eq('id', id)
+      .select()
+      .single();
 
-    if (error) throw new Error(error);
+    if (error) throw new Error(error.message);
     if (!user) throw new Error('Failed to update user - no data returned');
     return user;
   }
 
   async search(query: string, limit: number = 20): Promise<User[]> {
-    const { data, error } = await safeSupabaseOperation(() =>
-      this.db
-        .from('profiles')
-        .select('*')
-        .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
-        .limit(limit)
-    );
+    const { data, error } = await this.db
+      .from('profiles')
+      .select('*')
+      .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
+      .limit(limit);
 
-    if (error) throw new Error(error);
+    if (error) throw new Error(error.message);
     return data || [];
   }
 
   async getFollowers(userId: string): Promise<User[]> {
-    const { data, error } = await safeSupabaseOperation(() =>
-      this.db
-        .from('follows')
-        .select(`
-          profiles!follows_follower_id_fkey (
-            id,
-            username,
-            display_name,
-            avatar_url,
-            bio,
-            followers_count,
-            following_count,
-            posts_count,
-            created_at,
-            updated_at
-          )
-        `)
-        .eq('following_id', userId)
-    );
+    const { data, error } = await this.db
+      .from('follows')
+      .select(`
+        profiles!follows_follower_id_fkey (
+          id,
+          username,
+          display_name,
+          avatar_url,
+          bio,
+          followers_count,
+          following_count,
+          posts_count,
+          created_at,
+          updated_at
+        )
+      `)
+      .eq('following_id', userId);
 
-    if (error) throw new Error(error);
+    if (error) throw new Error(error.message);
     return (data?.map(item => item.profiles).filter(Boolean) as unknown as User[]) || [];
   }
 
   async getFollowing(userId: string): Promise<User[]> {
-    const { data, error } = await safeSupabaseOperation(() =>
-      this.db
-        .from('follows')
-        .select(`
-          profiles!follows_following_id_fkey (
-            id,
-            username,
-            display_name,
-            avatar_url,
-            bio,
-            followers_count,
-            following_count,
-            posts_count,
-            created_at,
-            updated_at
-          )
-        `)
-        .eq('follower_id', userId)
-    );
+    const { data, error } = await this.db
+      .from('follows')
+      .select(`
+        profiles!follows_following_id_fkey (
+          id,
+          username,
+          display_name,
+          avatar_url,
+          bio,
+          followers_count,
+          following_count,
+          posts_count,
+          created_at,
+          updated_at
+        )
+      `)
+      .eq('follower_id', userId);
 
-    if (error) throw new Error(error);
+    if (error) throw new Error(error.message);
     return (data?.map(item => item.profiles).filter(Boolean) as unknown as User[]) || [];
   }
 
   async follow(followerId: string, followingId: string): Promise<void> {
-    const { error } = await safeSupabaseOperation(() =>
-      this.db
-        .from('follows')
-        .insert({
-          follower_id: followerId,
-          following_id: followingId
-        })
-    );
+    const { error } = await this.db
+      .from('follows')
+      .insert({
+        follower_id: followerId,
+        following_id: followingId
+      });
 
-    if (error) throw new Error(error);
+    if (error) throw new Error(error.message);
 
     await Promise.all([
       this.incrementFollowingCount(followerId),
@@ -128,15 +113,13 @@ export class UserRepository {
   }
 
   async unfollow(followerId: string, followingId: string): Promise<void> {
-    const { error } = await safeSupabaseOperation(() =>
-      this.db
-        .from('follows')
-        .delete()
-        .eq('follower_id', followerId)
-        .eq('following_id', followingId)
-    );
+    const { error } = await this.db
+      .from('follows')
+      .delete()
+      .eq('follower_id', followerId)
+      .eq('following_id', followingId);
 
-    if (error) throw new Error(error);
+    if (error) throw new Error(error.message);
 
     await Promise.all([
       this.decrementFollowingCount(followerId),
