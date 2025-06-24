@@ -8,8 +8,9 @@ import PurchasedArticles from '../components/myArticle/PurchasedArticles';
 import BookmarkedArticles from '../components/myArticle/BookmarkedArticles';
 import RecentlyViewedArticles from '../components/myArticle/RecentlyViewedArticles';
 import SidebarTabs from '../components/myArticle/SidebarTabs';
+import PromptManagementList from '../components/dashboard/PromptManagementList';
 
-type ArticleTab = 'myArticles' | 'likedArticles' | 'purchasedArticles' | 'bookmarkedArticles' | 'recentlyViewedArticles';
+type ArticleTab = 'myArticles' | 'likedArticles' | 'purchasedArticles' | 'bookmarkedArticles' | 'recentlyViewedArticles' | 'manageArticles';
 
 const MyArticles: React.FC = () => {
   const router = useRouter();
@@ -33,6 +34,9 @@ const MyArticles: React.FC = () => {
         case 'recentlyViewedArticles':
           setActiveTab('recentlyViewedArticles');
           break;
+        case 'manageArticles':
+          setActiveTab('manageArticles');
+          break;
         default:
           setActiveTab('myArticles');
       }
@@ -44,6 +48,8 @@ const MyArticles: React.FC = () => {
     switch (activeTab) {
       case 'myArticles':
         return <MyArticlesList />;
+      case 'manageArticles':
+        return <PromptManagementList />;
       case 'likedArticles':
         return <LikedArticles />;
       case 'purchasedArticles':

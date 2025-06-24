@@ -106,13 +106,38 @@ export const getServerSideProps: GetServerSideProps = async ({ params, req, res,
       stripe_product_id,
       stripe_price_id,
       preview_lines,
-      ai_model
+      ai_model,
+      published
     `)
     .eq('id', formattedId)
     .single();
     
   if (error || !promptData) {
       return { notFound: true };
+    }
+
+    // 認証ユーザーを取得（非公開記事の所有者チェック用）
+    let currentUserId = null;
+    try {
+      const authCookie = req.headers.cookie
+        ?.split(';')
+        .find(c => c.trim().startsWith('supabase-auth-token='))
+        ?.split('=')[1];
+      
+      if (authCookie) {
+        const { data: { user } } = await supabaseAdmin.auth.getUser(authCookie);
+        currentUserId = user?.id;
+      }
+    } catch (authError) {
+      // 認証エラーは無視（ゲストユーザーの場合）
+    }
+
+    // 非公開記事のアクセス制御
+    if (!promptData.published) {
+      // 記事が非公開で、かつ作成者でない場合は404を返す
+      if (!currentUserId || currentUserId !== promptData.author_id) {
+        return { notFound: true };
+      }
     }
 
     // プロフィール情報を別途取得（並列処理）

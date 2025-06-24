@@ -5,9 +5,9 @@ import { FileText } from 'lucide-react';
 import { Heart } from 'lucide-react'; 
 import { ShoppingBag } from 'lucide-react';
 import { Bookmark } from 'lucide-react';
-import { Clock } from 'lucide-react';
+import { Clock, Settings } from 'lucide-react';
 
-type ArticleTab = 'myArticles' | 'likedArticles' | 'purchasedArticles' | 'bookmarkedArticles' | 'recentlyViewedArticles';
+type ArticleTab = 'myArticles' | 'likedArticles' | 'purchasedArticles' | 'bookmarkedArticles' | 'recentlyViewedArticles' | 'manageArticles';
 
 interface SidebarTabsProps {
   activeTab: ArticleTab;
@@ -29,6 +29,7 @@ const SidebarTabs: React.FC<SidebarTabsProps> = ({ activeTab, setActiveTab }) =>
   // タブリスト定義（アイコン付き）
   const tabs = [
     { id: 'myArticles' as ArticleTab, label: '自分の記事', shortLabel: '記事', icon: <FileText className="h-4 w-4" /> },
+    { id: 'manageArticles' as ArticleTab, label: '記事管理', shortLabel: '管理', icon: <Settings className="h-4 w-4" /> },
     { id: 'likedArticles' as ArticleTab, label: 'イイねした', shortLabel: 'いいね', icon: <Heart className="h-4 w-4" /> },
     { id: 'purchasedArticles' as ArticleTab, label: '購入した', shortLabel: '購入', icon: <ShoppingBag className="h-4 w-4" /> },
     { id: 'bookmarkedArticles' as ArticleTab, label: 'ブックマークした', shortLabel: 'ブックマーク', icon: <Bookmark className="h-4 w-4" /> },
