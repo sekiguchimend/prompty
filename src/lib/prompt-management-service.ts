@@ -181,7 +181,7 @@ export class PromptManagementService {
           created_at,
           updated_at,
           category_id,
-          categories!prompts_category_id_fkey (
+          categories (
             id,
             name,
             slug
@@ -195,9 +195,14 @@ export class PromptManagementService {
         query = query.eq('published', published);
       }
 
-      const { data, error } = await query;
+            const { data, error } = await query;
 
-             if (error) {
+      if (error) {
+        console.error('Supabaseクエリエラー:', {
+          error,
+          query: query.toString(),
+          userId: session.user.id
+        });
         throw error;
       }
 
