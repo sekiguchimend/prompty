@@ -147,174 +147,20 @@ const AdminDashboard: React.FC = () => {
   const fetchReports = async () => {
     setReportsLoading(true);
     try {
-      
-      // 1. まずテーブルの存在確認
-      const { data: tableCheck, error: tableError } = await supabase
-        .from('reports')
-        .select('count', { count: 'exact', head: true });
-      
-      
-      if (tableError) {
-        console.error('テーブルアクセスエラー:', tableError);
-        setReports([]);
-        toast({
-          title: 'テーブルアクセスエラー',
-          description: `reportsテーブルにアクセスできません: ${tableError.message}`,
-          variant: 'destructive'
-        });
-        return;
+      const response = await fetch('/api/admin/reports');
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'レポートの取得に失敗しました');
       }
 
-      // 2. 権限確認のため、最もシンプルなクエリを実行
-      const { data: simpleData, error: simpleError } = await supabase
-        .from('reports')
-        .select('id')
-        .limit(1);
-      
-      
-      if (simpleError) {
-        console.error('権限エラー:', simpleError);
-        setReports([]);
-        toast({
-          title: '権限エラー',
-          description: `reportsテーブルの読み取り権限がありません: ${simpleError.message}`,
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      // 3. カラム構造確認のため、特定のカラムを指定してクエリ
-      const { data: columnData, error: columnError } = await supabase
-        .from('reports')
-        .select('id, target_id, target_type, prompt_id, reporter_id, reason, details, status, created_at, updated_at')
-        .limit(5);
-      
-      
-      if (columnError) {
-        console.error('カラム構造エラー:', columnError);
-        
-        // 個別カラムをテスト
-        const testColumns = ['id', 'target_id', 'target_type', 'prompt_id', 'reporter_id', 'reason', 'details', 'status', 'created_at', 'updated_at'];
-        
-        for (const column of testColumns) {
-          try {
-            const { data, error } = await supabase
-              .from('reports')
-              .select(column)
-              .limit(1);
-          } catch (e) {
-          }
-        }
-        
-        setReports([]);
-        toast({
-          title: 'カラム構造エラー',
-          description: `指定したカラムが存在しません: ${columnError.message}`,
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      // 4. 全データ取得
-      const { data: reportsData, error: reportsError } = await supabase
-        .from('reports')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-
-      if (reportsError) {
-        console.error('全データ取得エラー:', reportsError);
-        setReports([]);
-        toast({
-          title: 'データ取得エラー',
-          description: `レポートデータの取得に失敗しました: ${reportsError.message}`,
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      if (!reportsData || reportsData.length === 0) {
-        setReports([]);
-        return;
-      }
-
-
-      // まずは基本データのみで表示（関連データは後で追加）
-      const basicReports = reportsData.map(report => ({
-        ...report,
-        reporter: {
-          display_name: '読み込み中...',
-          username: '読み込み中...'
-        },
-        prompt: {
-          title: '読み込み中...'
-        }
-      }));
-
-      // 基本データを先に設定
-      setReports(basicReports);
-
-      // 関連データを非同期で取得
-      try {
-        const reporterIds = Array.from(new Set(reportsData.map(report => report.reporter_id))).filter(id => id);
-        const promptIds = Array.from(new Set(reportsData.map(report => report.prompt_id))).filter(id => id);
-
-
-        // 報告者の情報を取得
-        let reportersData: any[] = [];
-        if (reporterIds.length > 0) {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('id, display_name, username')
-            .in('id', reporterIds);
-          
-          if (error) {
-            console.error('報告者データ取得エラー:', error);
-          } else {
-            reportersData = data || [];
-          }
-        }
-
-        // プロンプトの情報を取得
-        let promptsData: any[] = [];
-        if (promptIds.length > 0) {
-          const { data, error } = await supabase
-            .from('prompts')
-            .select('id, title')
-            .in('id', promptIds);
-          
-          if (error) {
-            console.error('プロンプトデータ取得エラー:', error);
-          } else {
-            promptsData = data || [];
-          }
-        }
-
-        // データを結合して最終更新
-        const enrichedReports = reportsData.map(report => ({
-          ...report,
-          reporter: reportersData?.find(reporter => reporter.id === report.reporter_id) || {
-            display_name: '不明なユーザー',
-            username: '不明'
-          },
-          prompt: promptsData?.find(prompt => prompt.id === report.prompt_id) || {
-            title: '不明なプロンプト'
-          }
-        }));
-
-        setReports(enrichedReports);
-      } catch (relationError) {
-        console.error('関連データ取得エラー:', relationError);
-        // 関連データの取得に失敗しても基本データは表示する
-      }
-
-
+      setReports(result.data || []);
     } catch (error) {
       console.error('レポート取得エラー:', error);
       setReports([]);
       toast({
         title: 'エラー',
-        description: 'レポートの取得に失敗しました',
+        description: error instanceof Error ? error.message : 'レポートの取得に失敗しました',
         variant: 'destructive'
       });
     } finally {
@@ -326,18 +172,19 @@ const AdminDashboard: React.FC = () => {
   const fetchAnnouncements = async () => {
     setAnnouncementsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('announcements')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const response = await fetch('/api/admin/announcements');
+      const result = await response.json();
 
-      if (error) throw error;
-      setAnnouncements(data || []);
+      if (!result.success) {
+        throw new Error(result.error || 'お知らせの取得に失敗しました');
+      }
+
+      setAnnouncements(result.data || []);
     } catch (error) {
       console.error('お知らせ取得エラー:', error);
       toast({
         title: 'エラー',
-        description: 'お知らせの取得に失敗しました',
+        description: error instanceof Error ? error.message : 'お知らせの取得に失敗しました',
         variant: 'destructive'
       });
     } finally {
@@ -349,27 +196,19 @@ const AdminDashboard: React.FC = () => {
   const fetchContacts = async () => {
     setContactsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('contacts')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const response = await fetch('/api/admin/contacts');
+      const result = await response.json();
 
-      if (error) {
-        console.error('お問い合わせ取得エラー:', error);
-        toast({
-          title: 'エラー',
-          description: 'お問い合わせの取得に失敗しました',
-          variant: 'destructive'
-        });
-        return;
+      if (!result.success) {
+        throw new Error(result.error || 'お問い合わせの取得に失敗しました');
       }
 
-      setContacts(data || []);
+      setContacts(result.data || []);
     } catch (error) {
       console.error('お問い合わせ取得エラー:', error);
       toast({
         title: 'エラー',
-        description: 'お問い合わせの取得に失敗しました',
+        description: error instanceof Error ? error.message : 'お問い合わせの取得に失敗しました',
         variant: 'destructive'
       });
     } finally {
@@ -381,27 +220,19 @@ const AdminDashboard: React.FC = () => {
   const fetchFeedbacks = async () => {
     setFeedbacksLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('feedback')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const response = await fetch('/api/admin/feedback');
+      const result = await response.json();
 
-      if (error) {
-        console.error('フィードバック取得エラー:', error);
-        toast({
-          title: 'エラー',
-          description: 'フィードバックの取得に失敗しました',
-          variant: 'destructive'
-        });
-        return;
+      if (!result.success) {
+        throw new Error(result.error || 'フィードバックの取得に失敗しました');
       }
 
-      setFeedbacks(data || []);
+      setFeedbacks(result.data || []);
     } catch (error) {
       console.error('フィードバック取得エラー:', error);
       toast({
         title: 'エラー',
-        description: 'フィードバックの取得に失敗しました',
+        description: error instanceof Error ? error.message : 'フィードバックの取得に失敗しました',
         variant: 'destructive'
       });
     } finally {
@@ -424,15 +255,19 @@ const AdminDashboard: React.FC = () => {
   // レポートのステータス更新
   const updateReportStatus = async (reportId: string, status: 'resolved' | 'dismissed') => {
     try {
-      const { error } = await supabase
-        .from('reports')
-        .update({ 
-          status,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', reportId);
+      const response = await fetch('/api/admin/reports', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: reportId, status }),
+      });
 
-      if (error) throw error;
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'レポートの更新に失敗しました');
+      }
 
       toast({
         title: '更新完了',
@@ -444,7 +279,7 @@ const AdminDashboard: React.FC = () => {
       console.error('レポート更新エラー:', error);
       toast({
         title: 'エラー',
-        description: 'レポートの更新に失敗しました',
+        description: error instanceof Error ? error.message : 'レポートの更新に失敗しました',
         variant: 'destructive'
       });
     }
@@ -462,17 +297,19 @@ const AdminDashboard: React.FC = () => {
     }
 
     try {
-      const { error } = await supabase
-        .from('announcements')
-        .insert({
-          ...newAnnouncement,
-          start_date: new Date(newAnnouncement.start_date).toISOString(),
-          end_date: newAnnouncement.end_date ? new Date(newAnnouncement.end_date).toISOString() : null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
+      const response = await fetch('/api/admin/announcements', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newAnnouncement),
+      });
 
-      if (error) throw error;
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'お知らせの作成に失敗しました');
+      }
 
       toast({
         title: '作成完了',
@@ -495,7 +332,7 @@ const AdminDashboard: React.FC = () => {
       console.error('お知らせ作成エラー:', error);
       toast({
         title: 'エラー',
-        description: 'お知らせの作成に失敗しました',
+        description: error instanceof Error ? error.message : 'お知らせの作成に失敗しました',
         variant: 'destructive'
       });
     }
@@ -504,15 +341,19 @@ const AdminDashboard: React.FC = () => {
   // お知らせのアクティブ状態を切り替え
   const toggleAnnouncementActive = async (announcementId: string, isActive: boolean) => {
     try {
-      const { error } = await supabase
-        .from('announcements')
-        .update({ 
-          is_active: !isActive,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', announcementId);
+      const response = await fetch('/api/admin/announcements', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: announcementId, is_active: !isActive }),
+      });
 
-      if (error) throw error;
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'お知らせの更新に失敗しました');
+      }
 
       toast({
         title: '更新完了',
@@ -524,7 +365,7 @@ const AdminDashboard: React.FC = () => {
       console.error('お知らせ更新エラー:', error);
       toast({
         title: 'エラー',
-        description: 'お知らせの更新に失敗しました',
+        description: error instanceof Error ? error.message : 'お知らせの更新に失敗しました',
         variant: 'destructive'
       });
     }
@@ -533,13 +374,18 @@ const AdminDashboard: React.FC = () => {
   // お問い合わせの既読状態を切り替え
   const toggleContactRead = async (contactId: string, isRead: boolean) => {
     try {
-      const { error } = await supabase
-        .from('contacts')
-        .update({ is_read: !isRead })
-        .eq('id', contactId);
+      const response = await fetch('/api/admin/contacts', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: contactId, is_read: !isRead }),
+      });
 
-      if (error) {
-        throw error;
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'お問い合わせの更新に失敗しました');
       }
 
       toast({
@@ -552,7 +398,7 @@ const AdminDashboard: React.FC = () => {
       console.error('お問い合わせ更新エラー:', error);
       toast({
         title: 'エラー',
-        description: 'お問い合わせの更新に失敗しました',
+        description: error instanceof Error ? error.message : 'お問い合わせの更新に失敗しました',
         variant: 'destructive'
       });
     }
@@ -561,13 +407,18 @@ const AdminDashboard: React.FC = () => {
   // フィードバックの既読/未読切り替え
   const toggleFeedbackRead = async (feedbackId: string, isRead: boolean) => {
     try {
-      const { error } = await supabase
-        .from('feedback')
-        .update({ is_read: !isRead })
-        .eq('id', feedbackId);
+      const response = await fetch('/api/admin/feedback', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: feedbackId, is_read: !isRead }),
+      });
 
-      if (error) {
-        throw error;
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'フィードバックの更新に失敗しました');
       }
 
       toast({
@@ -580,7 +431,7 @@ const AdminDashboard: React.FC = () => {
       console.error('フィードバック更新エラー:', error);
       toast({
         title: 'エラー',
-        description: 'フィードバックの更新に失敗しました',
+        description: error instanceof Error ? error.message : 'フィードバックの更新に失敗しました',
         variant: 'destructive'
       });
     }

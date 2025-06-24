@@ -181,7 +181,7 @@ export class PromptManagementService {
           created_at,
           updated_at,
           category_id,
-          categories (
+          categories:category_id (
             id,
             name,
             slug

@@ -39,6 +39,8 @@ const nextConfig = {
       },
       {
         key: 'Permissions-Policy',
+        // セキュリティ設定：カメラ・マイクロフォン・位置情報へのアクセスを禁止
+        // これによりブラウザコンソールに警告が表示されますが、意図的な設定です
         value: 'camera=(), microphone=(), geolocation=()'
       }
     ];
