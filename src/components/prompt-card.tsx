@@ -250,7 +250,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
   }, [showDropdown]);
   
   return (
-    <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm min-h-[340px]">
+    <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm h-[340px]">
       <Link href={`/prompts/${promptId}`} className="block" prefetch={false}>
         <div className="relative pb-[56.25%]">
           {(() => {
@@ -302,21 +302,23 @@ const PromptCard: React.FC<PromptCardProps> = ({
         </div>
         
         <div className="mt-auto">
-          <div className="flex items-center gap-2">
-            <Link href={`/users/${user.name}`} className="block h-6 w-6 overflow-hidden rounded-full">
-              <img 
-                src={user.avatarUrl} 
-                alt={user.account_name || user.name} 
-                className="h-full w-full object-cover"
-              />
-            </Link>
-            <Link href={`/users/${user.name}`} className="text-xs text-gray-600 hover:underline">
-              {user.account_name || user.name}
-            </Link>
-            <span className="text-xs text-gray-500">{postedAt}</span>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <Link href={`/users/${user.name}`} className="block h-6 w-6 overflow-hidden rounded-full flex-shrink-0">
+                <img 
+                  src={user.avatarUrl} 
+                  alt={user.account_name || user.name} 
+                  className="h-full w-full object-cover"
+                />
+              </Link>
+              <Link href={`/users/${user.name}`} className="text-xs text-gray-600 hover:underline truncate flex-1 min-w-0">
+                {user.account_name || user.name}
+              </Link>
+            </div>
+            <span className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0">{postedAt}</span>
           </div>
           <div className="flex items-center">
-            <div className="flex items-center text-gray-500 mt-4">
+            <div className="flex items-center text-gray-500">
               <button 
                 className={`like-button flex items-center ${liked ? 'text-red-500' : 'text-gray-500'}`}
                 onClick={toggleLike}
@@ -325,7 +327,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
               </button>
               <span className="text-xs">{currentLikeCount}</span>
             </div>
-            <div className="flex items-center text-gray-500 mt-4 ml-2">
+            <div className="flex items-center text-gray-500 ml-2">
               <button 
                 className={`bookmark-button flex items-center ${bookmarked ? 'text-blue-500' : 'text-gray-500'}`}
                 onClick={toggleBookmark}

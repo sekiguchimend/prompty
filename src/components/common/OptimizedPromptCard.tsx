@@ -240,7 +240,7 @@ const OptimizedPromptCard: React.FC<OptimizedPromptCardProps> = memo(({
         href={`/prompts/${id}`} 
         className="block group/card hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1"
       >
-        <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200 h-full flex flex-col">
+        <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200 flex flex-col">
           {/* サムネイル */}
           <div className="relative aspect-[16/9] overflow-hidden">
             {mediaType === 'video' ? (
@@ -276,24 +276,26 @@ const OptimizedPromptCard: React.FC<OptimizedPromptCardProps> = memo(({
             </h3>
             
             {/* ユーザー情報 */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2 min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center space-x-2 flex-1 min-w-0">
                 <Avatar
                   src={user.avatarUrl}
                   displayName={user.name}
                   size="sm"
                   className="shrink-0"
                 />
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-xs text-gray-600 truncate">
                     {getDisplayName(user.name)}
                   </p>
-                  <p className="text-xs text-gray-500">{postedAt}</p>
                 </div>
               </div>
-              
+              <p className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0">{postedAt}</p>
+            </div>
+            
+            <div className="mt-2">
               {/* アクションボタン */}
-              <div className="flex items-center space-x-2 ml-2">
+              <div className="flex items-center space-x-2 justify-end">
                 <button
                   onClick={toggleLike}
                   disabled={isLikeProcessing}

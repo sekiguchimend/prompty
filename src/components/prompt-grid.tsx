@@ -44,6 +44,7 @@ interface PromptCardProps {
   isLiked?: boolean;
   isBookmarked?: boolean;
   onHide?: (id: string) => void;
+  isLastItem?: boolean;
 }
 
 // メニュー開閉を管理するためのカスタムイベント名
@@ -169,6 +170,7 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
   isLiked = false,
   isBookmarked = false,
   onHide,
+  isLastItem,
 }) => {
   const [liked, setLiked] = useState(isLiked);
   const [bookmarked, setBookmarked] = useState(isBookmarked);
@@ -410,32 +412,32 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
     return null;
   }
   
-  // モバイル表示の場合（リスト形式）
+  // モバイル表示用のカードレイアウト（横並びの簡素版）
   if (isMobile && !isFeatureSection) {
     return (
-      <div className="flex items-center border-b border-gray-300 py-2 relative">
+      <div className={`py-3 flex ${!isLastItem ? 'border-b border-gray-200' : ''}`}>
         {/* カード左側：テキスト情報 */}
-        <div className="flex-1 pr-2">
-          <h3 className="text-base font-medium line-clamp-2 mb-1">
+        <div className="flex-1 pr-3">
+          <h3 className="text-base font-medium line-clamp-2 mb-2">
             <Link href={`/prompts/${id}`} passHref legacyBehavior prefetch={false}>
               <a className="cursor-pointer hover:text-blue-600">{title}</a>
             </Link>
           </h3>
           
-          <div className="flex items-center text-xs text-gray-500 mt-1">
+          <div className="flex items-center text-xs text-gray-500">
             {/* ユーザー情報 */}
-            <div className="flex items-center">
+            <div className="flex items-center mr-3">
               <UnifiedAvatar
                 src={user.avatarUrl}
                 displayName={user.name}
                 size="xs"
                 className="mr-1"
               />
-              <span className="mr-2">{user.name}</span>
+              <span className="truncate">{user.name}</span>
             </div>
             
             {/* 投稿日時 */}
-            <span className="mr-2">{postedAt}</span>
+            <span className="mr-3">{postedAt}</span>
             
             {/* いいね数 */}
             <div className="flex items-center">
@@ -445,8 +447,8 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
           </div>
         </div>
         
-        {/* カード右側：サムネイル画像/動画 - Next.js Imageコンポーネントで最適化 */}
-        <div className="w-24 h-14 flex-shrink-0">
+        {/* カード右側：サムネイル画像/動画 */}
+        <div className="w-20 h-12 flex-shrink-0">
           <Link href={`/prompts/${id}`} passHref legacyBehavior prefetch={false}>
             <div className="w-full h-full rounded overflow-hidden relative">
               {mediaType === 'video' ? (
@@ -475,7 +477,7 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
                   quality={75}
                   sizes="80px"
                   placeholder="blur"
-                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGBkbHR4f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R7hLHk="
+                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGBkbHR4f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R7hLHk="
                   onError={() => setImageError(true)}
                 />
               )}
@@ -488,7 +490,7 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
   
   // 通常のカードレイアウト（PC表示および「今日の注目記事」セクション）
   return (
-    <div className="relative group h-full">
+    <div className="relative group">
       <div className="cursor-pointer bg-white border border-gray-100 rounded-lg shadow-sm hover:shadow-md transition duration-200 h-full overflow-hidden flex flex-col">
         <div className="relative pt-[56.25%] bg-gray-50">
           <Link href={`/prompts/${id}`} passHref legacyBehavior prefetch={false}>
@@ -576,19 +578,22 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
           </div>
           
           <div className="mt-auto">
-            <div className="flex items-center gap-2">
-              <UnifiedAvatar
-                src={user.avatarUrl}
-                displayName={user.account_name || user.name}
-                size="xs"
-              />
-              <span className="text-xs text-gray-600">
-                {user.account_name || user.name}
-              </span>
-              <span className="text-xs text-gray-500">{postedAt}</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <UnifiedAvatar
+                  src={user.avatarUrl}
+                  displayName={user.account_name || user.name}
+                  size="xs"
+                  className="flex-shrink-0"
+                />
+                <span className="text-xs text-gray-600 truncate flex-1 min-w-0">
+                  {user.account_name || user.name}
+                </span>
+              </div>
+              <span className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0">{postedAt}</span>
             </div>
-            <div className="flex items-center">
-              <div className="flex items-center text-gray-500 mt-3">
+            <div className="flex items-center mt-3">
+              <div className="flex items-center text-gray-500">
                 <button 
                   className={`like-button flex items-center ${liked ? 'text-pink-500' : 'text-gray-400'}`}
                   onClick={toggleLike}
@@ -597,7 +602,7 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
                 </button>
                 <span className="text-xs">{currentLikeCount}</span>
               </div>
-              <div className="flex items-center text-gray-500 mt-3 ml-2">
+              <div className="flex items-center text-gray-500 ml-2">
                 <button 
                   className={`bookmark-button flex items-center ${bookmarked ? 'text-blue-300' : 'text-gray-500'}`}
                   onClick={toggleBookmark}
@@ -796,25 +801,25 @@ const PromptGrid: React.FC<PromptGridProps> = memo(({
         : 'flex flex-col' // 今日の注目記事以外は縦並びのリスト
       : horizontalScroll 
         ? 'flex flex-nowrap overflow-x-auto pb-4 gap-3 snap-x snap-mandatory pr-4 -mr-4 scroll-smooth scrollbar-none w-auto min-w-0'
-        : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-4';
+        : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-4 items-stretch';
     
     // カードクラスもスマホ表示用に調整
     const cardClass = isMobile 
       ? isFeatureSection
-        ? horizontalScroll ? 'flex-shrink-0 w-[180px] snap-start md:w-[200px] h-full pt-2' : 'h-full pt-2'
+        ? horizontalScroll ? 'flex-shrink-0 w-[180px] snap-start md:w-[200px]' : ''
         : 'w-full'  // 今日の注目記事以外では幅いっぱい
       : horizontalScroll
-        ? 'flex-shrink-0 w-[180px] snap-start md:w-[200px] h-full pt-2'
-        : 'h-full pt-2';
+        ? 'flex-shrink-0 w-[180px] snap-start md:w-[200px]'
+        : '';
     
     // 「すべてを見る」カードのクラス
     const viewAllCardClass = isMobile
       ? isFeatureSection
-        ? horizontalScroll ? 'flex-shrink-0 w-[180px] snap-start md:w-[200px] h-100px pt-2' : 'h-full pt-2'
+        ? horizontalScroll ? 'flex-shrink-0 w-[180px] snap-start md:w-[200px]' : ''
         : 'w-full mt-2'  // 今日の注目記事以外では幅いっぱい
       : horizontalScroll
-        ? 'flex-shrink-0 w-[180px] snap-start md:w-[200px] h-100px pt-2'
-        : 'h-full pt-2';
+        ? 'flex-shrink-0 w-[180px] snap-start md:w-[200px]'
+        : '';
 
     return { containerClass, cardClass, viewAllCardClass };
   }, [isMobile, isFeatureSection, horizontalScroll]);
@@ -856,7 +861,7 @@ const PromptGrid: React.FC<PromptGridProps> = memo(({
           className={containerClass}
           onLoad={checkScrollability} // コンテンツ読み込み完了時にスクロール可能性をチェック
         >
-          {limitedPrompts.map((prompt) => (
+          {limitedPrompts.map((prompt, index) => (
             <div key={`${sectionPrefix}-${prompt.id}`} className={cardClass}>
               <PromptCard
                 id={prompt.id}
@@ -869,6 +874,7 @@ const PromptGrid: React.FC<PromptGridProps> = memo(({
                 isLiked={prompt.isLiked}
                 isBookmarked={prompt.isBookmarked}
                 onHide={() => handleHidePrompt(prompt.id)}
+                isLastItem={index === limitedPrompts.length - 1 && (!showViewAll || visiblePrompts.length <= 6)}
               />
             </div>
           ))}
@@ -876,8 +882,18 @@ const PromptGrid: React.FC<PromptGridProps> = memo(({
           {/* すべてを見るカード（6件より多い場合かつshowViewAllがtrueの場合のみ表示） */}
           {showViewAll && visiblePrompts.length > 6 && (
             <div className={viewAllCardClass}>
-              {isMobile ? (
-                // スマホ表示ではテキストリンク
+              {isMobile && !isFeatureSection ? (
+                // スマホ表示で人気記事以外ではボーダー付きテキストリンク（最後なので下線なし）
+                <Link href={viewAllPath} className="block py-4 text-center font-bold text-gray-500 hover:underline">
+                  <span className="flex items-center justify-center">
+                    すべてを見る 
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </span>
+                </Link>
+              ) : isMobile ? (
+                // スマホ表示で人気記事（影ありカード）
                 <Link href={viewAllPath} className="block text-center py-4 font-bold text-gray-500 hover:underline">
                   <span className="flex items-center justify-center">
                     すべてを見る 
@@ -889,14 +905,26 @@ const PromptGrid: React.FC<PromptGridProps> = memo(({
               ) : (
                 // PC表示ではカード
                 <Link href={viewAllPath} passHref legacyBehavior>
-                  <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm cursor-pointer h-full" data-id="view-all">
-                    <div className="flex items-center justify-center h-full w-full p-2 bg-gray-100">
-                      <div className="flex flex-col items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200 flex flex-col cursor-pointer hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1" data-id="view-all">
+                    {/* サムネイル部分（投稿カードと同じアスペクト比） */}
+                    <div className="relative aspect-[16/9] overflow-hidden bg-gray-100">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
-                        <div className={`text-gray-700 text-center ${notoSansJP.className}`} style={{ fontWeight: 700 }}>
-                          すべてを見る
+                      </div>
+                    </div>
+                    
+                    {/* コンテンツ部分（投稿カードと同じ構造） */}
+                    <div className="p-4 flex-1 flex flex-col">
+                      <h3 className={`text-sm font-medium text-gray-700 text-center mb-3 flex-1 leading-relaxed ${notoSansJP.className}`}>
+                        すべてを見る
+                      </h3>
+                      
+                      {/* 空のスペース（投稿カードのユーザー情報と同じ高さ） */}
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="text-xs text-gray-500">
+                          すべての記事を表示
                         </div>
                       </div>
                     </div>

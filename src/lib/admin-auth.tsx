@@ -1,5 +1,5 @@
 import React from 'react';
-import { supabase } from './supabaseClient';
+import { supabase } from './supabase-unified';
 
 // 管理者メールアドレス一覧
 const ADMIN_EMAILS = [

@@ -1,5 +1,5 @@
 import { NextApiRequest } from 'next';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../lib/supabase-unified';
 
 // APIリクエストのユーザー認証を確認するヘルパー関数
 export async function isAuthenticated(req: NextApiRequest) {

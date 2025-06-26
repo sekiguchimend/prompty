@@ -203,7 +203,11 @@ const PromptContent: React.FC<PromptContentProps> = ({
         });
       }
     };
-    fetchUser();
+    
+    // ハイドレーション完了後に実行
+    setTimeout(() => {
+      fetchUser();
+    }, 100);
   }, []);
 
   // 購入済み判定ロジック

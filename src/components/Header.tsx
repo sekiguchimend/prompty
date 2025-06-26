@@ -6,14 +6,15 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/router';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { useToast } from './ui/use-toast';
+import { useToast } from '../hooks/use-toast';
 import NotificationDropdown from './notification-dropdown';
 import UserMenu from './user-menu';
 import { PostItem, getFollowingPosts, getTodayForYouPosts } from '../data/posts';
 import { useAuth } from '../lib/auth-context';
-import { supabase } from '../lib/supabaseClient';
+import { useAuthSync } from '../hooks/useAuthSync';
+import { supabase, getInstanceId } from '../lib/supabase-unified';
 import { checkAdminStatus } from '../lib/admin-auth';
 
 // カテゴリタブMen
@@ -43,6 +44,7 @@ const useUserProfile = (userId: string | undefined) => {
     
     const fetchUserProfile = async () => {
       try {
+        console.log(`🔧 Header: Using unified client (${getInstanceId()}) for user ${userId}`);
         const { data, error } = await supabase
           .from('profiles')
           .select('username, display_name, avatar_url')
@@ -51,10 +53,13 @@ const useUserProfile = (userId: string | undefined) => {
           
         if (error) {
           console.error('ヘッダー: プロフィール取得エラー:', error);
+          // エラーでも基本的なユーザー情報は表示できるようにする
+          console.log('ヘッダー: プロフィール取得エラーですが、基本ユーザー情報は利用可能');
           return;
         }
         
         if (data) {
+          console.log('✅ Header: プロフィール取得成功', data);
           setUserProfile({
             username: data.username as string | undefined,
             display_name: data.display_name as string | undefined,
@@ -98,10 +103,11 @@ const useIsMobile = () => {
 
 const Header = () => {
   const router = useRouter();
-  const pathname = router.pathname;
-  const queryParams = router.query;
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { user, isLoading, signOut } = useAuth();
+  const { syncAuthState, instanceId } = useAuthSync();
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const isMobile = useIsMobile();
@@ -113,6 +119,18 @@ const Header = () => {
   
   const displayName = userProfile?.display_name || userProfile?.username || user?.email?.split('@')[0] || "ユーザー";
   const profileAvatarUrl = userProfile?.avatar_url || user?.user_metadata?.avatar_url || "https://github.com/shadcn.png";
+
+  // デバッグ用：認証状態をログ出力
+  useEffect(() => {
+    console.log('🔍 Header Debug - Auth State:', {
+      isLoading,
+      user: user ? { id: user.id, email: user.email } : null,
+      userProfile,
+      displayName,
+      profileAvatarUrl,
+      instanceId
+    });
+  }, [isLoading, user, userProfile, displayName, profileAvatarUrl, instanceId]);
 
   useEffect(() => {
     const currentPath = pathname || '/';
@@ -159,7 +177,7 @@ const Header = () => {
       setMobileSearchOpen(false);
       const searchUrl = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
       
-      if (pathname === '/search' && queryParams?.q === searchQuery.trim()) {
+      if (pathname === '/search' && searchParams?.get('q') === searchQuery.trim()) {
         window.location.href = searchUrl;
       } else {
         router.push(searchUrl);
@@ -293,7 +311,7 @@ const Header = () => {
                       <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                       <Input
                         type="text"
-                        placeholder="キーワードでやクリエイターで検索"
+                        placeholder="キーワードやクリエイターで検索"
                         className="w-full bg-gray-100 pl-9 rounded-md border-none"
                         value={searchQuery}
                         onChange={handleSearchChange}
@@ -309,7 +327,12 @@ const Header = () => {
                 </div>
               
                 <div className="flex items-center gap-4">
-                  {!isLoading && (
+                  {isLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+                      <span className="text-sm text-gray-500">読み込み中...</span>
+                    </div>
+                  ) : (
                     <>
                       {!user ? (
                         <>

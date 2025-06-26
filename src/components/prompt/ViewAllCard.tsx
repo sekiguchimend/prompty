@@ -20,7 +20,7 @@ export const ViewAllCard: React.FC<ViewAllCardProps> = memo(({
       href={linkPath}
       className={`block group/view-all ${className}`}
     >
-      <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-lg h-full min-h-[280px] flex flex-col items-center justify-center p-6 transition-all duration-200 hover:border-blue-400 hover:bg-gradient-to-br hover:from-blue-50 hover:to-blue-100 group-hover/view-all:shadow-md">
+      <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-lg h-full flex flex-col items-center justify-center p-6 transition-all duration-200 hover:border-blue-400 hover:bg-gradient-to-br hover:from-blue-50 hover:to-blue-100 group-hover/view-all:shadow-md">
         {/* アイコン */}
         <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm group-hover/view-all:shadow-md transition-shadow duration-200">
           <GridIcon className="w-8 h-8 text-gray-400 group-hover/view-all:text-blue-500 transition-colors duration-200" />

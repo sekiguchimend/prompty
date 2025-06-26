@@ -57,8 +57,20 @@ export const getSupabaseAdminClient = (): SupabaseClient => {
   return adminClientInstance;
 };
 
-// Export admin client
-export const supabaseAdmin = getSupabaseAdminClient();
+// Export admin client (lazy initialization)
+export const supabaseAdmin = (() => {
+  // クライアントサイドでは初期化しない
+  if (typeof window !== 'undefined') {
+    return null as any;
+  }
+  
+  try {
+    return getSupabaseAdminClient();
+  } catch (error) {
+    console.warn('Admin client initialization failed:', error);
+    return null as any;
+  }
+})();
 
 // Admin operation wrapper with enhanced error handling
 export const safeAdminOperation = async <T>(

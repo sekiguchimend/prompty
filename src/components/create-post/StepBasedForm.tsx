@@ -20,6 +20,7 @@ interface StepBasedFormProps {
   markStepAsCompleted: (step: number) => void;
   goToNextStep: () => void;
   goToPreviousStep: () => void;
+  goToStep?: (step: number) => void;
   submitProject: () => void;
   isSubmitting: boolean;
 }
@@ -34,6 +35,7 @@ const StepBasedForm: React.FC<StepBasedFormProps> = (props) => {
         completedSteps={props.completedSteps}
         goToNextStep={props.goToNextStep}
         goToPreviousStep={props.goToPreviousStep}
+        goToStep={props.goToStep}
       />
       
       {/* ステップコンテンツ */}

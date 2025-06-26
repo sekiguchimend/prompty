@@ -460,7 +460,7 @@ const Following: React.FC = () => {
                 size="xs"
                 className="mr-1.5"
               />
-              <span className="text-xs text-gray-500">{post.user.name}</span>
+              <span className="text-xs text-gray-500 truncate">{post.user.name}</span>
               <span className="text-xs text-gray-500 ml-2">{post.postedAt}</span>
             </div>
             <div className="flex items-center mt-2.5">
@@ -487,31 +487,28 @@ const Following: React.FC = () => {
           <div className="flex items-start">
             <div className="w-[104px] h-[58px] flex-shrink-0 bg-gray-100 rounded-md overflow-hidden shadow-sm">
                         {post.mediaType === 'video' ? (
-            <div className="w-full h-full relative">
-              <video
-                src={post.thumbnailUrl}
-                className="w-full h-full object-cover"
-                muted
-                playsInline
-                preload="metadata"
-                poster=""
-              />
-              <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
-                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                動画
-              </div>
-            </div>
+            <VideoPlayer
+              src={post.thumbnailUrl}
+              alt={post.title}
+              className="w-full h-full"
+              hoverToPlay={false}
+              tapToPlay={false}
+              muted={true}
+              loop={false}
+              showThumbnail={true}
+              minimumOverlay={true}
+            />
           ) : (
-                <img src={post.thumbnailUrl} 
-                    alt={post.title} 
-                    className="w-full h-full object-cover" 
-                    loading="lazy" 
-                    fetchPriority="low" 
-                    onError={(e) => {
-                      // 画像読み込みエラー時にデフォルト画像を表示
-                      (e.target as HTMLImageElement).src = '/images/default-thumbnail.svg';
-                    }}
-                />
+              <img src={post.thumbnailUrl} 
+                  alt={post.title} 
+                  className="w-full h-full object-cover" 
+                  loading="lazy" 
+                  fetchPriority="low" 
+                  onError={(e) => {
+                    // 画像読み込みエラー時にデフォルト画像を表示
+                    (e.target as HTMLImageElement).src = '/images/default-thumbnail.svg';
+                  }}
+              />
               )}
             </div>
             
@@ -538,34 +535,33 @@ const Following: React.FC = () => {
   }, [handleFollowingLike, openReportDialog, hidePost]);
 
   const DesktopArticleItem = useCallback(({ post }: { post: PostItem }) => (
-    <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm h-full">
+    <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm h-[340px]">
       <Link href={`/prompts/${post.id}`} className="block">
         <div className="relative pb-[56.25%] bg-gray-100">
           {post.mediaType === 'video' ? (
-            <div className="absolute inset-0 h-full w-full">
-              <video
-                src={post.thumbnailUrl}
-                className="w-full h-full object-cover"
-                muted
-                playsInline
-                preload="metadata"
-                poster=""
-              />
-              <div className="absolute bottom-3 left-3 bg-black/70 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
-                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                動画
-              </div>
-            </div>
-          ) : (
-            <img 
-              src={post.thumbnailUrl} 
-              alt={post.title} 
-              className="absolute inset-0 h-full w-full object-cover"
-              loading="lazy"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/images/default-thumbnail.svg';
+            <VideoPlayer
+              src={post.thumbnailUrl}
+              alt={post.title}
+              className="absolute inset-0 h-full w-full"
+              hoverToPlay={true}
+              tapToPlay={true}
+              muted={true}
+              loop={true}
+              showThumbnail={true}
+              onLinkClick={() => {
+                window.location.href = `/prompts/${post.id}`;
               }}
             />
+          ) : (
+          <img 
+            src={post.thumbnailUrl} 
+            alt={post.title} 
+            className="absolute inset-0 h-full w-full object-cover"
+            loading="lazy"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/images/default-thumbnail.svg';
+            }}
+          />
           )}
         </div>
       </Link>
@@ -592,18 +588,20 @@ const Following: React.FC = () => {
         </div>
         
         <div className="mt-auto">
-          <div className="flex items-center gap-2 mb-2">
-            <Link href={`/users/${post.user.userId}`} className="block">
-              <UnifiedAvatar
-                src={post.user.avatarUrl}
-                displayName={post.user.name}
-                size="xs"
-              />
-            </Link>
-            <Link href={`/users/${post.user.userId}`} className="text-xs text-gray-600 hover:underline truncate">
-              {post.user.name}
-            </Link>
-            <span className="text-xs text-gray-500 flex-shrink-0">{post.postedAt}</span>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <Link href={`/users/${post.user.userId}`} className="block h-6 w-6 overflow-hidden rounded-full flex-shrink-0">
+                <UnifiedAvatar
+                  src={post.user.avatarUrl}
+                  displayName={post.user.name}
+                  size="xs"
+                />
+              </Link>
+              <Link href={`/users/${post.user.userId}`} className="text-xs text-gray-600 hover:underline truncate flex-1 min-w-0">
+                {post.user.name}
+              </Link>
+            </div>
+            <span className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0">{post.postedAt}</span>
           </div>
           <div className="flex items-center">
             <div className="flex items-center text-gray-500">
@@ -649,9 +647,9 @@ const Following: React.FC = () => {
   const DesktopArticleGrid = useMemo(() => (
     <div className="hidden md:block px-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {followingPosts.map((post) => (
-          <DesktopArticleItem key={post.id} post={post} />
-        ))}
+      {followingPosts.map((post) => (
+        <DesktopArticleItem key={post.id} post={post} />
+      ))}
       </div>
     </div>
   ), [followingPosts, DesktopArticleItem]);

@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect, startTransition } from 'react';
+import React, { Suspense, useEffect, startTransition, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { useAuth } from '../lib/auth-context';
@@ -25,10 +25,19 @@ const HomePage = dynamic(() => import('../components/home-page'), {
 export default function Home() {
   const router = useRouter();
   const { user } = useAuth();
+  const [isHydrated, setIsHydrated] = useState(false);
 
-  // ホームページがロードされたら、バックグラウンドでフォローページをプリフェッチ
+  // ハイドレーション完了を検知
   useEffect(() => {
-    // ハイドレーション後にプリフェッチを実行
+    setIsHydrated(true);
+  }, []);
+
+  // ハイドレーション完了後のプリフェッチ処理
+  useEffect(() => {
+    // ハイドレーションが完了していない場合は何もしない
+    if (!isHydrated) return;
+
+    // さらに安全な遅延でプリフェッチを実行
     const timer = setTimeout(() => {
       startTransition(() => {
         // ユーザーがログインしていれば、フォローページをプリフェッチ
@@ -36,10 +45,10 @@ export default function Home() {
           router.prefetch('/following');
         }
       });
-    }, 100); // 短い遅延でハイドレーション完了を待つ
+    }, 1000); // より長い遅延でハイドレーション完了を確実に待つ
 
     return () => clearTimeout(timer);
-  }, [router, user]);
+  }, [router, user, isHydrated]);
 
   return (
     <>
@@ -95,7 +104,24 @@ export default function Home() {
           }}
         />
       </Head>
-      <Suspense fallback={
+      {/* ハイドレーション完了後のみSuspenseを使用 */}
+      {isHydrated ? (
+        <Suspense fallback={
+          <div className="h-screen flex items-center justify-center">
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-200 rounded w-64 mb-4"></div>
+              <div className="grid grid-cols-2 gap-4">
+                {Array(6).fill(0).map((_, i) => (
+                  <div key={i} className="h-40 bg-gray-200 rounded"></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        }>
+          <HomePage />
+        </Suspense>
+      ) : (
+        // ハイドレーション中は静的なローディング表示
         <div className="h-screen flex items-center justify-center">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-64 mb-4"></div>
@@ -106,9 +132,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-      }>
-        <HomePage />
-      </Suspense>
+      )}
     </>
   );
 } 

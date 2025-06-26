@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient';
+import { supabase } from './supabase-unified';
 
 /**
  * 投稿をブックマークする

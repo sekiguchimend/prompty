@@ -1,7 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { UserRepository } from '../../repositories/user.repository';
 import { User, UserProfile } from '../../../types/entities/user';
-import { supabase } from '../../clients/supabase/client';
+import { supabase } from '../../supabase-unified';
 
 export class UserService {
   private repository: UserRepository;

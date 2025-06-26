@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import { Card, CardContent, CardHeader } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -35,6 +35,7 @@ import {
 import Link from 'next/link';
 import { PromptManagementService } from '../../lib/prompt-management-service';
 import { PromptManagementData } from '../../types/prompt-management';
+import VideoPlayer from '../common/VideoPlayer';
 
 interface PromptManagementCardProps {
   prompt: PromptManagementData;
@@ -126,7 +127,7 @@ const PromptManagementCard: React.FC<PromptManagementCardProps> = ({
 
   return (
     <>
-      <Card className="hover:shadow-lg transition-shadow duration-200">
+      <Card className="hover:shadow-lg transition-shadow duration-200 h-[400px] flex flex-col">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
@@ -191,15 +192,21 @@ const PromptManagementCard: React.FC<PromptManagementCardProps> = ({
           </div>
         </CardHeader>
 
-        <CardContent className="pt-0">
+        <CardContent className="pt-0 flex-1 flex flex-col">
           {/* サムネイル */}
           {prompt.thumbnail_url && (
             <div className="mb-4">
               {prompt.media_type === 'video' ? (
-                <video 
-                  src={prompt.thumbnail_url} 
+                <VideoPlayer
+                  src={prompt.thumbnail_url}
+                  alt={prompt.title}
                   className="w-full h-32 object-cover rounded-lg"
-                  muted
+                  hoverToPlay={false}
+                  tapToPlay={false}
+                  muted={true}
+                  loop={false}
+                  showThumbnail={true}
+                  minimumOverlay={true}
                 />
               ) : (
                 <img 
@@ -228,7 +235,7 @@ const PromptManagementCard: React.FC<PromptManagementCardProps> = ({
           </div>
 
           {/* カテゴリと価格 */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mt-auto">
             <div className="flex items-center gap-2">
               {prompt.categories && (
                 <Badge variant="outline" className="text-xs">

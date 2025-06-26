@@ -1,7 +1,7 @@
 /**
  * 購入状態の判定と管理のためのユーティリティ関数
  */
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../lib/supabase-unified';
 
 /**
  * ユーザーが特定のプロンプトを購入済みかどうかを判定

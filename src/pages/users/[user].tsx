@@ -18,6 +18,7 @@ import { supabase } from '../../lib/supabaseClient';
 import FollowModal from '../../components/modals/FollowModal';
 import Head from 'next/head';
 import { generateSiteUrl, getDefaultOgImageUrl } from '../../utils/seo-helpers';
+import VideoPlayer from '../../components/common/VideoPlayer';
 
 // ユーザーデータの型定義
 interface UserData {
@@ -391,26 +392,23 @@ const UserPage: React.FC = () => {
           {post.thumbnailUrl && (
             <div className="md:w-40 h-40 md:h-28 rounded-md overflow-hidden flex-shrink-0 bg-gray-100 relative">
               {post.mediaType === 'video' ? (
-                <div className="w-full h-full relative">
-                  <video
-                    src={post.thumbnailUrl}
-                    className="w-full h-full object-cover"
-                    muted
-                    playsInline
-                    preload="metadata"
-                    poster=""
-                  />
-                  <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
-                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                    動画
-                  </div>
-                </div>
-              ) : (
-                <img 
-                  src={post.thumbnailUrl} 
-                  alt={post.title} 
-                  className="w-full h-full object-cover"
+                <VideoPlayer
+                  src={post.thumbnailUrl}
+                  alt={post.title}
+                  className="w-full h-full"
+                  hoverToPlay={false}
+                  tapToPlay={false}
+                  muted={true}
+                  loop={false}
+                  showThumbnail={true}
+                  minimumOverlay={true}
                 />
+              ) : (
+              <img 
+                src={post.thumbnailUrl} 
+                alt={post.title} 
+                className="w-full h-full object-cover"
+              />
               )}
             </div>
           )}

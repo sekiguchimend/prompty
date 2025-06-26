@@ -65,6 +65,7 @@ export const PromptCardGrid = memo(forwardRef<HTMLDivElement, PromptCardGridProp
           <ViewAllCard
             categoryPath={categoryPath}
             sectionPrefix={sectionPrefix}
+            className="h-[340px]"
           />
         </div>
       )}

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from './supabaseClient';
+import { supabase } from './supabase-unified';
 
 // ユーザー型定義
 export interface User {

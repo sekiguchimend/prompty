@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient';
+import { supabase } from './supabase-unified';
 
 // シンプルなビュートラッキング - 確実にカウント
 export const trackView = async (promptId: string): Promise<boolean> => {

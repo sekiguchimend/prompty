@@ -35,20 +35,21 @@ interface PostCardProps {
 
 const PostCard: React.FC<PostCardProps> = ({ post }) => {
   return (
-    <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+    <div className="border rounded-lg p-4 hover:shadow-md transition-shadow h-[280px] flex flex-col">
       <img src={post.thumbnailUrl} alt={post.title} className="w-full h-32 object-cover rounded mb-3" />
-      <h3 className="font-semibold text-lg mb-2 line-clamp-2">{post.title}</h3>
+      <h3 className="font-semibold text-lg mb-2 line-clamp-2 flex-1">{post.title}</h3>
       
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between mb-3 mt-auto">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
           <UnifiedAvatar
             src={post.user.avatarUrl}
             displayName={post.user.name}
             size="xs"
+            className="flex-shrink-0"
           />
-          <span className="text-sm text-gray-600">{post.user.name}</span>
+          <span className="text-sm text-gray-600 truncate flex-1 min-w-0">{post.user.name}</span>
         </div>
-        <span className="text-xs text-gray-500">{post.postedAt}</span>
+        <span className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0">{post.postedAt}</span>
       </div>
       
       <div className="flex items-center justify-between">

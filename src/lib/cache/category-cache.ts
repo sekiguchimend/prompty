@@ -1,4 +1,4 @@
-import { supabase } from '../supabaseClient';
+import { supabase } from '../supabase-unified';
 
 export interface Category {
   id: string;

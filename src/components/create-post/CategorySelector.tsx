@@ -9,15 +9,19 @@ import { useToast } from "../../components/ui/use-toast";
 import { useForm, Control, FieldValues } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '../../lib/supabase-unified';
 import { categoryCache, type Category } from '../../lib/cache/category-cache';
 
 // Categoryの型はcategory-cacheからエクスポート
 export type { Category };
 
-// 新規カテゴリフォームのスキーマ（カテゴリ名のみ）
+// 新規カテゴリフォームのスキーマ
 const newCategorySchema = z.object({
   name: z.string().min(2, "カテゴリ名は2文字以上入力してください"),
+  slug: z.string()
+    .min(2, "URLスラッグは2文字以上入力してください")
+    .regex(/^[a-z0-9-]+$/, "URLスラッグは半角英数字とハイフンのみ使用できます")
+    .refine(val => !val.startsWith('-') && !val.endsWith('-'), "URLスラッグの最初と最後にハイフンは使用できません"),
 });
 
 type NewCategoryFormValues = z.infer<typeof newCategorySchema>;
@@ -62,6 +66,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
     resolver: zodResolver(newCategorySchema),
     defaultValues: {
       name: "",
+      slug: "",
     }
   });
 
@@ -97,6 +102,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
         },
         body: JSON.stringify({
           name: data.name,
+          slug: data.slug,
         })
       });
 
@@ -262,10 +268,37 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
                   placeholder="例: プログラミング、画像生成、etc."
                   className="border-gray-300"
                   {...createCategoryForm.register("name")}
+                  onChange={(e) => {
+                    // カテゴリ名の変更時に自動でslugを生成
+                    const name = e.target.value;
+                    const autoSlug = generateSlug(name);
+                    createCategoryForm.setValue("name", name);
+                    createCategoryForm.setValue("slug", autoSlug);
+                  }}
                 />
                 {createCategoryForm.formState.errors.name && (
                   <p className="text-xs text-red-600 mt-1">
                     {createCategoryForm.formState.errors.name.message}
+                  </p>
+                )}
+              </div>
+              
+              <div className="grid gap-2">
+                <label htmlFor="slug" className="text-sm font-medium">
+                  URLスラッグ
+                </label>
+                <Input
+                  id="slug"
+                  placeholder="例: programming, image-generation"
+                  className="border-gray-300"
+                  {...createCategoryForm.register("slug")}
+                />
+                <p className="text-xs text-gray-500">
+                  カテゴリーページのURL（/category/ここに表示）に使用されます。半角英数字とハイフンのみ使用可能です。
+                </p>
+                {createCategoryForm.formState.errors.slug && (
+                  <p className="text-xs text-red-600 mt-1">
+                    {createCategoryForm.formState.errors.slug.message}
                   </p>
                 )}
               </div>

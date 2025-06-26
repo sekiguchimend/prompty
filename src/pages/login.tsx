@@ -7,7 +7,7 @@ import { Mail, Lock, AlertCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../lib/auth-context';
 import Image from 'next/image';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../lib/supabase-unified';
 // Manually implement or mock the missing components
 const Input = ({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) => (
   <input className={`border rounded px-3 py-2 w-full ${className}`} {...props} />

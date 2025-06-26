@@ -12,7 +12,6 @@ import { PreviewMarkerOverlay } from "./PreviewMarkerOverlay";
 
 // シンプル化したプロンプトフォームスキーマ
 const promptFormSchema = z.object({
-  promptTitle: z.string().default(""), // タイトルは任意（自動生成されるため）
   fullPrompt: z.string().min(5, "プロンプトは最低5文字以上入力してください"),
   promptNumber: z.number().min(1, "プロンプト番号は1以上である必要があります"),
 });
@@ -54,7 +53,6 @@ const SimplifiedPromptForm: React.FC<PromptFormProps> = ({
   const promptForm = useForm<PromptFormValues>({
     resolver: zodResolver(promptFormSchema),
     defaultValues: {
-      promptTitle: "",
       fullPrompt: "",
       promptNumber: promptNumber,
     },
@@ -162,17 +160,16 @@ const SimplifiedPromptForm: React.FC<PromptFormProps> = ({
   };
 
   const handleSubmitForm = (data: PromptFormValues) => {
-    // タイトルが入力されていない場合は自動生成
+    // タイトルを自動生成
     const finalData = {
       ...data,
-      promptTitle: data.promptTitle.trim() || generateTitleFromPrompt(data.fullPrompt)
+      promptTitle: generateTitleFromPrompt(data.fullPrompt)
     };
     
     onSubmit(finalData);
     
     // フォーム送信後にフォームをリセット
     promptForm.reset({
-      promptTitle: "",
       fullPrompt: "",
       promptNumber: promptNumber + 1
     });
@@ -210,29 +207,7 @@ const SimplifiedPromptForm: React.FC<PromptFormProps> = ({
               </CollapsibleTrigger>
               <CollapsibleContent className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-top-1 data-[state=open]:slide-in-from-top-1 duration-300">
                 <div className="bg-white rounded-b-xl border-l border-r border-b border-gray-200 shadow-sm p-6 hover:shadow-md transition-shadow duration-300 space-y-6">
-                  {/* プロンプトタイトル入力フィールド */}
-                  <FormField
-                    control={promptForm.control}
-                    name="promptTitle"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-medium text-gray-900">
-                          プロンプトタイトル <span className="text-gray-400 text-sm">(任意)</span>
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="例：SEO最適化された商品説明文を作成するプロンプト（空欄の場合は自動生成されます）"
-                            className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                          />
-                        </FormControl>
-                        <div className="text-sm text-gray-500 mt-1">
-                          プロンプトの目的や用途が分かりやすいタイトルを入力してください。空欄の場合は、プロンプト内容から自動的にタイトルが生成されます。
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-                  
+
                   {/* プロンプト内容入力フィールド */}
                   <FormField
                     control={promptForm.control}
@@ -396,7 +371,7 @@ const SimplifiedPromptForm: React.FC<PromptFormProps> = ({
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-1">プロンプトを保存</h4>
                     <p className="text-sm text-gray-600">
-                      プロンプト内容を入力すれば、タイトルは自動生成されます。
+                      プロンプト内容からタイトルが自動生成されます。
                       <br className="hidden sm:block" />
                       後から編集や削除も可能です。
                     </p>

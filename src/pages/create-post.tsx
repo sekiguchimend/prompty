@@ -24,7 +24,7 @@ import { useToast } from "../components/ui/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { useAuth } from "../lib/auth-context";
 import { v4 as uuidv4 } from 'uuid';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../lib/supabase-unified';
 import { categoryCache, type Category } from '../lib/cache/category-cache';
 
 // Supabase接続情報をチェックする関数（開発中のみ使用）
@@ -1067,6 +1067,14 @@ const submitProject = async () => {
     }
   };
 
+  // 指定されたステップに移動（完了済みのステップのみ）
+  const goToStep = (step: number) => {
+    // 完了済みのステップまたは現在のステップにのみ移動可能
+    if (completedSteps.has(step) || step === currentStep) {
+      setCurrentStep(step);
+    }
+  };
+
  
 
   // ボタンクリック時のハンドラー
@@ -1335,6 +1343,7 @@ const submitProject = async () => {
                           markStepAsCompleted={markStepAsCompleted}
                           goToNextStep={goToNextStep}
                           goToPreviousStep={goToPreviousStep}
+                          goToStep={goToStep}
                           submitProject={submitProject}
                           isSubmitting={isSubmitting}
                         />

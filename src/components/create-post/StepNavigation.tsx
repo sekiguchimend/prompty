@@ -20,6 +20,7 @@ interface StepNavigationProps {
   completedSteps: Set<number>;
   goToNextStep: () => void;
   goToPreviousStep: () => void;
+  goToStep?: (step: number) => void;
 }
 
 // ステップ情報の定義
@@ -46,7 +47,8 @@ const StepNavigation: React.FC<StepNavigationProps> = ({
   totalSteps,
   completedSteps,
   goToNextStep,
-  goToPreviousStep
+  goToPreviousStep,
+  goToStep
 }) => {
   const currentStepInfo = stepInfoMap[currentStep];
   const CurrentIcon = currentStepInfo?.icon || MessageSquare;
@@ -94,22 +96,39 @@ const StepNavigation: React.FC<StepNavigationProps> = ({
             const isCompleted = completedSteps.has(step);
             const isCurrent = step === currentStep;
             
+            // クリック可能かどうかを判定（完了済みまたは現在のステップ）
+            const isClickable = isCompleted || isCurrent;
+            
+            const handleStepClick = () => {
+              if (isClickable && goToStep && step !== currentStep) {
+                goToStep(step);
+              }
+            };
+
             return (
               <div 
                 key={step} 
+                onClick={handleStepClick}
                 className={`flex flex-col items-center p-3 rounded-lg transition-all duration-200 ${
                   isCurrent 
                     ? stepInfo?.bgColor || 'bg-gray-50'
                     : isCompleted 
-                      ? 'bg-gray-100' 
+                      ? 'bg-gray-100 hover:bg-gray-200 cursor-pointer' 
                       : 'bg-gray-50'
-                }`}
+                } ${isClickable && !isCurrent ? 'hover:shadow-sm' : ''}`}
+                title={
+                  isCompleted && !isCurrent 
+                    ? `${stepInfo?.label}に戻る` 
+                    : isCurrent 
+                      ? `現在のステップ: ${stepInfo?.label}`
+                      : `${stepInfo?.label}（未完了）`
+                }
               >
-                <div className={`w-8 h-8 rounded-lg border flex items-center justify-center mb-2 ${
+                <div className={`w-8 h-8 rounded-lg border flex items-center justify-center mb-2 transition-all duration-200 ${
                   isCurrent
                     ? `border-gray-300 ${stepInfo?.color || 'text-gray-800'} bg-white shadow-sm`
                     : isCompleted
-                      ? 'border-gray-300 bg-gray-800 text-white'
+                      ? 'border-gray-300 bg-gray-800 text-white hover:bg-gray-700'
                       : 'border-gray-200 text-gray-400 bg-white'
                 }`}>
                   {isCompleted && !isCurrent ? (
@@ -118,11 +137,11 @@ const StepNavigation: React.FC<StepNavigationProps> = ({
                     <Icon className="h-4 w-4" />
                   )}
                 </div>
-                <span className={`text-xs text-center font-medium leading-tight ${
+                <span className={`text-xs text-center font-medium leading-tight transition-colors duration-200 ${
                   isCurrent
                     ? 'text-gray-900'
                     : isCompleted
-                      ? 'text-gray-700'
+                      ? 'text-gray-700 hover:text-gray-900'
                       : 'text-gray-400'
                 }`}>
                   {stepInfo?.label.split(' ').map((word, i) => (

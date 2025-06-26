@@ -518,12 +518,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
               {(!isPlaying || showControls) && !isPlaying && (
                 <button 
                   onClick={handlePlayButtonClick}
-                  className={`bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg transition-all duration-300 hover:bg-white hover:scale-110 ${
+                  className={`bg-black/80 backdrop-blur-sm rounded-full p-3 shadow-lg transition-all duration-300 hover:bg-black hover:scale-110 ${
                     showControls || !hoverToPlay ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                   }`}
                   data-play-button="true"
                 >
-                  <Play className="h-6 w-6 text-gray-700" />
+                  <Play className="h-6 w-6 fill-white" />
                 </button>
               )}
             </div>
@@ -541,11 +541,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           {isMobile && !isPlaying && (firstFrameLoaded || thumbnailLoaded) && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div 
-                className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg opacity-100 pointer-events-auto z-10"
+                className="bg-black/80 backdrop-blur-sm rounded-full p-2 shadow-lg opacity-100 pointer-events-auto z-10"
                 onClick={handlePlayButtonClick}
                 data-play-button="true"
               >
-                <Play className="h-5 w-5 text-gray-700" />
+                <Play className="h-5 w-5 fill-white" />
               </div>
             </div>
           )}

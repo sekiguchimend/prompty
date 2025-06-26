@@ -5,6 +5,7 @@ import { MoreVertical } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { useAuth } from '../../lib/auth-context';
 import Image from 'next/image';
+import VideoPlayer from '../common/VideoPlayer';
 
 // Supabaseクライアントの初期化
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -194,29 +195,26 @@ const PurchasedArticles = () => {
                   {article.thumbnail_url ? (
                     <div className="relative w-16 h-12 md:w-24 md:h-16 rounded-md overflow-hidden">
                       {article.media_type === 'video' ? (
-                        <div className="w-full h-full relative">
-                          <video
-                            src={article.thumbnail_url}
-                            className="w-full h-full object-cover"
-                            muted
-                            playsInline
-                            preload="metadata"
-                            poster=""
-                          />
-                          <div className="absolute bottom-1 left-1 bg-black/70 text-white px-1 py-0.5 rounded text-xs flex items-center gap-1">
-                            <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
-                            動画
-                          </div>
-                        </div>
-                      ) : (
-                        <Image 
+                        <VideoPlayer
                           src={article.thumbnail_url}
                           alt={article.title}
-                          fill
-                          sizes="(max-width: 768px) 64px, 96px"
-                          style={{ objectFit: 'cover' }}
                           className="w-full h-full"
+                          hoverToPlay={false}
+                          tapToPlay={false}
+                          muted={true}
+                          loop={false}
+                          showThumbnail={true}
+                          minimumOverlay={true}
                         />
+                      ) : (
+                      <Image 
+                        src={article.thumbnail_url}
+                        alt={article.title}
+                        fill
+                        sizes="(max-width: 768px) 64px, 96px"
+                        style={{ objectFit: 'cover' }}
+                        className="w-full h-full"
+                      />
                       )}
                     </div>
                   ) : (

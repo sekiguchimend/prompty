@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../lib/supabase-unified';
 import { PromptItem } from '../types/components';
 import { DEFAULT_AVATAR_URL } from '../components/index';
 

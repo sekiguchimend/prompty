@@ -5,6 +5,10 @@ import { PromptItem } from '../../pages/prompts/[id]';
 import { useAuth } from '../../lib/auth-context';
 import { Clock, FileText } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { formatDistanceToNow } from 'date-fns';
+import { ja } from 'date-fns/locale';
+import VideoPlayer from '../common/VideoPlayer';
 
 const RecentlyViewedArticles: React.FC = () => {
   const [recentlyViewedPrompts, setRecentlyViewedPrompts] = useState<PromptItem[]>([]);
@@ -88,29 +92,26 @@ const RecentlyViewedArticles: React.FC = () => {
               {prompt.thumbnailUrl ? (
                 <div className="relative w-16 h-12 md:w-24 md:h-16 rounded-md overflow-hidden">
                   {prompt.mediaType === 'video' ? (
-                    <div className="w-full h-full relative">
-                      <video
-                        src={prompt.thumbnailUrl}
-                        className="w-full h-full object-cover"
-                        muted
-                        playsInline
-                        preload="metadata"
-                        poster=""
-                      />
-                      <div className="absolute bottom-1 left-1 bg-black/70 text-white px-1 py-0.5 rounded text-xs flex items-center gap-1">
-                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
-                        動画
-                      </div>
-                    </div>
-                  ) : (
-                    <Image 
+                    <VideoPlayer
                       src={prompt.thumbnailUrl}
                       alt={prompt.title}
-                      fill
-                      sizes="(max-width: 768px) 64px, 96px"
-                      style={{ objectFit: 'cover' }}
                       className="w-full h-full"
+                      hoverToPlay={false}
+                      tapToPlay={false}
+                      muted={true}
+                      loop={false}
+                      showThumbnail={true}
+                      minimumOverlay={true}
                     />
+                  ) : (
+                  <Image 
+                    src={prompt.thumbnailUrl}
+                    alt={prompt.title}
+                    fill
+                    sizes="(max-width: 768px) 64px, 96px"
+                    style={{ objectFit: 'cover' }}
+                    className="w-full h-full"
+                  />
                   )}
                 </div>
               ) : (
@@ -128,7 +129,7 @@ const RecentlyViewedArticles: React.FC = () => {
               
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                 <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm text-gray-600">
-                  <span>by {prompt.user.name}</span>
+                  <span className="truncate">by {prompt.user.name}</span>
                   <span>{prompt.postedAt}</span>
                 </div>
                 

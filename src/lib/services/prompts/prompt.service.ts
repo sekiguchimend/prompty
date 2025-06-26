@@ -2,7 +2,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { PromptRepository } from '../../repositories/prompt.repository';
 import { CreatePromptDTO, UpdatePromptDTO, PromptFilterDTO } from '../../../types/dto/prompt.dto';
 import { Prompt, PromptWithRelations } from '../../../types/entities/prompt';
-import { supabase } from '../../clients/supabase/client';
+import { supabase } from '../../supabase-unified';
 import { supabaseAdmin } from '../../clients/supabase/admin';
 
 export class PromptService {

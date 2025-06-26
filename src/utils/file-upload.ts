@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../lib/supabase-unified';
 import { toast } from '../components/ui/use-toast';
 
 /**
