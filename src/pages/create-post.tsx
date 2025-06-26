@@ -435,7 +435,7 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
 };
 
   // プロンプトの追加
-  const handlePromptSubmit = (data: PromptFormValues) => {
+  const handlePromptSubmit = (data: PromptFormValues & { promptTitle?: string }) => {
     
     // 常に一意のIDを生成（既存のIDとの重複を避ける）
     const uniqueId = data.promptNumber;
