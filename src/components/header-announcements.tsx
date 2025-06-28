@@ -150,12 +150,7 @@ const HeaderAnnouncements: React.FC<{
     fetchAnnouncements();
   }, [fetchAnnouncements]);
 
-  // コンポーネントがマウントされた時（通知を開いた時）に即座に既読にする
-  useEffect(() => {
-    if (announcements.length > 0 && unreadAnnouncements > 0 && user) {
-      markAllAnnouncementsRead();
-    }
-  }, [announcements.length, user]); // announcements.lengthが変わった時（初回データ取得時）に実行
+  // 自動既読処理を削除 - 個別タップ時のみ既読にする
 
   useEffect(() => {
     // Add click outside handler
@@ -174,13 +169,7 @@ const HeaderAnnouncements: React.FC<{
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
     
-    // Mark all as read when tab is opened
-    if (tab === 'お知らせ' && unreadAnnouncements > 0) {
-      markAllAnnouncementsRead();
-    } else if (tab === '通知' && unreadNotifications > 0) {
-      setUnreadNotifications(0);
-      // TODO: Mark notifications as read in the database
-    }
+    // タブ切り替え時の自動既読処理を削除 - 個別タップ時のみ既読にする
   };
 
   const markAllAnnouncementsRead = async () => {
@@ -191,8 +180,7 @@ const HeaderAnnouncements: React.FC<{
       
       if (unreadAnnouncements.length === 0) return;
       
-      
-      // Mark announcements as read in the UI immediately
+      // Mark announcements as read in the UI immediately (楽観的更新)
       setAnnouncements(prevAnnouncements => 
         prevAnnouncements.map(a => ({ ...a, is_read: true }))
       );
@@ -203,47 +191,28 @@ const HeaderAnnouncements: React.FC<{
         onUnreadCountChange(0);
       }
       
-      // 一旦既存の既読レコードを取得
-      const { data: existingReads, error: checkError } = await supabase
+      // 未読のお知らせを一括でupsert
+      const readsToInsert = unreadAnnouncements.map(a => ({
+        user_id: user.id,
+        announcement_id: a.id,
+        created_at: new Date().toISOString()
+      }));
+      
+      const { error } = await supabase
         .from('announcement_reads')
-        .select('announcement_id')
-        .eq('user_id', user.id)
-        .in('announcement_id', unreadAnnouncements.map(a => a.id));
+        .upsert(readsToInsert, {
+          onConflict: 'user_id,announcement_id'
+        });
         
-      if (checkError) {
-        console.error('既読チェックに失敗しました:', checkError);
-        return;
-      }
-      
-      // 既存の既読レコードのIDをセットに変換
-      const existingReadIds = new Set(existingReads?.map(r => r.announcement_id) || []);
-      
-      // 既に既読のものは除外して新規に必要なもののみ挿入
-      const newReads = unreadAnnouncements
-        .filter(a => !existingReadIds.has(a.id))
-        .map(a => ({
-          user_id: user.id,
-          announcement_id: a.id,
-          created_at: new Date().toISOString()
-        }));
-      
-      if (newReads.length > 0) {
-        // 新規の既読レコードのみ挿入
-        const { data, error } = await supabase
-          .from('announcement_reads')
-          .insert(newReads)
-          .select();
-        
-        if (error) {
-          console.error('お知らせの既読設定に失敗しました:', error);
-        } else {
-          console.log('お知らせの既読設定が完了しました:', data);
-        }
-      } else {
-        console.log('全てのお知らせは既に既読です');
+      if (error) {
+        console.error('お知らせの一括既読設定に失敗しました:', error);
+        // エラーの場合はUIを元に戻す
+        fetchAnnouncements();
       }
     } catch (error) {
-      console.error('お知らせの既読処理に失敗しました:', error);
+      console.error('お知らせの一括既読処理に失敗しました:', error);
+      // エラーの場合はUIを元に戻す
+      fetchAnnouncements();
     }
   };
 
@@ -253,78 +222,51 @@ const HeaderAnnouncements: React.FC<{
     try {
       // Check if the announcement is already read
       const announcement = announcements.find(a => a.id === announcementId);
-      if (!announcement) return;
+      if (!announcement || announcement.is_read) return;
       
-      
-      // すでに既読の場合でも処理を継続（データの一貫性を確保するため）
-      // debugのためにあえて既読でも処理を実行
-      
-      // Mark as read in the UI immediately
+      // Mark as read in the UI immediately (楽観的更新)
       setAnnouncements(prevAnnouncements => 
         prevAnnouncements.map(a => 
           a.id === announcementId ? { ...a, is_read: true } : a
         )
       );
       
-      // Update unread count if it was unread
-      if (!announcement.is_read) {
+      // Update unread count
+      setUnreadAnnouncements(prev => {
+        const newCount = Math.max(0, prev - 1);
+        // 親コンポーネントに未読数を通知
+        if (onUnreadCountChange) {
+          onUnreadCountChange(newCount);
+        }
+        return newCount;
+      });
+      
+      // upsertで既読レコードを挿入/更新（重複を防ぐ）
+      const { error } = await supabase
+        .from('announcement_reads')
+        .upsert({
+          user_id: user.id,
+          announcement_id: announcementId,
+          created_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,announcement_id'
+        });
+        
+      if (error) {
+        console.error('お知らせの既読設定に失敗しました:', error);
+        // エラーの場合はUIを元に戻す
+        setAnnouncements(prevAnnouncements => 
+          prevAnnouncements.map(a => 
+            a.id === announcementId ? { ...a, is_read: false } : a
+          )
+        );
         setUnreadAnnouncements(prev => {
-          const newCount = Math.max(0, prev - 1);
-          // 親コンポーネントに未読数を通知
+          const newCount = prev + 1;
           if (onUnreadCountChange) {
             onUnreadCountChange(newCount);
           }
           return newCount;
         });
-      }
-      
-      // 既存の既読レコードを確認
-      const { data: existingRead, error: checkError } = await supabase
-        .from('announcement_reads')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('announcement_id', announcementId)
-        .maybeSingle();
-        
-      if (checkError) {
-        console.error('既読チェックに失敗しました:', checkError);
-        return;
-      }
-      
-      let result;
-      
-      // 既存レコードがある場合は削除してから再挿入
-      if (existingRead) {
-        
-        // 既存レコード削除
-        const { error: deleteError } = await supabase
-          .from('announcement_reads')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('announcement_id', announcementId);
-          
-        if (deleteError) {
-          console.error('既存の既読レコード削除に失敗しました:', deleteError);
-          return;
-        }
-      }
-      
-      // 新しい既読レコードを挿入
-      const { data, error } = await supabase
-        .from('announcement_reads')
-        .insert({
-          user_id: user.id,
-          announcement_id: announcementId,
-          created_at: new Date().toISOString() // 最終既読時間
-        })
-        .select();
-        
-      result = { data, error };
-      
-      if (error) {
-        console.error('お知らせの既読設定に失敗しました:', error);
-      } else {
-        console.log('お知らせの既読設定が完了しました:', data);
       }
     } catch (error) {
       console.error('お知らせの既読処理に失敗しました:', error);
@@ -443,12 +385,22 @@ const HeaderAnnouncements: React.FC<{
       {/* ヘッダー部分 */}
       <div className="bg-white p-4 flex items-center justify-between border-b sticky top-0 z-10">
         <h2 className="text-lg font-medium">お知らせ</h2>
-        <button
-          onClick={onClose}
-          className="rounded-full p-2 hover:bg-gray-100 transition-colors"
-        >
-          <X className="h-5 w-5 text-gray-500" />
-        </button>
+        <div className="flex items-center gap-2">
+          {unreadAnnouncements > 0 && (
+            <button
+              onClick={markAllAnnouncementsRead}
+              className="text-xs text-blue-600 hover:text-blue-700 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+            >
+              全て既読にする
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="rounded-full p-2 hover:bg-gray-100 transition-colors"
+          >
+            <X className="h-5 w-5 text-gray-500" />
+          </button>
+        </div>
       </div>
 
       <div className="py-2 overflow-y-auto">

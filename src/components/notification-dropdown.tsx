@@ -141,10 +141,7 @@ const NotificationDropdown: React.FC = () => {
     const newState = !isOpen;
     setIsOpen(newState);
     
-    // 開いた瞬間に未読数を 0 にリセット（楽観的更新）
-    if (newState) {
-      setUnreadCount(0);
-    }
+    // 楽観的更新を削除 - 実際に通知が読まれた時のみ未読数を更新
   };
 
   return (
@@ -178,7 +175,13 @@ const NotificationDropdown: React.FC = () => {
           >
             <HeaderAnnouncements 
               onClose={() => setIsOpen(false)} 
-              onUnreadCountChange={(count) => setUnreadCount(count)}
+              onUnreadCountChange={(count) => {
+                setUnreadCount(count);
+                // 状態の確実な同期のため、少し遅延させて再度取得
+                setTimeout(() => {
+                  fetchUnreadCount();
+                }, 100);
+              }}
             />
           </div>
         </div>
