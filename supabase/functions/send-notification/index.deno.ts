@@ -21,11 +21,23 @@ async function getAccessToken(): Promise<string> {
   };
 
   // プライベートキーの処理
-  const privateKeyPem = getEnv('FIREBASE_PRIVATE_KEY')
-    .replace(/\\n/g, '\n')
+  const privateKeyRaw = getEnv('FIREBASE_PRIVATE_KEY');
+  
+  // 改行文字を正規化
+  let privateKeyPem = privateKeyRaw.replace(/\\n/g, '\n');
+  
+  // ヘッダー・フッターを除去してBase64部分のみ抽出
+  privateKeyPem = privateKeyPem
     .replace(/-----BEGIN PRIVATE KEY-----/, '')
     .replace(/-----END PRIVATE KEY-----/, '')
-    .replace(/\s/g, '');
+    .replace(/\s/g, '')
+    .replace(/\n/g, '');
+
+  console.log('Private Key Debug:', {
+    originalLength: privateKeyRaw.length,
+    processedLength: privateKeyPem.length,
+    startsWithMII: privateKeyPem.startsWith('MII')
+  });
 
   // PEM形式のプライベートキーをCryptoKeyに変換
   const privateKeyBuffer = Uint8Array.from(atob(privateKeyPem), c => c.charCodeAt(0));
