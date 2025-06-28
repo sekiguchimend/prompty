@@ -29,8 +29,9 @@ interface NotificationHook {
   fcmTokens: FCMToken[];
   enableNotifications: () => Promise<boolean>;
   disableNotifications: () => Promise<void>;
-  sendTestNotification: (title: string, body: string, data?: any) => Promise<boolean>;
-  refreshTokens: () => Promise<void>;
+      sendTestNotification: (title: string, body: string, data?: any) => Promise<boolean>;
+    refreshTokens: () => Promise<void>;
+    processNotificationQueue: () => Promise<{processedCount: number, errorCount: number, totalItems: number}>;
 }
 
 export const useNotifications = (): NotificationHook => {
@@ -271,6 +272,32 @@ export const useNotifications = (): NotificationHook => {
     }
   }, [fcmTokens, toast]);
 
+  // 🎯 通知キューを手動で処理する関数を追加
+  const processNotificationQueue = async (): Promise<{processedCount: number, errorCount: number, totalItems: number}> => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/process-notification-queue`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          manual_trigger: true
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('通知キュー処理結果:', result);
+      return result;
+    } catch (error) {
+      console.error('通知キュー処理エラー:', error);
+      throw error;
+    }
+  };
+
   return {
     isSupported,
     permission,
@@ -279,6 +306,7 @@ export const useNotifications = (): NotificationHook => {
     enableNotifications,
     disableNotifications,
     sendTestNotification,
-    refreshTokens
+    refreshTokens,
+    processNotificationQueue
   };
 }; 

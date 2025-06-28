@@ -67,7 +67,8 @@ const NotificationSettingsComponent: React.FC = memo(() => {
     fcmTokens,
     enableNotifications,
     disableNotifications,
-    sendTestNotification
+    sendTestNotification,
+    processNotificationQueue
   } = useNotifications();
 
   // ユーザー情報を取得
@@ -213,6 +214,23 @@ const NotificationSettingsComponent: React.FC = memo(() => {
       }
     }));
   }, []);
+
+  // 🎯 通知キューを処理する関数
+  const handleProcessQueue = async () => {
+    try {
+      const result = await processNotificationQueue();
+      toast({
+        title: "通知キュー処理完了",
+        description: `${result.processedCount || 0}件の通知を処理しました`,
+      });
+    } catch (error) {
+      toast({
+        title: "エラー",
+        description: "通知キューの処理中にエラーが発生しました",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (!currentUser) {
     return (
@@ -401,6 +419,17 @@ const NotificationSettingsComponent: React.FC = memo(() => {
                     >
                       <TestTube className="h-4 w-4" />
                       テスト送信
+                    </Button>
+                    
+                    {/* 🎯 通知キュー処理ボタンを追加 */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleProcessQueue}
+                      disabled={fcmLoading}
+                      className="flex items-center gap-2"
+                    >
+                      🔧 通知キューを処理
                     </Button>
                   </>
                 )}
