@@ -177,10 +177,6 @@ const NotificationDropdown: React.FC = () => {
               onClose={() => setIsOpen(false)} 
               onUnreadCountChange={(count) => {
                 setUnreadCount(count);
-                // 状態の確実な同期のため、少し遅延させて再度取得
-                setTimeout(() => {
-                  fetchUnreadCount();
-                }, 100);
               }}
             />
           </div>

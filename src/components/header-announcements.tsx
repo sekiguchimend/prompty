@@ -128,9 +128,11 @@ const HeaderAnnouncements: React.FC<{
       setUnreadAnnouncements(unreadCount);
       setAnnouncements(processedAnnouncements);
       
-      // 親コンポーネントに未読数を通知
+      // 親コンポーネントに未読数を通知（非同期で実行）
       if (onUnreadCountChange) {
-        onUnreadCountChange(unreadCount);
+        setTimeout(() => {
+          onUnreadCountChange(unreadCount);
+        }, 0);
       }
       
       // TODO: In the future, fetch real notifications
@@ -186,9 +188,11 @@ const HeaderAnnouncements: React.FC<{
       );
       setUnreadAnnouncements(0);
       
-      // 親コンポーネントに未読数を通知
+      // 親コンポーネントに未読数を通知（非同期で実行）
       if (onUnreadCountChange) {
-        onUnreadCountChange(0);
+        setTimeout(() => {
+          onUnreadCountChange(0);
+        }, 0);
       }
       
       // 未読のお知らせを一括でupsert
@@ -234,9 +238,11 @@ const HeaderAnnouncements: React.FC<{
       // Update unread count
       setUnreadAnnouncements(prev => {
         const newCount = Math.max(0, prev - 1);
-        // 親コンポーネントに未読数を通知
+        // 親コンポーネントに未読数を通知（非同期で実行）
         if (onUnreadCountChange) {
-          onUnreadCountChange(newCount);
+          setTimeout(() => {
+            onUnreadCountChange(newCount);
+          }, 0);
         }
         return newCount;
       });
@@ -263,7 +269,9 @@ const HeaderAnnouncements: React.FC<{
         setUnreadAnnouncements(prev => {
           const newCount = prev + 1;
           if (onUnreadCountChange) {
-            onUnreadCountChange(newCount);
+            setTimeout(() => {
+              onUnreadCountChange(newCount);
+            }, 0);
           }
           return newCount;
         });
