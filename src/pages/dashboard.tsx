@@ -3,6 +3,7 @@ import { ChevronDown, Eye, MessageSquare, Heart, HelpCircle, Menu, X, Award, Dol
 import Footer from '../components/footer';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import Image from 'next/image';
 import Announcements from '../components/announcements';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../lib/auth-context';
@@ -22,7 +23,7 @@ interface ArticleData {
 
 // バッジデータの型定義
 interface BadgeData {
-  id: number;
+  id: string;
   name: string;
   description: string;
   acquired: boolean;
@@ -97,6 +98,7 @@ const DashboardPage: React.FC = () => {
   useEffect(() => {
     if (user) {
       fetchDashboardData();
+      fetchBadgesData();
     }
   }, [user, timePeriod]);
   
@@ -159,20 +161,88 @@ const DashboardPage: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  // バッジアイコンを取得するヘルパー関数（URL対応）
+  const getBadgeIcon = (iconUrl: string, acquired: boolean) => {
+    // URLの場合は画像を表示
+    if (iconUrl && iconUrl.startsWith('http')) {
+      return (
+        <div className={`h-12 w-12 sm:h-14 sm:w-14 relative ${acquired ? 'opacity-100' : 'opacity-30 grayscale'}`}>
+          <Image 
+            src={iconUrl} 
+            alt="バッジアイコン" 
+            width={56}
+            height={56}
+            className="object-contain rounded-lg"
+            quality={95}
+            priority={false}
+            unoptimized={true}
+            onError={(e) => {
+              // 画像の読み込みに失敗した場合のフォールバック
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+        </div>
+      );
+    }
+    
+    // 文字列の場合は従来のアイコンを表示（フォールバック）
+    const iconClass = acquired ? 'text-yellow-500' : 'text-gray-300';
+    return <Award className={`h-12 w-12 sm:h-14 sm:w-14 ${iconClass}`} />;
+  };
+
+  // バッジデータを取得する
+  const fetchBadgesData = async () => {
+    if (!user) return;
+    
+    try {
+      // 全バッジを取得
+      const { data: allBadges, error: badgesError } = await supabase
+        .from('badges')
+        .select('*')
+        .order('name');
+      
+      if (badgesError) throw badgesError;
+
+      // ユーザーが獲得したバッジを取得
+      const { data: userBadges, error: userBadgesError } = await supabase
+        .from('user_badges')
+        .select('badge_id')
+        .eq('user_id', user.id);
+      
+      if (userBadgesError) throw userBadgesError;
+
+      // 獲得済みバッジIDのセットを作成
+      const acquiredBadgeIds = new Set(userBadges?.map(ub => ub.badge_id) || []);
+
+      // バッジデータを整形
+      const formattedBadges: BadgeData[] = (allBadges || []).map(badge => ({
+        id: badge.id,
+        name: badge.name,
+        description: badge.description,
+        acquired: acquiredBadgeIds.has(badge.id),
+        icon: getBadgeIcon(badge.icon, acquiredBadgeIds.has(badge.id))
+      }));
+
+      setBadges(formattedBadges);
+      
+    } catch (error) {
+      console.error('バッジデータ取得エラー:', error);
+      toast({
+        title: "バッジデータ取得エラー",
+        description: "バッジ情報の取得に失敗しました。",
+        variant: "destructive"
+      });
+    }
+  };
   
   // 画面サイズに基づくブレイクポイント
   const isMobile = windowWidth < 640;
   const isTablet = windowWidth >= 640 && windowWidth < 1024;
   const isDesktop = windowWidth >= 1024;
   
-  // サンプルのバッジデータ
-  const badges = [
-    { id: 1, name: 'ファーストポスト', description: '初めての投稿を行いました', acquired: articles.length > 0, icon: <Award className="h-8 w-8 text-yellow-500" /> },
-    { id: 2, name: '10いいね達成', description: '投稿が合計10いいねを獲得しました', acquired: totalLikes >= 10, icon: <Heart className="h-8 w-8 text-pink-500" /> },
-    { id: 3, name: '100ビュー達成', description: '投稿が合計100ビューを達成しました', acquired: totalViews >= 100, icon: <Eye className="h-8 w-8 text-emerald-500" /> },
-    { id: 4, name: '1000ビュー達成', description: '投稿が合計1000ビューを達成しました', acquired: totalViews >= 1000, icon: <Eye className="h-8 w-8 text-gray-300" /> },
-    { id: 5, name: 'コメントゲッター', description: '5件以上のコメントを獲得しました', acquired: totalComments >= 5, icon: <MessageSquare className="h-8 w-8 text-gray-300" /> }
-  ];
+  // 動的バッジデータ
+  const [badges, setBadges] = useState<BadgeData[]>([]);
   
   // サンプルの売上データ
   const salesSummary = [
@@ -433,13 +503,11 @@ const DashboardPage: React.FC = () => {
                 {badges.map((badge) => (
                   <div 
                     key={badge.id} 
-                    className={`p-3 sm:p-4 rounded-md shadow-sm ${badge.acquired ? 'bg-white' : 'bg-gray-50 opacity-60'}`}
+                    className={`p-3 sm:p-4 rounded-lg border ${badge.acquired ? 'border-gray-200 bg-transparent' : 'border-gray-100 bg-transparent opacity-60'}`}
                   >
                     <div className="flex items-center mb-3">
                       <div className="mr-3 flex-shrink-0">
-                        {React.cloneElement(badge.icon, {
-                          className: `h-6 w-6 sm:h-8 sm:w-8 ${badge.acquired ? badge.icon.props.className : 'text-gray-300'}`
-                        })}
+                        {badge.icon}
                       </div>
                       <div>
                         <h3 className={`font-bold text-sm ${badge.acquired ? 'text-gray-900' : 'text-gray-400'}`}>
