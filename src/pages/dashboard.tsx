@@ -74,6 +74,11 @@ const DashboardPage: React.FC = () => {
   const [totalLikes, setTotalLikes] = useState(0);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   
+  // 売上・振込関連の状態
+  const [salesData, setSalesData] = useState<SalesSummary[]>([]);
+  const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([]);
+  const [salesHistory, setSalesHistory] = useState<SalesHistory[]>([]);
+  
   // 画面サイズを検出
   useEffect(() => {
     // クライアントサイドでのみwindowオブジェクトを使用
@@ -99,6 +104,9 @@ const DashboardPage: React.FC = () => {
     if (user) {
       fetchDashboardData();
       fetchBadgesData();
+      fetchSalesData();
+      fetchPaymentData();
+      fetchSalesHistoryData();
     }
   }, [user, timePeriod]);
   
@@ -235,6 +243,170 @@ const DashboardPage: React.FC = () => {
       });
     }
   };
+
+  // 売上データを取得する
+  const fetchSalesData = async () => {
+    if (!user) return;
+    
+    try {
+      // 購入データから売上を計算（promptのauthor_idを通じて取得）
+      const { data: purchases, error: purchasesError } = await supabase
+        .from('purchases')
+        .select(`
+          amount, 
+          created_at,
+          prompt:prompts!inner(author_id)
+        `)
+        .eq('prompt.author_id', user.id);
+      
+      if (purchasesError) throw purchasesError;
+
+      // 今月の売上計算
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      
+      const monthlyAmount = (purchases || [])
+        .filter(purchase => {
+          const purchaseDate = new Date(purchase.created_at);
+          return purchaseDate.getMonth() === currentMonth && 
+                 purchaseDate.getFullYear() === currentYear;
+        })
+        .reduce((sum, purchase) => sum + (purchase.amount || 0), 0);
+
+      // 累計売上計算
+      const totalAmount = (purchases || [])
+        .reduce((sum, purchase) => sum + (purchase.amount || 0), 0);
+
+      // 売上サマリーデータを設定
+      const salesSummary: SalesSummary[] = [
+        { 
+          title: '今月の売上', 
+          amount: monthlyAmount,
+          icon: <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-green-500" />
+        },
+        { 
+          title: '累計売上', 
+          amount: totalAmount,
+          icon: <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
+        },
+        { 
+          title: '売上可能額', 
+          amount: totalAmount, // TODO: 実際の振込可能額計算
+          icon: <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-500" />
+        }
+      ];
+
+      setSalesData(salesSummary);
+      
+    } catch (error) {
+      console.error('売上データ取得エラー:', error);
+      setSalesData([
+        { title: '今月の売上', amount: 0, icon: <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-green-500" /> },
+        { title: '累計売上', amount: 0, icon: <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" /> },
+        { title: '売上可能額', amount: 0, icon: <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-500" /> }
+      ]);
+    }
+  };
+
+  // 振込データを取得する
+  const fetchPaymentData = async () => {
+    if (!user) return;
+    
+    try {
+      const { data: payouts, error: payoutsError } = await supabase
+        .from('payouts')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (payoutsError) throw payoutsError;
+
+      // データが空の場合のデフォルト表示
+      if (!payouts || payouts.length === 0) {
+        setPaymentHistory([
+          { id: 1, month: '2025年5月', amount: 0, status: '準備中', scheduledDate: '2025/05/15' }
+        ]);
+        return;
+      }
+
+      // 振込データを整形
+      const formattedPayments: PaymentHistory[] = payouts.map((payout, index) => ({
+        id: index + 1,
+        month: new Date(payout.created_at).toLocaleDateString('ja-JP', { 
+          year: 'numeric', 
+          month: 'long' 
+        }),
+        amount: payout.amount || 0,
+        status: payout.status === 'completed' ? '完了' : 
+                payout.status === 'pending' ? '処理中' : '準備中',
+        scheduledDate: payout.completed_at 
+          ? new Date(payout.completed_at).toLocaleDateString('ja-JP')
+          : new Date(payout.created_at).toLocaleDateString('ja-JP')
+      }));
+
+      setPaymentHistory(formattedPayments);
+      
+    } catch (error) {
+      console.error('振込データ取得エラー:', error);
+      setPaymentHistory([
+        { id: 1, month: '2025年5月', amount: 0, status: '準備中', scheduledDate: '2025/05/15' }
+      ]);
+    }
+  };
+
+  // 販売履歴を取得する
+  const fetchSalesHistoryData = async () => {
+    if (!user) return;
+    
+    try {
+      const { data: purchases, error: purchasesError } = await supabase
+        .from('purchases')
+        .select(`
+          id,
+          amount,
+          created_at,
+          status,
+          prompt:prompts!inner(title, author_id),
+          buyer:profiles!purchases_buyer_id_fkey(username, display_name)
+        `)
+        .eq('prompt.author_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (purchasesError) throw purchasesError;
+
+      // データが空の場合のデフォルト表示
+      if (!purchases || purchases.length === 0) {
+        setSalesHistory([
+          { id: 1, date: '----/--/--', itemName: 'まだ販売履歴はありません', price: 0, buyer: '-', status: '-' }
+        ]);
+        return;
+      }
+
+      // 販売履歴を整形
+      const formattedHistory: SalesHistory[] = purchases.map(purchase => ({
+        id: purchase.id,
+        date: new Date(purchase.created_at).toLocaleDateString('ja-JP'),
+        itemName: Array.isArray(purchase.prompt) && purchase.prompt.length > 0 
+          ? purchase.prompt[0].title 
+          : (purchase.prompt as any)?.title || '不明なコンテンツ',
+        price: purchase.amount || 0,
+        buyer: Array.isArray(purchase.buyer) && purchase.buyer.length > 0
+          ? (purchase.buyer[0].display_name || purchase.buyer[0].username)
+          : (purchase.buyer as any)?.display_name || (purchase.buyer as any)?.username || '匿名ユーザー',
+        status: purchase.status === 'completed' ? '完了' : 
+                purchase.status === 'pending' ? '処理中' : '未確定'
+      }));
+
+      setSalesHistory(formattedHistory);
+      
+    } catch (error) {
+      console.error('販売履歴取得エラー:', error);
+      setSalesHistory([
+        { id: 1, date: '----/--/--', itemName: 'まだ販売履歴はありません', price: 0, buyer: '-', status: '-' }
+      ]);
+    }
+  };
   
   // 画面サイズに基づくブレイクポイント
   const isMobile = windowWidth < 640;
@@ -244,22 +416,7 @@ const DashboardPage: React.FC = () => {
   // 動的バッジデータ
   const [badges, setBadges] = useState<BadgeData[]>([]);
   
-  // サンプルの売上データ
-  const salesSummary = [
-    { title: '今月の売上', amount: 0, icon: <DollarSign className="h-6 w-6 text-green-500" /> },
-    { title: '累計売上', amount: 0, icon: <DollarSign className="h-6 w-6 text-blue-500" /> },
-    { title: '売上可能額', amount: 0, icon: <DollarSign className="h-6 w-6 text-indigo-500" /> }
-  ];
-  
-  // サンプルの振込データ
-  const paymentHistory = [
-    { id: 1, month: '2025年5月', amount: 0, status: '準備中', scheduledDate: '2025/05/15' }
-  ];
-  
-  // サンプルの販売履歴
-  const salesHistory = [
-    { id: 1, date: '----/--/--', itemName: 'まだ販売履歴はありません', price: 0, buyer: '-', status: '-' }
-  ];
+  // 削除: ハードコードされたダミーデータは状態管理に移行
   
   // サイドバーのメニュー項目
   const sidebarItems = [
@@ -540,12 +697,10 @@ const DashboardPage: React.FC = () => {
             </div>
             <div className="p-4 sm:p-6 lg:p-8 bg-white shadow-sm">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-                {salesSummary.map((item, index) => (
+                {salesData.map((item, index) => (
                   <div key={index} className="bg-white rounded-md p-3 sm:p-4 flex items-center shadow-sm border border-gray-100">
                     <div className="bg-gray-100 p-2 sm:p-3 rounded-full mr-3 sm:mr-4 flex-shrink-0">
-                      {React.cloneElement(item.icon, {
-                        className: `h-5 w-5 sm:h-6 sm:w-6 ${item.icon.props.className}`
-                      })}
+                      {item.icon}
                     </div>
                     <div>
                       <p className="text-xs sm:text-sm text-gray-500">{item.title}</p>
@@ -669,13 +824,35 @@ const DashboardPage: React.FC = () => {
                 ))}
               </div>
               
-              {/* モバイル表示 - 空の状態 */}
-              <div className="flex justify-center items-center py-6 sm:py-8">
-                <div className="text-center">
-                  <Clock className="h-8 w-8 sm:h-10 sm:w-10 text-gray-300 mx-auto mb-3" />
-                  <p className="text-sm text-gray-500 mb-2">販売履歴はまだありません</p>
-                  <p className="text-xs text-gray-400">有料コンテンツを公開すると、ここに販売履歴が表示されます</p>
-                </div>
+              {/* モバイル表示 */}
+              <div className="sm:hidden space-y-3 mb-6">
+                {salesHistory.length > 0 && salesHistory[0].itemName !== 'まだ販売履歴はありません' ? (
+                  salesHistory.map((sale) => (
+                    <div key={sale.id} className="bg-white rounded-md shadow-sm p-3 border border-gray-100">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium text-sm">{sale.itemName}</span>
+                        <span className="text-sm font-bold">¥{sale.price.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs text-gray-500">
+                        <span>{sale.date}</span>
+                        <span>購入者: {sale.buyer}</span>
+                      </div>
+                      <div className="mt-2">
+                        <span className="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                          {sale.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex justify-center items-center py-6 sm:py-8">
+                    <div className="text-center">
+                      <Clock className="h-8 w-8 sm:h-10 sm:w-10 text-gray-300 mx-auto mb-3" />
+                      <p className="text-sm text-gray-500 mb-2">販売履歴はまだありません</p>
+                      <p className="text-xs text-gray-400">有料コンテンツを公開すると、ここに販売履歴が表示されます</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
