@@ -194,15 +194,20 @@ const UserProfilePage: React.FC = () => {
       
       // Fetch magazines (collections of prompts)
       const { data: magazinesData, error: magazinesError } = await supabase
-        .from('magazines') // Assuming there's a magazines table
+        .from('magazines')
         .select(`
           id,
           title,
           cover_url,
-          articles_count
+          description
         `)
         .eq('author_id', user.id)
         .order('created_at', { ascending: false });
+      
+      if (magazinesError) {
+        console.error('Error fetching magazines:', magazinesError);
+        // エラーが発生してもマガジンは空の配列として続行
+      }
       
       // Process posts data
       const processedPosts: PostData[] = postsData.map((post: any) => ({
@@ -224,13 +229,41 @@ const UserProfilePage: React.FC = () => {
         }
       }));
       
-      // Process magazines data
-      const processedMagazines: MagazineData[] = magazinesData ? magazinesData.map((magazine: any) => ({
-        id: magazine.id as string,
-        title: magazine.title as string,
-        cover_url: (magazine.cover_url as string) || null,
-        articles_count: (magazine.articles_count as number) || 0
-      })) : [];
+      // Process magazines data - エラーがあった場合は空の配列を使用
+      const processedMagazines: MagazineData[] = [];
+      
+      if (magazinesData && !magazinesError) {
+        // すべてのマガジンIDを取得
+        const magazineIds = magazinesData.map(magazine => magazine.id);
+        
+        // 一度のクエリで全てのマガジンの記事数を取得
+        let magazineArticleCounts: { [key: string]: number } = {};
+        
+        if (magazineIds.length > 0) {
+          const { data: articleCountsData } = await supabase
+            .from('magazine_prompts')
+            .select('magazine_id')
+            .in('magazine_id', magazineIds);
+            
+          // マガジンIDごとの記事数をカウント
+          if (articleCountsData) {
+            magazineArticleCounts = articleCountsData.reduce((acc: { [key: string]: number }, item: any) => {
+              acc[item.magazine_id] = (acc[item.magazine_id] || 0) + 1;
+              return acc;
+            }, {});
+          }
+        }
+        
+        // マガジンデータを処理
+        magazinesData.forEach((magazine: any) => {
+          processedMagazines.push({
+            id: magazine.id as string,
+            title: magazine.title as string,
+            cover_url: (magazine.cover_url as string) || null,
+            articles_count: magazineArticleCounts[magazine.id] || 0
+          });
+        });
+      }
       
       // Set state
       const completeProfileData: ProfileData = {

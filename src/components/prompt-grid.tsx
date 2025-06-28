@@ -418,11 +418,11 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
       <div className={`py-3 flex ${!isLastItem ? 'border-b border-gray-200' : ''}`}>
         {/* カード左側：テキスト情報 */}
         <div className="flex-1 pr-3">
-          <h3 className="text-base font-medium line-clamp-2 mb-2">
-            <Link href={`/prompts/${id}`} passHref legacyBehavior prefetch={false}>
-              <a className="cursor-pointer hover:text-blue-600">{title}</a>
-            </Link>
-          </h3>
+                  <h3 className="text-base font-bold line-clamp-2 mb-2">
+          <Link href={`/prompts/${id}`} passHref legacyBehavior prefetch={false}>
+            <a className="cursor-pointer hover:text-blue-600">{title}</a>
+          </Link>
+        </h3>
           
           <div className="flex items-center text-xs text-gray-500">
             {/* ユーザー情報 */}
@@ -448,7 +448,7 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
         </div>
         
         {/* カード右側：サムネイル画像/動画 */}
-        <div className="w-20 h-12 flex-shrink-0">
+        <div className="w-24 h-16 flex-shrink-0">
           <Link href={`/prompts/${id}`} passHref legacyBehavior prefetch={false}>
             <div className="w-full h-full rounded overflow-hidden relative">
               {mediaType === 'video' ? (
@@ -475,7 +475,7 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
                   loading="lazy"
                   priority={false}
                   quality={75}
-                  sizes="80px"
+                  sizes="96px"
                   placeholder="blur"
                   blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGBkbHR4f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R7hLHk="
                   onError={() => setImageError(true)}

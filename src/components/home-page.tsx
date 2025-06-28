@@ -48,6 +48,7 @@ const HomePage: React.FC = memo(() => {
   // APIから取得したプロンプトデータ
   const [processingFeaturedPrompts, setProcessingFeaturedPrompts] = useState<PromptItem[]>([]);
   const [processingPopularPosts, setProcessingPopularPosts] = useState<PromptItem[]>([]);
+  const [processingRecentPosts, setProcessingRecentPosts] = useState<PromptItem[]>([]);
   // カテゴリごとの記事
   const [categoryContents, setCategoryContents] = useState<CategoryContent[]>([]);
   // 特別に扱うカテゴリーのコンテンツ
@@ -156,11 +157,14 @@ const HomePage: React.FC = memo(() => {
       }, 30000);
       
       // 並列でAPIを呼び出し
-      const [featuredAndPopularResponse, categoryResponse] = await Promise.all([
+      const [featuredAndPopularResponse, categoryResponse, recentResponse] = await Promise.all([
         fetch(`/api/prompts/featured-and-popular?limit=${currentDisplayCount + 2}`, {
           signal: controller.signal
         }),
         fetch('/api/prompts/by-category', {
+          signal: controller.signal
+        }),
+        fetch('/api/prompts/recent', {
           signal: controller.signal
         })
       ]);
@@ -178,15 +182,22 @@ const HomePage: React.FC = memo(() => {
         throw new Error(errorData.error || 'カテゴリー別記事の取得に失敗しました');
       }
       
+      if (!recentResponse.ok) {
+        const errorData = await recentResponse.json().catch(() => ({}));
+        throw new Error(errorData.error || '新着記事の取得に失敗しました');
+      }
+      
       // 並列でJSONを解析
-      const [featuredAndPopularData, categoryData] = await Promise.all([
+      const [featuredAndPopularData, categoryData, recentData] = await Promise.all([
         featuredAndPopularResponse.json(),
-        categoryResponse.json()
+        categoryResponse.json(),
+        recentResponse.json()
       ]);
       
       // データの変換処理
       const formattedFeaturedPrompts = (featuredAndPopularData.featuredPrompts || []).map(transformToPromptItem);
       const formattedPopularPrompts = (featuredAndPopularData.popularPrompts || []).map(transformToPromptItem);
+      const formattedRecentPrompts = (recentData.recentPrompts || []).map(transformToPromptItem);
       
       const specialCategories = (categoryData.specialCategories || []).map((item: any) => ({
         category: item.category,
@@ -201,6 +212,7 @@ const HomePage: React.FC = memo(() => {
       // バッチで状態を更新
       setProcessingFeaturedPrompts(formattedFeaturedPrompts);
       setProcessingPopularPosts(formattedPopularPrompts);
+      setProcessingRecentPosts(formattedRecentPrompts);
       setSpecialCategoryContents(specialCategories);
       setCategoryContents(regularCategories);
       
@@ -295,6 +307,18 @@ const HomePage: React.FC = memo(() => {
               className="mt-0"
               categoryUrl="/popular"
               moreLinkUrl="/popular"
+              isFeatureSection={true}
+            />
+
+            <PromptSection 
+              title="新着記事" 
+              prompts={processingRecentPosts}
+              showMoreLink={true}
+              horizontalScroll={shouldUseHorizontalScroll}
+              maxVisible={getDisplayCount()}
+              className="mt-4"
+              categoryUrl="/recent"
+              moreLinkUrl="/recent"
               isFeatureSection={true}
             />
            

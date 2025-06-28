@@ -33,17 +33,19 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   return (
     <div className="border-b border-gray-200">
       <div className="container mx-auto px-4 max-w-4xl py-4 md:py-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-          <UnifiedAvatar
-            src={avatarUrl}
-            displayName={displayName}
-            size="xl"
-            className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border border-gray-200"
-          />
+        <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:gap-6">
+          <div className="flex justify-center sm:justify-start">
+            <UnifiedAvatar
+              src={avatarUrl}
+              displayName={displayName}
+              size="xl"
+              className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border border-gray-200"
+            />
+          </div>
           
           <div className="flex-1 min-w-0">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
+              <div className="text-center sm:text-left">
                 <h1 className="text-2xl font-bold text-gray-900">{displayName}</h1>
                 {profileData.username && (
                   <p className="text-gray-500">@{profileData.username}</p>
@@ -77,12 +79,12 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             </div>
             
             {/* プロフィールの自己紹介 */}
-            <div className="my-4">
+            <div className="my-4 text-center sm:text-left">
               <p className="text-sm text-gray-700 whitespace-pre-line">{profileData.bio || ''}</p>
             </div>
             
             {/* 追加情報 */}
-            <div className="flex flex-wrap gap-y-2 gap-x-4 text-sm text-gray-500 mb-4">
+            <div className="flex flex-wrap gap-y-2 gap-x-4 text-sm text-gray-500 mb-4 justify-center sm:justify-start">
               {profileData.location && (
                 <div className="flex items-center">
                   <span>{profileData.location}</span>
