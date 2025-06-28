@@ -69,7 +69,8 @@ const nextConfig = {
       'qrxrulntwojimhhhnwqk.supabase.co', // Supabase storage
       'prompty-ai.com',
       'localhost',
-      'lh3.googleusercontent.com' // Google profile images
+      'lh3.googleusercontent.com', // Google profile images
+      'avatars.githubusercontent.com' // GitHub profile images
     ],
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60,

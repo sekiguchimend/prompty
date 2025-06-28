@@ -338,3 +338,14 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   z-index: 1000;
 }
+
+/* WebKit系ブラウザのスクロールバーを非表示 */
+textarea::-webkit-scrollbar {
+  display: none;
+}
+
+/* Firefox, IE/Edge対応 */
+textarea {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}

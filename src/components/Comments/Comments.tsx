@@ -2,23 +2,12 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { supabase } from '../../lib/supabaseClient';
-import { MoreVertical } from 'lucide-react';
+import { MoreVertical, Heart, MessageCircle, ChevronDown, ChevronRight, User } from 'lucide-react';
 import ReportDialog from '../shared/ReportDialog';
 import { Avatar } from '../shared/Avatar';
 import { getDisplayName } from '../../lib/avatar-utils';
-
-type Comment = {
-  id: string;
-  content: string;
-  created_at: string;
-  user_id: string;
-  is_edited?: boolean;
-  user?: {
-    username: string;
-    display_name: string;
-    avatar_url: string;
-  };
-};
+import { CommentWithUser } from '../../types/entities/comment';
+import Link from 'next/link';
 
 type UserSettings = {
   auto_hide_reported: boolean;
@@ -30,7 +19,7 @@ type CommentsProps = {
 };
 
 const Comments: React.FC<CommentsProps> = ({ promptId }) => {
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [comments, setComments] = useState<CommentWithUser[]>([]);
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -44,6 +33,9 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
     auto_hide_reported: false,
     hidden_comments: [],
   });
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState('');
+  const [collapsedComments, setCollapsedComments] = useState<string[]>([]);
 
   // ユーザー情報の取得
   useEffect(() => {
@@ -130,12 +122,13 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
     loadHiddenComments();
   }, [currentUser]);
 
-  // コメントの取得関数をuseCallbackでメモ化
+  // コメントの取得関数を拡張（階層構造とリプライを考慮）
   const fetchComments = useCallback(async () => {
     if (!promptId) return;
     
     setIsLoading(true);
     try {
+      // 全てのコメントを取得（parent_idでソート）
       const { data, error, count } = await supabase
         .from('comments')
         .select(`
@@ -146,34 +139,101 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
         .order('created_at', { ascending: false });
         
       if (error) {
+        console.error('コメント取得エラー:', error);
         return;
       }
       
-      // データを正しい型に変換
-      const typedComments: Comment[] = (data || []).map(item => {
-        const commentItem = item as any; // anyを使用して型エラーを回避
-        return {
-          id: commentItem.id as string,
-          content: commentItem.content as string,
-          created_at: commentItem.created_at as string,
-          user_id: commentItem.user_id as string,
-          is_edited: commentItem.is_edited as boolean | undefined,
+      // データを階層構造に変換
+      const commentsMap = new Map<string, CommentWithUser>();
+      const rootComments: CommentWithUser[] = [];
+
+      // まず全てのコメントをマップに追加
+      (data || []).forEach(item => {
+        const commentItem = item as any;
+        const typedComment: CommentWithUser = {
+          id: commentItem.id,
+          content: commentItem.content,
+          created_at: commentItem.created_at,
+          user_id: commentItem.user_id,
+          prompt_id: commentItem.prompt_id,
+          parent_id: commentItem.parent_id,
+          updated_at: commentItem.updated_at,
+          is_edited: commentItem.is_edited,
           user: commentItem.user ? {
             username: String(commentItem.user.username || ''),
             display_name: String(commentItem.user.display_name || ''),
             avatar_url: String(commentItem.user.avatar_url || '')
-          } : undefined
+          } : undefined,
+          like_count: 0, // デフォルト値
+          liked_by_user: false, // デフォルト値
+          reply_count: 0, // デフォルト値
+          replies: [],
+          is_collapsed: collapsedComments.includes(commentItem.id)
         };
+        commentsMap.set(commentItem.id, typedComment);
       });
-      
-      setComments(typedComments);
+
+      // いいね情報を別途取得（comment_likesテーブルが存在する場合のみ）
+      try {
+        const commentIds = Array.from(commentsMap.keys());
+        if (commentIds.length > 0) {
+          const { data: likesData, error: likesError } = await supabase
+            .from('comment_likes')
+            .select('comment_id, user_id')
+            .in('comment_id', commentIds);
+
+          if (!likesError && likesData) {
+            // いいね情報を集計
+            const likesCount: { [key: string]: number } = {};
+            const userLikes: { [key: string]: boolean } = {};
+
+            likesData.forEach((like: any) => {
+              likesCount[like.comment_id] = (likesCount[like.comment_id] || 0) + 1;
+              if (currentUser && like.user_id === currentUser.id) {
+                userLikes[like.comment_id] = true;
+              }
+            });
+
+            // コメントにいいね情報を追加
+            commentsMap.forEach((comment, commentId) => {
+              comment.like_count = likesCount[commentId] || 0;
+              comment.liked_by_user = userLikes[commentId] || false;
+            });
+          }
+        }
+      } catch (likesError) {
+        console.log('いいね情報の取得をスキップしました（テーブルが存在しない可能性があります）');
+      }
+
+      // リプライ数を計算
+      commentsMap.forEach((comment, commentId) => {
+        const replyCount = Array.from(commentsMap.values()).filter(c => c.parent_id === commentId).length;
+        comment.reply_count = replyCount;
+      });
+
+      // 階層構造を構築
+      commentsMap.forEach(comment => {
+        if (comment.parent_id) {
+          const parent = commentsMap.get(comment.parent_id);
+          if (parent) {
+            parent.replies = parent.replies || [];
+            parent.replies.push(comment);
+            // リプライを時間順にソート
+            parent.replies.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+          }
+        } else {
+          rootComments.push(comment);
+        }
+      });
+
+      setComments(rootComments);
       setCommentCount(count || 0);
     } catch (err) {
-      // コメント取得中に例外が発生
+      console.error('コメント取得中に例外が発生:', err);
     } finally {
       setIsLoading(false);
     }
-  }, [promptId]);
+  }, [promptId, currentUser?.id, collapsedComments]);
   
   // コメントの初回読み込み
   useEffect(() => {
@@ -218,6 +278,21 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
       }, (payload) => {
         fetchComments();
       })
+      // コメントいいねのリアルタイム更新
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'comment_likes'
+      }, (payload) => {
+        fetchComments();
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'comment_likes'
+      }, (payload) => {
+        fetchComments();
+      })
       .subscribe((status) => {
         // 購読ステータスの管理
       });
@@ -228,7 +303,7 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
     };
   }, [fetchComments, promptId]);
 
-  // コメント送信
+  // コメント送信（APIエンドポイント経由）
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -236,67 +311,40 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
     
     setIsSubmitting(true);
     
+    // 入力内容をローカル変数に保存（非同期処理の前に）
+    const commentContent = newComment.trim();
+    
     try {
-      // コメントを送信
-      
-      // 入力内容をローカル変数に保存（非同期処理の前に）
-      const commentContent = newComment.trim();
-      
       // 送信前にフォームをクリア（UX向上）
       setNewComment('');
       
-      const { data, error } = await supabase
-        .from('comments')
-        .insert([
-          {
-            prompt_id: promptId,
-            user_id: currentUser.id,
-            content: commentContent,
-            is_edited: false
-          }
-        ])
-        .select();
-        
-      if (error) {
-        throw error;
+      // APIを呼び出し
+      const response = await fetch('/api/content/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt_id: promptId,
+          user_id: currentUser.id,
+          content: commentContent,
+          parent_id: null // 通常のコメント
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'コメントの送信に失敗しました');
       }
+
+      // 成功時はコメントを再取得
+      fetchComments();
       
-      // コメント送信成功
-      
-      // リアルタイム更新が遅れる場合に備え、手動でコメントリストを更新
-      // 新しいコメントをローカルで追加
-      if (data && data.length > 0) {
-        const newCommentData = data[0] as Comment;
-        
-        // ユーザープロフィール情報を取得
-        const { data: userData, error: userError } = await supabase
-          .from('profiles')
-          .select('username, display_name, avatar_url')
-          .eq('id', currentUser.id)
-          .single();
-          
-        if (!userError && userData) {
-          newCommentData.user = {
-            username: String(userData.username || ''),
-            display_name: String(userData.display_name || ''),
-            avatar_url: String(userData.avatar_url || '')
-          };
-        }
-        
-        // コメントリストの先頭に新しいコメントを追加（降順表示のため）
-        setComments(prev => [newCommentData, ...prev]);
-        setCommentCount(prev => prev + 1);
-      }
-      
-      // 念のため全件取得も実行
-      setTimeout(() => {
-        fetchComments();
-      }, 300);
-      
-    } catch (error) {
-      alert('コメントの送信に失敗しました');
+    } catch (error: any) {
+      console.error('コメント送信エラー:', error);
+      alert(error.message || 'コメントの送信に失敗しました');
       // エラー時は入力内容を復元
-      setNewComment(newComment);
+      setNewComment(commentContent);
     } finally {
       setIsSubmitting(false);
     }
@@ -394,39 +442,172 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
     };
   }, []);
 
-  return (
-    <div className="mt-8 border-t border-gray-200 pt-6">
-      <h3 className="text-lg font-medium mb-4">コメント ({commentCount})</h3>
+  // いいね機能の実装（APIエンドポイント経由）
+  const toggleCommentLike = async (commentId: string) => {
+    if (!currentUser) {
+      alert('いいねするにはログインが必要です');
+      return;
+    }
+
+    try {
+      // 楽観的更新（UIを先に更新）
+      const updatedComments = [...comments];
+      const updateCommentLike = (commentsList: CommentWithUser[]) => {
+        commentsList.forEach(comment => {
+          if (comment.id === commentId) {
+            comment.liked_by_user = !comment.liked_by_user;
+            comment.like_count = (comment.like_count || 0) + (comment.liked_by_user ? 1 : -1);
+          }
+          if (comment.replies) {
+            updateCommentLike(comment.replies);
+          }
+        });
+      };
+      updateCommentLike(updatedComments);
+      setComments(updatedComments);
+
+      // APIを呼び出し
+      const response = await fetch('/api/interactions/comment-like', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ commentId }),
+      });
+
+      if (!response.ok) {
+        // エラーの場合は元に戻す
+        fetchComments();
+        
+        if (response.status === 401) {
+          alert('ログインが必要です');
+        } else if (response.status === 404) {
+          alert('コメントが見つかりません');
+        } else {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'いいね操作に失敗しました');
+        }
+        return;
+      }
+
+      const result = await response.json();
       
-      {isLoading ? (
-        <div className="py-4 text-center text-gray-500">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-500 mx-auto mb-2"></div>
-          <p>コメントを読み込み中...</p>
-        </div>
-      ) : (
-        <div className="space-y-6 mb-6">
-          {comments.length > 0 ? (
-            comments.map((comment) => (
-              !hiddenComments.includes(comment.id) && (
-                <div key={comment.id} className="flex space-x-3 group">
+      // 成功時は正確な数値で更新
+      const finalComments = [...comments];
+      const updateFinalCommentLike = (commentsList: CommentWithUser[]) => {
+        commentsList.forEach(comment => {
+          if (comment.id === commentId) {
+            comment.liked_by_user = result.liked;
+            comment.like_count = result.count;
+          }
+          if (comment.replies) {
+            updateFinalCommentLike(comment.replies);
+          }
+        });
+      };
+      updateFinalCommentLike(finalComments);
+      setComments(finalComments);
+
+    } catch (error: any) {
+      console.error('いいね操作エラー:', error);
+      // エラー時は状態を復元
+      fetchComments();
+      alert(error.message || 'いいね操作に失敗しました');
+    }
+  };
+
+  // リプライ送信（APIエンドポイント経由）
+  const handleReplySubmit = async (parentId: string) => {
+    if (!replyContent.trim() || !currentUser) return;
+
+    setIsSubmitting(true);
+    
+    // 入力内容をローカル変数に保存
+    const replyContentData = replyContent.trim();
+    
+    try {
+      // 楽観的更新（UIをクリア）
+      setReplyContent('');
+      setReplyingTo(null);
+
+      // APIを呼び出し
+      const response = await fetch('/api/content/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt_id: promptId,
+          user_id: currentUser.id,
+          content: replyContentData,
+          parent_id: parentId
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'リプライの送信に失敗しました');
+      }
+
+      // 成功時はコメントを再取得
+      fetchComments();
+      
+    } catch (error: any) {
+      console.error('リプライ送信エラー:', error);
+      alert(error.message || 'リプライの送信に失敗しました');
+      // エラー時は入力内容を復元
+      setReplyContent(replyContentData);
+      setReplyingTo(parentId);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // コメントの折りたたみ/展開
+  const toggleCommentCollapse = (commentId: string) => {
+    setCollapsedComments(prev => 
+      prev.includes(commentId) 
+        ? prev.filter(id => id !== commentId)
+        : [...prev, commentId]
+    );
+  };
+
+  // コメントコンポーネント（再帰的にレンダリング）
+  const CommentItem: React.FC<{ comment: CommentWithUser; depth?: number }> = ({ comment, depth = 0 }) => {
+    const isHidden = hiddenComments.includes(comment.id);
+    const hasReplies = comment.replies && comment.replies.length > 0;
+    const isCollapsed = comment.is_collapsed;
+
+    if (isHidden) return null;
+
+  return (
+      <div className={`${depth > 0 ? 'ml-8 border-l-2 border-gray-200 pl-4' : ''}`}>
+        <div className="flex space-x-3 group">
+          <Link href={`/users/${comment.user?.username || comment.user_id}`} className="flex-shrink-0">
                   <Avatar 
                     src={comment.user?.avatar_url}
                     displayName={getDisplayName(comment.user?.display_name)}
                     size="sm"
-                    className="mr-2"
+              className="mr-2 cursor-pointer hover:ring-2 hover:ring-blue-300 transition-all"
                   />
+          </Link>
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
+                <Link href={`/users/${comment.user?.username || comment.user_id}`} className="hover:underline">
                         <span className="font-medium text-sm">
                           {comment.user?.display_name || comment.user?.username || '匿名ユーザー'}
                         </span>
+                </Link>
                         <span className="text-xs text-gray-500">
                           {formatDistanceToNow(new Date(comment.created_at), { 
                             addSuffix: true, 
                             locale: ja 
                           })}
                         </span>
+                {comment.is_edited && (
+                  <span className="text-xs text-gray-400">(編集済み)</span>
+                )}
                       </div>
                       <div className="relative">
                         <button 
@@ -459,14 +640,137 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
                       </div>
                     </div>
                     <p className="text-sm mt-1 text-gray-700">{comment.content}</p>
+            
+            {/* アクションボタン */}
+            <div className="flex items-center gap-4 mt-3">
+              <button
+                onClick={() => toggleCommentLike(comment.id)}
+                className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full transition-all duration-200 ${
+                  comment.liked_by_user 
+                    ? 'text-red-500 hover:text-red-600 hover:bg-red-50' 
+                    : 'text-gray-500 hover:text-red-500 hover:bg-red-50'
+                } ${!currentUser ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                disabled={!currentUser}
+                title={!currentUser ? 'ログインしていいねしよう' : comment.liked_by_user ? 'いいねを取り消す' : 'いいね'}
+              >
+                <Heart 
+                  className={`h-4 w-4 transition-all ${comment.liked_by_user ? 'fill-current scale-110' : ''}`} 
+                />
+                <span className="font-medium">{comment.like_count || 0}</span>
+              </button>
+              
+              <button
+                onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full transition-all duration-200 ${
+                  replyingTo === comment.id
+                    ? 'text-blue-500 bg-blue-50'
+                    : 'text-gray-500 hover:text-blue-500 hover:bg-blue-50'
+                } ${!currentUser ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                disabled={!currentUser}
+                title={!currentUser ? 'ログインして返信しよう' : replyingTo === comment.id ? '返信をキャンセル' : '返信する'}
+              >
+                <MessageCircle className="h-4 w-4" />
+                <span>返信</span>
+              </button>
+
+              {hasReplies && (
+                <button
+                  onClick={() => toggleCommentCollapse(comment.id)}
+                  className="flex items-center gap-1 text-xs px-2 py-1 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all duration-200"
+                  title={isCollapsed ? '返信を表示' : '返信を非表示'}
+                >
+                  {isCollapsed ? (
+                    <ChevronRight className="h-4 w-4 transition-transform" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 transition-transform" />
+                  )}
+                  <span className="font-medium">{comment.reply_count || comment.replies?.length || 0}件の返信</span>
+                </button>
+              )}
+            </div>
+
+            {/* リプライフォーム */}
+            {replyingTo === comment.id && (
+              <div className="mt-3 flex gap-3">
+                <Avatar 
+                  src={currentUser?.user_metadata?.avatar_url}
+                  displayName={getDisplayName(currentUser?.user_metadata?.full_name)}
+                  size="sm"
+                  className="mr-2"
+                />
+                <div className="flex-1 relative">
+                  <textarea 
+                    className="flex w-full rounded-md border border-input bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none min-h-[60px] p-3 pr-20" 
+                    placeholder={`@${comment.user?.display_name || comment.user?.username}さんに返信...`}
+                    value={replyContent}
+                    onChange={(e) => setReplyContent(e.target.value)}
+                    disabled={!currentUser || isSubmitting}
+                  />
+                  <div className="absolute bottom-2 right-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReplyingTo(null);
+                        setReplyContent('');
+                      }}
+                      className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1"
+                    >
+                      キャンセル
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => handleReplySubmit(comment.id)}
+                      disabled={!currentUser || isSubmitting || !replyContent.trim()} 
+                      className="text-xs bg-blue-500 text-white px-3 py-1 rounded disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-blue-600 transition-colors"
+                    >
+                      返信
+                    </button>
                   </div>
                 </div>
-              )
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* リプライ表示 */}
+        {hasReplies && !isCollapsed && (
+          <div className="mt-4 space-y-4">
+            {comment.replies?.map((reply) => (
+              <CommentItem key={reply.id} comment={reply} depth={depth + 1} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="mt-8 border-t border-gray-200 pt-6">
+      <h3 className="text-lg font-medium mb-4">コメント ({commentCount})</h3>
+      
+      {isLoading ? (
+        <div className="py-4 text-center text-gray-500">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-500 mx-auto mb-2"></div>
+          <p>コメントを読み込み中...</p>
+        </div>
+      ) : (
+        <div className="space-y-6 mb-6">
+          {comments.length > 0 ? (
+            comments.map((comment) => (
+              <CommentItem key={comment.id} comment={comment} />
             ))
           ) : (
-            <div className="py-6 text-center text-gray-500">
-              <p>コメントはまだありません</p>
-              <p className="text-sm mt-1">最初のコメントを投稿しましょう</p>
+            <div className="py-8 text-center">
+              <div className="flex flex-col items-center">
+                <MessageCircle className="h-12 w-12 text-gray-300 mb-3" />
+                <p className="text-gray-600 font-medium">まだコメントがありません</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {currentUser 
+                    ? '最初のコメントを投稿して会話を始めましょう！' 
+                    : 'ログインしてコメントに参加しましょう'
+                  }
+                </p>
+              </div>
             </div>
           )}
         </div>
@@ -513,9 +817,9 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
         onOpenChange={(open: boolean) => {
           if (!open) closeReportDialog();
         }}
+        targetType="comment"
         targetId={selectedCommentId || ''}
         promptId={promptId}
-        targetType="comment"
       />
     </div>
   );

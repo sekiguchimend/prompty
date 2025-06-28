@@ -109,7 +109,7 @@ const ReportDialog: React.FC<ReportDialogProps> = ({
       };
 
       const { error } = await supabase
-        .from('content_reports')
+        .from('reports')
         .insert(reportData);
 
       if (error) throw error;

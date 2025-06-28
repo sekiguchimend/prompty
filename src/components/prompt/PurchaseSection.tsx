@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '../../components/ui/button';
 import Link from 'next/link';
 import { Badge } from '../../components/ui/badge';
@@ -78,6 +78,8 @@ interface CommentType {
   user_id: string;
   content: string;
   created_at: string;
+  parent_id?: string | null;
+  replies?: CommentType[];
   user?: {
     username?: string;
     display_name?: string;
@@ -125,7 +127,7 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
   const [liked, setLiked] = useState(false);
   const [likes, setLikes] = useState(initialLikes);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
-  const [isCommentSectionVisible, setIsCommentSectionVisible] = useState(true);
+  const [isCommentSectionVisible, setIsCommentSectionVisible] = useState(false);
   const [comments, setComments] = useState<CommentType[]>([]);
   const [commentCount, setCommentCount] = useState(0);
   const [newComment, setNewComment] = useState("");
@@ -134,33 +136,31 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
   const [promptId, setPromptId] = useState<string>("");
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [isCommentsLoading, setIsCommentsLoading] = useState(false);
-  const [isLikeLoading, setIsLikeLoading] = useState(false); // いいね処理中のローディング状態
-  const [isFollowLoading, setIsFollowLoading] = useState(false); // フォロー処理中のローディング状態
+  const [isLikeLoading, setIsLikeLoading] = useState(false);
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
+  const [commentLikes, setCommentLikes] = useState<{ [commentId: string]: { count: number; liked: boolean } }>({});
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState('');
 
-  // initialLikesが変更された時にlikesステートを更新
   useEffect(() => {
     setLikes(initialLikes);
   }, [initialLikes]);
 
-  // Get the prompt ID from the URL
   useEffect(() => {
     const pathname = window.location.pathname;
     const id = pathname.split('/').pop();
     if (id) {
       setPromptId(id);
-      // プロンプトIDが取得できたらすぐにコメントを読み込む
       fetchComments(id);
     }
   }, []);
 
-  // Get current user
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setCurrentUser(session.user as User);
         
-        // ユーザープロフィール情報も取得（必要なカラムのみ）
         const { data: profileData } = await supabase
           .from('profiles')
           .select('id, username, display_name, avatar_url')
@@ -168,7 +168,6 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
           .single();
           
         if (profileData) {
-          // プロフィール情報をcurrentUserに追加
           setCurrentUser({
             ...session.user,
             avatar_url: profileData.avatar_url || session.user.user_metadata?.avatar_url,
@@ -181,10 +180,8 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
     
     fetchUser();
     
-    // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
-        // セッション変更時にもプロフィール情報を取得（必要なカラムのみ）
         supabase
           .from('profiles')
           .select('id, username, display_name, avatar_url')
@@ -212,18 +209,15 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
     };
   }, []);
 
-  // ユーザーのいいね状態を取得
   useEffect(() => {
     if (promptId && currentUser) {
       checkUserLikeStatus();
-      checkUserFollowStatus(); // フォロー状態も確認
+      checkUserFollowStatus();
     } else if (promptId) {
-      // ユーザーがログインしていない場合でも、最新のいいね数は取得する
       fetchCurrentLikeCount();
     }
   }, [promptId, currentUser]);
 
-  // 最新のいいね数を取得する関数
   const fetchCurrentLikeCount = async () => {
     if (!promptId) return;
 
@@ -241,12 +235,10 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
     }
   };
 
-  // ユーザーがいいねしているか確認
   const checkUserLikeStatus = async () => {
     if (!currentUser || !promptId) return;
 
     try {
-      // ユーザーのいいね状態と最新のいいね数を同時に取得
       const [likeStatusResult, likeCountResult] = await Promise.all([
         supabase
         .from('likes')
@@ -260,14 +252,12 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
           .eq('prompt_id', promptId)
       ]);
 
-      // いいね状態の設定
       if (!likeStatusResult.error && likeStatusResult.data && likeStatusResult.data.length > 0) {
         setLiked(true);
       } else if (likeStatusResult.error) {
         console.error("いいね状態取得エラー:", likeStatusResult.error);
       }
 
-      // 最新のいいね数の設定
       if (!likeCountResult.error && likeCountResult.count !== null) {
         setLikes(likeCountResult.count);
       } else if (likeCountResult.error) {
@@ -278,12 +268,10 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
     }
   };
 
-  // ユーザーがフォローしているか確認
   const checkUserFollowStatus = async () => {
     if (!currentUser || !author?.userId) return;
 
     try {
-      // シンプルなクエリに修正
       const { data, error } = await supabase
         .from('follows')
         .select('id')
@@ -301,7 +289,6 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
     }
   };
 
-  // いいねをAPIで処理する関数
   const toggleLike = async () => {
     if (!currentUser) {
       toast({
@@ -318,7 +305,6 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
     
     try {
       if (liked) {
-        // いいねを削除
         const { error } = await supabase
           .from('likes')
           .delete()
@@ -335,12 +321,10 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
           return false;
         }
         
-        // 成功したらカウント減少
         setLikes(prev => Math.max(0, prev - 1));
         setLiked(false);
         return true;
       } else {
-        // いいねを追加
         const { error } = await supabase
           .from('likes')
           .insert({
@@ -358,7 +342,6 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
           return false;
         }
         
-        // 成功したらカウント増加
         setLikes(prev => prev + 1);
         setLiked(true);
         return true;
@@ -375,7 +358,6 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
     }
   };
 
-  // フォロー/アンフォローを処理する関数
   const toggleFollow = async () => {
     if (!currentUser) {
       toast({
@@ -388,7 +370,6 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
 
     if (!author?.userId || isFollowLoading) return false;
 
-    // 自分自身をフォローできないようにする制限を追加
     if (currentUser.id === author.userId) {
       toast({
         title: "自分自身をフォローすることはできません",
@@ -402,7 +383,6 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
     
     try {
       if (isFollowing) {
-        // フォロー解除
         const { error } = await supabase
           .from('follows')
           .delete()
@@ -419,11 +399,9 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
           return false;
         }
         
-        // 成功したらフォロー状態を更新
         setIsFollowing(false);
         return true;
       } else {
-        // フォロー追加
         const { error } = await supabase
           .from('follows')
           .insert({
@@ -441,7 +419,6 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
           return false;
         }
         
-        // 成功したらフォロー状態を更新
         setIsFollowing(true);
         return true;
       }
@@ -471,11 +448,11 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
       const { data, error } = await supabase
         .from('comments')
         .select(`
-          id, user_id, content, created_at,
+          id, user_id, content, created_at, parent_id,
           user:profiles(id, username, display_name, avatar_url)
         `)
         .eq('prompt_id', promptId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: true });
 
       if (error) {
         console.error("コメント取得エラー:", error);
@@ -485,9 +462,7 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
           variant: "destructive",
         });
       } else {
-        // 型キャストの処理を修正
         const safeComments = Array.isArray(data) ? data.map(comment => {
-          // データの安全な取得のために、Optional Chainingとnullishチェックを使用
           const userObj = comment.user as any || {};
           
           return {
@@ -495,6 +470,8 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
             user_id: String(comment.user_id || ''),
             content: String(comment.content || ''),
             created_at: String(comment.created_at || new Date().toISOString()),
+            parent_id: comment.parent_id ? String(comment.parent_id) : null,
+            replies: [],
             user: {
               username: userObj.username ? String(userObj.username) : undefined,
               display_name: userObj.display_name ? String(userObj.display_name) : undefined,
@@ -503,7 +480,39 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
           } as CommentType;
         }) : [];
         
-        setComments(safeComments);
+        // 階層構造を構築
+        const commentMap = new Map<string, CommentType>();
+        const rootComments: CommentType[] = [];
+        
+        // 全コメントをマップに登録
+        safeComments.forEach(comment => {
+          commentMap.set(comment.id, comment);
+        });
+        
+        // 親子関係を構築
+        safeComments.forEach(comment => {
+          if (comment.parent_id) {
+            const parent = commentMap.get(comment.parent_id);
+            if (parent) {
+              if (!parent.replies) parent.replies = [];
+              parent.replies.push(comment);
+            }
+          } else {
+            rootComments.push(comment);
+          }
+        });
+        
+        // 返信を日時順にソート（新しい順）
+        rootComments.forEach(comment => {
+          if (comment.replies) {
+            comment.replies.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+          }
+        });
+        
+        // ルートコメントを新しい順にソート
+        rootComments.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        
+        setComments(rootComments);
         setCommentCount(safeComments.length);
       }
     } catch (err) {
@@ -513,12 +522,10 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
     }
   };
 
-  // Fetch comments when section is visible and promptId is available
   useEffect(() => {
     if (promptId) {
       fetchComments(promptId);
 
-      // リアルタイム更新のためのチャンネル設定
       const channel = supabase
         .channel(`comments-${promptId}`)
         .on(
@@ -530,7 +537,6 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
             filter: `prompt_id=eq.${promptId}`
           },
           (payload) => {
-            // リアルタイム更新の最適化：必要な場合のみ再取得
             if (payload.eventType === 'INSERT' || payload.eventType === 'DELETE' || payload.eventType === 'UPDATE') {
               fetchComments(promptId);
             }
@@ -541,7 +547,6 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
           }
         });
 
-      // クリーンアップ関数
       return () => {
         supabase.removeChannel(channel);
       };
@@ -549,12 +554,11 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
   }, [promptId]);
 
   const handleFollowClick = async () => {
-    if (!author) return; // 著者情報がなければ処理を中断
+    if (!author) return;
 
     const success = await toggleFollow();
     
     if (success) {
-      // 操作が成功した場合のみトースト表示
       if (isFollowing) {
         toast({
           title: `${author.name}さんのフォローを解除しました`,
@@ -573,7 +577,6 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
     const success = await toggleLike();
     
     if (success) {
-      // 操作が成功した場合のみトースト表示
       if (liked) {
         toast({
           title: "いいねを取り消しました",
@@ -620,60 +623,45 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
     setIsSubmittingComment(true);
     
     try {
-      // 画面表示を即時更新するため、現在のユーザー情報を使用して一時的なコメントを作成
-      const tempComment: CommentType = {
-        id: `temp-${Date.now()}`,
-        user_id: currentUser.id,
-        content: newComment.trim(),
-        created_at: new Date().toISOString(),
-        user: {
-          username: currentUser?.user_metadata?.username,
-          display_name: currentUser?.user_metadata?.full_name || currentUser?.user_metadata?.name,
-          avatar_url: currentUser?.user_metadata?.avatar_url
-        }
-      };
+      // コメントの内容を保存
+      const commentContent = newComment.trim();
       
-      // 一時的なコメントを追加して即時表示
-      setComments(prev => [tempComment, ...prev]);
-      setCommentCount(prev => prev + 1);
-      
-      // フォームをクリア
+      // 先にフォームをクリア
       setNewComment('');
       
-      // 実際のコメントをデータベースに保存（必要なカラムのみ取得）
-      const { error, data } = await supabase
+      // フォームの高さをリセット
+      setTimeout(() => {
+        const textareas = document.querySelectorAll('textarea[placeholder="コメントを入力..."]');
+        textareas.forEach((textarea: Element) => {
+          const textareaEl = textarea as HTMLTextAreaElement;
+          textareaEl.style.height = '32px';
+        });
+      }, 0);
+      
+      const { error } = await supabase
         .from('comments')
         .insert({
           prompt_id: promptId,
           user_id: currentUser.id,
-          content: tempComment.content,
-        })
-        .select('id, user_id, content, created_at');
+          content: commentContent,
+        });
       
       if (error) {
         console.error("コメント投稿エラー:", error);
-        
-        // エラーの場合、一時的なコメントを削除
-        setComments(prev => prev.filter(comment => comment.id !== tempComment.id));
-        setCommentCount(prev => prev - 1);
-        
-        // エラーメッセージを表示
+        // エラー時は入力内容を復元
+        setNewComment(commentContent);
         toast({
           title: "コメントの投稿に失敗しました",
-          description: error.message,
+          description: "しばらくしてから再度お試しください",
           variant: "destructive",
         });
-        
-        // 入力内容を復元
-        setNewComment(tempComment.content);
       } else {
+        // 成功時はコメントリストを再取得（正確な情報で表示）
+        await fetchComments(promptId);
         toast({
           title: "コメントを投稿しました",
           variant: "default",
         });
-        
-        // 一時的なコメントを実際のコメントに置き換える処理は、
-        // リアルタイム更新のリスナーが処理するのでここでは行わない
       }
     } catch (err) {
       console.error("コメント投稿中の例外:", err);
@@ -687,7 +675,6 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
     }
   };
 
-  // 報告処理を更新
   const handleReportButtonClick = () => {
     if (!currentUser) {
       toast({
@@ -711,6 +698,435 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
     });
   };
 
+  // コメントのいいね状態を取得
+  const fetchCommentLikes = async (promptId: string) => {
+    if (!promptId) return;
+    
+    try {
+      // すべてのコメントのいいね状態を取得
+      const { data, error } = await supabase
+        .from('comment_likes')
+        .select('comment_id, user_id');
+
+      if (!error && data) {
+        const likesMap: { [commentId: string]: { count: number; liked: boolean } } = {};
+        
+        comments.forEach(comment => {
+          const commentLikesData = data.filter(like => like.comment_id === comment.id);
+          likesMap[comment.id] = {
+            count: commentLikesData.length,
+            liked: currentUser ? commentLikesData.some(like => like.user_id === currentUser.id) : false
+          };
+        });
+        
+        setCommentLikes(likesMap);
+      }
+    } catch (err) {
+      console.error("コメントのいいね状態取得エラー:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (promptId && comments.length > 0) {
+      fetchCommentLikes(promptId);
+    }
+  }, [promptId, comments, currentUser]);
+
+  // コメントのいいね切り替え
+  const toggleCommentLike = async (commentId: string) => {
+    if (!currentUser) {
+      toast({
+        title: "ログインが必要です",
+        description: "いいねするにはログインしてください",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!promptId) return;
+
+    const currentLike = commentLikes[commentId] || { count: 0, liked: false };
+    
+    try {
+      if (currentLike.liked) {
+        // いいね削除
+        const { error } = await supabase
+          .from('comment_likes')
+          .delete()
+          .eq('comment_id', commentId)
+          .eq('user_id', currentUser.id);
+
+        if (!error) {
+          setCommentLikes(prev => ({
+            ...prev,
+            [commentId]: {
+              count: Math.max(0, currentLike.count - 1),
+              liked: false
+            }
+          }));
+        }
+      } else {
+        // いいね追加
+        const { error } = await supabase
+          .from('comment_likes')
+          .insert({
+            comment_id: commentId,
+            user_id: currentUser.id
+          });
+
+        if (!error) {
+          setCommentLikes(prev => ({
+            ...prev,
+            [commentId]: {
+              count: currentLike.count + 1,
+              liked: true
+            }
+          }));
+        }
+      }
+    } catch (err) {
+      console.error("コメントのいいね処理エラー:", err);
+      toast({
+        title: "エラーが発生しました",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // リプライ送信
+  const handleReplySubmit = async (parentCommentId: string) => {
+    if (!currentUser || !replyContent.trim() || !promptId) return;
+
+    try {
+      const { error } = await supabase
+        .from('comments')
+        .insert({
+          prompt_id: promptId,
+          user_id: currentUser.id,
+          content: replyContent.trim(),
+          parent_id: parentCommentId
+        });
+
+      if (!error) {
+        setReplyContent('');
+        setReplyingTo(null);
+        
+        // リプライフォームの高さをリセット
+        setTimeout(() => {
+          const textareas = document.querySelectorAll('textarea[placeholder*="さんに返信"]');
+          textareas.forEach((textarea: Element) => {
+            const textareaEl = textarea as HTMLTextAreaElement;
+            textareaEl.style.height = '32px';
+          });
+        }, 0);
+        
+        fetchComments(promptId);
+        toast({
+          title: "返信を投稿しました",
+        });
+      } else {
+        toast({
+          title: "返信の投稿に失敗しました",
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      console.error("返信投稿エラー:", err);
+      toast({
+        title: "エラーが発生しました",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // コメント削除機能
+  const handleDeleteComment = async (commentId: string) => {
+    if (!currentUser || !promptId) return;
+
+    try {
+      const { error } = await supabase
+        .from('comments')
+        .delete()
+        .eq('id', commentId)
+        .eq('user_id', currentUser.id); // 自分のコメントのみ削除可能
+
+      if (!error) {
+        fetchComments(promptId);
+        toast({
+          title: "コメントを削除しました",
+        });
+      } else {
+        toast({
+          title: "コメントの削除に失敗しました",
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      console.error("コメント削除エラー:", err);
+      toast({
+        title: "エラーが発生しました",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // コメントアイテムコンポーネント（再帰的階層表示対応）
+  const CommentItem: React.FC<{ comment: CommentType; depth: number }> = React.memo(({ comment, depth }) => {
+    const isOwnComment = currentUser && comment.user_id === currentUser.id;
+    const hasReplies = comment.replies && comment.replies.length > 0;
+    
+    // リプライフォームのローカルstate（IME安定化のため）
+    const [localReplyingTo, setLocalReplyingTo] = useState<string | null>(null);
+    const [localReplyContent, setLocalReplyContent] = useState('');
+    
+    // ローカルリプライ送信ハンドラー
+    const handleLocalReplySubmit = async (parentCommentId: string) => {
+      if (!currentUser || !localReplyContent.trim() || !promptId) return;
+
+      try {
+        const { error } = await supabase
+          .from('comments')
+          .insert({
+            prompt_id: promptId,
+            user_id: currentUser.id,
+            content: localReplyContent.trim(),
+            parent_id: parentCommentId
+          });
+
+        if (!error) {
+          setLocalReplyContent('');
+          setLocalReplyingTo(null);
+          
+          fetchComments(promptId);
+          toast({
+            title: "返信を投稿しました",
+          });
+        } else {
+          toast({
+            title: "返信の投稿に失敗しました",
+            variant: "destructive",
+          });
+        }
+      } catch (err) {
+        console.error("返信投稿エラー:", err);
+        toast({
+          title: "エラーが発生しました",
+          variant: "destructive",
+        });
+      }
+    };
+
+    return (
+      <div className={`${depth > 0 ? 'ml-8 pl-4 border-l-2 border-gray-200' : ''}`}>
+        <div className="flex space-x-3 p-3 rounded-lg bg-card hover:bg-gray-50 transition-colors">
+          <div className="flex-shrink-0">
+            {comment.user?.username ? (
+              <Link href={`/users/${comment.user.username}`}>
+                <UnifiedAvatar
+                  src={comment.user?.avatar_url}
+                  displayName={comment.user?.display_name || comment.user?.username || "ユーザー"}
+                  size="md"
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                />
+              </Link>
+            ) : (
+              <UnifiedAvatar
+                src={comment.user?.avatar_url}
+                displayName={comment.user?.display_name || comment.user?.username || "ユーザー"}
+                size="md"
+              />
+            )}
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                {comment.user?.username ? (
+                  <Link href={`/users/${comment.user.username}`}>
+                    <p className="font-medium text-foreground hover:text-blue-600 cursor-pointer transition-colors">
+                      {comment.user?.display_name || comment.user?.username || "不明なユーザー"}
+                    </p>
+                  </Link>
+                ) : (
+                  <p className="font-medium text-foreground">
+                    {comment.user?.display_name || comment.user?.username || "不明なユーザー"}
+                  </p>
+                )}
+                <span className="text-xs text-muted-foreground">
+                  {formatDistanceToNow(new Date(comment.created_at), { 
+                    addSuffix: true,
+                    locale: ja 
+                  })}
+                </span>
+              </div>
+              {/* 削除ボタン（自分のコメントのみ） */}
+              {isOwnComment && (
+                <button
+                  onClick={() => handleDeleteComment(comment.id)}
+                  className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+                  title="削除"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              )}
+            </div>
+            <p className="mt-1 text-foreground leading-relaxed font-noto break-words whitespace-pre-wrap">
+              {comment.content}
+            </p>
+            
+            <div className="flex items-center gap-4 mt-3">
+              <button
+                className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full transition-all duration-200 cursor-pointer ${
+                  commentLikes[comment.id]?.liked 
+                    ? 'text-red-500 bg-red-50 hover:bg-red-100' 
+                    : 'text-gray-500 hover:text-red-500 hover:bg-red-50'
+                }`}
+                title="いいね"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleCommentLike(comment.id);
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-all ${commentLikes[comment.id]?.liked ? 'fill-current' : ''}`} fill={commentLikes[comment.id]?.liked ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+                <span className="font-medium">{commentLikes[comment.id]?.count || 0}</span>
+              </button>
+              
+              <button
+                className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full transition-all duration-200 cursor-pointer ${
+                  localReplyingTo === comment.id
+                    ? 'text-blue-500 bg-blue-50 hover:bg-blue-100'
+                    : 'text-gray-500 hover:text-blue-500 hover:bg-blue-50'
+                }`}
+                title="返信する"
+                onClick={() => {
+                  setLocalReplyingTo(localReplyingTo === comment.id ? null : comment.id);
+                  setLocalReplyContent('');
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                <span>返信</span>
+              </button>
+
+              {/* 返信数表示 */}
+              {hasReplies && (
+                <span className="text-xs text-gray-500">
+                  {comment.replies!.length}件の返信
+                </span>
+              )}
+            </div>
+            
+            {/* リプライフォーム */}
+            {localReplyingTo === comment.id && (
+              <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                <form 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (localReplyContent.trim()) {
+                      handleLocalReplySubmit(comment.id);
+                    }
+                  }}
+                  className="flex gap-2"
+                >
+                  {currentUser?.username ? (
+                    <Link href={`/users/${currentUser.username}`}>
+                      <UnifiedAvatar
+                        src={currentUser?.avatar_url}
+                        displayName={currentUser?.display_name || currentUser?.username || 'User'}
+                        size="sm"
+                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                      />
+                    </Link>
+                  ) : (
+                    <UnifiedAvatar
+                      src={currentUser?.avatar_url}
+                      displayName={currentUser?.display_name || currentUser?.username || 'User'}
+                      size="sm"
+                    />
+                  )}
+                  <div className="flex-1">
+                    <Textarea
+                      key={`reply-${comment.id}`}
+                      placeholder={`${comment.user?.display_name || comment.user?.username || "ユーザー"}さんに返信...`}
+                      value={localReplyContent}
+                      onChange={(e) => setLocalReplyContent(e.target.value)}
+                      className="resize-none min-h-[32px] max-h-[100px] text-sm py-1.5 px-3 overflow-y-auto overflow-x-hidden leading-normal"
+                      style={{
+                        height: '32px',
+                        minHeight: '32px',
+                        lineHeight: '1.5',
+                        scrollbarWidth: 'none',
+                        msOverflowStyle: 'none',
+                      }}
+                      onInput={(e: React.FormEvent<HTMLTextAreaElement>) => {
+                        const target = e.target as HTMLTextAreaElement;
+                        // IME入力中は高さ調整をスキップ
+                        if (!(target as any).composing) {
+                          target.style.height = '32px';
+                          target.style.height = `${Math.min(target.scrollHeight, 100)}px`;
+                        }
+                      }}
+                      onCompositionStart={(e) => {
+                        // IME入力開始時にフラグを設定
+                        (e.target as any).composing = true;
+                      }}
+                      onCompositionEnd={(e) => {
+                        // IME入力終了時にフラグを解除し、高さを調整
+                        (e.target as any).composing = false;
+                        const target = e.target as HTMLTextAreaElement;
+                        target.style.height = '32px';
+                        target.style.height = `${Math.min(target.scrollHeight, 100)}px`;
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (localReplyContent.trim()) {
+                            handleLocalReplySubmit(comment.id);
+                          }
+                        }
+                      }}
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={!localReplyContent.trim()}
+                    className="flex-shrink-0 p-1.5 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Send className="h-4 w-4" />
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 返信コメントを再帰表示 */}
+        {hasReplies && (
+          <div className="mt-2">
+            {comment.replies!.map((reply) => (
+              <CommentItem key={reply.id} comment={reply} depth={depth + 1} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }, (prevProps, nextProps) => {
+    // コメント内容が変わらない限り再レンダリングしない（ローカルstate使用により安定化）
+    return (
+      prevProps.comment.id === nextProps.comment.id &&
+      prevProps.comment.content === nextProps.comment.content &&
+      prevProps.depth === nextProps.depth &&
+      JSON.stringify(prevProps.comment.replies) === JSON.stringify(nextProps.comment.replies)
+    );
+  });
+
   return (
     <div className="mt-16 border-t border-gray-200 pt-10">
       <div className="flex flex-wrap gap-2 justify-center mb-8">
@@ -725,7 +1141,6 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
         ))}
       </div>
       
-      {/* Social interaction buttons */}
       <div className="flex items-center justify-between mb-10">
         <div className="flex items-center gap-4">
           <button 
@@ -765,12 +1180,10 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
         </div>
       </div>
       
-      {/* コメントセクション - 位置を上に移動 */}
       {isCommentSectionVisible && (
         <div className="mb-8 border-t border-gray-200 pt-6">
           <h3 className="text-lg font-medium mb-4">コメント ({commentCount})</h3>
           
-          {/* コメントリスト */}
           <div className="space-y-4 mt-4">
             {isCommentsLoading ? (
               <div className="flex justify-center p-4">
@@ -778,31 +1191,7 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
               </div>
             ) : comments.length > 0 ? (
               comments.map((comment) => (
-                <div key={comment.id} className="flex space-x-3 p-3 rounded-lg bg-card hover:bg-gray-50 transition-colors">
-                  <div className="flex-shrink-0">
-                    <UnifiedAvatar
-                      src={comment.user?.avatar_url}
-                      displayName={comment.user?.display_name || comment.user?.username || "ユーザー"}
-                      size="md"
-                    />
-                  </div>
-                  <div className="flex-1 overflow-hidden">
-                    <div className="flex items-center space-x-2">
-                      <p className="font-medium text-foreground">
-                        {comment.user?.display_name || comment.user?.username || "不明なユーザー"}
-                      </p>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(comment.created_at), { 
-                          addSuffix: true,
-                          locale: ja 
-                        })}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-foreground leading-relaxed font-noto break-words whitespace-pre-wrap">
-                      {comment.content}
-                    </p>
-                  </div>
-                </div>
+                <CommentItem key={comment.id} comment={comment} depth={0} />
               ))
             ) : (
               <div className="text-center py-6 bg-gray-50 rounded-lg border border-gray-200">
@@ -813,32 +1202,80 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
             )}
           </div>
           
-          {/* コメント入力フォーム */}
           <form onSubmit={handleCommentSubmit} className="mt-4 flex flex-col gap-3">
             {currentUser ? (
-              <div className="flex gap-3">
-                <UnifiedAvatar
-                  src={currentUser?.avatar_url || currentUser?.user_metadata?.avatar_url}
-                  displayName={currentUser?.display_name || currentUser?.user_metadata?.full_name || 'User'}
-                  size="sm"
-                  className="ml-2"
-                />
-                <div className="flex-1 relative">
+              <div className="flex gap-2">
+                {currentUser?.username ? (
+                  <Link href={`/users/${currentUser.username}`}>
+                    <UnifiedAvatar
+                      src={currentUser?.avatar_url}
+                      displayName={currentUser?.display_name || currentUser?.username || 'User'}
+                      size="sm"
+                      className="ml-2 cursor-pointer hover:opacity-80 transition-opacity"
+                    />
+                  </Link>
+                ) : (
+                  <UnifiedAvatar
+                    src={currentUser?.avatar_url}
+                    displayName={currentUser?.display_name || currentUser?.username || 'User'}
+                    size="sm"
+                    className="ml-2"
+                  />
+                )}
+                <div className="flex-1">
                   <Textarea 
                     placeholder="コメントを入力..." 
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
-                    className="resize-none min-h-[80px] p-3 pr-10"
+                    className="resize-none min-h-[32px] max-h-[120px] py-1.5 px-3 overflow-y-auto overflow-x-hidden leading-normal"
                     disabled={isSubmittingComment}
+                    style={{
+                      height: '32px',
+                      minHeight: '32px',
+                      lineHeight: '1.5',
+                      scrollbarWidth: 'none',
+                      msOverflowStyle: 'none',
+                    }}
+                    onInput={(e: React.FormEvent<HTMLTextAreaElement>) => {
+                      const target = e.target as HTMLTextAreaElement;
+                      // IME入力中は高さ調整をスキップ
+                      if (!(target as any).composing) {
+                        target.style.height = '32px';
+                        target.style.height = `${Math.min(target.scrollHeight, 120)}px`;
+                      }
+                    }}
+                    onCompositionStart={(e) => {
+                      // IME入力開始時にフラグを設定
+                      (e.target as any).composing = true;
+                    }}
+                    onCompositionEnd={(e) => {
+                      // IME入力終了時にフラグを解除し、高さを調整
+                      (e.target as any).composing = false;
+                      const target = e.target as HTMLTextAreaElement;
+                      target.style.height = '32px';
+                      target.style.height = `${Math.min(target.scrollHeight, 120)}px`;
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (newComment.trim() && !isSubmittingComment) {
+                          const form = e.currentTarget.closest('form') as HTMLFormElement;
+                          if (form) {
+                            form.requestSubmit();
+                          }
+                        }
+                      }
+                    }}
                   />
-                  <button 
-                    type="submit" 
-                    disabled={isSubmittingComment || !newComment.trim()} 
-                    className="absolute bottom-3 right-3 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed"
-                  >
-                    <Send className="h-5 w-5" />
-                  </button>
                 </div>
+                <button
+                  type="submit"
+                  disabled={isSubmittingComment || !newComment.trim()}
+                  className="flex-shrink-0 p-1.5 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
               </div>
             ) : (
               <div className="text-center p-4 border border-gray-200 rounded-md">
@@ -856,27 +1293,35 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
         </div>
       )}
       
-      {/* Author profile - 著者プロフィール部分を強化 */}
       <div className="border-t border-gray-200 pt-6 mb-8">
         <div className="flex flex-col">
           <div className="flex items-start space-x-4 mb-6">
-            <UnifiedAvatar
-              src={author?.avatarUrl || DEFAULT_AVATAR_URL}
-              displayName={author?.name || 'ユーザー'}
-              size="xl"
-              className="flex-shrink-0 border border-gray-200 shadow-sm"
-            />
+            {author?.userId ? (
+              <Link href={`/users/${author.userId}`}>
+                <UnifiedAvatar
+                  src={author?.avatarUrl || DEFAULT_AVATAR_URL}
+                  displayName={author?.name || 'ユーザー'}
+                  size="xl"
+                  className="flex-shrink-0 border border-gray-200 shadow-sm cursor-pointer hover:opacity-80 transition-opacity"
+                />
+              </Link>
+            ) : (
+              <UnifiedAvatar
+                src={author?.avatarUrl || DEFAULT_AVATAR_URL}
+                displayName={author?.name || 'ユーザー'}
+                size="xl"
+                className="flex-shrink-0 border border-gray-200 shadow-sm"
+              />
+            )}
             <div className="flex-1">
               <h3 className="text-lg font-bold text-gray-900">{author?.name || 'ユーザー不明'}</h3>
               
-              {/* 著者のバイオ情報 */}
               {author?.bio && (
                 <p className="text-sm text-gray-600 mt-1 mb-2 line-clamp-3">
                   {author.bio}
                 </p>
               )}
               
-              {/* ウェブサイトとソーシャルリンク */}
               <div className="flex items-center flex-wrap gap-3 mt-2">
                 {author?.website && (
                   <a 
@@ -912,7 +1357,6 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
             </div>
           </div>
           
-          {/* フォローボタン */}
           {currentUser && author?.userId && currentUser.id !== author.userId && (
           <div className="flex justify-center">
             <Button 
@@ -948,7 +1392,6 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
           </div>
           )}
           
-          {/* 投稿者の統計情報 */}
           {author?.userId && (
             <div className="flex justify-center gap-6 mt-4 pt-4 border-t border-gray-100">
               <div className="text-center">
@@ -984,7 +1427,6 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
         }}
       />
 
-      {/* 共有ダイアログ */}
       <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -1025,7 +1467,7 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
                   onClick={() => window.open("https://line.me/R/msg/text/?" + window.location.href, "_blank")}
                 >
                   <svg viewBox="0 0 24 24" className="h-5 w-5 mr-2" fill="#06C755">
-                    <path d="M24 10.304c0-5.369-5.383-9.738-12-9.738-6.616 0-12 4.369-12 9.738 0 4.814 4.269 8.846 10.036 9.608.391.084.922.258 1.057.592.121.303.079.778.039 1.085l-.171 1.027c-.053.303-.242 1.186 1.039.647 1.281-.54 6.911-4.069 9.428-6.967 1.739-1.907 2.572-3.844 2.572-5.992zm-18.988-2.595c.129 0 .234.105.234v4.153h2.287c.129 0 .233.104.233.233v.842a.233.233 0 01-.233.234H4.781a.233.233 0 01-.234-.234V7.943c0-.129.105-.234.234-.234h.465zm14.701 0c.129 0 .233.105.233.234v.842a.232.232 0 01-.233.234h-2.287v.922h2.287c.129 0 .233.105.233.234v.842a.232.232 0 01-.233.234h-2.287v.922h2.287c.129 0 .233.105.233.234v.842a.232.232 0 01-.233.234h-3.363a.233.233 0 01-.234-.234V7.943c0-.129.105-.234.234-.234h3.363zm-10.12.002c.128 0 .233.104.233.233v4.153c0 .129-.105.234-.233.234h-.842a.233.233 0 01-.234-.234V7.944c0-.129.105-.233.234-.233h.842zm2.894 0a.233.233 0 01.233.233v4.153a.232.232 0 01-.233.234h-.842a.232.232 0 01-.233-.234V7.944c0-.129.104-.233.233-.233h.842z" />
+                    <path d="M24 10.304c0-5.369-5.383-9.738-12-9.738-6.616 0-12 4.369-12 9.738 0 4.814 4.269 8.846 10.036 9.608.391.084.922.258 1.057.592.121.303.079.778.039 1.085l-.171 1.027c-.053.303-.242 1.186 1.039.647 1.281-.54 6.911-4.069 9.428-6.967 1.739-1.907 2.572-3.844 2.572-5.992zm-18.988-2.595c.129 0 .234.105.234v4.153h2.287c.129 0 .233.104.233v.842a.233.233 0 01-.233.234H4.781a.233.233 0 01-.234-.234V7.943c0-.129.105-.234.234-.234h.465zm14.701 0c.129 0 .233.105.233.234v.842a.232.232 0 01-.233.234h-2.287v.922h2.287c.129 0 .233.105.233.234v.842a.232.232 0 01-.233.234h-2.287v.922h2.287c.129 0 .233.105.233.234v.842a.232.232 0 01-.233.234h-3.363a.233.233 0 01-.234-.234V7.943c0-.129.105-.234.234-.234h3.363zm-10.12.002c.128 0 .233.104.233.233v4.153c0 .129-.105.234-.233.234h-.842a.233.233 0 01-.234-.234V7.944c0-.129.105-.233.234-.233h.842zm2.894 0a.233.233 0 01.233.233v4.153a.232.232 0 01-.233.234h-.842a.232.232 0 01-.233-.234V7.944c0-.129.104-.233.233-.233h.842z" />
                   </svg>
                   LINE
                 </Button>
@@ -1053,7 +1495,6 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* 報告ダイアログ */}
       <ReportDialog
         open={isReportDialogOpen}
         onOpenChange={() => setIsReportDialogOpen(false)}

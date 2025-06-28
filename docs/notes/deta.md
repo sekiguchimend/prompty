@@ -89,8 +89,17 @@ CREATE TABLE public.categories (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT categories_pkey PRIMARY KEY (id),
-  CONSTRAINT categories_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
-  CONSTRAINT categories_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.categories(id)
+  CONSTRAINT categories_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.categories(id),
+  CONSTRAINT categories_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id)
+);
+CREATE TABLE public.comment_likes (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  comment_id uuid NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT comment_likes_pkey PRIMARY KEY (id),
+  CONSTRAINT comment_likes_comment_id_fkey FOREIGN KEY (comment_id) REFERENCES public.comments(id),
+  CONSTRAINT comment_likes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
 );
 CREATE TABLE public.comments (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -102,9 +111,9 @@ CREATE TABLE public.comments (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT comments_pkey PRIMARY KEY (id),
+  CONSTRAINT comments_prompt_id_fkey FOREIGN KEY (prompt_id) REFERENCES public.prompts(id),
   CONSTRAINT comments_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id),
-  CONSTRAINT comments_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.comments(id),
-  CONSTRAINT comments_prompt_id_fkey FOREIGN KEY (prompt_id) REFERENCES public.prompts(id)
+  CONSTRAINT comments_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.comments(id)
 );
 CREATE TABLE public.contacts (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -127,9 +136,9 @@ CREATE TABLE public.contest_entries (
   is_winner boolean DEFAULT false,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT contest_entries_pkey PRIMARY KEY (id),
-  CONSTRAINT contest_entries_prompt_id_fkey FOREIGN KEY (prompt_id) REFERENCES public.prompts(id),
+  CONSTRAINT contest_entries_contest_id_fkey FOREIGN KEY (contest_id) REFERENCES public.contests(id),
   CONSTRAINT contest_entries_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id),
-  CONSTRAINT contest_entries_contest_id_fkey FOREIGN KEY (contest_id) REFERENCES public.contests(id)
+  CONSTRAINT contest_entries_prompt_id_fkey FOREIGN KEY (prompt_id) REFERENCES public.prompts(id)
 );
 CREATE TABLE public.contests (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -195,8 +204,8 @@ CREATE TABLE public.magazine_prompts (
   order_index integer NOT NULL,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT magazine_prompts_pkey PRIMARY KEY (id),
-  CONSTRAINT magazine_prompts_magazine_id_fkey FOREIGN KEY (magazine_id) REFERENCES public.magazines(id),
-  CONSTRAINT magazine_prompts_prompt_id_fkey FOREIGN KEY (prompt_id) REFERENCES public.prompts(id)
+  CONSTRAINT magazine_prompts_prompt_id_fkey FOREIGN KEY (prompt_id) REFERENCES public.prompts(id),
+  CONSTRAINT magazine_prompts_magazine_id_fkey FOREIGN KEY (magazine_id) REFERENCES public.magazines(id)
 );
 CREATE TABLE public.magazines (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -251,8 +260,8 @@ CREATE TABLE public.notifications (
   is_read boolean DEFAULT false,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT notifications_pkey PRIMARY KEY (id),
-  CONSTRAINT notifications_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES public.profiles(id),
-  CONSTRAINT notifications_recipient_id_fkey FOREIGN KEY (recipient_id) REFERENCES public.profiles(id)
+  CONSTRAINT notifications_recipient_id_fkey FOREIGN KEY (recipient_id) REFERENCES public.profiles(id),
+  CONSTRAINT notifications_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES public.profiles(id)
 );
 CREATE TABLE public.payment_methods (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -376,7 +385,6 @@ CREATE TABLE public.prompts (
   is_free boolean DEFAULT true,
   is_featured boolean DEFAULT false,
   is_premium boolean DEFAULT false,
-  is_ai_generated boolean DEFAULT false,
   published boolean DEFAULT true,
   view_count integer DEFAULT 0,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
@@ -405,8 +413,8 @@ CREATE TABLE public.purchases (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   currency text DEFAULT 'JPY'::text,
   CONSTRAINT purchases_pkey PRIMARY KEY (id),
-  CONSTRAINT purchases_buyer_id_fkey FOREIGN KEY (buyer_id) REFERENCES public.profiles(id),
-  CONSTRAINT purchases_prompt_id_fkey FOREIGN KEY (prompt_id) REFERENCES public.prompts(id)
+  CONSTRAINT purchases_prompt_id_fkey FOREIGN KEY (prompt_id) REFERENCES public.prompts(id),
+  CONSTRAINT purchases_buyer_id_fkey FOREIGN KEY (buyer_id) REFERENCES public.profiles(id)
 );
 CREATE TABLE public.recently_viewed_prompts (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -414,9 +422,9 @@ CREATE TABLE public.recently_viewed_prompts (
   prompt_id uuid NOT NULL,
   viewed_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT recently_viewed_prompts_pkey PRIMARY KEY (id),
+  CONSTRAINT recently_viewed_prompts_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
   CONSTRAINT recently_viewed_prompts_prompt_id_fkey FOREIGN KEY (prompt_id) REFERENCES public.prompts(id),
-  CONSTRAINT recently_viewed_prompts_user_id_idx FOREIGN KEY (user_id) REFERENCES auth.users(id),
-  CONSTRAINT recently_viewed_prompts_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+  CONSTRAINT recently_viewed_prompts_user_id_idx FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.reports (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -445,8 +453,8 @@ CREATE TABLE public.subscriptions (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT subscriptions_pkey PRIMARY KEY (id),
-  CONSTRAINT subscriptions_payment_method_id_fkey FOREIGN KEY (payment_method_id) REFERENCES public.payment_methods(id),
   CONSTRAINT subscriptions_creator_id_fkey FOREIGN KEY (creator_id) REFERENCES public.profiles(id),
+  CONSTRAINT subscriptions_payment_method_id_fkey FOREIGN KEY (payment_method_id) REFERENCES public.payment_methods(id),
   CONSTRAINT subscriptions_subscriber_id_fkey FOREIGN KEY (subscriber_id) REFERENCES public.profiles(id)
 );
 CREATE TABLE public.tags (
@@ -462,8 +470,8 @@ CREATE TABLE public.user_badges (
   badge_id uuid NOT NULL,
   awarded_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT user_badges_pkey PRIMARY KEY (id),
-  CONSTRAINT user_badges_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id),
-  CONSTRAINT user_badges_badge_id_fkey FOREIGN KEY (badge_id) REFERENCES public.badges(id)
+  CONSTRAINT user_badges_badge_id_fkey FOREIGN KEY (badge_id) REFERENCES public.badges(id),
+  CONSTRAINT user_badges_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
 );
 CREATE TABLE public.user_settings (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
