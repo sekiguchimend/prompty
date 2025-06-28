@@ -73,23 +73,22 @@ export const useNotifications = (): NotificationHook => {
   // FCMトークンを取得
   const refreshTokens = useCallback(async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) return;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-      const response = await fetch('/api/notifications/fcm-token', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const { data, error } = await supabase
+        .from('fcm_tokens')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
 
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          setFcmTokens(result.data || []);
-        }
+      if (error) {
+        console.error('FCMトークン取得エラー:', error);
+        return;
       }
+
+      setFcmTokens(data || []);
     } catch (error) {
       console.error('FCMトークン取得エラー:', error);
     }
@@ -137,36 +136,9 @@ export const useNotifications = (): NotificationHook => {
         return false;
       }
 
-      // FCMトークンをSupabaseに保存
+      // FCMトークンをSupabaseに直接保存
       await saveFCMToken(token);
-
-      // API経由でもトークンを保存（互換性のため）
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token) {
-        try {
-          const response = await fetch('/api/notifications/fcm-token', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${session.access_token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              token,
-              device_info: {
-                userAgent: navigator.userAgent,
-                platform: navigator.platform,
-                timestamp: new Date().toISOString()
-              }
-            })
-          });
-
-          if (!response.ok) {
-            console.warn('API経由でのトークン保存に失敗しました:', response.statusText);
-          }
-        } catch (apiError) {
-          console.warn('API経由でのトークン保存エラー:', apiError);
-        }
-      }
+      console.log('✅ FCMトークンをSupabaseに保存しました');
 
       await refreshTokens();
 
@@ -195,24 +167,11 @@ export const useNotifications = (): NotificationHook => {
     setIsLoading(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) return;
-
       // アクティブなトークンをすべて無効化
       for (const tokenData of fcmTokens) {
         try {
           // Firebase経由で削除
           await removeFCMToken(tokenData.token);
-          
-          // API経由でも削除（互換性のため）
-          await fetch('/api/notifications/fcm-token', {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${session.access_token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ token: tokenData.token })
-          });
         } catch (tokenError) {
           console.warn('トークン削除エラー:', tokenError);
         }
@@ -253,8 +212,10 @@ export const useNotifications = (): NotificationHook => {
     }
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
+      
+      if (!session?.access_token || !user) {
         toast({
           title: 'ログインが必要です',
           description: 'ログインしてからテスト通知を送信してください。',
@@ -263,7 +224,7 @@ export const useNotifications = (): NotificationHook => {
         return false;
       }
 
-      // 最初のアクティブなトークンを使用
+      // アクティブなトークンがあるか確認
       const activeToken = fcmTokens.find(t => t.is_active);
       if (!activeToken) {
         toast({
@@ -281,10 +242,9 @@ export const useNotifications = (): NotificationHook => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          fcm_token: activeToken.token,
+          userId: user.id,  // Edge Functionが期待するuserIdを送信
           title,
-          body,
-          data
+          body
         })
       });
 
