@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '../../components/ui/button';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { Badge } from '../../components/ui/badge';
 import { Heart, Share2, MessageSquare, MoreHorizontal, Flag, Send } from 'lucide-react';
 import PurchaseDialog from './PurchaseDialog';
@@ -142,18 +143,117 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
 
+  const router = useRouter();
+
   useEffect(() => {
     setLikes(initialLikes);
   }, [initialLikes]);
 
-  useEffect(() => {
-    const pathname = window.location.pathname;
-    const id = pathname.split('/').pop();
-    if (id) {
-      setPromptId(id);
-      fetchComments(id);
+  // fetchComments関数を先に定義（useCallbackを使用）
+  const fetchComments = useCallback(async (promptId: string) => {
+    if (!promptId) {
+      console.error("プロンプトIDが指定されていません");
+      return;
+    }
+    
+    setIsCommentsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('comments')
+        .select(`
+          id, user_id, content, created_at, parent_id,
+          user:profiles(id, username, display_name, avatar_url)
+        `)
+        .eq('prompt_id', promptId)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error("コメント取得エラー:", error);
+        toast({
+          title: "コメントの取得に失敗しました",
+          description: "しばらくしてから再度お試しください",
+          variant: "destructive",
+        });
+      } else {
+        const safeComments = Array.isArray(data) ? data.map(comment => {
+          const userObj = comment.user as any || {};
+          
+          return {
+            id: String(comment.id || `temp-${Date.now()}`),
+            user_id: String(comment.user_id || ''),
+            content: String(comment.content || ''),
+            created_at: String(comment.created_at || new Date().toISOString()),
+            parent_id: comment.parent_id ? String(comment.parent_id) : null,
+            replies: [],
+            user: {
+              username: userObj.username ? String(userObj.username) : undefined,
+              display_name: userObj.display_name ? String(userObj.display_name) : undefined,
+              avatar_url: userObj.avatar_url ? String(userObj.avatar_url) : undefined
+            }
+          } as CommentType;
+        }) : [];
+        
+        // 階層構造を構築
+        const commentMap = new Map<string, CommentType>();
+        const rootComments: CommentType[] = [];
+        
+        // 全コメントをマップに登録
+        safeComments.forEach(comment => {
+          commentMap.set(comment.id, comment);
+        });
+        
+        // 親子関係を構築
+        safeComments.forEach(comment => {
+          if (comment.parent_id) {
+            const parent = commentMap.get(comment.parent_id);
+            if (parent) {
+              if (!parent.replies) parent.replies = [];
+              parent.replies.push(comment);
+            }
+          } else {
+            rootComments.push(comment);
+          }
+        });
+        
+        // 返信を日時順にソート（新しい順）
+        rootComments.forEach(comment => {
+          if (comment.replies) {
+            comment.replies.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+          }
+        });
+        
+        // ルートコメントを新しい順にソート
+        rootComments.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        
+        setComments(rootComments);
+        setCommentCount(safeComments.length);
+      }
+    } catch (err) {
+      console.error("コメント取得中の例外:", err);
+    } finally {
+      setIsCommentsLoading(false);
     }
   }, []);
+
+  // routerからpromptIdを取得し、IDが変わった時にコメント状態をリセット
+  useEffect(() => {
+    const id = router.query.id as string;
+    if (id && id !== promptId) {
+      // 記事IDが変わった時は全てのコメント関連状態をリセット
+      setPromptId(id);
+      setComments([]);
+      setCommentCount(0);
+      setNewComment("");
+      setIsSubmittingComment(false);
+      setReplyingTo(null);
+      setReplyContent('');
+      setIsCommentSectionVisible(false);
+      setCommentLikes({});
+      
+      // 新しい記事のコメントを取得
+      fetchComments(id);
+    }
+  }, [router.query.id, promptId, fetchComments]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -437,95 +537,11 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
     }
   };
 
-  const fetchComments = async (promptId: string) => {
-    if (!promptId) {
-      console.error("プロンプトIDが指定されていません");
-      return;
-    }
-    
-    setIsCommentsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('comments')
-        .select(`
-          id, user_id, content, created_at, parent_id,
-          user:profiles(id, username, display_name, avatar_url)
-        `)
-        .eq('prompt_id', promptId)
-        .order('created_at', { ascending: true });
 
-      if (error) {
-        console.error("コメント取得エラー:", error);
-        toast({
-          title: "コメントの取得に失敗しました",
-          description: "しばらくしてから再度お試しください",
-          variant: "destructive",
-        });
-      } else {
-        const safeComments = Array.isArray(data) ? data.map(comment => {
-          const userObj = comment.user as any || {};
-          
-          return {
-            id: String(comment.id || `temp-${Date.now()}`),
-            user_id: String(comment.user_id || ''),
-            content: String(comment.content || ''),
-            created_at: String(comment.created_at || new Date().toISOString()),
-            parent_id: comment.parent_id ? String(comment.parent_id) : null,
-            replies: [],
-            user: {
-              username: userObj.username ? String(userObj.username) : undefined,
-              display_name: userObj.display_name ? String(userObj.display_name) : undefined,
-              avatar_url: userObj.avatar_url ? String(userObj.avatar_url) : undefined
-            }
-          } as CommentType;
-        }) : [];
-        
-        // 階層構造を構築
-        const commentMap = new Map<string, CommentType>();
-        const rootComments: CommentType[] = [];
-        
-        // 全コメントをマップに登録
-        safeComments.forEach(comment => {
-          commentMap.set(comment.id, comment);
-        });
-        
-        // 親子関係を構築
-        safeComments.forEach(comment => {
-          if (comment.parent_id) {
-            const parent = commentMap.get(comment.parent_id);
-            if (parent) {
-              if (!parent.replies) parent.replies = [];
-              parent.replies.push(comment);
-            }
-          } else {
-            rootComments.push(comment);
-          }
-        });
-        
-        // 返信を日時順にソート（新しい順）
-        rootComments.forEach(comment => {
-          if (comment.replies) {
-            comment.replies.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-          }
-        });
-        
-        // ルートコメントを新しい順にソート
-        rootComments.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        
-        setComments(rootComments);
-        setCommentCount(safeComments.length);
-      }
-    } catch (err) {
-      console.error("コメント取得中の例外:", err);
-    } finally {
-      setIsCommentsLoading(false);
-    }
-  };
 
+  // Supabaseリアルタイム購読の設定
   useEffect(() => {
     if (promptId) {
-      fetchComments(promptId);
-
       const channel = supabase
         .channel(`comments-${promptId}`)
         .on(
@@ -542,16 +558,13 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
             }
           }
         )
-        .subscribe((status) => {
-          if (status !== 'SUBSCRIBED') {
-          }
-        });
+        .subscribe();
 
       return () => {
         supabase.removeChannel(channel);
       };
     }
-  }, [promptId]);
+  }, [promptId, fetchComments]);
 
   const handleFollowClick = async () => {
     if (!author) return;

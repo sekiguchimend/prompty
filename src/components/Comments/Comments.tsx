@@ -235,12 +235,24 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
     }
   }, [promptId, currentUser?.id, collapsedComments]);
   
-  // コメントの初回読み込み
+  // promptIdが変更された時にコメント状態をリセット
   useEffect(() => {
     if (promptId) {
+      // 記事IDが変わった時は全てのコメント関連状態をリセット
+      setComments([]);
+      setCommentCount(0);
+      setNewComment('');
+      setIsSubmitting(false);
+      setReplyingTo(null);
+      setReplyContent('');
+      setOpenMenuId(null);
+      setSelectedCommentId(null);
+      setIsReportDialogOpen(false);
+      
+      // 新しい記事のコメントを取得
       fetchComments();
     }
-  }, [fetchComments, promptId]);
+  }, [promptId, fetchComments]);
   
   // リアルタイム購読のセットアップ
   useEffect(() => {
