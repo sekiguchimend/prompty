@@ -38,3 +38,9 @@ package-lock.json
 *.njsproj
 *.sln
 *.sw?
+
+# Firebase機密情報（プライベートキー含む）
+setup-firebase-env.sh
+firebase-private-key.json
+service-account-key.json
+*-firebase-adminsdk-*.json

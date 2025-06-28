@@ -5,7 +5,8 @@ import { Separator } from '../../components/ui/separator';
 import { useToast } from '../../hooks/use-toast';
 import { Skeleton } from '../../components/ui/skeleton';
 import { supabase } from '../../lib/supabaseClient';
-import { Loader2 } from 'lucide-react';
+import { useNotifications } from '../../hooks/useNotifications';
+import { Loader2, Bell, BellOff, TestTube } from 'lucide-react';
 
 // 通知設定のインターフェース
 interface NotificationSettings {
@@ -57,6 +58,17 @@ const NotificationSettingsComponent: React.FC = memo(() => {
   const [isSaving, setIsSaving] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const { toast } = useToast();
+  
+  // FCM通知フック
+  const {
+    isSupported,
+    permission,
+    isLoading: fcmLoading,
+    fcmTokens,
+    enableNotifications,
+    disableNotifications,
+    sendTestNotification
+  } = useNotifications();
 
   // ユーザー情報を取得
   useEffect(() => {
@@ -307,6 +319,100 @@ const NotificationSettingsComponent: React.FC = memo(() => {
         
         <div>
           <h2 className="text-sm font-medium text-gray-700 mb-6">プッシュ通知</h2>
+          
+          {/* Web Push通知制御セクション */}
+          <div className="mb-8 p-4 border rounded-lg bg-gray-50">
+            <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
+              <Bell className="h-4 w-4" />
+              Web Push通知設定
+            </h3>
+            
+            <div className="space-y-4">
+              {/* サポート状況表示 */}
+              <div className="text-xs text-gray-600">
+                {isSupported ? (
+                  <span className="text-green-600">✓ ブラウザがWeb Push通知をサポートしています</span>
+                ) : (
+                  <span className="text-red-600">✗ ブラウザがWeb Push通知をサポートしていません</span>
+                )}
+              </div>
+              
+              {/* 権限状況表示 */}
+              {isSupported && (
+                <div className="text-xs text-gray-600">
+                  権限状態: {
+                    permission === 'granted' ? (
+                      <span className="text-green-600">許可済み</span>
+                    ) : permission === 'denied' ? (
+                      <span className="text-red-600">拒否</span>
+                    ) : (
+                      <span className="text-yellow-600">未設定</span>
+                    )
+                  }
+                </div>
+              )}
+              
+              {/* アクティブなトークン数表示 */}
+              {fcmTokens.length > 0 && (
+                <div className="text-xs text-gray-600">
+                  アクティブなデバイス: {fcmTokens.filter(t => t.is_active).length}台
+                </div>
+              )}
+              
+              {/* 制御ボタン */}
+              <div className="flex gap-2">
+                {fcmTokens.filter(t => t.is_active).length === 0 ? (
+                  <Button
+                    size="sm"
+                    onClick={enableNotifications}
+                    disabled={!isSupported || fcmLoading}
+                    className="flex items-center gap-2"
+                  >
+                    {fcmLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Bell className="h-4 w-4" />
+                    )}
+                    通知を有効にする
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={disableNotifications}
+                      disabled={fcmLoading}
+                      className="flex items-center gap-2"
+                    >
+                      {fcmLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <BellOff className="h-4 w-4" />
+                      )}
+                      通知を無効にする
+                    </Button>
+                    
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => sendTestNotification('テスト通知', 'これはテスト通知です')}
+                      disabled={fcmLoading}
+                      className="flex items-center gap-2"
+                    >
+                      <TestTube className="h-4 w-4" />
+                      テスト送信
+                    </Button>
+                  </>
+                )}
+              </div>
+              
+              {!isSupported && (
+                <p className="text-xs text-gray-500 mt-2">
+                  Web Push通知を利用するには、Chrome、Firefox、Safariなどの対応ブラウザをご利用ください。
+                </p>
+              )}
+            </div>
+          </div>
           
           <div className="space-y-6">
             <div className="flex justify-between items-center">
