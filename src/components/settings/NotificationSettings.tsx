@@ -371,14 +371,49 @@ const NotificationSettingsComponent: React.FC = memo(() => {
               )}
               
               {/* アクティブなトークン数表示 */}
-              {fcmTokens.length > 0 && (
+              {fcmTokens.length > 0 ? (
                 <div className="text-xs text-gray-600">
-                  アクティブなデバイス: {fcmTokens.filter(t => t.is_active).length}台
+                  <span className="text-green-600">✓ 通知設定完了</span> - アクティブなデバイス: {fcmTokens.filter(t => t.is_active).length}台
+                </div>
+              ) : (
+                <div className="text-xs text-red-600">
+                  ❌ 通知が受け取れません - 下のボタンから通知を有効にしてください
+                </div>
+              )}
+
+              {/* 通知が無効な場合の説明を追加 */}
+              {isSupported && fcmTokens.filter(t => t.is_active).length === 0 && (
+                <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-md">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <Bell className="h-4 w-4 text-yellow-600 mt-0.5" />
+                    </div>
+                    <div className="ml-2">
+                      <h4 className="text-sm font-medium text-yellow-800">通知が届かない理由</h4>
+                      <div className="mt-1 text-sm text-yellow-700">
+                        {permission === 'denied' ? (
+                          <p>ブラウザで通知が拒否されています。ブラウザの設定から通知を許可してください。</p>
+                        ) : permission === 'default' ? (
+                          <p>まだ通知許可をリクエストしていません。下のボタンから通知を有効にしてください。</p>
+                        ) : (
+                          <p>通知トークンが登録されていません。下のボタンから通知を有効にしてください。</p>
+                        )}
+                      </div>
+                      {permission === 'denied' && (
+                        <div className="mt-2 text-xs text-yellow-600">
+                          <p><strong>解決方法:</strong></p>
+                          <p>1. ブラウザのアドレスバー左側の🔒マークをクリック</p>
+                          <p>2. 通知を「許可」に変更</p>
+                          <p>3. ページを再読み込み後、再度通知を有効にしてください</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
               
               {/* 制御ボタン */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 {fcmTokens.filter(t => t.is_active).length === 0 ? (
                   <Button
                     size="sm"
@@ -436,9 +471,12 @@ const NotificationSettingsComponent: React.FC = memo(() => {
               </div>
               
               {!isSupported && (
-                <p className="text-xs text-gray-500 mt-2">
-                  Web Push通知を利用するには、Chrome、Firefox、Safariなどの対応ブラウザをご利用ください。
-                </p>
+                <div className="bg-red-50 border border-red-200 p-3 rounded-md">
+                  <p className="text-xs text-red-700">
+                    <strong>ブラウザが通知をサポートしていません</strong><br />
+                    Web Push通知を利用するには、Chrome、Firefox、Safari（iOS 16.4+）などの対応ブラウザをご利用ください。
+                  </p>
+                </div>
               )}
             </div>
           </div>

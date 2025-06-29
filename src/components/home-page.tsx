@@ -7,6 +7,8 @@ import { useResponsive } from '../hooks/use-responsive';
 import { PromptItem } from '../pages/prompts/[id]';
 import { cachedFetch, generateCacheKey } from '../lib/cache';
 import { DEFAULT_AVATAR_URL } from './index';
+import { useNotifications } from '../hooks/useNotifications';
+import { Bell, X } from 'lucide-react';
 
 // カテゴリの型定義
 interface Category {
@@ -55,6 +57,22 @@ const HomePage: React.FC = memo(() => {
   const [specialCategoryContents, setSpecialCategoryContents] = useState<CategoryContent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showNotificationBanner, setShowNotificationBanner] = useState(true);
+  const { isSupported, permission, fcmTokens, enableNotifications } = useNotifications();
+
+  // 通知バナーを表示すべきかチェック
+  const shouldShowNotificationBanner = 
+    showNotificationBanner && 
+    isSupported && 
+    permission !== 'granted' && 
+    fcmTokens.length === 0;
+
+  const handleEnableNotifications = async () => {
+    const success = await enableNotifications();
+    if (success) {
+      setShowNotificationBanner(false);
+    }
+  };
 
   // 記事をPromptItem形式に変換する関数 - useCallbackで最適化
   const transformToPromptItem = useCallback((item: any): PromptItem => {
@@ -264,6 +282,37 @@ const HomePage: React.FC = memo(() => {
 
   return (
     <div className="flex min-h-screen flex-col">
+      {/* 通知許可促進バナー */}
+      {shouldShowNotificationBanner && (
+        <div className="bg-blue-600 text-white py-3 px-4 relative z-50">
+          <div className="max-w-6xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Bell className="h-5 w-5" />
+              <div>
+                <p className="font-medium">📢 いいねやコメントの通知を受け取りませんか？</p>
+                <p className="text-sm text-blue-100">
+                  新しいフォロワーやリアクションをリアルタイムで確認できます
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleEnableNotifications}
+                className="bg-white text-blue-600 px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-50 transition-colors"
+              >
+                通知を有効にする
+              </button>
+              <button
+                onClick={() => setShowNotificationBanner(false)}
+                className="text-blue-100 hover:text-white transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Header />
       <Sidebar />
       

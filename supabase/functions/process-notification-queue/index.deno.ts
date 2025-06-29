@@ -112,6 +112,26 @@ async function sendFCMNotification(token: string, notification: any, data?: any)
 
 Deno.serve(async (req: Request) => {
   try {
+    // CORSヘッダーを設定
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    };
+
+    // OPTIONSリクエストの場合
+    if (req.method === 'OPTIONS') {
+      return new Response('ok', { headers: corsHeaders });
+    }
+
+    // POSTリクエストのみ受け付け
+    if (req.method !== 'POST') {
+      return new Response('Method not allowed', { 
+        status: 405,
+        headers: corsHeaders
+      });
+    }
+
     console.log('通知キュー処理開始');
     
     // Supabaseクライアントの初期化
@@ -137,7 +157,7 @@ Deno.serve(async (req: Request) => {
     if (!queueItems || queueItems.length === 0) {
       return new Response(JSON.stringify({ message: '処理対象の通知はありません' }), {
         status: 200,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
@@ -318,7 +338,7 @@ Deno.serve(async (req: Request) => {
       totalItems: queueItems.length
     }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
@@ -327,7 +347,10 @@ Deno.serve(async (req: Request) => {
       JSON.stringify({ error: (error as Error).message }), 
       { 
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json'
+        }
       }
     );
   }
