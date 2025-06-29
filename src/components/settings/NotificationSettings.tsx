@@ -62,9 +62,11 @@ const NotificationSettingsComponent: React.FC = memo(() => {
   // FCM通知フック
   const {
     isSupported,
+    isFirebaseSupported,
     permission,
     isLoading: fcmLoading,
     fcmTokens,
+    supportCheckError,
     enableNotifications,
     disableNotifications,
     sendTestNotification,
@@ -348,10 +350,17 @@ const NotificationSettingsComponent: React.FC = memo(() => {
             <div className="space-y-4">
               {/* サポート状況表示 */}
               <div className="text-xs text-gray-600">
-                {isSupported ? (
+                {isSupported && isFirebaseSupported ? (
                   <span className="text-green-600">✓ ブラウザがWeb Push通知をサポートしています</span>
                 ) : (
-                  <span className="text-red-600">✗ ブラウザがWeb Push通知をサポートしていません</span>
+                  <div>
+                    <span className="text-red-600">✗ 通知をサポートしていません</span>
+                    {supportCheckError && (
+                      <div className="mt-1 text-red-600">
+                        理由: {supportCheckError}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
               
@@ -418,7 +427,7 @@ const NotificationSettingsComponent: React.FC = memo(() => {
                   <Button
                     size="sm"
                     onClick={enableNotifications}
-                    disabled={!isSupported || fcmLoading}
+                    disabled={!isSupported || !isFirebaseSupported || fcmLoading}
                     className="flex items-center gap-2"
                   >
                     {fcmLoading ? (
@@ -470,11 +479,18 @@ const NotificationSettingsComponent: React.FC = memo(() => {
                 )}
               </div>
               
-              {!isSupported && (
+              {(!isSupported || !isFirebaseSupported) && (
                 <div className="bg-red-50 border border-red-200 p-3 rounded-md">
                   <p className="text-xs text-red-700">
-                    <strong>ブラウザが通知をサポートしていません</strong><br />
-                    Web Push通知を利用するには、Chrome、Firefox、Safari（iOS 16.4+）などの対応ブラウザをご利用ください。
+                    <strong>通知がサポートされていません</strong><br />
+                    {supportCheckError && (
+                      <span>エラー: {supportCheckError}<br /></span>
+                    )}
+                    Web Push通知を利用するには以下をご確認ください：<br />
+                    • HTTPS環境またはlocalhostでアクセスしている<br />
+                    • Chrome、Firefox、Safari（iOS 16.4+）などの対応ブラウザを使用している<br />
+                    • ブラウザの通知設定で当サイトをブロックしていない<br />
+                    • Service Workerが利用可能な環境である
                   </p>
                 </div>
               )}

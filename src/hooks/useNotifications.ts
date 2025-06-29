@@ -4,6 +4,7 @@ import {
   getNotificationToken, 
   requestNotificationPermission,
   checkNotificationSupport,
+  checkFirebaseMessagingSupport,
   getNotificationPermission,
   saveFCMToken,
   removeFCMToken,
@@ -24,31 +25,71 @@ interface FCMToken {
 
 interface NotificationHook {
   isSupported: boolean;
+  isFirebaseSupported: boolean;
   permission: NotificationPermission | null;
   isLoading: boolean;
   fcmTokens: FCMToken[];
+  supportCheckError: string | null;
   enableNotifications: () => Promise<boolean>;
   disableNotifications: () => Promise<void>;
-      sendTestNotification: (title: string, body: string, data?: any) => Promise<boolean>;
-    refreshTokens: () => Promise<void>;
-    processNotificationQueue: () => Promise<{processedCount: number, errorCount: number, totalItems: number}>;
+  sendTestNotification: (title: string, body: string, data?: any) => Promise<boolean>;
+  refreshTokens: () => Promise<void>;
+  processNotificationQueue: () => Promise<{processedCount: number, errorCount: number, totalItems: number}>;
 }
 
 export const useNotifications = (): NotificationHook => {
   const [isSupported, setIsSupported] = useState(false);
+  const [isFirebaseSupported, setIsFirebaseSupported] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [fcmTokens, setFcmTokens] = useState<FCMToken[]>([]);
+  const [supportCheckError, setSupportCheckError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // 通知サポートチェック
+  // 通知サポートチェック（改善版）
   useEffect(() => {
-    const checkSupport = () => {
-      const supported = checkNotificationSupport();
-      setIsSupported(supported);
-      
-      if (supported) {
+    const checkSupport = async () => {
+      try {
+        setSupportCheckError(null);
+        
+        // 基本的なブラウザサポートチェック
+        const basicSupport = checkNotificationSupport();
+        console.log('🔍 Basic Notification Support:', basicSupport);
+        setIsSupported(basicSupport);
+        
+        if (!basicSupport) {
+          if (typeof window !== 'undefined') {
+            const errors = [];
+            if (!('Notification' in window)) errors.push('Notification API');
+            if (!('serviceWorker' in navigator)) errors.push('Service Worker');
+            if (window.location.protocol !== 'https:' && 
+                window.location.hostname !== 'localhost' && 
+                window.location.hostname !== '127.0.0.1') {
+              errors.push('HTTPS環境');
+            }
+            setSupportCheckError(`以下が不足しています: ${errors.join(', ')}`);
+          }
+          return;
+        }
+        
+        // Firebase Messaging サポートチェック
+        const firebaseSupport = await checkFirebaseMessagingSupport();
+        console.log('🔍 Firebase Messaging Support:', firebaseSupport);
+        setIsFirebaseSupported(firebaseSupport);
+        
+        if (!firebaseSupport) {
+          setSupportCheckError('Firebase Messaging がサポートされていません');
+          return;
+        }
+        
+        // 通知権限を取得
         setPermission(getNotificationPermission());
+        
+      } catch (error: any) {
+        console.error('通知サポートチェックエラー:', error);
+        setSupportCheckError(`サポートチェック中にエラーが発生しました: ${error.message}`);
+        setIsSupported(false);
+        setIsFirebaseSupported(false);
       }
     };
 
@@ -373,9 +414,11 @@ export const useNotifications = (): NotificationHook => {
 
   return {
     isSupported,
+    isFirebaseSupported,
     permission,
     isLoading,
     fcmTokens,
+    supportCheckError,
     enableNotifications,
     disableNotifications,
     sendTestNotification,

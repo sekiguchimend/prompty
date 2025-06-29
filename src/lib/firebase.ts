@@ -264,10 +264,45 @@ export const removeFCMToken = async (token: string) => {
   }
 };
 
-// サポート状況を確認
+// サポート状況を確認（改善版）
 export const checkNotificationSupport = () => {
   if (typeof window === 'undefined') return false;
-  return 'Notification' in window && 'serviceWorker' in navigator && isFirebaseSupported;
+  
+  // 基本的なブラウザ機能のチェック
+  const hasNotification = 'Notification' in window;
+  const hasServiceWorker = 'serviceWorker' in navigator;
+  
+  console.log('🔍 Notification Support Check:', {
+    hasNotification,
+    hasServiceWorker,
+    isFirebaseSupported,
+    userAgent: navigator.userAgent,
+    protocol: window.location.protocol
+  });
+  
+  // HTTPS または localhost の場合のみ通知が利用可能
+  const isSecureContext = window.location.protocol === 'https:' || 
+                          window.location.hostname === 'localhost' ||
+                          window.location.hostname === '127.0.0.1';
+  
+  if (!isSecureContext) {
+    console.warn('⚠️ 通知はHTTPS環境でのみ利用可能です');
+    return false;
+  }
+  
+  return hasNotification && hasServiceWorker;
+};
+
+// 非同期でFirebaseサポートをチェック
+export const checkFirebaseMessagingSupport = async (): Promise<boolean> => {
+  try {
+    const supported = await isSupported();
+    console.log('🔍 Firebase Messaging Support:', supported);
+    return supported;
+  } catch (error) {
+    console.error('❌ Firebase Messaging Support Check Error:', error);
+    return false;
+  }
 };
 
 // VAPID Key検証
