@@ -1,26 +1,23 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Button } from '../../components/ui/button';
-import Link from 'next/link';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Button } from '../ui/button';
+import { Textarea } from '../ui/textarea';
+import { Badge } from '../ui/badge';
+import { Heart, Share2, MessageSquare, MoreHorizontal, Send, Flag } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from '../ui/dialog';
+import { useToast } from '../../hooks/use-toast';
 import { useRouter } from 'next/router';
-import { Badge } from '../../components/ui/badge';
-import { Heart, Share2, MessageSquare, MoreHorizontal, Flag, Send } from 'lucide-react';
+import ReportDialog from '../shared/ReportDialog';
 import PurchaseDialog from './PurchaseDialog';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from '../../components/ui/dialog';
-import { toast } from '../../components/ui/use-toast';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '../../components/ui/dropdown-menu';
-import { Textarea } from '../../components/ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
+import { LoadingSpinner } from '../ui/loading-spinner';
+import { supabase } from '../../lib/supabaseClient';
+import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { supabase } from '../../lib/supabaseClient';
-import { LoadingSpinner } from '../../components/ui/loading-spinner';
-import ReportDialog from '../shared/ReportDialog';
-import { UnifiedAvatar, DEFAULT_AVATAR_URL } from '../index';
+import UnifiedAvatar from '../shared/Avatar';
+import { getDisplayName } from '../../lib/avatar-utils';
+
+const DEFAULT_AVATAR_URL = '/images/default-avatar.svg';
 
 // ユーザー情報の型定義
 interface AuthorInfo {
@@ -144,6 +141,7 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
   const [replyContent, setReplyContent] = useState('');
 
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     setLikes(initialLikes);
@@ -259,21 +257,28 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
     const fetchUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        // 最初に基本ユーザー情報を設定
         setCurrentUser(session.user as User);
         
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('id, username, display_name, avatar_url')
-          .eq('id', session.user.id)
-          .single();
-          
-        if (profileData) {
-          setCurrentUser({
-            ...session.user,
-            avatar_url: profileData.avatar_url || session.user.user_metadata?.avatar_url,
-            username: profileData.username || session.user.user_metadata?.username,
-            display_name: profileData.display_name || session.user.user_metadata?.full_name
-          } as User);
+        // プロフィール情報を非同期で取得
+        try {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('id, username, display_name, avatar_url')
+            .eq('id', session.user.id)
+            .single();
+            
+          if (profileData) {
+            setCurrentUser({
+              ...session.user,
+              avatar_url: profileData.avatar_url || session.user.user_metadata?.avatar_url,
+              username: profileData.username || session.user.user_metadata?.username,
+              display_name: profileData.display_name || session.user.user_metadata?.full_name
+            } as User);
+          }
+        } catch (error) {
+          console.error('プロフィール取得エラー:', error);
+          // エラーが発生してもセッション情報は使用可能
         }
       }
     };
@@ -937,7 +942,7 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
               <Link href={`/users/${comment.user.username}`}>
                 <UnifiedAvatar
                   src={comment.user?.avatar_url}
-                  displayName={comment.user?.display_name || comment.user?.username || "ユーザー"}
+                  displayName={getDisplayName(comment.user?.display_name, comment.user?.username)}
                   size="md"
                   className="cursor-pointer hover:opacity-80 transition-opacity"
                 />
@@ -945,7 +950,7 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
             ) : (
               <UnifiedAvatar
                 src={comment.user?.avatar_url}
-                displayName={comment.user?.display_name || comment.user?.username || "ユーザー"}
+                displayName={getDisplayName(comment.user?.display_name, comment.user?.username)}
                 size="md"
               />
             )}
@@ -956,12 +961,12 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
                 {comment.user?.username ? (
                   <Link href={`/users/${comment.user.username}`}>
                     <p className="font-medium text-foreground hover:text-blue-600 cursor-pointer transition-colors">
-                      {comment.user?.display_name || comment.user?.username || "不明なユーザー"}
+                      {getDisplayName(comment.user?.display_name, comment.user?.username)}
                     </p>
                   </Link>
                 ) : (
                   <p className="font-medium text-foreground">
-                    {comment.user?.display_name || comment.user?.username || "不明なユーザー"}
+                    {getDisplayName(comment.user?.display_name, comment.user?.username)}
                   </p>
                 )}
                 <span className="text-xs text-muted-foreground">
@@ -1066,7 +1071,7 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
                   <div className="flex-1">
                     <Textarea
                       key={`reply-${comment.id}`}
-                      placeholder={`${comment.user?.display_name || comment.user?.username || "ユーザー"}さんに返信...`}
+                      placeholder={`${getDisplayName(comment.user?.display_name, comment.user?.username)}さんに返信...`}
                       value={localReplyContent}
                       onChange={(e) => setLocalReplyContent(e.target.value)}
                       className="resize-none min-h-[32px] max-h-[100px] text-sm py-1.5 px-3 overflow-y-auto overflow-x-hidden leading-normal"

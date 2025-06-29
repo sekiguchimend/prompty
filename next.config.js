@@ -63,7 +63,7 @@ const nextConfig = {
     ];
   },
 
-  // Image optimization
+  // Image optimization - Performance enhanced
   images: {
     domains: [
       'qrxrulntwojimhhhnwqk.supabase.co', // Supabase storage
@@ -72,10 +72,13 @@ const nextConfig = {
       'lh3.googleusercontent.com', // Google profile images
       'avatars.githubusercontent.com' // GitHub profile images
     ],
-    formats: ['image/webp', 'image/avif'],
-    minimumCacheTTL: 60,
+    formats: ['image/webp', 'image/avif'], // Modern formats for better compression
+    minimumCacheTTL: 86400, // 24時間キャッシュ（60秒から延長）
     dangerouslyAllowSVG: false, // Security: disable SVG
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840], // 最適化されたデバイスサイズ
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384], // 最適化された画像サイズ
+    unoptimized: false, // 画像最適化を有効化
   },
 
   // Webpack configuration

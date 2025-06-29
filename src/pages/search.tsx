@@ -18,6 +18,7 @@ import { supabase } from '../lib/supabaseClient';
 import { Badge } from '../components/ui/badge';
 import Head from 'next/head';
 import { generateSiteUrl, getDefaultOgImageUrl } from '../utils/seo-helpers';
+import { getDisplayName } from '../lib/avatar-utils';
 
 // 検索オプションの型定義
 type SortOption = 'relevance' | 'title_asc' | 'title_desc' | 'latest' | 'oldest' | 'popular';
@@ -269,7 +270,7 @@ const Search = () => {
           likeCount: prompt.like_count || 0,
           user: {
             userId: prompt.author_id || '',
-            name: profileData.display_name || profileData.username || '不明なユーザー',
+            name: getDisplayName(profileData.display_name, profileData.username),
             avatarUrl: profileData.avatar_url || '/images/default-avatar.svg',
           }
         };

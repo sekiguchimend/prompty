@@ -51,8 +51,8 @@ const LazyImage: React.FC<LazyImageProps> = ({
           });
         },
         {
-          rootMargin: '50px', // 50px手前で読み込み開始
-          threshold: 0.1
+          rootMargin: '200px', // 200px手前で読み込み開始（よりスムーズに）
+          threshold: 0.01
         }
       );
 
@@ -89,14 +89,8 @@ const LazyImage: React.FC<LazyImageProps> = ({
             className
           )}
         >
-          {placeholder && (
-            <img 
-              src={placeholder} 
-              alt="" 
-              className="w-full h-full object-cover opacity-50"
-              aria-hidden="true"
-            />
-          )}
+          {/* プレースホルダー画像の読み込みを削除してパフォーマンス向上 */}
+          <div className="w-8 h-8 bg-gray-300 rounded" />
         </div>
       )}
       

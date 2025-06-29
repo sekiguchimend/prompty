@@ -614,7 +614,7 @@ const submitProject = async () => {
 
       // Stripeアカウントの状態を確認
       try {
-        const accountResponse = await fetch('/api/stripe/check-account-status', {
+        const accountResponse = await fetch('/api/payments/check-account-status', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

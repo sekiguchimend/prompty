@@ -98,7 +98,7 @@ const PurchaseDialog: React.FC<PurchaseDialogProps> = ({ isOpen, onClose, prompt
       }
 
       // 決済処理
-      const res = await fetch('/api/stripe/create-payment-intent', {
+      const res = await fetch('/api/payments/create-payment-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

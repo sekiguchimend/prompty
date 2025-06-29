@@ -159,7 +159,7 @@ const Business = () => {
                         width: 'auto'
                       }}
                       priority
-                      quality={90}
+                      quality={75}
                       sizes="120px"
                       loading="eager"
                     />

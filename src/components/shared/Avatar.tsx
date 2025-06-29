@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import Image from 'next/image';
 import { cn } from '../../lib/utils';
 
@@ -29,7 +29,7 @@ const iconSizes = {
   xl: 'h-8 w-8'
 };
 
-export const Avatar: React.FC<AvatarProps> = ({
+export const Avatar: React.FC<AvatarProps> = memo(({
   src,
   alt = 'Avatar',
   displayName = 'Anonymous',
@@ -74,6 +74,8 @@ export const Avatar: React.FC<AvatarProps> = ({
           className="object-cover"
           sizes={getSizes(size)}
           onError={handleImageError}
+          quality={60}
+          priority={false}
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-400 text-white">
@@ -88,6 +90,8 @@ export const Avatar: React.FC<AvatarProps> = ({
       )}
     </div>
   );
-};
+});
+
+Avatar.displayName = 'Avatar';
 
 export default Avatar;

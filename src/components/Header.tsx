@@ -9,6 +9,7 @@ import Image from 'next/image';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '../hooks/use-toast';
+import { getDisplayName } from '../lib/avatar-utils';
 import NotificationDropdown from './notification-dropdown';
 import UserMenu from './user-menu';
 import { PostItem, getFollowingPosts, getTodayForYouPosts } from '../data/posts';
@@ -117,7 +118,7 @@ const Header = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const tabButtonsRef = useRef<(HTMLButtonElement | null)[]>([]);
   
-  const displayName = userProfile?.display_name || userProfile?.username || user?.email?.split('@')[0] || "ユーザー";
+  const displayName = getDisplayName(userProfile?.display_name, userProfile?.username) || user?.email?.split('@')[0] || "ユーザー";
   const profileAvatarUrl = userProfile?.avatar_url || user?.user_metadata?.avatar_url || "https://github.com/shadcn.png";
 
   // デバッグ用：認証状態をログ出力
@@ -264,7 +265,7 @@ const Header = () => {
                       width: 'auto'
                     }}
                     priority
-                    quality={90}
+                    quality={75}
                     sizes="(max-width: 768px) 80px, 100px"
                     loading="eager"
                   />

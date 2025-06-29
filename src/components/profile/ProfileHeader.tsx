@@ -9,7 +9,8 @@ import {
   DropdownMenuTrigger
 } from '../../components/ui/dropdown-menu';
 import { Edit, MoreHorizontal, Settings } from 'lucide-react';
-import { ProfileData, getDisplayName, getAvatarUrl } from '../../types/profile';
+import { ProfileData, getAvatarUrl } from '../../types/profile';
+import { getDisplayName } from '../../lib/avatar-utils';
 
 interface ProfileHeaderProps {
   profileData: ProfileData;
@@ -25,8 +26,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   const router = useRouter();
   const isMobile = windowWidth < 640;
   
-  // 表示名を取得（nullや空の場合は「匿名」）
-  const displayName = getDisplayName(profileData.display_name);
+  // 表示名を取得（nullや空の場合、または自動生成されたusernameの場合は「ユーザー」）
+  const displayName = getDisplayName(profileData.display_name, profileData.username);
   // アバターURLを取得
   const avatarUrl = getAvatarUrl(profileData.avatar_url);
   

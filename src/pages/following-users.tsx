@@ -3,6 +3,7 @@ import { ChevronRight, UserPlus, Loader2, ChevronDown, UserMinus } from 'lucide-
 import Link from 'next/link';
 import { supabase } from '../lib/supabaseClient';
 import { useToast } from '../components/ui/use-toast';
+import { getDisplayName } from '../lib/avatar-utils';
 import { Button } from '../components/ui/button';
 import { useInView } from 'react-intersection-observer';
 import Footer from '../components/footer';
@@ -92,7 +93,7 @@ const fetchFollowingUsersData = async (
       return {
         id: profile?.id || '',
         username: profile?.username || '不明なユーザー',
-        display_name: profile?.display_name || profile?.username || '不明なユーザー',
+        display_name: getDisplayName(profile?.display_name, profile?.username),
         avatar_url: profile?.avatar_url || DEFAULT_AVATAR_URL,
         bio: profile?.bio || '',
         created_at: formattedDate
@@ -331,11 +332,11 @@ const FollowingUsers: React.FC = () => {
       <Link href={`/users/${encodeURIComponent(user.username)}`} className="flex items-center space-x-4 flex-1">
         <UnifiedAvatar
           src={user.avatar_url}
-          displayName={user.display_name || user.username}
+          displayName={getDisplayName(user.display_name, user.username)}
           size="lg"
         />
         <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-gray-900 truncate">{user.display_name || user.username}</h3>
+          <h3 className="font-medium text-gray-900 truncate">{getDisplayName(user.display_name, user.username)}</h3>
           <p className="text-sm text-gray-500 truncate">@{user.username}</p>
           {user.bio && <p className="text-sm text-gray-600 mt-1 line-clamp-1">{user.bio}</p>}
           <p className="text-xs text-gray-400 mt-1">フォロー日: {user.created_at}</p>

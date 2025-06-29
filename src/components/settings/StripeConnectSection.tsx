@@ -33,10 +33,10 @@ const StripeConnectSection: React.FC<StripeConnectSectionProps> = ({ userId, str
     
     try {
       // Expressアカウント作成API呼び出し
-      const { data: acctData } = await axios.post('/api/stripe/create-express-account', { userId });
+      const { data: acctData } = await axios.post('/api/payments/create-express-account', { userId });
       
       // アカウントリンク生成API呼び出し
-      const { data: linkData } = await axios.post('/api/stripe/create-account-link', { 
+      const { data: linkData } = await axios.post('/api/payments/create-account-link', { 
         accountId: acctData.accountId 
       });
       
@@ -89,7 +89,7 @@ const StripeConnectSection: React.FC<StripeConnectSectionProps> = ({ userId, str
       });
       
       // ログインリンク生成API呼び出し
-      const response = await axios.post('/api/stripe/create-login-link', { 
+      const response = await axios.post('/api/payments/create-login-link', { 
         accountId: stripeAccountId 
       });
       

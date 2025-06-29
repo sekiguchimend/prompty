@@ -50,13 +50,21 @@ export function getAvatarFallback(displayName: string | null | undefined): strin
 
 /**
  * 表示名を取得する
- * nullや空の場合は「ユーザー」を返す
+ * nullや空の場合、または自動生成されたusernameの場合は「ユーザー」を返す
  */
 export function getDisplayName(displayName: string | null | undefined, fallbackName?: string): string {
-  if (!displayName || displayName.trim() === '') {
-    return fallbackName || 'ユーザー';
+  // displayNameが有効な場合はそれを返す
+  if (displayName && displayName.trim() !== '') {
+    return displayName.trim();
   }
-  return displayName.trim();
+  
+  // fallbackNameが自動生成されたusername（user_で始まる）の場合は「ユーザー」を返す
+  if (fallbackName && fallbackName.startsWith('user_')) {
+    return 'ユーザー';
+  }
+  
+  // その他の場合はfallbackNameまたは「ユーザー」を返す
+  return fallbackName || 'ユーザー';
 }
 
 // プロフィール画像のURLを安全に取得する関数

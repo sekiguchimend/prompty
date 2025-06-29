@@ -161,7 +161,7 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
           is_edited: commentItem.is_edited,
           user: commentItem.user ? {
             username: String(commentItem.user.username || ''),
-            display_name: String(commentItem.user.display_name || ''),
+            display_name: commentItem.user.display_name ? String(commentItem.user.display_name) : '',
             avatar_url: String(commentItem.user.avatar_url || '')
           } : undefined,
           like_count: 0, // デフォルト値
@@ -598,7 +598,7 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
           <Link href={`/users/${comment.user?.username || comment.user_id}`} className="flex-shrink-0">
                   <Avatar 
                     src={comment.user?.avatar_url}
-                    displayName={getDisplayName(comment.user?.display_name)}
+                    displayName={getDisplayName(comment.user?.display_name, comment.user?.username)}
                     size="sm"
               className="mr-2 cursor-pointer hover:ring-2 hover:ring-blue-300 transition-all"
                   />
@@ -608,7 +608,7 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
                       <div className="flex items-center gap-2">
                 <Link href={`/users/${comment.user?.username || comment.user_id}`} className="hover:underline">
                         <span className="font-medium text-sm">
-                          {comment.user?.display_name || comment.user?.username || '匿名ユーザー'}
+                          {getDisplayName(comment.user?.display_name, comment.user?.username)}
                         </span>
                 </Link>
                         <span className="text-xs text-gray-500">
@@ -713,7 +713,7 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
                 <div className="flex-1 relative">
                   <textarea 
                     className="flex w-full rounded-md border border-input bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none min-h-[60px] p-3 pr-20" 
-                    placeholder={`@${comment.user?.display_name || comment.user?.username}さんに返信...`}
+                    placeholder={`@${getDisplayName(comment.user?.display_name, comment.user?.username)}さんに返信...`}
                     value={replyContent}
                     onChange={(e) => setReplyContent(e.target.value)}
                     disabled={!currentUser || isSubmitting}

@@ -193,21 +193,16 @@ const PromptContent: React.FC<PromptContentProps> = ({
   // プロンプトIDを取得
   const promptId = router.query.id as string;
 
-  // ユーザー情報の取得
+  // ユーザー情報の取得（最適化: 不要なstartTransitionとsetTimeoutを削除）
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        startTransition(() => {
-          setCurrentUser(session.user);
-        });
+        setCurrentUser(session.user);
       }
     };
     
-    // ハイドレーション完了後に実行
-    setTimeout(() => {
-      fetchUser();
-    }, 100);
+    fetchUser();
   }, []);
 
   // 購入済み判定ロジック
@@ -599,6 +594,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
                     placeholder="blur"
                     blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
                     className="object-cover"
+                    quality={70}
                     onLoad={() => {
                       // 画像読み込み完了時の処理
                     }}

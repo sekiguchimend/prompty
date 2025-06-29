@@ -100,43 +100,38 @@ const OptimizedPromptCard: React.FC<OptimizedPromptCardProps> = memo(({
     }
   }, [id]);
   
-  // いいね状態を取得
+  // いいね状態を取得（最適化: debounce + memoization）
   useEffect(() => {
     let isMounted = true;
+    let timeoutId: NodeJS.Timeout;
     
-    const checkLikeStatus = async () => {
+    const checkStatuses = async () => {
       if (!currentUser || isLoading) return;
       
       try {
-        const likedStatus = await checkIfLiked(id, currentUser.id);
+        // 並列実行で高速化
+        const [likedStatus, bookmarkedStatus] = await Promise.all([
+          checkIfLiked(id, currentUser.id),
+          checkIfBookmarked(id, currentUser.id)
+        ]);
+        
         if (isMounted) {
           setLiked(likedStatus);
-        }
-      } catch (error) {
-        console.error('いいね状態の取得に失敗しました:', error);
-      }
-    };
-    
-    const checkBookmarkStatus = async () => {
-      if (!currentUser || isLoading) return;
-      
-      try {
-        const bookmarkedStatus = await checkIfBookmarked(id, currentUser.id);
-        if (isMounted) {
           setBookmarked(bookmarkedStatus);
         }
       } catch (error) {
-        console.error('ブックマーク状態の取得に失敗しました:', error);
+        console.error('状態の取得に失敗しました:', error);
       }
     };
     
-    checkLikeStatus();
-    checkBookmarkStatus();
+    // debounce処理で頻繁な呼び出しを抑制
+    timeoutId = setTimeout(checkStatuses, 100);
     
     return () => {
       isMounted = false;
+      clearTimeout(timeoutId);
     };
-  }, [id, currentUser, isLoading]);
+  }, [id, currentUser?.id, isLoading]); // currentUser.idのみに依存
 
   const toggleLike = useCallback(async (e: React.MouseEvent) => {
     e.preventDefault();
