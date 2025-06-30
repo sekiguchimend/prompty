@@ -20,6 +20,7 @@ import Head from 'next/head';
 import { generateSiteUrl, getDefaultOgImageUrl } from '../../utils/seo-helpers';
 import VideoPlayer from '../../components/common/VideoPlayer';
 import { useResponsive } from '../../hooks/use-responsive';
+import Image from 'next/image';
 
 // ユーザーデータの型定義
 interface UserData {
@@ -391,10 +392,13 @@ const UserPage: React.FC = () => {
                   minimumOverlay={true}
                 />
               ) : (
-              <img 
+              <Image 
                 src={post.thumbnailUrl} 
                 alt={post.title} 
-                className="w-full h-full object-cover"
+                fill
+                sizes="(max-width: 768px) 100vw, 160px"
+                style={{ objectFit: 'cover' }}
+                className="w-full h-full"
               />
               )}
             </div>

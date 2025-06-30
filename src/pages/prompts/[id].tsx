@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import { User } from '@supabase/supabase-js';
 import Footer from '../../components/footer';
 import { ChevronLeft, Edit, Download } from 'lucide-react';
 import { Separator } from '../../components/ui/separator';
@@ -21,7 +22,7 @@ import { FileText, Info } from 'lucide-react';
 import { isContentFree, isContentPremium, normalizeContentText } from '../../utils/content-helpers';
 import { checkPurchaseStatus } from '../../utils/purchase-helpers';
 import Comments from '../../components/Comments/Comments';
-import { toast } from '../../components/ui/use-toast';
+import { toast, useToast } from '../../components/ui/use-toast';
 import { DEFAULT_AVATAR_URL } from '../../components/index';
 import Head from 'next/head';
 import { generateSiteUrl, getDefaultOgImageUrl } from '../../utils/seo-helpers';
@@ -322,33 +323,18 @@ const PromptDetail = ({
   nextPost: PostItem | null;
   error?: string;
 }) => {
-  const router = useRouter();  
+  const router = useRouter();
+  const { toast } = useToast();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAuthor, setIsAuthor] = useState(false);
+  const [isPaid, setIsPaid] = useState(false);
   const [prompt, setPrompt] = useState<ExtendedPostItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isPaid, setIsPaid] = useState<boolean>(false);
-  const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [isAuthor, setIsAuthor] = useState(false);
 
-  // エラーがある場合の早期リターン
-  if (error || !postData) {
-    return (
-      <div className="flex min-h-screen flex-col">
-        <main className="flex-1 bg-white mt-14 md:mt-4 flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-gray-600">{error || 'プロンプトが見つかりませんでした'}</p>
-            <button 
-              onClick={() => router.push('/')}
-              className="mt-4 text-blue-600 hover:underline"
-            >
-              ホームに戻る
-            </button>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
+  // 閲覧履歴記録（一回のみ実行）
+  const viewRecordedRef = useRef(false);
+
+  // すべてのHooksを最初に定義（条件分岐の前）
 
   // ユーザー取得（最適化）
   useEffect(() => {
@@ -357,7 +343,7 @@ const PromptDetail = ({
     const fetchUser = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (mounted && session) {
+        if (mounted && session && postData) {
           setCurrentUser(session.user);
           setIsAuthor(session.user.id === postData.user.userId);
         }
@@ -365,12 +351,14 @@ const PromptDetail = ({
       }
     };
     
-    fetchUser();
+    if (postData) {
+      fetchUser();
+    }
     
     return () => {
       mounted = false;
     };
-  }, [postData.user.userId]);
+  }, [postData?.user.userId]);
 
   // Stripe決済処理（最適化）
   useEffect(() => {
@@ -422,7 +410,7 @@ const PromptDetail = ({
     return () => {
       mounted = false;
     };
-  }, [router.isReady, router.query.success, currentUser, postData?.id]);
+  }, [router.isReady, router.query.success, currentUser, postData?.id, router, toast]);
 
   // 購入状態確認（最適化）
   useEffect(() => {
@@ -447,47 +435,31 @@ const PromptDetail = ({
     };
   }, [currentUser, postData?.id]);
 
-  // 早期リターン処理の最適化
-  if (router.isFallback) {
-    return (
-      <div className="flex min-h-screen flex-col">
-        <main className="flex-1 bg-white mt-14 md:mt-4 flex items-center justify-center">
-          <div className="animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
-            <div className="h-3 bg-gray-200 rounded w-16"></div>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (postData) {
+      setPrompt(postData);
+      setIsLoading(false);
+    }
+  }, [postData]);
   
-  // データ検証の最適化
-  if (!postData) {
-    return (
-      <div className="flex min-h-screen flex-col">
-        <main className="flex-1 bg-white mt-14 md:mt-4 flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-gray-600">プロンプトが見つかりませんでした</p>
-            <button 
-              onClick={() => router.push('/')}
-              className="mt-4 text-blue-600 hover:underline"
-            >
-              ホームに戻る
-            </button>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-  
+  useEffect(() => {
+    if (postData?.id && !viewRecordedRef.current) {
+      viewRecordedRef.current = true;
+      console.log('🎯 Recording view for prompt:', postData.id);
+      recordPromptView(postData.id).catch(() => {
+        // エラーは無視
+      });
+    }
+  }, [postData?.id]);
+
   // 有料・無料判定（メモ化）
-  const isFree = useMemo(() => isContentFree(postData), [postData]);
-  const isPremium = useMemo(() => isContentPremium(postData), [postData]);
+  const isFree = useMemo(() => postData ? isContentFree(postData) : false, [postData]);
+  const isPremium = useMemo(() => postData ? isContentPremium(postData) : false, [postData]);
   
   // コンテンツ処理（メモ化）
   const { basicContent, premiumContent } = useMemo(() => {
+    if (!postData) return { basicContent: '', premiumContent: '' };
+    
     // Supabaseのデータをそのまま使用して改行・空白を保持
     const basic = postData.content;
     const premium = postData.prompt_content || '';
@@ -501,25 +473,29 @@ const PromptDetail = ({
       basicContent: processedBasic, 
       premiumContent: premium 
     };
-  }, [postData.content, postData.prompt_content]);
+  }, [postData?.content, postData?.prompt_content]);
 
   // データ変換（メモ化）
-  const promptData = useMemo(() => ({
-    ...postData,
-    authorForSidebar: {
-      name: postData.user.name,
-      avatarUrl: postData.user.avatarUrl,
-      bio: postData.user.bio || '著者情報なし',
-      userId: postData.user.userId || ''
-    },
-    authorForContent: {
-      name: postData.user.name,
-      avatarUrl: postData.user.avatarUrl,
-      bio: postData.user.bio || '著者情報なし',
-      publishedAt: postData.user.publishedAt || '投稿日時なし',
-      userId: postData.user.userId || ''
-    }
-  }), [postData]);
+  const promptData = useMemo(() => {
+    if (!postData) return null;
+    
+    return {
+      ...postData,
+      authorForSidebar: {
+        name: postData.user.name,
+        avatarUrl: postData.user.avatarUrl,
+        bio: postData.user.bio || '著者情報なし',
+        userId: postData.user.userId || ''
+      },
+      authorForContent: {
+        name: postData.user.name,
+        avatarUrl: postData.user.avatarUrl,
+        bio: postData.user.bio || '著者情報なし',
+        publishedAt: postData.user.publishedAt || '投稿日時なし',
+        userId: postData.user.userId || ''
+      }
+    };
+  }, [postData]);
   
   // PopularArticlesコンポーネントの型に合わせてデータを変換（メモ化）
   const popularArticles = useMemo(() => 
@@ -535,70 +511,26 @@ const PromptDetail = ({
   , [popularPosts]);
 
   // 前後の記事データも同様に変換
-  const prevArticle = prevPost ? {
+  const prevArticle = useMemo(() => prevPost ? {
     id: prevPost.id,
     title: prevPost.title,
     likes: prevPost.likeCount,
     thumbnailUrl: prevPost.thumbnailUrl,
     date: prevPost.postedAt
-  } : null;
+  } : null, [prevPost]);
 
-  const nextArticle = nextPost ? {
+  const nextArticle = useMemo(() => nextPost ? {
     id: nextPost.id,
     title: nextPost.title,
     likes: nextPost.likeCount,
     thumbnailUrl: nextPost.thumbnailUrl,
     date: nextPost.postedAt
-  } : null;
-
-  useEffect(() => {
-    if (postData) {
-      setPrompt(postData);
-      setIsLoading(false);
-    }
-  }, [postData]);
-  
-  // 閲覧履歴記録（一回のみ実行）
-  const viewRecordedRef = useRef(false);
-  
-  useEffect(() => {
-    if (postData?.id && !viewRecordedRef.current) {
-      viewRecordedRef.current = true;
-      console.log('🎯 Recording view for prompt:', postData.id);
-      recordPromptView(postData.id).catch(() => {
-        // エラーは無視
-      });
-    }
-  }, [postData?.id]);
-
-  // YAMLダウンロード機能を追加
-  const generateYamlContent = (postData: ExtendedPostItem) => {
-    // プロンプト本文のみ（AIが再現するのに必要な唯一の情報）
-    const yaml = `---
-prompt: |
-  ${postData.prompt_content?.split('\n').join('\n  ') || ''}
----`;
-    
-    return yaml;
-  };
-
-  const handleDownloadYaml = (postData: ExtendedPostItem) => {
-    const yamlContent = generateYamlContent(postData);
-    const blob = new Blob([yamlContent], { type: 'text/yaml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    // タイトルを安全なファイル名に変換
-    const safeTitle = postData.title.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_').substring(0, 50);
-    a.download = `${safeTitle}_prompt.yaml`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
+  } : null, [nextPost]);
 
   // SEO用のメタデータを生成（記事固有の詳細情報）
-  const generateSEOData = () => {
+  const generateSEOData = useCallback(() => {
+    if (!postData) return { title: '', description: '', url: '', imageUrl: '', keywords: '' };
+    
     // より具体的で魅力的なタイトル生成
     const title = `${postData.title} | ${postData.user.name}のAIプロンプト | Prompty`;
     
@@ -658,9 +590,90 @@ prompt: |
     ].filter(Boolean).join(',');
     
     return { title, description, url, imageUrl, keywords };
-  };
+  }, [postData, isFree]);
 
   const seoData = generateSEOData();
+
+  // YAMLダウンロード機能を追加
+  const generateYamlContent = useCallback((postData: ExtendedPostItem) => {
+    // プロンプト本文のみ（AIが再現するのに必要な唯一の情報）
+    const yaml = `---
+prompt: |
+  ${postData.prompt_content?.split('\n').join('\n  ') || ''}
+---`;
+    
+    return yaml;
+  }, []);
+
+  const handleDownloadYaml = useCallback((postData: ExtendedPostItem) => {
+    const yamlContent = generateYamlContent(postData);
+    const blob = new Blob([yamlContent], { type: 'text/yaml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    // タイトルを安全なファイル名に変換
+    const safeTitle = postData.title.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_').substring(0, 50);
+    a.download = `${safeTitle}_prompt.yaml`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [generateYamlContent]);
+
+  // 条件付きレンダリング（早期リターン）
+  if (error) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <main className="flex-1 bg-white mt-14 md:mt-4 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-gray-600">{error}</p>
+            <button 
+              onClick={() => router.push('/')}
+              className="mt-4 text-blue-600 hover:underline"
+            >
+              ホームに戻る
+            </button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // 早期リターン処理の最適化
+  if (router.isFallback) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <main className="flex-1 bg-white mt-14 md:mt-4 flex items-center justify-center">
+          <div className="animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+            <div className="h-3 bg-gray-200 rounded w-16"></div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+  
+  // データ検証の最適化
+  if (!postData || !promptData) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <main className="flex-1 bg-white mt-14 md:mt-4 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-gray-600">プロンプトが見つかりませんでした</p>
+            <button 
+              onClick={() => router.push('/')}
+              className="mt-4 text-blue-600 hover:underline"
+            >
+              ホームに戻る
+            </button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   // 表示切替
   return (

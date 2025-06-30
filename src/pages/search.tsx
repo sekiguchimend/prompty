@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Footer from '../components/footer';
 import PromptGrid from '../components/prompt-grid';
@@ -39,7 +39,7 @@ const Search = () => {
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
 
   // 検索実行関数
-  const executeSearch = async (searchQuery: string) => {
+  const executeSearch = useCallback(async (searchQuery: string) => {
     setIsLoading(true);
     setSearchError(null);
     
@@ -174,7 +174,7 @@ const Search = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     // searchParamsからクエリを取得
@@ -187,7 +187,7 @@ const Search = () => {
     }, 300);
     
     return () => clearTimeout(timer);
-  }, [query]); // queryではなくsearchParamsの変更を監視
+  }, [query, executeSearch]); // queryではなくsearchParamsの変更を監視
   
   // 検索結果の並び替えとフィルタリングを適用
   useEffect(() => {
