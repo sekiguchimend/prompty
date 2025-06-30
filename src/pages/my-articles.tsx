@@ -8,9 +8,8 @@ import PurchasedArticles from '../components/myArticle/PurchasedArticles';
 import BookmarkedArticles from '../components/myArticle/BookmarkedArticles';
 import RecentlyViewedArticles from '../components/myArticle/RecentlyViewedArticles';
 import SidebarTabs from '../components/myArticle/SidebarTabs';
-import PromptManagementList from '../components/dashboard/PromptManagementList';
 
-type ArticleTab = 'myArticles' | 'likedArticles' | 'purchasedArticles' | 'bookmarkedArticles' | 'recentlyViewedArticles' | 'manageArticles';
+type ArticleTab = 'myArticles' | 'likedArticles' | 'purchasedArticles' | 'bookmarkedArticles' | 'recentlyViewedArticles';
 
 const MyArticles: React.FC = () => {
   const router = useRouter();
@@ -34,9 +33,6 @@ const MyArticles: React.FC = () => {
         case 'recentlyViewedArticles':
           setActiveTab('recentlyViewedArticles');
           break;
-        case 'manageArticles':
-          setActiveTab('manageArticles');
-          break;
         default:
           setActiveTab('myArticles');
       }
@@ -48,8 +44,6 @@ const MyArticles: React.FC = () => {
     switch (activeTab) {
       case 'myArticles':
         return <MyArticlesList />;
-      case 'manageArticles':
-        return <PromptManagementList />;
       case 'likedArticles':
         return <LikedArticles />;
       case 'purchasedArticles':
@@ -66,44 +60,21 @@ const MyArticles: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <main className="flex-1">
-        {/* スマホ用レイアウト */}
-        <div className="md:hidden">
-          <div className="bg-white border-b border-gray-200">
-            <div className="px-4 py-4">
-              <h1 className="text-lg font-semibold text-gray-900 mb-4">マイページ</h1>
-              <SidebarTabs 
-                activeTab={activeTab} 
+        <div className="container mx-auto px-4 py-6 max-w-6xl">
+          <div className="flex gap-6">
+            {/* サイドバー */}
+            <div className="w-64 flex-shrink-0">
+              <SidebarTabs
+                activeTab={activeTab}
                 setActiveTab={setActiveTab}
+                mobileMenuOpen={mobileMenuOpen}
+                setMobileMenuOpen={setMobileMenuOpen}
               />
             </div>
-          </div>
-          
-          <div className="bg-white">
-            {renderTabContent()}
-          </div>
-        </div>
-
-        {/* デスクトップ用レイアウト（既存） */}
-        <div className="hidden md:block">
-          <div className="container mx-auto px-4 py-6 max-w-6xl">
-            <div className="flex gap-6">
-              {/* サイドバー（デスクトップ） */}
-              <div className="w-64 flex-shrink-0">
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                  <h2 className="text-lg font-semibold mb-4">マイページ</h2>
-                  <SidebarTabs 
-                    activeTab={activeTab} 
-                    setActiveTab={setActiveTab}
-                  />
-                </div>
-              </div>
-
-              {/* メインコンテンツ */}
-              <div className="flex-1">
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                  {renderTabContent()}
-                </div>
-              </div>
+            
+            {/* メインコンテンツ */}
+            <div className="flex-1">
+              {renderTabContent()}
             </div>
           </div>
         </div>
