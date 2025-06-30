@@ -38,11 +38,11 @@ const SidebarTabs: React.FC<SidebarTabsProps> = ({ activeTab, setActiveTab }) =>
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+    <div>
       <h2 className="text-lg font-semibold mb-4">マイページ</h2>
       
       {/* デスクトップ用ナビゲーション */}
-      <nav className="hidden md:block">
+      <nav className="hidden lg:block">
         <ul className="space-y-1">
           {tabs.map((tab) => (
             <li key={tab.id}>
@@ -64,8 +64,8 @@ const SidebarTabs: React.FC<SidebarTabsProps> = ({ activeTab, setActiveTab }) =>
         </ul>
       </nav>
 
-      {/* スマホ用ナビゲーション */}
-      <div className="md:hidden">
+      {/* モバイル用ナビゲーション */}
+      <div className="lg:hidden">
         <div className="flex overflow-x-auto gap-1 pb-1">
           {tabs.map((tab) => (
             <button

@@ -61,9 +61,10 @@ const MyArticles: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-gray-50">
       <main className="flex-1">
         <div className="container mx-auto px-4 py-6 max-w-6xl">
-          <div className="flex gap-6">
-            {/* サイドバー */}
-            <div className="w-64 flex-shrink-0">
+          {/* レスポンシブレイアウト */}
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* サイドバー - モバイルでは上部、デスクトップでは左側 */}
+            <div className="w-full lg:w-64 lg:flex-shrink-0">
               <SidebarTabs
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
@@ -73,7 +74,7 @@ const MyArticles: React.FC = () => {
             </div>
             
             {/* メインコンテンツ */}
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               {renderTabContent()}
             </div>
           </div>

@@ -8,7 +8,7 @@ import { useToast } from '../../components/ui/use-toast';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
-import { ChevronLeft, Save, Loader2 } from 'lucide-react';
+import { ChevronLeft, Save, Loader2, AlertCircle } from 'lucide-react';
 import ThumbnailUploader from '../../components/create-post/ThumbnailUploader';
 
 // プロンプトデータの型定義
@@ -72,8 +72,11 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
 const EditPromptPage: React.FC<EditPromptPageProps> = ({ promptData }) => {
   const router = useRouter();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, session, isLoading: authLoading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [canEdit, setCanEdit] = useState(false);
   
   // フォームの状態
   const [formData, setFormData] = useState({
@@ -90,26 +93,49 @@ const EditPromptPage: React.FC<EditPromptPageProps> = ({ promptData }) => {
 
   // 認証チェック
   useEffect(() => {
+    console.log('認証状態チェック:', { 
+      authLoading, 
+      user: !!user, 
+      userId: user?.id, 
+      authorId: promptData.author_id 
+    });
+
+    // 認証状態の確認中は何もしない
+    if (authLoading) {
+      console.log('認証確認中...');
+      return;
+    }
+
+    // ユーザーがログインしていない場合
     if (!user) {
-      toast({
-        title: "認証エラー",
-        description: "ログインが必要です",
-        variant: "destructive",
-      });
-      router.push('/login');
+      console.log('ユーザーがログインしていません');
+      setAuthError("ログインが必要です");
+      setPageLoading(false);
+      // ログインページに3秒後に遷移
+      setTimeout(() => {
+        router.push(`/login?redirect=${encodeURIComponent(`/edit-prompt/${promptData.id}`)}`);
+      }, 3000);
       return;
     }
     
+    // 権限チェック
     if (user.id !== promptData.author_id) {
-      toast({
-        title: "権限エラー",
-        description: "このプロンプトを編集する権限がありません",
-        variant: "destructive",
-      });
-      router.push('/prompts/' + promptData.id);
+      console.log('権限なし:', { userId: user.id, authorId: promptData.author_id });
+      setAuthError("このプロンプトを編集する権限がありません");
+      setPageLoading(false);
+      // 詳細ページに3秒後に遷移
+      setTimeout(() => {
+        router.push(`/prompts/${promptData.id}`);
+      }, 3000);
       return;
     }
-  }, [user, promptData.author_id, promptData.id, router, toast]);
+
+    // 認証と権限の確認が完了
+    console.log('認証・権限確認完了');
+    setCanEdit(true);
+    setPageLoading(false);
+    setAuthError(null);
+  }, [user, authLoading, promptData.author_id, promptData.id, router]);
 
   // フォーム更新ハンドラー
   const handleInputChange = (field: string, value: any) => {
@@ -140,8 +166,7 @@ const EditPromptPage: React.FC<EditPromptPageProps> = ({ promptData }) => {
   // サムネイルアップロード処理
   const uploadThumbnail = async (file: File): Promise<string | null> => {
     try {
-      // 認証トークンを取得
-      const { data: { session } } = await supabase.auth.getSession();
+      // セッションから認証トークンを取得
       if (!session?.access_token) {
         throw new Error('認証が必要です');
       }
@@ -233,6 +258,60 @@ const EditPromptPage: React.FC<EditPromptPageProps> = ({ promptData }) => {
     }
   };
 
+  // ローディング状態（認証確認中または権限チェック中）
+  if (authLoading || pageLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">
+            {authLoading ? '認証状態を確認中...' : '編集権限を確認中...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // 認証エラー状態
+  if (authError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">アクセスエラー</h1>
+          <p className="text-gray-600 mb-6">{authError}</p>
+          <div className="space-y-3">
+            <Button 
+              onClick={() => router.push(`/prompts/${promptData.id}`)}
+              className="w-full"
+            >
+              プロンプト詳細に戻る
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => router.push('/')}
+              className="w-full"
+            >
+              ホームに戻る
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 編集権限がない場合（通常はauthErrorで処理されるが、念のため）
+  if (!canEdit) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">アクセス権限を確認中...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container max-w-4xl mx-auto px-4 py-8 mt-10">
@@ -240,7 +319,7 @@ const EditPromptPage: React.FC<EditPromptPageProps> = ({ promptData }) => {
         <div className="mb-6">
           <button 
             onClick={() => router.push('/prompts/' + promptData.id)}
-            className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+            className="flex items-center text-gray-600 hover:text-gray-900 mb-4 transition-colors"
           >
             <ChevronLeft className="w-4 h-4 mr-1" />
             プロンプト詳細に戻る
@@ -250,7 +329,7 @@ const EditPromptPage: React.FC<EditPromptPageProps> = ({ promptData }) => {
         </div>
 
         {/* 編集フォーム */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* サムネイル */}
             <div>
@@ -275,6 +354,7 @@ const EditPromptPage: React.FC<EditPromptPageProps> = ({ promptData }) => {
                 onChange={(e) => handleInputChange('title', e.target.value)}
                 placeholder="プロンプトのタイトルを入力"
                 required
+                className="w-full"
               />
             </div>
 
@@ -288,6 +368,7 @@ const EditPromptPage: React.FC<EditPromptPageProps> = ({ promptData }) => {
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 placeholder="プロンプトの説明を入力（任意）"
                 rows={3}
+                className="w-full"
               />
             </div>
 
@@ -300,6 +381,7 @@ const EditPromptPage: React.FC<EditPromptPageProps> = ({ promptData }) => {
                 value={formData.promptTitle}
                 onChange={(e) => handleInputChange('promptTitle', e.target.value)}
                 placeholder="プロンプトのタイトル"
+                className="w-full"
               />
             </div>
 
@@ -314,6 +396,7 @@ const EditPromptPage: React.FC<EditPromptPageProps> = ({ promptData }) => {
                 placeholder="プロンプトの内容を入力"
                 rows={10}
                 required
+                className="w-full"
               />
             </div>
 
@@ -326,6 +409,7 @@ const EditPromptPage: React.FC<EditPromptPageProps> = ({ promptData }) => {
                 value={formData.aiModel}
                 onChange={(e) => handleInputChange('aiModel', e.target.value)}
                 placeholder="chat-gpt"
+                className="w-full"
               />
               <div className="text-sm text-gray-500 mt-2 space-y-1">
                 <p>• 推奨: claude-4-20250120 (最新・高性能)</p>
@@ -378,7 +462,15 @@ const EditPromptPage: React.FC<EditPromptPageProps> = ({ promptData }) => {
             </div>
 
             {/* 保存ボタン */}
-            <div className="flex justify-end pt-6 border-t">
+            <div className="flex justify-end gap-3 pt-6 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push('/prompts/' + promptData.id)}
+                disabled={isSubmitting}
+              >
+                キャンセル
+              </Button>
               <Button
                 type="submit"
                 disabled={isSubmitting}
