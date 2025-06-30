@@ -10,7 +10,7 @@ export const useAuthSync = () => {
 
   // 最適化されたauth-contextが統合管理するため、
   // 重複したイベントリスナーは削除済み
-  
+
   return {
     user,
     session,

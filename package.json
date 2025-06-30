@@ -13,7 +13,9 @@
     "start": "next start",
     "start:gemini": "cross-env NODE_ENV=production node gemini-server.js",
     "start:with-gemini": "concurrently \"npm run start\" \"npm run start:gemini\"",
-    "lint": "next lint"
+    "lint": "next lint",
+    "diagnose:vapid": "node scripts/diagnose-vapid-key.js",
+    "test:notifications": "npm run diagnose:vapid"
   },
   "dependencies": {
     "@codesandbox/sandpack-react": "^2.20.0",

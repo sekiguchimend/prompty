@@ -2,14 +2,18 @@
 
 Firebase Web Push通知を有効にするためのVAPID Key設定手順です。
 
-## 🚨 現在のエラー
+## 🚨 現在の問題
 
+### エラーの種類：
 ```
 401 (Unauthorized)
 messaging/token-subscribe-failed
 ```
 
-このエラーは**VAPID Keyが無効または未設定**のため発生しています。
+### 原因：
+VAPID KeyとFIREBASE_PRIVATE_KEYの混同が原因です：
+- ✅ **FIREBASE_PRIVATE_KEY**: Supabase Functionsに正しく設定済み（サーバー側）
+- ❌ **VAPID KEY**: クライアント側の設定が不正確（この問題を解決する必要があります）
 
 ## 📋 VAPID Key取得手順
 
@@ -32,7 +36,7 @@ messaging/token-subscribe-failed
 
 ```typescript
 // 修正前
-const VAPID_KEY = process.env.NEXT_PUBLIC_VAPID_KEY || "BCmrKPYqpPcV9zcxqPjU_GJdFrlCXx9zOuPbNR4zjb6X6VuQOgwN6o6L8FtHZJnBzSDnNWKjN6pR4HwLgJbGqAw";
+const VAPID_KEY = process.env.NEXT_PUBLIC_VAPID_KEY || "YOUR_CURRENT_VAPID_KEY";
 
 // 修正後（YOUR_ACTUAL_VAPID_KEYを実際のキーに置き換え）
 const VAPID_KEY = process.env.NEXT_PUBLIC_VAPID_KEY || "YOUR_ACTUAL_VAPID_KEY";

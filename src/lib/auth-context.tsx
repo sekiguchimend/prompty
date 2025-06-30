@@ -190,12 +190,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(false);
     }
   }, []);
-
+  
   // 初期化とメイン認証状態リスナー
   useEffect(() => {
     let isMounted = true;
     let authSubscription: any = null;
-
+    
     const initializeAuth = async () => {
       try {
         // 初期セッション取得
@@ -214,7 +214,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // 🚀 最適化: 初期化時はプロフィール取得をスキップしてすぐにローディング解除
           await updateAuthState(data.session, true);
           setIsInitialized(true);
-          
+            
           // プロフィール情報は別途バックグラウンドで取得
           if (data.session?.user) {
             fetchProfile(data.session.user.id, data.session).then(extendedUser => {
@@ -234,7 +234,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
     };
-
+    
     // 認証状態変更リスナー（統合された単一のリスナー）
     const setupAuthListener = () => {
       authSubscription = supabase.auth.onAuthStateChange(async (event, newSession) => {
@@ -250,8 +250,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               break;
             case 'SIGNED_OUT':
               sessionRef.current = null;
-              setSession(null);
-              setUser(null);
+                setSession(null);
+                setUser(null);
               setError(null);
               profileCacheRef.current = {};
               setIsLoading(false);
@@ -285,7 +285,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-
+    
     // クリーンアップ
     return () => {
       isMounted = false;
@@ -307,7 +307,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     refreshAuth,
     refreshProfile
   }), [user, session, isLoading, isProfileLoading, error, signOut, refreshAuth, refreshProfile]);
-
+  
   return (
     <AuthContext.Provider value={contextValue}>
       {children}

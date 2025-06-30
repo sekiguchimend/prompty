@@ -22,8 +22,13 @@ module.exports = {
         NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
         SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
         
-        // Stripe設定 - 重要！
+        // Stripe設定 - 直接設定版（セキュリティ注意）
+        // 方法1: システム環境変数から取得（推奨）
         STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+        
+        // 方法2: 直接設定（本番環境のみ、.gitignoreを忘れずに）
+        // STRIPE_SECRET_KEY: "sk_live_YOUR_ACTUAL_KEY_HERE",
+        
         NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
         STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
         

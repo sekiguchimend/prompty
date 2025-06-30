@@ -250,26 +250,26 @@ const MyArticlesList = () => {
 
   // ローディング状態
   if (authLoading || loading) {
-    return (
-      <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-        <span className="ml-3 text-gray-600">読み込み中...</span>
-      </div>
+  return (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <span className="ml-3 text-gray-600">読み込み中...</span>
+        </div>
     );
   }
 
   // エラー状態
   if (error) {
     return (
-      <div className="text-center py-8">
-        <p className="text-red-500 mb-4">{error}</p>
-        <button 
-          onClick={() => window.location.reload()}
-          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-        >
-          再試行
-        </button>
-      </div>
+        <div className="text-center py-8">
+          <p className="text-red-500 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            再試行
+          </button>
+        </div>
     );
   }
 
@@ -292,19 +292,19 @@ const MyArticlesList = () => {
 
   return (
     <div className="space-y-6">
-      {/* ヘッダー */}
+          {/* ヘッダー */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900">{myArticles.length} 件の記事</h2>
-        <button className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
-          期間 ▼
-        </button>
-      </div>
-      
-      {/* 記事リスト */}
+            <h2 className="text-xl font-semibold text-gray-900">{myArticles.length} 件の記事</h2>
+            <button className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
+              期間 ▼
+            </button>
+          </div>
+          
+          {/* 記事リスト */}
       <div className="space-y-4">
-        {myArticles.map((article) => (
-          <div 
-            key={article.id} 
+            {myArticles.map((article) => (
+              <div 
+                key={article.id} 
             className="relative hover:bg-gray-50 transition-colors rounded-lg p-3"
           >
             {/* スマホ版レイアウト */}
@@ -471,14 +471,14 @@ const MyArticlesList = () => {
                           minimumOverlay={true}
                         />
                       ) : (
-                        <Image 
-                          src={article.thumbnail_url}
-                          alt={article.title}
-                          fill
+                      <Image 
+                        src={article.thumbnail_url}
+                        alt={article.title}
+                        fill
                           sizes="96px"
-                          style={{ objectFit: 'cover' }}
-                          className="w-full h-full"
-                        />
+                        style={{ objectFit: 'cover' }}
+                        className="w-full h-full"
+                      />
                       )}
                     </div>
                   ) : (
@@ -501,12 +501,12 @@ const MyArticlesList = () => {
                   <div className="flex flex-col gap-2 mb-3">
                     <div className="flex items-center justify-between">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        article.is_published 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {article.is_published ? '公開中' : '下書き'}
-                      </span>
+                      article.is_published 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {article.is_published ? '公開中' : '下書き'}
+                    </span>
                       <span className="font-semibold text-blue-600 text-sm">
                         {formatPrice(article.price)}
                       </span>
@@ -521,17 +521,17 @@ const MyArticlesList = () => {
                         <span className="flex items-center gap-1">
                           <Eye className="h-4 w-4" />
                           {article.view_count}
-                        </span>
-                        <span className="flex items-center gap-1 text-red-500">
+                      </span>
+                      <span className="flex items-center gap-1 text-red-500">
                           <Heart className="h-4 w-4" />
-                          {article.like_count}
-                        </span>
-                        <span className="flex items-center gap-1 text-blue-500">
+                        {article.like_count}
+                      </span>
+                      <span className="flex items-center gap-1 text-blue-500">
                           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                          </svg>
-                          {article.bookmark_count}
-                        </span>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                        </svg>
+                        {article.bookmark_count}
+                      </span>
                       </div>
                     </div>
                   </div>
@@ -591,7 +591,7 @@ const MyArticlesList = () => {
             </div>
           </div>
         ))}
-      </div>
+        </div>
 
       {/* 削除確認ダイアログ */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

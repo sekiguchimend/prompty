@@ -13,10 +13,19 @@ const firebaseConfig = {
   measurementId: "G-1QWX7QV6PE"
 };
 
-// 🚨 VAPID KEY設定 - 取得完了！✅
-// Firebaseコンソール → Project Settings → Cloud Messaging → Web configuration → Generate key pair
-// 生成されたキーをここに設定してください（88文字程度、Bで始まる）
-const VAPID_KEY = process.env.NEXT_PUBLIC_VAPID_KEY || "BEIhO6yNlVnbzfmTYuYj3W9tKuDWOayGXKs6QQHJT45rWQ96a2HSOTgGCHQ0avY76UzadHCli8wBQWBeWrwDgaw";
+// 🚨 VAPID KEY設定 - 正しい値を設定してください！
+// 【重要】下記のデフォルト値は仮の値です。正しい手順で取得したVAPID KEYに置き換えてください。
+// 
+// 【VAPID KEY取得手順】:
+// 1. https://console.firebase.google.com/ にアクセス
+// 2. プロジェクト「rapid-access-457000-v3」を選択
+// 3. ⚙️ Project Settings → Cloud Messaging タブ
+// 4. "Web configuration" セクション → "Generate key pair" をクリック  
+// 5. 生成された公開鍵（88文字程度、"B"で始まる）をコピー
+// 6. 環境変数 NEXT_PUBLIC_VAPID_KEY に設定するか、下記のデフォルト値を置き換え
+//
+// ⚠️ 現在のデフォルト値は正しくない可能性があります！
+const VAPID_KEY = process.env.NEXT_PUBLIC_VAPID_KEY || "YOUR_VAPID_KEY_HERE";
 
 // デバッグ情報をコンソールに出力
 console.log('🔑 VAPID Key Debug Info:', {
@@ -320,6 +329,45 @@ export const getNotificationPermission = () => {
     return 'default';
   }
   return Notification.permission;
+};
+
+/**
+ * VAPID KEYをテストする（実際にFCMトークンの取得を試行）
+ */
+export const testVapidKey = async (): Promise<{ isValid: boolean; error?: string; token?: string }> => {
+  try {
+    console.log('🧪 VAPID KEYテスト開始...');
+    
+    // 基本的な検証
+    if (!validateVapidKey()) {
+      return {
+        isValid: false,
+        error: 'VAPID KEYの形式が無効です'
+      };
+    }
+    
+    // 実際にFCMトークンの取得を試行
+    const token = await getNotificationToken();
+    
+    if (token) {
+      console.log('✅ VAPID KEYテスト成功');
+      return {
+        isValid: true,
+        token: token.substring(0, 20) + '...'
+      };
+    } else {
+      return {
+        isValid: false,
+        error: 'FCMトークンの取得に失敗しました'
+      };
+    }
+  } catch (error) {
+    console.error('❌ VAPID KEYテスト失敗:', error);
+    return {
+      isValid: false,
+      error: (error as Error).message
+    };
+  }
 };
 
 export { app, messaging }; 
