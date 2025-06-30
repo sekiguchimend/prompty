@@ -837,9 +837,13 @@ const submitProject = async () => {
     
     // プロンプトプロジェクトのメインデータを保存
     const requestBody = {
-      title: projectSettings.projectTitle || "無題のプロジェクト",
+      title: projectSettings.projectTitle || "無題のプロジェクト", // メイン表示タイトル（プロジェクトタイトル）
       description: projectSettings.projectDescription || "",
-      content: projectSettings.projectDescription || "", // プロジェクト説明をcontentに
+      content: prompts.length === 1 
+        ? prompts[0].prompt_content // 単一プロンプトの場合
+        : prompts.map((prompt, index) => 
+            `プロンプト${index + 1}:\n${prompt.prompt_content}`
+          ).join('\n\n---\n\n'), // 複数プロンプトの場合は番号付きで結合
       thumbnail_url: thumbnailUrl, // Supabase Storageの公開URL
       media_type: finalMediaType, // 最終的なメディアタイプ
       category_id: projectSettings.categoryId, // カテゴリーIDを追加
@@ -850,7 +854,7 @@ const submitProject = async () => {
         : projectSettings.aiModel,
       author_id: finalAuthorId, // 必ず最新のauthorIdを使う
       site_url: projectSettings.projectUrl || null, // プロジェクトURLを送信
-      prompt_title: prompts[0].prompt_title, // 最初のプロンプトのタイトル
+      prompt_title: prompts[0].prompt_title, // プロンプトタイトル
       prompt_content: prompts.length === 1 
         ? prompts[0].prompt_content // 単一プロンプトの場合
         : prompts.map((prompt, index) => 
