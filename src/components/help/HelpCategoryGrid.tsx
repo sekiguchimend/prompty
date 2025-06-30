@@ -1,89 +1,80 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import HelpCategoryCard from './HelpCategoryCard';
+import HelpDialog from './HelpDialog';
+import { helpData } from '../../data/helpData';
 import { Book, User, Newspaper, Users, HelpCircle, MoreHorizontal, Briefcase, Bot } from 'lucide-react';
 
-// Define categories based on the image
+// Define categories with icons for the UI
 const helpCategories = [
   {
     id: 'getting-started',
-    title: 'promptyを安心して使いこなすために',
-    description: '',
-    icon: <Book className="h-6 w-6 text-prompty-primary" />,
-    url: '/'
+    icon: <Book className="h-6 w-6 text-prompty-primary" />
   },
   {
     id: 'about',
-    title: 'promptyについて',
-    description: '初めての方はこちらから',
-    icon: <HelpCircle className="h-6 w-6 text-prompty-primary" />,
-    url: '/'
+    icon: <HelpCircle className="h-6 w-6 text-prompty-primary" />
   },
   {
     id: 'account',
-    title: 'アカウント',
-    description: 'アカウント情報の確認や変更、プロフィール等について',
-    icon: <User className="h-6 w-6 text-prompty-primary" />,
-    url: '/'
+    icon: <User className="h-6 w-6 text-prompty-primary" />
   },
   {
     id: 'articles',
-    title: '記事',
-    description: '記事の作り方、管理方法、サポート等について',
-    icon: <Newspaper className="h-6 w-6 text-prompty-primary" />,
-    url: '/'
+    icon: <Newspaper className="h-6 w-6 text-prompty-primary" />
   },
   {
     id: 'magazine',
-    title: 'マガジン',
-    description: 'マガジンの使い方、設定方法等について',
-    icon: <Book className="h-6 w-6 text-prompty-primary" />,
-    url: '/'
+    icon: <Book className="h-6 w-6 text-prompty-primary" />
   },
   {
     id: 'membership',
-    title: 'メンバーシップ',
-    description: 'メンバーシップの使い方、設定方法等について',
-    icon: <Users className="h-6 w-6 text-prompty-primary" />,
-    url: '/'
+    icon: <Users className="h-6 w-6 text-prompty-primary" />
   },
   {
     id: 'faq',
-    title: 'よくある質問',
-    description: 'よくお問い合わせいただく質問と回答をまとめました',
-    icon: <HelpCircle className="h-6 w-6 text-prompty-primary" />,
-    url: '/'
+    icon: <HelpCircle className="h-6 w-6 text-prompty-primary" />
   },
   {
     id: 'other-help',
-    title: 'その他のヘルプ',
-    description: 'その他の各種機能についてのヘルプはこちらにまとまっています',
-    icon: <MoreHorizontal className="h-6 w-6 text-prompty-primary" />,
-    url: '/'
+    icon: <MoreHorizontal className="h-6 w-6 text-prompty-primary" />
   },
   {
     id: 'business',
-    title: 'prompty pro/その他法人向け',
-    description: '',
-    icon: <Briefcase className="h-6 w-6 text-prompty-primary" />,
-    url: '/'
+    icon: <Briefcase className="h-6 w-6 text-prompty-primary" />
   }
 ];
 
 const HelpCategoryGrid: React.FC = () => {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const handleCardClick = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    setIsDialogOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
+    setSelectedCategory(null);
+  };
+
   return (
     <section className="w-full py-12">
       <div className="container px-4 md:px-6">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {helpCategories.map((category) => (
-            <HelpCategoryCard
-              key={category.id}
-              title={category.title}
-              description={category.description}
-              icon={category.icon}
-              url={category.url}
-            />
-          ))}
+          {helpCategories.map((category) => {
+            const categoryData = helpData[category.id];
+            return (
+              <HelpCategoryCard
+                key={category.id}
+                title={categoryData?.title || 'タイトル未設定'}
+                description={categoryData?.description || ''}
+                icon={category.icon}
+                onClick={() => handleCardClick(category.id)}
+              />
+            );
+          })}
         </div>
         
         {/* AI Support Section */}
@@ -94,6 +85,18 @@ const HelpCategoryGrid: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Help Dialog */}
+      {selectedCategory && (
+        <HelpDialog
+          open={isDialogOpen}
+          onOpenChange={handleDialogClose}
+          title={helpData[selectedCategory]?.title || 'ヘルプ'}
+          description={helpData[selectedCategory]?.description}
+          icon={helpCategories.find(cat => cat.id === selectedCategory)?.icon}
+          helpItems={helpData[selectedCategory]?.helpItems || []}
+        />
+      )}
     </section>
   );
 };

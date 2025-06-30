@@ -1,33 +1,36 @@
 import React from 'react';
-import Link from 'next/link';
 import { Card, CardContent } from '../ui/card';
 
 interface HelpCategoryCardProps {
   title: string;
   description: string;
   icon: React.ReactNode;
-  url: string;
+  onClick: () => void;
 }
 
 const HelpCategoryCard: React.FC<HelpCategoryCardProps> = ({
   title,
   description,
   icon,
-  url
+  onClick
 }) => {
   return (
-    <Link href={url}>
-      <Card className="h-full transition-all duration-200 hover:shadow-md hover:border-prompty-primary/50">
-        <CardContent className="p-6">
+    <Card 
+      className="h-full transition-all duration-200 hover:shadow-md hover:border-prompty-primary/50 cursor-pointer" 
+      onClick={onClick}
+    >
+      <CardContent className="p-6">
+        <div className="flex items-start space-x-3">
+          <div className="flex-shrink-0">{icon}</div>
           <div className="flex flex-col space-y-2">
             <h3 className="text-lg font-bold">{title}</h3>
             {description && (
               <p className="text-sm text-gray-500">{description}</p>
             )}
           </div>
-        </CardContent>
-      </Card>
-    </Link>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
