@@ -135,37 +135,5 @@ export const useOptimizedUserState = () => {
   }), [user, isLoading, updateUser, getCachedUser]);
 };
 
-// 画面サイズ最適化フック
-export const useOptimizedViewport = () => {
-  const [viewport, setViewport] = useState({
-    width: typeof window !== 'undefined' ? window.innerWidth : 0,
-    height: typeof window !== 'undefined' ? window.innerHeight : 0,
-    isMobile: typeof window !== 'undefined' ? window.innerWidth < 768 : false,
-  });
-  
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-    
-    const handleResize = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-        setViewport({
-          width,
-          height,
-          isMobile: width < 768,
-        });
-      }, 100); // デバウンス
-    };
-    
-    window.addEventListener('resize', handleResize);
-    
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      clearTimeout(timeoutId);
-    };
-  }, []);
-  
-  return viewport;
-}; 
+// 最適化: useOptimizedViewportフックを削除
+// 画面サイズ判定は統合された use-responsive.tsx フックを使用してください 

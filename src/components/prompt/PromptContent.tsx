@@ -14,6 +14,7 @@ import { UnifiedAvatar } from '../index';
 import PurchaseSection from './PurchaseSection';
 import { useAuth } from '../../lib/auth-context';
 import VideoPlayer from '../common/VideoPlayer';
+import { getOptimizedImageProps } from '../../lib/image-optimization';
 
 // 重いコンポーネントを遅延読み込み（Code Splitting）
 const ViewCounter = lazy(() => import('../view-counter'));
@@ -589,10 +590,7 @@ const PromptContent: React.FC<PromptContentProps> = ({
                     src={getSafeImageUrl(imageUrl)}
                     alt={title}
                     fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 800px"
-                    priority={false}
-                    placeholder="blur"
-                    blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+                    {...getOptimizedImageProps('content')}
                     className="object-cover"
                     quality={70}
                     onLoad={() => {

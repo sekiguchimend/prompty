@@ -88,22 +88,7 @@ export async function uploadFileToStorage(
     }
     
     
-    // URLが実際に有効かチェック（オプション）
-    try {
-      const imageTest = new Image();
-      imageTest.src = publicUrl;
-      
-      // 画像のロードを待つ
-      await new Promise((resolve, reject) => {
-        imageTest.onload = resolve;
-        imageTest.onerror = reject;
-        // 10秒のタイムアウト
-        setTimeout(() => reject(new Error('画像URLの検証がタイムアウトしました')), 10000);
-      });
-      
-    } catch (imageError) {
-      // 検証に失敗しても続行する
-    }
+    // URL検証は省略（アップロード成功時点で検証済み）
     
     return { url: publicUrl, error: null };
   } catch (error) {

@@ -10,20 +10,17 @@ import Header from '../components/Header';
 import "../styles/NotePage.css"
 import '../index.css';
 import { notoSansJP } from '../lib/fonts';
+import { preloadCriticalImages } from '../lib/image-optimization';
 
 function MyApp({ Component, pageProps }: AppProps) {
   const router = useRouter();
 
-  // プリロード警告を抑制するための設定
+  // 統合プリロードサービスを使用
   useEffect(() => {
-    // プリロードされたリソースの使用を促進
     const handleRouteChangeComplete = () => {
-      // ページ遷移完了時にプリロードされた画像を強制的に使用
-      const preloadedImages = document.querySelectorAll('link[rel="preload"][as="image"]');
-      preloadedImages.forEach((link) => {
-        const img = new Image();
-        img.src = (link as HTMLLinkElement).href;
-      });
+      // デフォルト画像をプリロード
+      const criticalImages = ['/images/default-thumbnail.svg', '/images/default-avatar.svg'];
+      preloadCriticalImages(criticalImages);
     };
 
     router.events.on('routeChangeComplete', handleRouteChangeComplete);

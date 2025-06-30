@@ -34,7 +34,6 @@ const UserMenu: React.FC<UserMenuProps> = React.memo(({
 }) => {
   const router = useRouter();
   const { user, signOut } = useAuth();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   
   // ページ遷移開始時にメニューを閉じる
@@ -49,34 +48,6 @@ const UserMenu: React.FC<UserMenuProps> = React.memo(({
       router.events.off('routeChangeStart', handleRouteChangeStart);
     };
   }, [router.events, onClose]);
-
-  // ユーザープロフィールを取得 - useCallbackで最適化
-  const fetchUserProfile = useCallback(async () => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('username, display_name, avatar_url')
-        .eq('id', user.id)
-        .single();
-        
-      if (error) {
-        console.error('プロフィール取得エラー:', error);
-        return;
-      }
-      
-      if (data) {
-        setProfile({
-          username: data.username as string | undefined,
-          display_name: data.display_name as string | undefined,
-          avatar_url: data.avatar_url as string | undefined
-        });
-      }
-    } catch (error) {
-      console.error('プロフィール取得中のエラー:', error);
-    }
-  }, [user]);
 
   // 管理者権限をチェック
   const checkUserAdminStatus = useCallback(async () => {
@@ -95,12 +66,11 @@ const UserMenu: React.FC<UserMenuProps> = React.memo(({
   }, [user]);
   
   useEffect(() => {
-    fetchUserProfile();
     checkUserAdminStatus();
-  }, [fetchUserProfile, checkUserAdminStatus]);
+  }, [checkUserAdminStatus]);
   
   // 表示用の名前を取得 - useMemoで最適化
-  const displayName = useMemo(() => getDisplayName(profile?.display_name), [profile?.display_name]);
+  const displayName = useMemo(() => getDisplayName(user?.display_name, user?.username), [user?.display_name, user?.username]);
   
   // ログアウト処理 - useCallbackで最適化
   const handleLogout = useCallback(async () => {
@@ -152,7 +122,7 @@ const UserMenu: React.FC<UserMenuProps> = React.memo(({
           <div className="p-4 border-b">
             <div className="flex items-center">
               <Avatar 
-                src={profile?.avatar_url}
+                src={user?.avatar_url}
                 displayName={displayName}
                 size="md"
                 className="mr-3 flex-shrink-0"
@@ -294,7 +264,7 @@ const UserMenu: React.FC<UserMenuProps> = React.memo(({
       <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-white z-10">
         <div className="flex items-center">
           <Avatar 
-            src={profile?.avatar_url}
+            src={user?.avatar_url}
             displayName={displayName}
             size="md"
             className="mr-3 flex-shrink-0"

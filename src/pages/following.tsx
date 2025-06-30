@@ -10,6 +10,7 @@ import {
 } from '../components/ui/dropdown-menu';
 import { useToast } from '../components/ui/use-toast';
 import Link from 'next/link';
+import NextImage from 'next/image';
 import { supabase } from '../lib/supabaseClient';
 import { Button } from '../components/ui/button';
 import { useInView } from 'react-intersection-observer';
@@ -20,6 +21,7 @@ import { Badge } from '../components/ui/badge';
 import { UnifiedAvatar, DEFAULT_AVATAR_URL } from '../components/index';
 import { generateSiteUrl, getDefaultOgImageUrl } from '../utils/seo-helpers';
 import VideoPlayer from '../components/common/VideoPlayer';
+import { storageService } from '../lib/storage-service';
 
 // ページあたりの投稿数を定義
 const POSTS_PER_PAGE = 12;
@@ -166,12 +168,14 @@ const fetchFollowingPostsData = async (
 };
 
 const Following: React.FC = () => {
+  // 最適化された認証フックを使用
+  const { user: currentUser, isLoading: authLoading } = useAuth();
+  
   // データ取得
   const [followingPosts, setFollowingPosts] = useState<PostItem[]>([]);
   const [todayForYouPosts, setTodayForYouPosts] = useState<PostItem[]>(getTodayForYouPosts());
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [hasMore, setHasMore] = useState(true);
   
@@ -187,47 +191,12 @@ const Following: React.FC = () => {
   
   const { toast } = useToast();
 
-  // 現在のユーザーを取得（メモ化して最適化）
+  // 認証状態の変更を監視 (最適化版)
   useEffect(() => {
-    let isActive = true;
-    const fetchUser = async () => {
-      try {
-        // セッションクエリを一度のみ実行
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        // コンポーネントがマウントされている場合のみ状態を更新
-        if (isActive) {
-          setCurrentUser(session?.user || null);
-          
-          // ログインしていない場合はローディング状態を解除
-          if (!session) {
-            setIsLoading(false);
-          }
-        }
-      } catch (error) {
-        if (isActive) {
-          setIsLoading(false);
-        }
-      }
-    };
-    
-    fetchUser();
-    
-    // ユーザー認証状態の監視
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (isActive) {
-        setCurrentUser(session?.user || null);
-        if (!session) {
-          setIsLoading(false);
-        }
-      }
-    });
-    
-    return () => {
-      isActive = false;
-      authListener?.subscription.unsubscribe();
-    };
-  }, []);
+    if (!currentUser && !authLoading) {
+      setIsLoading(false);
+    }
+  }, [currentUser, authLoading]);
 
   // 初回のフォローユーザー投稿を取得
   useEffect(() => {
@@ -369,13 +338,9 @@ const Following: React.FC = () => {
     // 今日のあなたにの投稿を非表示
     setTodayForYouPosts(prev => prev.filter(post => post.id !== postId));
     
-    // ローカルストレージに保存
+    // 統合サービスで保存（最適化）
     try {
-      const hiddenPosts = JSON.parse(localStorage.getItem('hiddenPosts') || '[]');
-      if (!hiddenPosts.includes(postId)) {
-        hiddenPosts.push(postId);
-        localStorage.setItem('hiddenPosts', JSON.stringify(hiddenPosts));
-      }
+      storageService.addHiddenPost(postId);
     } catch (error) {
     }
     
@@ -499,16 +464,18 @@ const Following: React.FC = () => {
               minimumOverlay={true}
             />
           ) : (
-              <img src={post.thumbnailUrl} 
-                  alt={post.title} 
-                  className="w-full h-full object-cover" 
-                  loading="lazy" 
-                  fetchPriority="low" 
-                  onError={(e) => {
-                    // 画像読み込みエラー時にデフォルト画像を表示
-                    (e.target as HTMLImageElement).src = '/images/default-thumbnail.svg';
-                  }}
-              />
+                                                          <NextImage 
+                        src={post.thumbnailUrl}
+                        fill
+                        alt={post.title} 
+                        className="object-cover" 
+                        sizes="104px"
+                        priority={false}
+                        onError={(e: any) => {
+                          // 画像読み込みエラー時にデフォルト画像を表示
+                          (e.target as HTMLImageElement).src = '/images/default-thumbnail.svg';
+                        }}
+                      />
               )}
             </div>
             
@@ -553,12 +520,14 @@ const Following: React.FC = () => {
               }}
             />
           ) : (
-          <img 
+          <NextImage 
             src={post.thumbnailUrl} 
             alt={post.title} 
-            className="absolute inset-0 h-full w-full object-cover"
-            loading="lazy"
-            onError={(e) => {
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 50vw, 25vw"
+            priority={false}
+            onError={(e: any) => {
               (e.target as HTMLImageElement).src = '/images/default-thumbnail.svg';
             }}
           />

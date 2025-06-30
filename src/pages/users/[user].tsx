@@ -19,6 +19,7 @@ import FollowModal from '../../components/modals/FollowModal';
 import Head from 'next/head';
 import { generateSiteUrl, getDefaultOgImageUrl } from '../../utils/seo-helpers';
 import VideoPlayer from '../../components/common/VideoPlayer';
+import { useResponsive } from '../../hooks/use-responsive';
 
 // ユーザーデータの型定義
 interface UserData {
@@ -52,7 +53,7 @@ const UserPage: React.FC = () => {
   const { user: userParam } = router.query;
   const [activeTab, setActiveTab] = useState<string>('新着');
   const [isFollowing, setIsFollowing] = useState(false);
-  const [windowWidth, setWindowWidth] = useState(0);
+  const { isMobile, isTablet } = useResponsive(); // 最適化: 統合レスポンシブフック使用
   const { toast } = useToast();
   const { user } = useAuth();
   const [isOwnProfile, setIsOwnProfile] = useState(false);
@@ -66,19 +67,7 @@ const UserPage: React.FC = () => {
   const [followModalType, setFollowModalType] = useState<'followers' | 'following'>('followers');
   const [followModalTitle, setFollowModalTitle] = useState('');
   
-  // 画面サイズを検出
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setWindowWidth(window.innerWidth);
-    
-      const handleResize = () => {
-        setWindowWidth(window.innerWidth);
-      };
-      
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
-    }
-  }, []);
+  // 最適化: 重複したリサイズリスナーを削除（useResponsiveフックで統一管理）
   
   // ユーザーデータを取得
   useEffect(() => {
@@ -232,9 +221,7 @@ const UserPage: React.FC = () => {
     return `${Math.floor(diffDays / 365)}年前`;
   };
   
-  // 画面サイズに基づくブレイクポイント
-  const isMobile = windowWidth < 640;
-  const isTablet = windowWidth >= 640 && windowWidth < 1024;
+  // 最適化: 画面サイズ判定は統合フックから取得済み
   
   // フォロー状態を切り替える
   const toggleFollow = async () => {

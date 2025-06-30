@@ -9,6 +9,7 @@ import { useInView } from 'react-intersection-observer';
 import Footer from '../components/footer';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { UnifiedAvatar, DEFAULT_AVATAR_URL } from '../components/index';
+import { useAuth } from '../lib/auth-context';
 
 // ページあたりのユーザー数を定義
 const USERS_PER_PAGE = 20;
@@ -127,47 +128,16 @@ const FollowingUsers: React.FC = () => {
   
   const { toast } = useToast();
 
-  // 現在のユーザーを取得
+  // 最適化された認証フックを使用
+  const { user: authUser, isLoading: authLoading } = useAuth();
+  
+  // 認証状態の変更を監視
   useEffect(() => {
-    let isActive = true;
-    const fetchUser = async () => {
-      try {
-        // セッションクエリを一度のみ実行
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        // コンポーネントがマウントされている場合のみ状態を更新
-        if (isActive) {
-          setCurrentUser(session?.user || null);
-          
-          // ログインしていない場合はローディング状態を解除
-          if (!session) {
-            setIsLoading(false);
-          }
-        }
-      } catch (error) {
-        if (isActive) {
-          setIsLoading(false);
-        }
-      }
-    };
-    
-    fetchUser();
-    
-    // ユーザー認証状態の監視
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (isActive) {
-        setCurrentUser(session?.user || null);
-        if (!session) {
-          setIsLoading(false);
-        }
-      }
-    });
-    
-    return () => {
-      isActive = false;
-      authListener?.subscription.unsubscribe();
-    };
-  }, []);
+    setCurrentUser(authUser);
+    if (!authUser && !authLoading) {
+      setIsLoading(false);
+    }
+  }, [authUser, authLoading]);
 
   // 初回のフォローユーザーを取得
   useEffect(() => {

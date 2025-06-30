@@ -19,11 +19,12 @@ import ProfileTabs from '../components/profile/ProfileTabs';
 import ProfileTabContent from '../components/profile/ProfileTabContent';
 import Head from 'next/head';
 import { generateSiteUrl, getDefaultOgImageUrl } from '../utils/seo-helpers';
+import { useResponsive } from '../hooks/use-responsive';
 
 const UserProfilePage: React.FC = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<string>('posts');
-  const [windowWidth, setWindowWidth] = useState(0);
+  const { width: windowWidth } = useResponsive(); // 最適化: 重複したリサイズリスナーを削除
   const { toast } = useToast();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -37,20 +38,8 @@ const UserProfilePage: React.FC = () => {
   const [mutualUsers, setMutualUsers] = useState<UserData[]>([]);
   const [followLoading, setFollowLoading] = useState<{[key: string]: boolean}>({});
   
-  // Detect screen size
-  useEffect(() => {
-    // Only access window object on client side
-    if (typeof window !== 'undefined') {
-      setWindowWidth(window.innerWidth);
-      
-      const handleResize = () => {
-        setWindowWidth(window.innerWidth);
-      };
-      
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
-    }
-  }, []);
+  // 最適化: 重複したリサイズリスナーを削除
+  // useResponsiveフックを使用してwindowWidthを取得
   
   // URLクエリからタブを設定
   useEffect(() => {

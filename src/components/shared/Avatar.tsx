@@ -1,6 +1,7 @@
-import React, { useState, memo } from 'react';
+import React, { memo } from 'react';
 import Image from 'next/image';
 import { cn } from '../../lib/utils';
+import { useImageState } from '../../lib/image-optimization';
 
 export const DEFAULT_AVATAR_URL = '/images/default-avatar.svg';
 
@@ -37,13 +38,9 @@ export const Avatar: React.FC<AvatarProps> = memo(({
   className,
   onClick
 }) => {
-  const [imageError, setImageError] = useState(false);
+  const { isLoading, hasError, handleLoad, handleError } = useImageState(); // 統合画像状態管理
   
   const avatarUrl = src && src.trim() !== '' ? src : null;
-
-  const handleImageError = () => {
-    setImageError(true);
-  };
 
   const getSizes = (size: string) => {
     switch (size) {
@@ -66,14 +63,15 @@ export const Avatar: React.FC<AvatarProps> = memo(({
       )}
       onClick={onClick}
     >
-      {!imageError && avatarUrl ? (
+      {!hasError && avatarUrl ? (
         <Image
           src={avatarUrl}
           alt={alt}
           fill
           className="object-cover"
           sizes={getSizes(size)}
-          onError={handleImageError}
+          onLoad={handleLoad}
+          onError={(e) => handleError(e, 'avatar')}
           quality={60}
           priority={false}
         />

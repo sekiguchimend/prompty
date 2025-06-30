@@ -12,6 +12,8 @@ import { Avatar } from '../shared/Avatar';
 import { getDisplayName } from '../../lib/avatar-utils';
 import ReportDialog from '../shared/ReportDialog';
 import { notoSansJP } from '../../lib/fonts';
+import { storageService } from '../../lib/storage-service';
+import { useResponsive } from '../../hooks/use-responsive';
 
 interface OptimizedPromptCardProps {
   id: string;
@@ -42,25 +44,7 @@ export const showGlobalToast = (title: string, description: string, variant: 'de
   window.dispatchEvent(event);
 };
 
-// スマホかどうかを判定するためのカスタムフック
-const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(false);
-  
-  useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 640);
-    };
-    
-    checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
-    
-    return () => {
-      window.removeEventListener('resize', checkIsMobile);
-    };
-  }, []);
-  
-  return isMobile;
-};
+// 最適化: 重複したリサイズリスナーを削除し、統合フックを使用
 
 const OptimizedPromptCard: React.FC<OptimizedPromptCardProps> = memo(({
   id,
@@ -83,21 +67,14 @@ const OptimizedPromptCard: React.FC<OptimizedPromptCardProps> = memo(({
   const [isLikeProcessing, setIsLikeProcessing] = useState(false);
   const [isBookmarkProcessing, setIsBookmarkProcessing] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
-  const isMobile = useIsMobile();
+  const { isMobile } = useResponsive(); // 最適化: 統合レスポンシブフック使用
   
   const { toast } = useToast();
   const { user: currentUser, isLoading } = useAuth();
   
-  // 初期表示時に非表示チェック
+  // 初期表示時に非表示チェック（最適化: 統合サービス使用）
   useEffect(() => {
-    try {
-      const hiddenPosts = JSON.parse(localStorage.getItem('hiddenPosts') || '[]');
-      if (Array.isArray(hiddenPosts) && hiddenPosts.includes(id)) {
-        setIsHidden(true);
-      }
-    } catch (error) {
-      console.error('非表示リストの読み込みに失敗しました', error);
-    }
+    setIsHidden(storageService.isPostHidden(id));
   }, [id]);
   
   // いいね状態を取得（最適化: debounce + memoization）
@@ -200,9 +177,8 @@ const OptimizedPromptCard: React.FC<OptimizedPromptCardProps> = memo(({
     e.stopPropagation();
     
     try {
-      const hiddenPosts = JSON.parse(localStorage.getItem('hiddenPosts') || '[]');
-      const updatedHiddenPosts = [...hiddenPosts, id];
-      localStorage.setItem('hiddenPosts', JSON.stringify(updatedHiddenPosts));
+      // 最適化: 統合サービス使用
+      storageService.addHiddenPost(id);
       
       setIsHidden(true);
       if (onHide) {

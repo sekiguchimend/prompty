@@ -16,6 +16,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import UnifiedAvatar from '../shared/Avatar';
 import { getDisplayName } from '../../lib/avatar-utils';
+import { useAuth } from '../../lib/auth-context';
 
 const DEFAULT_AVATAR_URL = '/images/default-avatar.svg';
 
@@ -130,7 +131,9 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
   const [commentCount, setCommentCount] = useState(0);
   const [newComment, setNewComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  // 最適化された認証フックを使用
+  const { user: currentUser } = useAuth();
+  
   const [promptId, setPromptId] = useState<string>("");
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [isCommentsLoading, setIsCommentsLoading] = useState(false);
@@ -253,66 +256,7 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
     }
   }, [router.query.id, promptId, fetchComments]);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // 最初に基本ユーザー情報を設定
-        setCurrentUser(session.user as User);
-        
-        // プロフィール情報を非同期で取得
-        try {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('id, username, display_name, avatar_url')
-            .eq('id', session.user.id)
-            .single();
-            
-          if (profileData) {
-            setCurrentUser({
-              ...session.user,
-              avatar_url: profileData.avatar_url || session.user.user_metadata?.avatar_url,
-              username: profileData.username || session.user.user_metadata?.username,
-              display_name: profileData.display_name || session.user.user_metadata?.full_name
-            } as User);
-          }
-        } catch (error) {
-          console.error('プロフィール取得エラー:', error);
-          // エラーが発生してもセッション情報は使用可能
-        }
-      }
-    };
-    
-    fetchUser();
-    
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        supabase
-          .from('profiles')
-          .select('id, username, display_name, avatar_url')
-          .eq('id', session.user.id)
-          .single()
-          .then(({ data: profileData }) => {
-            if (profileData) {
-              setCurrentUser({
-                ...session.user,
-                avatar_url: profileData.avatar_url || session.user.user_metadata?.avatar_url,
-                username: profileData.username || session.user.user_metadata?.username,
-                display_name: profileData.display_name || session.user.user_metadata?.full_name
-              } as User);
-            } else {
-              setCurrentUser(session.user as User);
-            }
-          });
-      } else {
-        setCurrentUser(null);
-      }
-    });
-    
-    return () => {
-      authListener?.subscription.unsubscribe();
-    };
-  }, []);
+  // 重複した認証リスナーを削除 (最適化された認証コンテキストを使用)
 
   useEffect(() => {
     if (promptId && currentUser) {
@@ -1144,6 +1088,9 @@ const PurchaseSection: React.FC<PurchaseSectionProps> = ({
       JSON.stringify(prevProps.comment.replies) === JSON.stringify(nextProps.comment.replies)
     );
   });
+
+  // display nameを設定
+  CommentItem.displayName = 'CommentItem';
 
   return (
     <div className="mt-16 border-t border-gray-200 pt-10">

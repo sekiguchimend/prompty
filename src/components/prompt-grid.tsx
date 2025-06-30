@@ -13,6 +13,9 @@ import ReportDialog from './shared/ReportDialog';
 import { notoSansJP } from '../lib/fonts';
 import { UnifiedAvatar, DEFAULT_AVATAR_URL } from './index';
 import VideoPlayer from './common/VideoPlayer';
+import { useResponsive } from '../hooks/use-responsive';
+import { storageService } from '../lib/storage-service';
+import { getOptimizedImageProps, useImageState, DEFAULT_BLUR_DATA_URL } from '../lib/image-optimization';
 
 // グローバルトースト用のイベント名
 const GLOBAL_TOAST_EVENT = 'global:toast:show';
@@ -50,15 +53,9 @@ interface PromptCardProps {
 // メニュー開閉を管理するためのカスタムイベント名
 const DROPDOWN_TOGGLE_EVENT = 'promptcard:dropdown:toggle';
 
-// 非表示チェック用の関数
+// 非表示チェック用の関数（最適化: 統合サービス使用）
 function isPostHidden(id: string): boolean {
-  try {
-    const hiddenPosts = JSON.parse(localStorage.getItem('hiddenPosts') || '[]');
-    return Array.isArray(hiddenPosts) && hiddenPosts.includes(id);
-  } catch (error) {
-    console.error('非表示リストの読み込みに失敗しました', error);
-    return false;
-  }
+  return storageService.isPostHidden(id);
 }
 
 // 簡易トースト通知コンポーネント
@@ -110,25 +107,7 @@ const GlobalToast: React.FC = () => {
   );
 };
 
-// スマホかどうかを判定するためのカスタムフック
-const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(false);
-  
-  useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 640); // sm ブレークポイント未満をモバイルとみなす
-    };
-    
-    checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
-    
-    return () => {
-      window.removeEventListener('resize', checkIsMobile);
-    };
-  }, []);
-  
-  return isMobile;
-};
+// 最適化: 重複したリサイズリスナーを削除し、統合フックを使用
 
 // FeatureSectionContextを追加
 const FeatureSectionContext = createContext<boolean>(false);
@@ -180,7 +159,7 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
   const [isLikeProcessing, setIsLikeProcessing] = useState(false);
   const [isBookmarkProcessing, setIsBookmarkProcessing] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
-  const isMobile = useIsMobile();
+  const { isMobile } = useResponsive(); // 最適化: 統合レスポンシブフック使用
   const isFeatureSection = useContext(FeatureSectionContext);
   
   // URLがない場合のプレースホルダー
@@ -189,8 +168,8 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
   // 常に安全なURLを使用（Supabaseのエラー回避）
   const imageUrl = getSafeImageUrl(thumbnailUrl);
   
-  // 画像読み込みエラー時のフォールバック設定用の状態
-  const [imageError, setImageError] = useState(false);
+  // 統合画像状態管理
+  const { isLoading: imageLoading, hasError: imageError, handleLoad: handleImageLoad, handleError: handleImageError } = useImageState();
   
   const { toast } = useToast();
   const { user: currentUser, isLoading } = useAuth();
@@ -205,16 +184,9 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
     return true; // 全ての画像を優先読み込みとして扱う（後で調整可能）
   }, []);
   
-  // 初期表示時に非表示チェック
+  // 初期表示時に非表示チェック（最適化: 統合サービス使用）
   useEffect(() => {
-    try {
-      const hiddenPosts = JSON.parse(localStorage.getItem('hiddenPosts') || '[]');
-      if (Array.isArray(hiddenPosts) && hiddenPosts.includes(id)) {
-        setIsHidden(true);
-      }
-    } catch (error) {
-      console.error('非表示リストの読み込みに失敗しました', error);
-    }
+    setIsHidden(storageService.isPostHidden(id));
   }, [id]);
   
   // コンポーネントマウント時にサーバーからいいね状態を取得
@@ -369,13 +341,9 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
     e.preventDefault();
     e.stopPropagation();
     
-    // ローカルストレージに保存
+    // 統合サービスで保存
     try {
-      const hiddenPosts = JSON.parse(localStorage.getItem('hiddenPosts') || '[]');
-      if (!hiddenPosts.includes(id)) {
-        hiddenPosts.push(id);
-        localStorage.setItem('hiddenPosts', JSON.stringify(hiddenPosts));
-      }
+      storageService.addHiddenPost(id);
       setIsHidden(true);
     } catch (error) {
       console.error('非表示設定の保存に失敗しました', error);
@@ -472,13 +440,12 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
                   alt={title}
                   fill
                   className="object-cover"
-                  loading="lazy"
-                  priority={false}
                   quality={65}
                   sizes="96px"
                   placeholder="blur"
-                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGBkbHR4f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R7hLHk="
-                  onError={() => setImageError(true)}
+                  blurDataURL={DEFAULT_BLUR_DATA_URL}
+                  onLoad={handleImageLoad}
+                  onError={(e) => handleImageError(e, 'thumbnail')}
                 />
               )}
             </div>
@@ -515,13 +482,9 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
                   alt={title}
                   fill
                   className="object-cover"
-                  loading="lazy"
-                  priority={false}
-                  quality={75}
-                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
-                  placeholder="blur"
-                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGBkbHR4f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R7hLHk="
-                  onError={() => setImageError(true)}
+                  {...getOptimizedImageProps('thumbnail')}
+                  onLoad={handleImageLoad}
+                  onError={(e) => handleImageError(e, 'thumbnail')}
                 />
               )}
             </div>
@@ -649,7 +612,7 @@ const PromptGrid: React.FC<PromptGridProps> = memo(({
 }) => {
   // 非表示の投稿を管理するための状態
   const [hiddenPromptIds, setHiddenPromptIds] = useState<string[]>([]);
-  const isMobile = useIsMobile(); // スマホかどうかを判定
+  const { isMobile } = useResponsive(); // 最適化: 統合レスポンシブフック使用
   const scrollContainerRef = React.useRef<HTMLDivElement>(null); // スクロールコンテナへの参照を追加
   const [canScrollLeft, setCanScrollLeft] = useState(false); // 左スクロール可能かどうか
   const [canScrollRight, setCanScrollRight] = useState(false); // 右スクロール可能かどうか
@@ -694,30 +657,15 @@ const PromptGrid: React.FC<PromptGridProps> = memo(({
     }
   }, []);
 
-  // 初期表示時に非表示リストを読み込む
+  // 初期表示時に非表示リストを読み込む（最適化: 統合サービス使用）
   useEffect(() => {
-    try {
-      const storedHiddenPosts = JSON.parse(localStorage.getItem('hiddenPosts') || '[]');
-      if (Array.isArray(storedHiddenPosts)) {
-        setHiddenPromptIds(storedHiddenPosts);
-      }
-    } catch (error) {
-      console.error('非表示リストの読み込みに失敗しました', error);
-    }
+    setHiddenPromptIds(storageService.getHiddenPosts());
   }, []);
 
-  // 初期表示時とウィンドウリサイズ時にスクロール可能性をチェック
+  // 初期表示時にスクロール可能性をチェック（最適化: windowリサイズイベントは不要）
   useEffect(() => {
     if (horizontalScroll) {
       checkScrollability();
-      
-      // リサイズ時にも確認
-      const handleResize = () => checkScrollability();
-      window.addEventListener('resize', handleResize);
-      
-      return () => {
-        window.removeEventListener('resize', handleResize);
-      };
     }
   }, [horizontalScroll, checkScrollability]);
   
@@ -754,24 +702,16 @@ const PromptGrid: React.FC<PromptGridProps> = memo(({
     }
   }, [horizontalScroll, checkScrollability]);
 
-  // 非表示処理の関数 - useCallbackで最適化
+  // 非表示処理の関数（最適化: 統合サービス使用）
   const handleHidePrompt = useCallback((id: string) => {
     try {
-      // ローカルストレージから現在の非表示リストを取得
-      const hiddenPosts = [...hiddenPromptIds];
-      
-      // IDをリストに追加（まだ含まれていない場合）
-      if (!hiddenPosts.includes(id)) {
-        hiddenPosts.push(id);
-        // ステートを更新して再レンダリングを発生させる
-        setHiddenPromptIds(hiddenPosts);
-        // ローカルストレージに保存
-        localStorage.setItem('hiddenPosts', JSON.stringify(hiddenPosts));
-      }
+      storageService.addHiddenPost(id);
+      // ステートを更新して再レンダリングを発生させる
+      setHiddenPromptIds(storageService.getHiddenPosts());
     } catch (error) {
       console.error('非表示処理に失敗しました', error);
     }
-  }, [hiddenPromptIds]);
+  }, []);
 
   // 計算処理をuseMemoで最適化
   const memoizedData = useMemo(() => {

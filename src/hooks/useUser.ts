@@ -1,10 +1,13 @@
-import { useAuth } from '../lib/auth-context';
+import { useAuthCheck, useProfile } from '../lib/auth-context';
 
 export function useUser() {
-  const { user, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, userId } = useAuthCheck();
+  const { profile } = useProfile();
   
   return {
-    user,
+    user: isAuthenticated ? { id: userId, ...profile } : null,
     isLoading,
+    isAuthenticated,
+    userId
   };
 } 

@@ -4,6 +4,7 @@ import { PromptCardGrid } from './PromptCardGrid';
 import { ViewAllCard } from './ViewAllCard';
 import { ScrollControls } from './ScrollControls';
 import { useScrollContainer } from '../../hooks/useScrollContainer';
+import { storageService } from '../../lib/storage-service';
 
 interface PromptGridContainerProps {
   prompts: PromptItem[];
@@ -34,27 +35,21 @@ export const PromptGridContainer: React.FC<PromptGridContainerProps> = ({
     handleScroll,
   } = useScrollContainer();
 
-  // ローカルストレージから非表示リストを読み込み
+  // 統合サービスから非表示リストを読み込み（最適化）
   useEffect(() => {
-    try {
-      const hidden = JSON.parse(localStorage.getItem('hiddenPosts') || '[]');
-      setHiddenPrompts(Array.isArray(hidden) ? hidden : []);
-    } catch (error) {
-      console.error('非表示リスト読み込みエラー:', error);
-    }
+    setHiddenPrompts(storageService.getHiddenPosts());
   }, []);
 
-  // 非表示処理
+  // 非表示処理（最適化: 統合サービス使用）
   const handleHidePrompt = useCallback((id: string) => {
     try {
-      const updatedHidden = [...hiddenPrompts, id];
-      setHiddenPrompts(updatedHidden);
-      localStorage.setItem('hiddenPosts', JSON.stringify(updatedHidden));
+      storageService.addHiddenPost(id);
+      setHiddenPrompts(storageService.getHiddenPosts());
       onHidePrompt?.(id);
     } catch (error) {
       console.error('非表示処理エラー:', error);
     }
-  }, [hiddenPrompts, onHidePrompt]);
+  }, [onHidePrompt]);
 
   // フィルタされたプロンプト
   const visiblePrompts = useMemo(() => {

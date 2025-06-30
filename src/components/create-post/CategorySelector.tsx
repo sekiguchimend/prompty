@@ -153,11 +153,13 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
         control={control}
         name="categoryId"
         render={({ field }) => {
-          // 検索ダイアログで使用するためにfieldを保存とinternalValueの同期
-          React.useEffect(() => {
+          // fieldの変更を検知してstate更新（副作用なしで直接更新）
+          if (selectedField !== field) {
             setSelectedField(field);
+          }
+          if (internalValue !== (field.value || "")) {
             setInternalValue(field.value || "");
-          }, [field]);
+          }
 
           // 選択されたカテゴリの名前を取得
           const selectedCategory = categories.find(cat => cat.id === field.value);

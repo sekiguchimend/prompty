@@ -10,6 +10,7 @@ import { useAuth } from '../lib/auth-context';
 import { useToast } from '../components/ui/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
+import { useResponsive } from '../hooks/use-responsive';
 
 // 記事データの型定義
 interface ArticleData {
@@ -62,7 +63,7 @@ const DashboardPage: React.FC = () => {
   const [timePeriod, setTimePeriod] = useState('全期間');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileHelpOpen, setIsMobileHelpOpen] = useState(false);
-  const [windowWidth, setWindowWidth] = useState(0);
+  const { width: windowWidth, isMobile, isTablet, isDesktop } = useResponsive(); // 最適化: 重複したリサイズリスナーを削除
   const { user } = useAuth();
   const { toast } = useToast();
   
@@ -79,25 +80,14 @@ const DashboardPage: React.FC = () => {
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([]);
   const [salesHistory, setSalesHistory] = useState<SalesHistory[]>([]);
   
-  // 画面サイズを検出
+  // 最適化: 重複したリサイズリスナーを削除
+  // useResponsiveフックを使用
   useEffect(() => {
-    // クライアントサイドでのみwindowオブジェクトを使用
-    if (typeof window !== 'undefined') {
-      setWindowWidth(window.innerWidth);
-      
-      const handleResize = () => {
-        setWindowWidth(window.innerWidth);
-        
-        // 画面サイズが大きくなったらモバイルメニューを閉じる
-        if (window.innerWidth >= 1024 && isMobileMenuOpen) {
-          setIsMobileMenuOpen(false);
-        }
-      };
-      
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
+    // 画面サイズが大きくなったらモバイルメニューを閉じる
+    if (isDesktop && isMobileMenuOpen) {
+      setIsMobileMenuOpen(false);
     }
-  }, [isMobileMenuOpen]);
+  }, [isDesktop, isMobileMenuOpen]);
   
   // データを取得する
   useEffect(() => {
@@ -408,10 +398,8 @@ const DashboardPage: React.FC = () => {
     }
   };
   
-  // 画面サイズに基づくブレイクポイント
-  const isMobile = windowWidth < 640;
-  const isTablet = windowWidth >= 640 && windowWidth < 1024;
-  const isDesktop = windowWidth >= 1024;
+  // 最適化: 重複した変数定義を削除
+  // useResponsiveフックから取得
   
   // 動的バッジデータ
   const [badges, setBadges] = useState<BadgeData[]>([]);

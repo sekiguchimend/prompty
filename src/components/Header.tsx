@@ -17,6 +17,7 @@ import { useAuth } from '../lib/auth-context';
 import { useAuthSync } from '../hooks/useAuthSync';
 import { supabase, getInstanceId } from '../lib/supabase-unified';
 import { checkAdminStatus } from '../lib/admin-auth';
+import { useResponsive } from '../hooks/use-responsive';
 
 // カテゴリタブMen
 const categoryTabs = [
@@ -29,77 +30,10 @@ const categoryTabs = [
 ];
 
 
-// プロフィール情報の型定義
-interface UserProfile {
-  username?: string;
-  display_name?: string;
-  avatar_url?: string;
-}
+// ヘッダーでuseUserProfile重複状態管理を削除 (最適化された認証コンテキストを使用)
 
-// ユーザープロフィール情報取得カスタムフック
-const useUserProfile = (userId: string | undefined) => {
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  
-  useEffect(() => {
-    if (!userId) return;
-    
-    const fetchUserProfile = async () => {
-      try {
-        console.log(`🔧 Header: Using unified client (${getInstanceId()}) for user ${userId}`);
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('username, display_name, avatar_url')
-          .eq('id', userId)
-          .single();
-          
-        if (error) {
-          console.error('ヘッダー: プロフィール取得エラー:', error);
-          // エラーでも基本的なユーザー情報は表示できるようにする
-          console.log('ヘッダー: プロフィール取得エラーですが、基本ユーザー情報は利用可能');
-          return;
-        }
-        
-        if (data) {
-          console.log('✅ Header: プロフィール取得成功', data);
-          setUserProfile({
-            username: data.username as string | undefined,
-            display_name: data.display_name as string | undefined,
-            avatar_url: data.avatar_url as string | undefined
-          });
-        }
-      } catch (error) {
-        console.error('ヘッダー: プロフィール取得中のエラー:', error);
-      }
-    };
-    
-    fetchUserProfile();
-  }, [userId]);
-  
-  return userProfile;
-};
-
-// 画面サイズ監視カスタムフック
-const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(false);
-  
-  useEffect(() => {
-    const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    // 初期チェック
-    checkIfMobile();
-    
-    // リサイズイベントのリスナー
-    window.addEventListener('resize', checkIfMobile);
-    
-    return () => {
-      window.removeEventListener('resize', checkIfMobile);
-    };
-  }, []);
-  
-  return isMobile;
-};
+// 最適化: 重複したリサイズリスナーを削除
+// 既存のuseResponsiveフックを使用
 
 
 const Header = () => {
@@ -111,27 +45,25 @@ const Header = () => {
   const { syncAuthState, instanceId } = useAuthSync();
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const isMobile = useIsMobile();
+  const { isMobile } = useResponsive();
   const [activeTab, setActiveTab] = useState('all');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const userProfile = useUserProfile(user?.id);
   const [isAdmin, setIsAdmin] = useState(false);
   const tabButtonsRef = useRef<(HTMLButtonElement | null)[]>([]);
   
-  const displayName = getDisplayName(userProfile?.display_name, userProfile?.username) || user?.email?.split('@')[0] || "ユーザー";
-  const profileAvatarUrl = userProfile?.avatar_url || user?.user_metadata?.avatar_url || "https://github.com/shadcn.png";
+  const displayName = getDisplayName(user?.display_name, user?.username) || user?.email?.split('@')[0] || "ユーザー";
+  const profileAvatarUrl = user?.avatar_url || user?.user_metadata?.avatar_url || "https://github.com/shadcn.png";
 
   // デバッグ用：認証状態をログ出力
   useEffect(() => {
     console.log('🔍 Header Debug - Auth State:', {
       isLoading,
       user: user ? { id: user.id, email: user.email } : null,
-      userProfile,
       displayName,
       profileAvatarUrl,
       instanceId
     });
-  }, [isLoading, user, userProfile, displayName, profileAvatarUrl, instanceId]);
+  }, [isLoading, user, displayName, profileAvatarUrl, instanceId]);
 
   useEffect(() => {
     const currentPath = pathname || '/';

@@ -169,7 +169,7 @@ const PromptManagementList: React.FC = () => {
           </span>
           {searchTerm && (
             <Badge variant="outline" className="text-xs">
-              検索: "{searchTerm}"
+              検索: &quot;{searchTerm}&quot;
             </Badge>
           )}
           {statusFilter !== 'all' && (

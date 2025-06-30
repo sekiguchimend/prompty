@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
 import { Button } from "../../components/ui/button";
 import { useAuth } from "../../lib/auth-context";
+import { readFileAsDataURL } from '../../lib/image-optimization';
 
 // フォームのスキーマ定義
 const projectSchema = z.object({
@@ -71,7 +72,7 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
   const { toast } = useToast();
   const { session } = useAuth();
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(defaultValues.thumbnail || null);
-  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
+  // メディアタイプ状態は親コンポーネントで管理（重複削除）
 
   
   // アコーディオンの開閉状態
@@ -104,22 +105,22 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
         onThumbnailFileChange(file);
       }
       
-      // メディアタイプを判定
+      // メディアタイプを判定（親コンポーネントで管理）
       const isVideo = file.type.startsWith('video/');
       const currentMediaType = isVideo ? 'video' : 'image';
-      setMediaType(currentMediaType);
       
       // サムネイルアップロード開始
 
       // 動画の場合はプレビューを後で設定（data URLは使わない）
       if (!isVideo) {
-        // 画像の場合のみローカルプレビューを表示
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const result = event.target?.result as string;
-          setThumbnailPreview(result);
-        };
-        reader.readAsDataURL(file);
+        // 画像の場合のみローカルプレビューを表示（統合サービス使用）
+        readFileAsDataURL(file)
+          .then(result => {
+            setThumbnailPreview(result);
+          })
+          .catch(error => {
+            console.error('ファイル読み込みエラー:', error);
+          });
       } else {
         // 動画の場合は一時的にファイル名を表示
         setThumbnailPreview(`uploading_${file.name}`);
@@ -186,7 +187,6 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
       
       // エラー時はプレビューをクリア
       setThumbnailPreview(null);
-      setMediaType(null);
       
       toast({
         title: "アップロードエラー",
@@ -199,7 +199,6 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
   // サムネイル画像・動画をクリア
   const clearThumbnail = () => {
     setThumbnailPreview(null);
-    setMediaType(null);
     projectForm.setValue("thumbnail", "");
     
     // ファイルオブジェクトもクリア
@@ -311,7 +310,6 @@ const ProjectSettingsForm: React.FC<ProjectSettingsFormProps> = ({
                       thumbnailPreview={thumbnailPreview}
                       onThumbnailChange={handleThumbnailChange}
                       onThumbnailClear={clearThumbnail}
-                      mediaType={mediaType}
                     />
                 </div>
               </CollapsibleContent>

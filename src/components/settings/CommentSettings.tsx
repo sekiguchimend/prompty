@@ -9,6 +9,7 @@ import { Label } from '../ui/label';
 import { Skeleton } from '../ui/skeleton';
 import { Loader2 } from 'lucide-react';
 import { Badge } from '../ui/badge';
+import { storageService } from '../../lib/storage-service';
 
 // コメント設定のインターフェース
 interface CommentSettings {
@@ -99,20 +100,17 @@ const CommentSettingsComponent: React.FC = () => {
           setSettings(defaultSettings);
         }
         
-        // ローカルストレージの非表示コメントを読み込んで統合
-        const storedHiddenComments = localStorage.getItem('hiddenComments');
-        if (storedHiddenComments) {
-          try {
-            const parsedHiddenComments = JSON.parse(storedHiddenComments);
-            if (Array.isArray(parsedHiddenComments)) {
-              setSettings(prev => ({
-                ...prev,
-                hidden_comments: Array.from(new Set([...prev.hidden_comments, ...parsedHiddenComments])),
-              }));
-            }
-          } catch (error) {
-            console.error('非表示コメントの読み込みに失敗しました:', error);
+        // 統合サービスから非表示コメントを読み込んで統合（最適化）
+        try {
+          const hiddenComments = storageService.getHiddenComments();
+          if (hiddenComments.length > 0) {
+            setSettings(prev => ({
+              ...prev,
+              hidden_comments: Array.from(new Set([...prev.hidden_comments, ...hiddenComments])),
+            }));
           }
+        } catch (error) {
+          console.error('非表示コメントの読み込みに失敗しました:', error);
         }
         
         // ユーザーが報告したコメントを取得
@@ -235,8 +233,8 @@ const CommentSettingsComponent: React.FC = () => {
       
       if (error) throw error;
       
-      // ローカルストレージも更新
-      localStorage.setItem('hiddenComments', JSON.stringify(settings.hidden_comments));
+      // 統合サービスでローカルストレージも更新（最適化）
+      storageService.setHiddenComments(settings.hidden_comments);
       
       toast({
         title: '設定を保存しました',

@@ -8,6 +8,8 @@ import { Avatar } from '../shared/Avatar';
 import { getDisplayName } from '../../lib/avatar-utils';
 import { CommentWithUser } from '../../types/entities/comment';
 import Link from 'next/link';
+import { storageService } from '../../lib/storage-service';
+import { useAuth } from '../../lib/auth-context';
 
 type UserSettings = {
   auto_hide_reported: boolean;
@@ -19,10 +21,12 @@ type CommentsProps = {
 };
 
 const Comments: React.FC<CommentsProps> = ({ promptId }) => {
+  // 最適化された認証フックを使用
+  const { user: currentUser } = useAuth();
+  
   const [comments, setComments] = useState<CommentWithUser[]>([]);
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const [commentCount, setCommentCount] = useState(0);
   const [hiddenComments, setHiddenComments] = useState<string[]>([]);
   const [selectedCommentId, setSelectedCommentId] = useState<string | null>(null);
@@ -37,45 +41,12 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
   const [replyContent, setReplyContent] = useState('');
   const [collapsedComments, setCollapsedComments] = useState<string[]>([]);
 
-  // ユーザー情報の取得
-  useEffect(() => {
-    const fetchUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        setCurrentUser(session.user);
-      }
-    };
-    
-    fetchUser();
-    
-    // 認証状態の変更を監視
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      setCurrentUser(session?.user || null);
-    });
-    
-    return () => {
-      authListener?.subscription.unsubscribe();
-    };
-  }, []);
-
   // ユーザー設定とローカルストレージから非表示コメントを読み込む
   useEffect(() => {
     const loadHiddenComments = async () => {
       try {
-        // ローカルストレージからの読み込み
-        const storedHiddenComments = localStorage.getItem('hiddenComments');
-        let hiddenCommentsFromStorage: string[] = [];
-        
-        if (storedHiddenComments) {
-          try {
-            const parsed = JSON.parse(storedHiddenComments);
-            if (Array.isArray(parsed)) {
-              hiddenCommentsFromStorage = parsed;
-            }
-          } catch (error) {
-            // 非表示コメントの読み込みに失敗
-          }
-        }
+        // 統合サービスからの読み込み
+        const hiddenCommentsFromStorage = storageService.getHiddenComments();
         
         if (currentUser) {
           // Supabaseからユーザー設定を取得
@@ -103,8 +74,8 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
             
             setHiddenComments(combinedHiddenComments);
             
-            // ローカルストレージを最新の状態に更新
-            localStorage.setItem('hiddenComments', JSON.stringify(combinedHiddenComments));
+            // 統合サービスで最新の状態に更新
+            storageService.setHiddenComments(combinedHiddenComments);
             
             return;
           }
@@ -374,8 +345,8 @@ const Comments: React.FC<CommentsProps> = ({ promptId }) => {
     
     setHiddenComments(updatedHiddenComments);
     
-    // ローカルストレージに保存
-    localStorage.setItem('hiddenComments', JSON.stringify(updatedHiddenComments));
+    // 統合サービスで保存
+    storageService.setHiddenComments(updatedHiddenComments);
     
     // ログインしているユーザーの場合、Supabaseにも設定を保存
     if (currentUser) {

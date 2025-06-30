@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { ChevronUp, ChevronDown, GripHorizontal } from 'lucide-react';
+import { useResponsive } from '../../hooks/use-responsive';
 
 interface PreviewMarkerOverlayProps {
   content: string;
@@ -19,18 +20,10 @@ export const PreviewMarkerOverlay: React.FC<PreviewMarkerOverlayProps> = ({
   const [markerPosition, setMarkerPosition] = useState<{ top: number; left: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [previewLines, setPreviewLines] = useState<number>(initialPreviewLines || 3);
-  const [isMobile, setIsMobile] = useState(false);
+  const { isMobile } = useResponsive(); // 最適化: 統合レスポンシブフック使用
   const overlayRef = useRef<HTMLDivElement>(null);
 
-  // モバイル判定
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  // 最適化: 重複したリサイズリスナーを削除（useResponsiveフックで統一管理）
 
   // マーカータグを挿入する関数
   const insertMarkerAtLine = useCallback((content: string, targetLine: number) => {

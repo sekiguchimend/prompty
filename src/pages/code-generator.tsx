@@ -59,12 +59,7 @@ const UnderDevelopmentPage: React.FC = () => {
 };
 
 const CodeGeneratorPage: React.FC = () => {
-  // 開発中の場合は専用ページを表示
-  if (IS_UNDER_DEVELOPMENT) {
-    return <UnderDevelopmentPage />;
-  }
-
-  // 以下は既存のコード（開発完了時に使用）
+  // Hooksは常に実行する（条件分岐の前に配置）
   const {
     isGenerating,
     error,
@@ -92,6 +87,7 @@ const CodeGeneratorPage: React.FC = () => {
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [typingCompleted, setTypingCompleted] = useState(false);
 
+  // 全てのhooksを条件分岐の前に配置
   const versionInfo = getVersionInfo();
 
   const handleGenerate = async () => {
@@ -141,6 +137,11 @@ const CodeGeneratorPage: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [error, clearError]);
+
+  // 開発中の場合は専用ページを表示
+  if (IS_UNDER_DEVELOPMENT) {
+    return <UnderDevelopmentPage />;
+  }
 
   const examplePrompts = [
     "ログイン画面を作って。メールとパスワード欄付きで。",

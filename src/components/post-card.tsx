@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { Badge } from '../components/ui/badge';
 import { Heart, MessageSquare } from 'lucide-react';
 import { UnifiedAvatar } from '../components/index';
@@ -36,7 +37,15 @@ interface PostCardProps {
 const PostCard: React.FC<PostCardProps> = ({ post }) => {
   return (
     <div className="border rounded-lg p-4 hover:shadow-md transition-shadow h-[280px] flex flex-col">
-      <img src={post.thumbnailUrl} alt={post.title} className="w-full h-32 object-cover rounded mb-3" />
+              <div className="relative w-full h-32 mb-3">
+          <Image 
+            src={post.thumbnailUrl} 
+            alt={post.title} 
+            fill
+            className="object-cover rounded"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+        </div>
       <h3 className="font-semibold text-lg mb-2 line-clamp-2 flex-1">{post.title}</h3>
       
       <div className="flex items-center justify-between mb-3 mt-auto">

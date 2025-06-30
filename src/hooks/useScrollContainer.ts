@@ -43,20 +43,15 @@ export const useScrollContainer = () => {
     const handleScrollEvent = () => checkScrollability();
     container.addEventListener('scroll', handleScrollEvent);
 
-    // ResizeObserver
+    // ResizeObserver（最適化: windowリサイズイベントは不要、ResizeObserverで十分）
     const resizeObserver = new ResizeObserver(() => {
       checkScrollability();
     });
     resizeObserver.observe(container);
 
-    // ウィンドウリサイズイベント
-    const handleResize = () => checkScrollability();
-    window.addEventListener('resize', handleResize);
-
     return () => {
       container.removeEventListener('scroll', handleScrollEvent);
       resizeObserver.disconnect();
-      window.removeEventListener('resize', handleResize);
     };
   }, [checkScrollability]);
 

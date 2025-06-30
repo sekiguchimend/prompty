@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from './supabase-unified';
+import React, { createContext, useContext } from 'react';
+import { useProfile, useAuth } from './auth-context';
 
-// ユーザー型定義
+// ユーザー型定義（下位互換性のため維持）
 export interface User {
   id: string;
   email?: string;
@@ -10,7 +10,7 @@ export interface User {
   // 必要に応じて他のユーザープロパティを追加
 }
 
-// コンテキスト型定義
+// コンテキスト型定義（下位互換性のため維持）
 interface UserContextType {
   user: User | null;
   loading: boolean;
@@ -18,105 +18,31 @@ interface UserContextType {
   refreshUser: () => Promise<void>;
 }
 
-// デフォルト値
-const defaultUserContext: UserContextType = {
-  user: null,
-  loading: true,
-  error: null,
-  refreshUser: async () => {},
+// 最適化されたプロバイダーは不要
+// 代わりに最適化された認証コンテキストを使用
+
+// 下位互換性のためのカスタムフック（最適化版）
+export const useUser = () => {
+  const { user, isLoading, error, refreshProfile } = useAuth();
+  
+  return {
+    user: user ? {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      avatar_url: user.avatar_url
+    } : null,
+    loading: isLoading,
+    error: error ? new Error(error) : null,
+    refreshUser: refreshProfile,
+  };
 };
 
-// コンテキスト作成
-const UserContext = createContext<UserContextType>(defaultUserContext);
-
-// カスタムフックを作成
-export const useUser = () => useContext(UserContext);
-
-// プロバイダーコンポーネント
+// プロバイダーコンポーネント（最適化版 - パススルー）
 export const UserProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  // ユーザー情報取得関数
-  const fetchUser = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Supabaseから現在のセッションを取得
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-      if (sessionError) {
-        throw sessionError;
-      }
-
-      if (!session) {
-        setUser(null);
-        return;
-      }
-
-      // ユーザー情報を取得
-      const { data: userData, error: userError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-
-      if (userError && userError.code !== 'PGRST116') {
-        throw userError;
-      }
-
-      // ユーザーデータを設定
-      if (userData) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email,
-          ...userData
-        });
-      } else {
-        // プロフィールが未作成の場合は基本情報のみ設定
-        setUser({
-          id: session.user.id,
-          email: session.user.email
-        });
-      }
-    } catch (err) {
-      console.error('ユーザー情報取得エラー:', err);
-      setError(err instanceof Error ? err : new Error('ユーザー情報の取得に失敗しました'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 初期ロード時にユーザー情報取得
-  useEffect(() => {
-    fetchUser();
-
-    // 認証状態変更をリッスン
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        fetchUser();
-      } else {
-        setUser(null);
-      }
-    });
-
-    // クリーンアップ関数
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
-
-  // コンテキスト値
-  const value = {
-    user,
-    loading,
-    error,
-    refreshUser: fetchUser,
-  };
-
-  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
+  // 最適化された認証コンテキストが全てを管理するため、
+  // 追加のプロバイダーやリスナーは不要
+  return <>{children}</>;
 };
 
 export default UserProvider; 

@@ -26,6 +26,7 @@ import { useAuth } from "../lib/auth-context";
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '../lib/supabase-unified';
 import { categoryCache, type Category } from '../lib/cache/category-cache';
+import { readFileAsDataURL, validateImageFile } from '../lib/image-optimization';
 
 // Supabase接続情報をチェックする関数（開発中のみ使用）
 const checkSupabaseConfiguration = () => {
@@ -221,13 +222,19 @@ const CreatePost = () => {
       const isVideo = file.type.startsWith('video/');
       setUploadedMediaType(isVideo ? 'video' : 'image');
       
-      // プレビュー用にdata URLを生成（projectSettingsに保存）
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        setProjectSettings(prev => ({ ...prev, thumbnail: result }));
-      };
-      reader.readAsDataURL(file);
+      // プレビュー用にdata URLを生成（統合サービス使用）
+      readFileAsDataURL(file)
+        .then(result => {
+          setProjectSettings(prev => ({ ...prev, thumbnail: result }));
+        })
+        .catch(error => {
+          console.error('ファイル読み込みエラー:', error);
+          toast({
+            title: "エラー",
+            description: error.message,
+            variant: "destructive",
+          });
+        });
     } else {
       setUploadedMediaType(null);
       setProjectSettings(prev => ({ ...prev, thumbnail: '' }));
@@ -407,21 +414,7 @@ const uploadThumbnailToStorage = async (file: File): Promise<string | null> => {
     }
     
     
-    // URLが実際に有効かチェック
-    try {
-      const imageTest = new Image();
-      imageTest.src = result.publicUrl;
-      
-      // 画像のロードを待つ
-      await new Promise((resolve, reject) => {
-        imageTest.onload = resolve;
-        imageTest.onerror = reject;
-        // 5秒のタイムアウト
-        setTimeout(() => reject(new Error('画像URLの検証がタイムアウトしました')), 5000);
-      });
-      
-    } catch (imageError) {
-    }
+    // URL検証は省略（アップロード成功時点で検証済み）
     
     return result.publicUrl;
   } catch (error) {
