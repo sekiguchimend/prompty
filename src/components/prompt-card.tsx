@@ -1,27 +1,24 @@
-import React, { useState, useEffect, useRef, memo } from 'react';
-import { Heart, Bookmark, BookmarkPlus, MoreVertical } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
+import { Heart, Bookmark, Clock, User, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '../hooks/use-toast';
 import Image from 'next/image';
-import { useRouter } from 'next/router';
-import { createClient } from '@supabase/supabase-js';
-import { useUser } from '../hooks/useUser';
-import { bookmarkPrompt, unbookmarkPrompt, checkIfBookmarked } from '../lib/bookmark-service';
-import { notoSansJP } from '../lib/fonts';
-import { HeartIcon, EyeIcon } from './ui/icons';
-import LazyImage from './common/LazyImage';
-import VideoPlayer from './common/VideoPlayer';
-import { Avatar } from './shared/Avatar';
-import { getDisplayName } from '../lib/avatar-utils';
 import { PromptItem } from '../pages/prompts/[id]';
 import { likePrompt, unlikePrompt, checkIfLiked } from '../lib/like-service';
+import { bookmarkPrompt, unbookmarkPrompt, checkIfBookmarked } from '../lib/bookmark-service';
 import { useAuth } from '../lib/auth-context';
-import { UnifiedAvatar, DEFAULT_AVATAR_URL } from './index';
-import ReportDialog from './shared/ReportDialog';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { cn } from '../lib/utils';
+import VideoPlayer from './common/VideoPlayer';
+import LazyImage from './common/LazyImage';
+import { useOptimizedCache, generateCacheKey } from '../lib/cache';
+import { getOptimizedImageProps } from '../lib/image-optimization';
 
 interface PromptCardProps {
   id: string;
   title: string;
+  description?: string;
   thumbnailUrl: string;
   mediaType?: 'image' | 'video';
   user: {
@@ -33,12 +30,18 @@ interface PromptCardProps {
   likeCount: number;
   isLiked?: boolean;
   isBookmarked?: boolean;
+  category?: string;
+  tags?: string[];
   onHide?: (id: string) => void;
+  isLastItem?: boolean;
+  index?: number;
+  showActions?: boolean;
 }
 
-const PromptCard: React.FC<PromptCardProps> = ({
+const PromptCard: React.FC<PromptCardProps> = memo(({
   id,
   title,
+  description,
   thumbnailUrl,
   mediaType = 'image',
   user,
@@ -46,308 +49,271 @@ const PromptCard: React.FC<PromptCardProps> = ({
   likeCount,
   isLiked = false,
   isBookmarked = false,
+  category,
+  tags = [],
   onHide,
+  isLastItem,
+  index = 0,
+  showActions = true
 }) => {
-  const router = useRouter();
   const [liked, setLiked] = useState(isLiked);
   const [bookmarked, setBookmarked] = useState(isBookmarked);
   const [currentLikeCount, setCurrentLikeCount] = useState(likeCount);
-  const [reportDialogOpen, setReportDialogOpen] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [isBookmarkProcessing, setIsBookmarkProcessing] = useState(false);
-  
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const { toast } = useToast();
-  const { user: currentUser } = useUser();
-  
-  // Extract the base ID without any prefix for the actual prompt ID
-  const promptId = id.includes('-') ? id.split('-')[1] : id;
-  
-  // Supabaseクライアントの初期化
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const { user: currentUser, isLoading } = useAuth();
+  const cache = useOptimizedCache();
+
+  // キャッシュキーの生成
+  const imageKey = useMemo(() => 
+    generateCacheKey('prompt-card', id, thumbnailUrl),
+    [id, thumbnailUrl]
   );
-  
-  // 初期状態でブックマーク状態といいね状態を確認
+
+  // 画像最適化設定
+  const imageProps = useMemo(() => 
+    getOptimizedImageProps('thumbnail', index),
+    [index]
+  );
+
+  // 状態チェック（最適化）
   useEffect(() => {
-    const checkInitialState = async () => {
-      if (!currentUser || !currentUser.id) return;
-      
-      const userId = currentUser.id!; // nullチェック済み
-      
-      // ブックマーク状態を確認
-      const isBookmarked = await checkIfBookmarked(promptId, userId);
-      setBookmarked(isBookmarked);
-      
-      // いいね状態を確認
-      const isLiked = await checkIfLiked(promptId, userId);
-      setLiked(isLiked);
-    };
+    if (!currentUser || isLoading) return;
     
-    checkInitialState();
-  }, [currentUser, promptId]);
-  
-  // いいねをトグルする関数
-  const toggleLike = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (!currentUser || !currentUser.id) {
-      toast({
-        title: "ログインが必要です",
-        description: "いいねするにはログインしてください",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const userId = currentUser.id!; // 型安全性のため変数に格納（上でnullチェック済み）
-    
-    // 楽観的更新（UIを先に更新）
-    const wasLiked = liked;
-    const previousCount = currentLikeCount;
-    
-    setLiked(!liked);
-    setCurrentLikeCount(prevCount => liked ? prevCount - 1 : prevCount + 1);
-    
-    try {
-      if (wasLiked) {
-        // いいねを削除
-        const { error } = await supabase
-          .from('likes')
-          .delete()
-          .eq('prompt_id', promptId)
-          .eq('user_id', userId);
-
-        if (error) {
-          console.error("いいね削除エラー:", error);
-          // エラー時は元の状態に戻す
-          setLiked(wasLiked);
-          setCurrentLikeCount(previousCount);
-          toast({
-            title: "いいねの削除に失敗しました",
-            description: error.message,
-            variant: "destructive",
-          });
-          return;
-        }
-      } else {
-        // いいねを追加
-        const { error } = await supabase
-          .from('likes')
-          .insert({
-            prompt_id: promptId,
-            user_id: userId,
-          });
-
-        if (error) {
-          console.error("いいね追加エラー:", error);
-          // エラー時は元の状態に戻す
-          setLiked(wasLiked);
-          setCurrentLikeCount(previousCount);
-          toast({
-            title: "いいねの追加に失敗しました",
-            description: error.message,
-            variant: "destructive",
-          });
-          return;
-        }
+    const checkStatuses = async () => {
+      try {
+        const [likedStatus, bookmarkedStatus] = await Promise.all([
+          checkIfLiked(id, currentUser.id),
+          checkIfBookmarked(id, currentUser.id)
+        ]);
+        
+        setLiked(likedStatus);
+        setBookmarked(bookmarkedStatus);
+      } catch (error) {
+        console.error('状態取得エラー:', error);
       }
-    } catch (err) {
-      console.error("いいね処理中のエラー:", err);
-      // エラー時は元の状態に戻す
-      setLiked(wasLiked);
-      setCurrentLikeCount(previousCount);
-      toast({
-        title: "エラーが発生しました",
-        description: "操作に失敗しました。後でもう一度お試しください。",
-        variant: "destructive",
-      });
-    }
-  };
-  
-  // ブックマークをトグルする関数
-  const toggleBookmark = async (e: React.MouseEvent) => {
+    };
+
+    checkStatuses();
+  }, [id, currentUser?.id, isLoading]);
+
+  // いいねハンドラー（最適化）
+  const handleLike = useCallback(async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    if (!currentUser || !currentUser.id) {
-      toast({
-        title: "ログインが必要です",
-        description: "ブックマークするにはログインしてください",
-        variant: "destructive"
-      });
-      return;
-    }
+    if (!currentUser || actionLoading) return;
     
-    const userId = currentUser.id!; // 型安全性のため変数に格納（上でnullチェック済み）
-    
-    // 同時に複数回処理されないようにする
-    if (isBookmarkProcessing) return;
-    
+    setActionLoading('like');
     try {
-      setIsBookmarkProcessing(true);
-      
-      // ブックマークの状態を楽観的に更新（UI応答性向上のため）
-      setBookmarked(!bookmarked);
-      
-      if (bookmarked) {
-        // ブックマークを削除
-        const result = await unbookmarkPrompt(promptId, userId);
-        if (!result.success) {
-          throw new Error('ブックマークの取り消しに失敗しました');
-        }
-        
-        toast({
-          title: "ブックマークを削除しました",
-        });
+      if (liked) {
+        await unlikePrompt(id, currentUser.id);
+        setLiked(false);
+        setCurrentLikeCount(prev => Math.max(0, prev - 1));
       } else {
-        // ブックマークを追加
-        const result = await bookmarkPrompt(promptId, userId);
-        if (!result.success) {
-          throw new Error('ブックマークの追加に失敗しました');
-        }
-        
-        toast({
-          title: "ブックマークに追加しました",
-        });
+        await likePrompt(id, currentUser.id);
+        setLiked(true);
+        setCurrentLikeCount(prev => prev + 1);
       }
     } catch (error) {
-      console.error('ブックマークエラー:', error);
-      
-      // エラーが発生した場合、状態を元に戻す
-      setBookmarked(bookmarked);
-      
+      console.error('いいね処理エラー:', error);
       toast({
-        title: "エラーが発生しました",
-        description: "操作に失敗しました。後でもう一度お試しください。",
+        title: "エラー",
+        description: "処理に失敗しました",
         variant: "destructive"
       });
     } finally {
-      setIsBookmarkProcessing(false);
+      setActionLoading(null);
     }
-  };
-  
-  // 非表示にする関数
-  const handleHide = () => {
-    if (onHide) {
-      onHide(id);
-    } else {
+  }, [liked, currentUser, id, actionLoading, toast]);
+
+  // ブックマークハンドラー（最適化）
+  const handleBookmark = useCallback(async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!currentUser || actionLoading) return;
+    
+    setActionLoading('bookmark');
+    try {
+      if (bookmarked) {
+        await unbookmarkPrompt(id, currentUser.id);
+        setBookmarked(false);
+      } else {
+        await bookmarkPrompt(id, currentUser.id);
+        setBookmarked(true);
+      }
+    } catch (error) {
+      console.error('ブックマーク処理エラー:', error);
       toast({
-        title: "投稿を非表示にしました",
-        description: "このコンテンツは今後表示されません",
+        title: "エラー",
+        description: "処理に失敗しました",
+        variant: "destructive"
       });
+    } finally {
+      setActionLoading(null);
     }
-  };
-  
-  // 報告ダイアログを開く
-  const openReportDialog = () => {
-    setReportDialogOpen(true);
-  };
-  
-  // クリックハンドラーをカード外に配置
-  React.useEffect(() => {
-    // ドロップダウンが開いている時のみクリックイベントを設定
-    if (showDropdown) {
-      const handleOutsideClick = () => setShowDropdown(false);
-      document.addEventListener('click', handleOutsideClick);
-      return () => document.removeEventListener('click', handleOutsideClick);
+  }, [bookmarked, currentUser, id, actionLoading, toast]);
+
+  // サムネイル表示の最適化
+  const thumbnailElement = useMemo(() => {
+    if (!thumbnailUrl) {
+      return (
+        <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
+          <div className="text-gray-400">画像なし</div>
+        </div>
+      );
     }
-  }, [showDropdown]);
-  
+
+    // キャッシュから確認
+    const cachedUrl = cache?.getImageUrl(imageKey);
+    const finalUrl = cachedUrl || thumbnailUrl;
+
+    if (mediaType === 'video') {
+      return (
+        <VideoPlayer
+          src={finalUrl}
+          alt={title}
+          className="w-full h-48"
+          hoverToPlay={true}
+          tapToPlay={true}
+          muted={true}
+          loop={true}
+          showThumbnail={true}
+          minimumOverlay={false}
+        />
+      );
+    }
+
+    return (
+      <LazyImage
+        src={finalUrl}
+        alt={title}
+        className="w-full h-48"
+        loading={imageProps.loading}
+        priority={imageProps.priority}
+        sizes={imageProps.sizes}
+        onLoad={() => {
+          if (cache && !cachedUrl) {
+            cache.cacheImageUrl(imageKey, thumbnailUrl);
+          }
+        }}
+      />
+    );
+  }, [thumbnailUrl, mediaType, title, cache, imageKey, imageProps]);
+
+  // タグ表示の最適化
+  const displayTags = useMemo(() => tags.slice(0, 3), [tags]);
+
   return (
-    <div className="prompt-card flex flex-col overflow-hidden rounded-md border bg-white shadow-sm h-[340px]">
-      <Link href={`/prompts/${promptId}`} className="block" prefetch={false}>
-        <div className="relative pb-[56.25%]">
-          {(() => {
-            return mediaType === 'video' ? (
-              <VideoPlayer
-                src={thumbnailUrl}
-                alt={title}
-                className="absolute inset-0 h-full w-full"
-                hoverToPlay={true}
-                tapToPlay={true}
-                muted={true}
-                loop={true}
-                showThumbnail={true}
-                onLinkClick={() => {
-                  // プログラム的にナビゲーション
-                  window.location.href = `/prompts/${promptId}`;
-                }}
+    <div className={cn(
+      'bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-all duration-200 hover:shadow-md group',
+      !isLastItem && 'mb-4'
+    )}>
+      <Link href={`/prompts/${id}`} className="block">
+        {/* サムネイル */}
+        <div className="relative">
+          {thumbnailElement}
+          
+          {/* カテゴリー */}
+          {category && (
+            <div className="absolute top-2 left-2">
+              <Badge variant="secondary" className="text-xs">
+                {category}
+              </Badge>
+            </div>
+          )}
+          
+          {/* 動画バッジ */}
+          {mediaType === 'video' && (
+            <div className="absolute top-2 right-2">
+              <Badge variant="default" className="text-xs bg-black bg-opacity-70 text-white border-none">
+                動画
+              </Badge>
+            </div>
+          )}
+        </div>
+
+        {/* コンテンツ */}
+        <div className="p-4 space-y-3">
+          {/* タイトル */}
+          <h3 className="font-medium text-gray-900 line-clamp-2 text-sm leading-5">
+            {title}
+          </h3>
+
+          {/* 説明文 */}
+          {description && (
+            <p className="text-xs text-gray-600 line-clamp-2 leading-4">
+              {description}
+            </p>
+          )}
+
+          {/* タグ */}
+          {displayTags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {displayTags.map((tag, idx) => (
+                <Badge key={idx} variant="outline" className="text-xs px-2 py-0.5">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          )}
+
+          {/* ユーザー情報 */}
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            {user.avatarUrl ? (
+              <img 
+                src={user.avatarUrl} 
+                alt={user.name}
+                className="w-5 h-5 rounded-full object-cover"
+                loading="lazy"
               />
             ) : (
-              <Image 
-                width={100}
-                height={100}
-                src={thumbnailUrl || '/images/default-thumbnail.svg'}
-                alt={title} 
-                priority={false}
-                sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-            );
-          })()}
+              <User className="h-4 w-4" />
+            )}
+            <span className="truncate font-medium">{user.name}</span>
+            <span>•</span>
+            <span>{postedAt}</span>
+          </div>
         </div>
       </Link>
-      <div className="flex flex-col p-3">
-        <div className="flex justify-between items-start mb-2">
-        <Link href={`/prompts/${promptId}`} prefetch={false} passHref legacyBehavior>
-          <a className={`line-clamp-2 font-extrabold hover:text-prompty-primary flex-1 mr-2 ${notoSansJP.className}`}
-          style={{ 
-            fontWeight: 900, 
-            textShadow: '0.03em 0 0 currentColor', // テキストに微妙なシャドウを追加して太く見せる
-          }}
-        >
-    {title}
-  </a>
-</Link>
-          
-          {/* シンプルな三点メニュー実装 */}
-          
-           
+
+      {/* アクションボタン */}
+      {showActions && (
+        <div className="px-4 pb-4 flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLike}
+            disabled={!!actionLoading || !currentUser}
+            className={cn(
+              "flex-1 h-8 text-xs",
+              liked && "text-red-500"
+            )}
+          >
+            <Heart className={cn("h-3 w-3 mr-1", liked && "fill-current")} />
+            {actionLoading === 'like' ? '...' : currentLikeCount}
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleBookmark}
+            disabled={!!actionLoading || !currentUser}
+            className={cn(
+              "flex-1 h-8 text-xs",
+              bookmarked && "text-blue-500"
+            )}
+          >
+            <Bookmark className={cn("h-3 w-3 mr-1", bookmarked && "fill-current")} />
+            {actionLoading === 'bookmark' ? '...' : '保存'}
+          </Button>
         </div>
-        
-        <div className="mt-auto">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <Link href={`/users/${user.name}`} className="block h-6 w-6 overflow-hidden rounded-full flex-shrink-0">
-                <img 
-                  src={user.avatarUrl} 
-                  alt={user.account_name || user.name} 
-                  className="h-full w-full object-cover"
-                />
-              </Link>
-              <Link href={`/users/${user.name}`} className="text-xs text-gray-600 hover:underline truncate flex-1 min-w-0">
-                {user.account_name || user.name}
-              </Link>
-            </div>
-            <span className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0">{postedAt}</span>
-          </div>
-          <div className="flex items-center">
-            <div className="flex items-center text-gray-500">
-              <button 
-                className={`like-button flex items-center ${liked ? 'text-red-500' : 'text-gray-500'}`}
-                onClick={toggleLike}
-              >
-                <Heart className={`mr-1 h-4 w-4 ${liked ? 'fill-red-500' : ''}`} />
-              </button>
-              <span className="text-xs">{currentLikeCount}</span>
-            </div>
-            <div className="flex items-center text-gray-500 ml-2">
-              <button 
-                className={`bookmark-button flex items-center ${bookmarked ? 'text-blue-500' : 'text-gray-500'}`}
-                onClick={toggleBookmark}
-              >
-                <Bookmark className={`mr-1 h-4 w-4 ${bookmarked ? 'fill-blue-500' : ''}`} />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-    
+      )}
     </div>
   );
-};
+});
 
-export default memo(PromptCard);
+PromptCard.displayName = 'PromptCard';
+
+export default PromptCard;

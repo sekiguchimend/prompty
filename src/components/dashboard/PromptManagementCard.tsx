@@ -36,6 +36,7 @@ import Link from 'next/link';
 import { PromptManagementService } from '../../lib/prompt-management-service';
 import { PromptManagementData } from '../../types/prompt-management';
 import VideoPlayer from '../common/VideoPlayer';
+import LazyImage from '../common/LazyImage';
 
 interface PromptManagementCardProps {
   prompt: PromptManagementData;
@@ -209,10 +210,12 @@ const PromptManagementCard: React.FC<PromptManagementCardProps> = ({
                   minimumOverlay={true}
                 />
               ) : (
-                <img 
+                <LazyImage 
                   src={prompt.thumbnail_url} 
                   alt={prompt.title}
                   className="w-full h-32 object-cover rounded-lg"
+                  loading="lazy"
+                  sizes="200px"
                 />
               )}
             </div>

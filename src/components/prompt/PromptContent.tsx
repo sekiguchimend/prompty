@@ -14,6 +14,7 @@ import { UnifiedAvatar } from '../index';
 import PurchaseSection from './PurchaseSection';
 import { useAuth } from '../../lib/auth-context';
 import VideoPlayer from '../common/VideoPlayer';
+import LazyImage from '../common/LazyImage';
 import { getOptimizedImageProps } from '../../lib/image-optimization';
 
 // 重いコンポーネントを遅延読み込み（Code Splitting）
@@ -560,28 +561,17 @@ const PromptContent: React.FC<PromptContentProps> = ({
                     muted={true}
                     loop={true}
                     showThumbnail={true}
-                    controls={true} // 詳細ページではコントロールを表示
+                    fullFeatured={true} // YouTube風の高機能プレイヤーを使用
                   />
                 );
               } else if (imageUrl.startsWith('http')) {
                 return (
-                  <img 
+                  <LazyImage 
                     src={imageUrl} 
                     alt={title} 
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover aspect-video"
                     loading="lazy"
-                    decoding="async"
-                    onLoad={(e) => {
-                      e.currentTarget.style.opacity = '1';
-                    }}
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                    style={{
-                      aspectRatio: '16/9',
-                      opacity: 0,
-                      transition: 'opacity 0.3s ease-in-out'
-                    }}
+                    sizes="(max-width: 768px) 100vw, 768px"
                   />
                 );
               } else {

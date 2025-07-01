@@ -1,8 +1,8 @@
-// 画像最適化ユーティリティ - 完全統合版
+// 画像最適化ユーティリティ - パフォーマンス最適化版
 import { ImageProps } from 'next/image';
 import { useState, useCallback } from 'react';
 
-// 🎨 統一ブラーデータURL（重複削除）
+// 🎨 統一ブラーデータURL
 export const DEFAULT_BLUR_DATA_URL = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgo";
 
 // 📁 統一フォールバック画像URL
@@ -13,59 +13,64 @@ export const DEFAULT_FALLBACK_URLS = {
   content: '/images/default-thumbnail.svg'
 } as const;
 
-// 画像読み込み優先度の判定
+// プリロード済み画像キャッシュ（メモリリーク防止）
+const preloadedImages = new Set<string>();
+const MAX_PRELOAD_CACHE = 50;
+
+// 画像読み込み優先度の判定（簡素化）
 export const getImagePriority = (index: number, isFeatureSection: boolean = false): boolean => {
-  if (isFeatureSection) {
-    // 特集セクションでは最初の2枚を優先読み込み
-    return index < 2;
-  }
-  // 通常セクションでは最初の4枚を優先読み込み
-  return index < 4;
+  return isFeatureSection ? index < 2 : index < 4;
 };
 
-// 画像品質の最適化
-export const getOptimizedQuality = (type: 'thumbnail' | 'avatar' | 'hero' | 'content'): number => {
-  switch (type) {
-    case 'thumbnail': return 70;
-    case 'avatar': return 60;
-    case 'hero': return 80;
-    case 'content': return 75;
-    default: return 70;
-  }
+// 画像品質の最適化（メモ化）
+const qualityMap = {
+  thumbnail: 70,
+  avatar: 60,
+  hero: 80,
+  content: 75
+} as const;
+
+export const getOptimizedQuality = (type: keyof typeof qualityMap): number => {
+  return qualityMap[type] || 70;
 };
 
-// サイズ別の最適化設定
-export const getOptimizedSizes = (type: 'thumbnail' | 'avatar' | 'hero' | 'content'): string => {
-  switch (type) {
-    case 'thumbnail': return '(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw';
-    case 'avatar': return '(max-width: 768px) 32px, 40px';
-    case 'hero': return '(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px';
-    case 'content': return '(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 800px';
-    default: return '100vw';
-  }
+// サイズ別の最適化設定（メモ化）
+const sizesMap = {
+  thumbnail: '(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw',
+  avatar: '(max-width: 768px) 32px, 40px',
+  hero: '(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px',
+  content: '(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 800px'
+} as const;
+
+export const getOptimizedSizes = (type: keyof typeof sizesMap): string => {
+  return sizesMap[type] || '100vw';
 };
 
-// 統合ストレージサービスを使用したプリロード管理
+// 最適化されたプリロード管理（非同期化）
 export const preloadCriticalImages = (imageUrls: string[]): void => {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined' || !imageUrls?.length) return;
   
-  // 統合ストレージサービスを動的にインポート（循環参照回避）
-  import('./storage-service').then(({ storageService }) => {
-    imageUrls.slice(0, 4).forEach((url) => {
-      if (!storageService.isImagePreloaded(url)) {
+  // キャッシュサイズ制限
+  if (preloadedImages.size >= MAX_PRELOAD_CACHE) {
+    preloadedImages.clear();
+  }
+  
+  // 重複チェックとプリロード（最初の4枚のみ）
+  imageUrls.slice(0, 4).forEach((url) => {
+    if (!preloadedImages.has(url)) {
+      requestIdleCallback(() => {
         const link = document.createElement('link');
         link.rel = 'preload';
         link.as = 'image';
         link.href = url;
         document.head.appendChild(link);
-        
-        storageService.addPreloadedImage(url);
-      }
-    });
+        preloadedImages.add(url);
+      });
+    }
   });
 };
 
-// 🔧 強化された画像エラーハンドリング
+// 🔧 最適化された画像エラーハンドリング
 export const handleImageError = (
   event: React.SyntheticEvent<HTMLImageElement>,
   type: keyof typeof DEFAULT_FALLBACK_URLS = 'thumbnail',
@@ -80,10 +85,10 @@ export const handleImageError = (
   }
 };
 
-// 📁 統合FileReader処理（重複削除）
+// 📁 最適化されたFileReader処理（非同期）
 export const readFileAsDataURL = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
-    if (!file || !file.type.startsWith('image/')) {
+    if (!file?.type.startsWith('image/')) {
       reject(new Error('有効な画像ファイルを選択してください'));
       return;
     }
@@ -102,36 +107,49 @@ export const readFileAsDataURL = (file: File): Promise<string> => {
   });
 };
 
-// 🖼️ 統合画像検証処理
+// 🖼️ 最適化された画像検証処理（非同期）
 export const validateImageFile = (file: File): Promise<{ width: number; height: number; valid: boolean }> => {
   return new Promise((resolve) => {
     const imageTest = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    
     imageTest.onload = () => {
+      URL.revokeObjectURL(objectUrl); // メモリリーク防止
       resolve({
         width: imageTest.width,
         height: imageTest.height,
         valid: imageTest.width > 0 && imageTest.height > 0
       });
     };
+    
     imageTest.onerror = () => {
+      URL.revokeObjectURL(objectUrl); // メモリリーク防止
       resolve({ width: 0, height: 0, valid: false });
     };
-    imageTest.src = URL.createObjectURL(file);
+    
+    imageTest.src = objectUrl;
   });
 };
 
-// ブラウザがWebPをサポートしているかチェック
+// WebPサポートチェック（キャッシュ機能付き）
+let webpSupported: boolean | null = null;
+
 export const checkWebPSupport = (): Promise<boolean> => {
+  if (webpSupported !== null) {
+    return Promise.resolve(webpSupported);
+  }
+  
   return new Promise((resolve) => {
     const webP = new Image();
     webP.onload = webP.onerror = () => {
-      resolve(webP.height === 2);
+      webpSupported = webP.height === 2;
+      resolve(webpSupported);
     };
     webP.src = 'data:image/webp;base64,UklGRjoAAABXRUJQVlA4IC4AAACyAgCdASoCAAIALmk0mk0iIiIiIgBoSygABc6WWgAA/veff/0PP8bA//LwYAAA';
   });
 };
 
-// 画像の遅延読み込み設定を最適化
+// 最適化された読み込み設定
 export const getOptimizedLoadingProps = (
   index: number,
   isFeatureSection: boolean = false
@@ -144,7 +162,7 @@ export const getOptimizedLoadingProps = (
   };
 };
 
-// 🎯 完全最適化された画像プロパティ生成（重複削除の決定版）
+// 🎯 最適化された画像プロパティ生成
 export const getOptimizedImageProps = (
   type: keyof typeof DEFAULT_FALLBACK_URLS,
   index: number = 0,
@@ -161,7 +179,7 @@ export const getOptimizedImageProps = (
   };
 };
 
-// 🎣 統合画像状態管理フック（重複削除）
+// 🎣 最適化された画像状態管理フック
 export const useImageState = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -194,7 +212,7 @@ export const useImageState = () => {
   };
 };
 
-// 📱 統合画像アップロードフック（重複削除）
+// 📱 最適化された画像アップロードフック
 export const useImageUpload = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -206,19 +224,21 @@ export const useImageUpload = () => {
     setUploadError(null);
     
     try {
-      // ファイル検証
-      const validation = await validateImageFile(file);
+      // 並列でファイル検証とプレビュー生成
+      const [validation, dataUrl] = await Promise.all([
+        validateImageFile(file),
+        readFileAsDataURL(file)
+      ]);
+      
       if (!validation.valid) {
         throw new Error('無効な画像ファイルです');
       }
       
-      // プレビューURL生成
-      const dataUrl = await readFileAsDataURL(file);
-      
       setUploadedFile(file);
       setPreviewUrl(dataUrl);
     } catch (error) {
-      setUploadError(error instanceof Error ? error.message : 'ファイル処理に失敗しました');
+      const errorMessage = error instanceof Error ? error.message : 'ファイル処理に失敗しました';
+      setUploadError(errorMessage);
       setUploadedFile(null);
       setPreviewUrl(null);
     } finally {
@@ -227,11 +247,16 @@ export const useImageUpload = () => {
   }, []);
   
   const clearFile = useCallback(() => {
+    // プレビューURLのクリーンアップ
+    if (previewUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    
     setUploadedFile(null);
     setPreviewUrl(null);
     setUploadError(null);
     setIsProcessing(false);
-  }, []);
+  }, [previewUrl]);
   
   return {
     uploadedFile,

@@ -263,18 +263,18 @@ const FollowModal: React.FC<FollowModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[80vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="text-center">{title}</DialogTitle>
+      <DialogContent className="max-w-md w-[90vw] sm:w-full max-h-[80vh] overflow-hidden flex flex-col p-4 sm:p-6">
+        <DialogHeader className="pb-3">
+          <DialogTitle className="text-center text-lg sm:text-xl">{title}</DialogTitle>
         </DialogHeader>
         
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto -mx-1 px-1">
           {isLoading ? (
             <div className="flex justify-center items-center py-8">
               <Loader2 className="h-6 w-6 animate-spin" />
             </div>
           ) : users.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 text-sm sm:text-base">
               {type === 'followers' ? 'フォロワーがいません' : 'フォローしているユーザーがいません'}
             </div>
           ) : (
@@ -289,14 +289,15 @@ const FollowModal: React.FC<FollowModalProps> = ({
                       src={user.avatar_url}
                       displayName={user.display_name}
                       size="md"
+                      className="flex-shrink-0"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{user.display_name}</p>
+                      <p className="font-medium text-sm sm:text-base truncate">{user.display_name}</p>
                       {user.account_name && (
-                        <p className="text-xs text-gray-500 truncate">@{user.account_name}</p>
+                        <p className="text-xs sm:text-sm text-gray-500 truncate">@{user.account_name}</p>
                       )}
                       {user.bio && (
-                        <p className="text-xs text-gray-600 truncate mt-1">{user.bio}</p>
+                        <p className="text-xs sm:text-sm text-gray-600 truncate mt-1 hidden sm:block">{user.bio}</p>
                       )}
                     </div>
                   </div>
@@ -310,14 +311,20 @@ const FollowModal: React.FC<FollowModalProps> = ({
                         handleFollowToggle(user.id);
                       }}
                       disabled={loadingStates[user.id]}
-                      className="ml-3 flex-shrink-0"
+                      className="ml-2 sm:ml-3 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
                     >
                       {loadingStates[user.id] ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                       ) : followingStates[user.id] ? (
-                        'フォロー中'
+                        <>
+                          <span className="hidden sm:inline">フォロー中</span>
+                          <span className="sm:hidden">中</span>
+                        </>
                       ) : (
-                        'フォロー'
+                        <>
+                          <span className="hidden sm:inline">フォロー</span>
+                          <span className="sm:hidden">+</span>
+                        </>
                       )}
                     </Button>
                   )}

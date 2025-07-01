@@ -1,5 +1,5 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Settings } from 'lucide-react';
 
 interface VideoPlayerProps {
   src: string;
@@ -12,9 +12,12 @@ interface VideoPlayerProps {
   hoverToPlay?: boolean;
   tapToPlay?: boolean;
   showThumbnail?: boolean;
-  onLinkClick?: () => void; // リンククリック用のコールバック
-  minimumOverlay?: boolean; // 最小限のオーバーレイ（再生ボタンのみ）
-  fallbackSources?: string[]; // フォールバック用の動画ソース
+  onLinkClick?: () => void;
+  minimumOverlay?: boolean;
+  fallbackSources?: string[];
+  timeout?: number;
+  fallbackImage?: string;
+  fullFeatured?: boolean; // YouTube風の高機能プレイヤーを使用するかどうか
 }
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({
@@ -30,547 +33,600 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   showThumbnail = true,
   onLinkClick,
   minimumOverlay = false,
-  fallbackSources = []
+  fallbackSources = [],
+  timeout = 10000,
+  fallbackImage = '/images/default-thumbnail.svg',
+  fullFeatured = false
 }): JSX.Element => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isMuted, setIsMuted] = useState(muted);
   const [showControls, setShowControls] = useState(false);
-  const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [loadTimeout, setLoadTimeout] = useState<NodeJS.Timeout | null>(null);
-  const [currentSrcIndex, setCurrentSrcIndex] = useState(0);
-  const [allSources] = useState([src, ...fallbackSources]);
-  const [retryCount, setRetryCount] = useState(0);
   const [firstFrameLoaded, setFirstFrameLoaded] = useState(false);
+  const [showFallbackImage, setShowFallbackImage] = useState(false);
+  
+  // 新しい状態変数（YouTube風機能用）
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(muted ? 0 : 1);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isMobile] = useState(
+    typeof window !== 'undefined' &&
+    (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(navigator.userAgent) ||
+     window.innerWidth <= 768)
+  );
 
-  useEffect(() => {
-    // モバイルデバイス判定
+  // ブラウザ検出
+  const getBrowserInfo = useCallback(() => {
+    if (typeof window === 'undefined') return { name: 'unknown', version: 0 };
+    
     const userAgent = navigator.userAgent;
-    const isMobileDevice = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(userAgent) ||
-      (navigator.maxTouchPoints && navigator.maxTouchPoints > 2) ||
-      window.innerWidth <= 768;
     
-    setIsMobile(isMobileDevice);
+    if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) {
+      return { name: 'safari', version: 1 };
+    } else if (userAgent.includes('Chrome')) {
+      return { name: 'chrome', version: 1 };
+    } else if (userAgent.includes('Firefox')) {
+      return { name: 'firefox', version: 1 };
+    } else if (userAgent.includes('Edge')) {
+      return { name: 'edge', version: 1 };
+    }
     
+    return { name: 'unknown', version: 0 };
+  }, []);
+
+  // 簡潔な動画形式判定
+  const getVideoFormat = useCallback((url: string) => {
+    const extension = url.split('.').pop()?.toLowerCase() || 'unknown';
+    return extension;
+  }, []);
+
+  // 動画形式に応じたMIMEタイプ取得（ブラウザ別最適化）
+  const getMimeType = useCallback((url: string) => {
+    const format = getVideoFormat(url);
+    const browser = getBrowserInfo();
+    
+    const mimeMap: Record<string, string> = {
+      'mp4': 'video/mp4',
+      'm4v': 'video/mp4',
+      'webm': 'video/webm',
+      'ogv': 'video/ogg',
+      'ogg': 'video/ogg',
+      'mov': browser.name === 'safari' ? 'video/quicktime' : 'video/mp4', // Chrome系ではmp4として処理
+      'qt': 'video/quicktime',
+      '3gp': 'video/3gpp',
+      'avi': 'video/x-msvideo',
+      'wmv': 'video/x-ms-wmv'
+    };
+    return mimeMap[format] || 'video/mp4';
+  }, [getVideoFormat, getBrowserInfo]);
+
+  // ブラウザ対応判定（MOVはSafariで優先対応）
+  const isFormatSupported = useCallback((url: string) => {
+    const format = getVideoFormat(url);
+    const browser = getBrowserInfo();
+    
+    // 基本対応形式
+    const basicSupported = ['mp4', 'm4v', 'webm', 'ogv', 'ogg'];
+    
+    // MOVファイルのブラウザ別対応
+    if (format === 'mov') {
+      return browser.name === 'safari' ? true : false; // Safari以外は対応困難
+    }
+    
+    return basicSupported.includes(format);
+  }, [getVideoFormat, getBrowserInfo]);
+
+  // プリロード設定の最適化
+  const getOptimalPreload = useCallback((url: string) => {
+    const format = getVideoFormat(url);
+    const browser = getBrowserInfo();
+    
+    if (format === 'mov') {
+      // MOVファイルはブラウザ別に最適化
+      if (browser.name === 'safari') {
+        return 'metadata'; // Safariでは通常のプリロード
+      } else {
+        return 'none'; // その他のブラウザでは軽量化
+      }
+    }
+    
+    return 'metadata'; // その他の形式は通常プリロード
+  }, [getVideoFormat, getBrowserInfo]);
+
+  // 時間更新処理
+  const handleTimeUpdate = useCallback(() => {
+    if (videoRef.current) {
+      setCurrentTime(videoRef.current.currentTime);
+    }
+  }, []);
+
+  // 読み込み完了処理
+  const handleLoadSuccess = useCallback(() => {
+    const format = getVideoFormat(src);
+    const browser = getBrowserInfo();
+    console.log(`✅ 動画読み込み成功 (${format} - ${browser.name}):`, src);
+    
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    setFirstFrameLoaded(true);
+    setIsLoading(false);
+    setHasError(false);
+    setShowFallbackImage(false);
+    
+    // 最初のフレームに移動
+    if (videoRef.current && videoRef.current.currentTime !== 0) {
+      videoRef.current.currentTime = 0;
+    }
+  }, [src, getVideoFormat, getBrowserInfo]);
+
+  // メタデータ読み込み完了処理
+  const handleLoadedMetadata = useCallback(() => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+    }
+    handleLoadSuccess();
+  }, [handleLoadSuccess]);
+
+  // エラー処理
+  const handleVideoError = useCallback((event?: any) => {
+    const format = getVideoFormat(src);
+    const browser = getBrowserInfo();
+    console.error(`❌ 動画読み込みエラー (${format} - ${browser.name}):`, src, event);
+    
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    setHasError(true);
+    setIsLoading(false);
+    setFirstFrameLoaded(false);
+    
+    // 対応形式でもエラーが発生した場合はフォールバック画像を表示
+    setShowFallbackImage(true);
+  }, [src, getVideoFormat, getBrowserInfo]);
+
+  // 再生関連イベント
+  const handlePlay = useCallback(() => {
+    setIsPlaying(true);
+  }, []);
+
+  const handlePause = useCallback(() => {
+    setIsPlaying(false);
+  }, []);
+
+  // タイムアウト設定（形式とブラウザ別最適化）
+  const setupVideoTimeout = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    const format = getVideoFormat(src);
+    const browser = getBrowserInfo();
+    
+    // 形式とブラウザ別タイムアウト時間
+    let timeoutDuration = timeout;
+    if (format === 'mov') {
+      timeoutDuration = browser.name === 'safari' ? 8000 : 15000; // Safari以外は長めに
+    }
+    
+    timeoutRef.current = setTimeout(() => {
+      console.warn(`⏰ 動画読み込みタイムアウト (${format} - ${browser.name}):`, src);
+      
+      setIsLoading(false);
+      
+      if (isFormatSupported(src)) {
+        // 対応形式は動画として強制表示
+        console.log(`🎬 ${format}形式を動画として強制表示 (${browser.name}):`, src);
+        setFirstFrameLoaded(true);
+        setHasError(false);
+        setShowFallbackImage(false);
+      } else {
+        // 未対応形式はフォールバック画像
+        console.log(`🖼️ ${format}形式をフォールバック画像として表示 (${browser.name}):`, src);
+        setHasError(true);
+        setShowFallbackImage(true);
+      }
+    }, timeoutDuration);
+  }, [src, timeout, getVideoFormat, getBrowserInfo, isFormatSupported]);
+
+  // MOV専用の初期化処理
+  const initializeMOVVideo = useCallback(() => {
+    const video = videoRef.current;
+    if (!video || getVideoFormat(src) !== 'mov') return;
+    
+    const browser = getBrowserInfo();
+    console.log(`🎥 MOV動画専用初期化 (${browser.name}):`, src);
+    
+    // Safari以外でのMOV対応強化
+    if (browser.name !== 'safari') {
+      // より積極的な読み込み試行
+      const tryLoad = () => {
+        if (video.readyState >= 1) { // HAVE_METADATA
+          handleLoadSuccess();
+        } else {
+          video.load(); // 強制再読み込み
+        }
+      };
+      
+      // 少し遅らせてから試行
+      setTimeout(tryLoad, 1000);
+    }
+  }, [src, getVideoFormat, getBrowserInfo, handleLoadSuccess]);
+
+  // 初期化とイベントリスナー設定
+  useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    const handlePlay = () => {
-      setIsPlaying(true);
-      setIsLoading(false);
-    };
-    
-    const handlePause = () => setIsPlaying(false);
-    const handleEnded = () => setIsPlaying(false);
-    
-    const handleLoadedData = () => {
-      setThumbnailLoaded(true);
-      setIsLoading(false);
-      setHasError(false);
-      setRetryCount(0);
-      setFirstFrameLoaded(true);
-      
-      // 動画の最初のフレーム（0秒）に移動
-      if (video.currentTime !== 0) {
-        video.currentTime = 0;
-      }
-      
-      if (loadTimeout) {
-        clearTimeout(loadTimeout);
-        setLoadTimeout(null);
-      }
-    };
+    console.log(`🚀 VideoPlayer初期化開始:`, src);
 
-    const handleCanPlay = () => {
-      setThumbnailLoaded(true);
-      setIsLoading(false);
-      setHasError(false);
-      setRetryCount(0);
-      setFirstFrameLoaded(true);
-      
-      // 動画の最初のフレームに確実に移動
-      if (video.currentTime !== 0) {
-        video.currentTime = 0;
-      }
-      
-      if (loadTimeout) {
-        clearTimeout(loadTimeout);
-        setLoadTimeout(null);
-      }
-    };
-
-    const handleLoadedMetadata = () => {
-      // メタデータが読み込まれた時点で最初のフレームを表示
-      setThumbnailLoaded(true);
-      setFirstFrameLoaded(true);
-      
-      // 動画の最初のフレームに移動
-      video.currentTime = 0;
-      
-      // モバイルでは少し待ってからローディング状態を解除
-      if (isMobileDevice) {
-        setTimeout(() => {
-          setIsLoading(false);
-          setHasError(false);
-          setRetryCount(0);
-          
-          if (loadTimeout) {
-            clearTimeout(loadTimeout);
-            setLoadTimeout(null);
-          }
-        }, 200);
-      } else {
-        setIsLoading(false);
-        setHasError(false);
-        setRetryCount(0);
-        
-        if (loadTimeout) {
-          clearTimeout(loadTimeout);
-          setLoadTimeout(null);
-        }
-      }
-    };
-
-    const handleSeeked = () => {
-      // シーク完了時に最初のフレームが表示される
-      setFirstFrameLoaded(true);
-      setThumbnailLoaded(true);
-      setIsLoading(false);
-    };
-    
-    const handleError = (e: Event) => {
-      console.error('Video loading error:', e, 'Current source:', allSources[currentSrcIndex], 'Retry count:', retryCount);
-      
-      if (loadTimeout) {
-        clearTimeout(loadTimeout);
-        setLoadTimeout(null);
-      }
-      
-      // リトライ回数が2回未満の場合は同じソースで再試行
-      if (retryCount < 2) {
-        console.log('Retrying same source:', allSources[currentSrcIndex], 'Attempt:', retryCount + 1);
-        setRetryCount(prev => prev + 1);
-        setIsLoading(true);
-        setHasError(false);
-        
-        setTimeout(() => {
-          if (video) {
-            video.load();
-          }
-        }, 1000 * (retryCount + 1));
-        return;
-      }
-      
-      // 次のソースを試す
-      if (currentSrcIndex < allSources.length - 1) {
-        console.log('Trying next source:', allSources[currentSrcIndex + 1]);
-        setCurrentSrcIndex(prev => prev + 1);
-        setRetryCount(0);
-        setIsLoading(true);
-        setHasError(false);
-      } else {
-        console.error('All video sources failed to load');
-        setHasError(true);
-        setIsLoading(false);
-        setRetryCount(0);
-      }
-    };
-    
-    const handleLoadStart = () => {
-      setIsLoading(true);
-      setHasError(false);
-      
-      // モバイルの場合はタイムアウトを短めに設定
-      const timeoutDuration = isMobileDevice ? 8000 : 12000;
-      
-      if (loadTimeout) {
-        clearTimeout(loadTimeout);
-      }
-      const timeout = setTimeout(() => {
-        console.warn('Video loading timeout:', allSources[currentSrcIndex]);
-        
-        if (currentSrcIndex < allSources.length - 1) {
-          console.log('Timeout - trying next source:', allSources[currentSrcIndex + 1]);
-          setCurrentSrcIndex(prev => prev + 1);
-          setRetryCount(0);
-          setIsLoading(true);
-          setHasError(false);
-        } else {
-          console.error('All video sources timed out');
-          setIsLoading(false);
-          setHasError(true);
-          setRetryCount(0);
-        }
-      }, timeoutDuration);
-      setLoadTimeout(timeout);
-    };
-
-    const handleSuspend = () => {
-      console.warn('Video loading suspended');
-      // モバイルでsuspendが発生した場合、ローディング状態を解除
-      if (isMobileDevice) {
-        setTimeout(() => {
-          if (isLoading && !firstFrameLoaded) {
-            setIsLoading(false);
-          }
-        }, 2000);
-      }
-    };
-
-    const handleStalled = () => {
-      console.warn('Video loading stalled');
-      // モバイルでstalledが発生した場合、ローディング状態を解除
-      if (isMobileDevice) {
-        setTimeout(() => {
-          if (isLoading && !firstFrameLoaded) {
-            setIsLoading(false);
-          }
-        }, 3000);
-      }
-    };
-
-    const handleWaiting = () => {
-      // バッファリング中
-      if (!isMobileDevice) {
-        setIsLoading(true);
-      }
-    };
-
-    const handleCanPlayThrough = () => {
-      // 十分にバッファリングされて再生可能
-      setIsLoading(false);
-      setFirstFrameLoaded(true);
-      setThumbnailLoaded(true);
-      
-      // 動画の最初のフレームに確実に移動
-      if (video.currentTime !== 0) {
-        video.currentTime = 0;
-      }
-    };
-
-    // 動画が読み込まれた直後に最初のフレームを表示するための処理
-    const handleTimeUpdate = () => {
-      // 再生中でない場合は、常に最初のフレームに戻す
-      if (!isPlaying && video.currentTime !== 0) {
-        video.currentTime = 0;
-      }
-    };
-
+    // イベントリスナー設定
+    video.addEventListener('loadedmetadata', handleLoadedMetadata);
+    video.addEventListener('loadeddata', handleLoadSuccess);
+    video.addEventListener('canplay', handleLoadSuccess);
+    video.addEventListener('canplaythrough', handleLoadSuccess);
+    video.addEventListener('error', handleVideoError);
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
-    video.addEventListener('ended', handleEnded);
-    video.addEventListener('loadeddata', handleLoadedData);
-    video.addEventListener('loadedmetadata', handleLoadedMetadata);
-    video.addEventListener('canplay', handleCanPlay);
-    video.addEventListener('canplaythrough', handleCanPlayThrough);
-    video.addEventListener('seeked', handleSeeked);
-    video.addEventListener('error', handleError);
-    video.addEventListener('loadstart', handleLoadStart);
-    video.addEventListener('suspend', handleSuspend);
-    video.addEventListener('stalled', handleStalled);
-    video.addEventListener('waiting', handleWaiting);
     video.addEventListener('timeupdate', handleTimeUpdate);
 
+    // タイムアウト開始
+    setupVideoTimeout();
+    
+    // MOV専用処理
+    initializeMOVVideo();
+
     return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      video.removeEventListener('loadeddata', handleLoadSuccess);
+      video.removeEventListener('canplay', handleLoadSuccess);
+      video.removeEventListener('canplaythrough', handleLoadSuccess);
+      video.removeEventListener('error', handleVideoError);
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
-      video.removeEventListener('ended', handleEnded);
-      video.removeEventListener('loadeddata', handleLoadedData);
-      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      video.removeEventListener('canplay', handleCanPlay);
-      video.removeEventListener('canplaythrough', handleCanPlayThrough);
-      video.removeEventListener('seeked', handleSeeked);
-      video.removeEventListener('error', handleError);
-      video.removeEventListener('loadstart', handleLoadStart);
-      video.removeEventListener('suspend', handleSuspend);
-      video.removeEventListener('stalled', handleStalled);
-      video.removeEventListener('waiting', handleWaiting);
       video.removeEventListener('timeupdate', handleTimeUpdate);
-      
-      if (loadTimeout) {
-        clearTimeout(loadTimeout);
-      }
     };
-  }, [allSources, currentSrcIndex, loadTimeout, retryCount, isPlaying]);
+  }, [src, handleLoadedMetadata, handleLoadSuccess, handleVideoError, handlePlay, handlePause, handleTimeUpdate, setupVideoTimeout, initializeMOVVideo]);
 
-  const handleMouseEnter = () => {
-    setIsHovered(true);
-    setShowControls(true);
-    if (hoverToPlay && videoRef.current && !isMobile) {
-      videoRef.current.play();
-    }
-  };
+  // フルスクリーン状態の監視
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
 
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-    setShowControls(false);
-    if (hoverToPlay && videoRef.current && !isMobile) {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0;
-    }
-  };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
 
-  const handleClick = (e: React.MouseEvent) => {
+  // src変更時のリセット
+  useEffect(() => {
+    console.log(`🔄 VideoPlayer リセット:`, src);
+    setIsLoading(true);
+    setHasError(false);
+    setFirstFrameLoaded(false);
+    setShowFallbackImage(false);
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+  }, [src]);
+
+  // クリックハンドラー（PC表示時は動画制御優先）
+  const handleClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    if (!tapToPlay || !videoRef.current) {
-      if (onLinkClick) {
-        onLinkClick();
-      }
+    if (hasError || showFallbackImage || !firstFrameLoaded) {
+      onLinkClick?.();
       return;
     }
     
-    if (isPlaying) {
-      videoRef.current.pause();
-    } else {
-      const playPromise = videoRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.error('Play failed:', error);
-          if (isMobile) {
-            videoRef.current?.load();
-          }
-        });
-      }
-    }
-  };
-
-  const handlePlayButtonClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    e.nativeEvent.stopImmediatePropagation(); // より確実にイベント伝播を止める
-    
-    if (!videoRef.current) return;
-    
-    if (isPlaying) {
-      videoRef.current.pause();
-    } else {
-      const playPromise = videoRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.error('Play failed:', error);
-          if (isMobile) {
-            videoRef.current?.load();
-          }
-        });
-      }
-    }
-  };
-
-  const handleVideoAreaClick = (e: React.MouseEvent) => {
-    // イベントがボタンから発生した場合は処理しない
-    if ((e.target as HTMLElement).closest('[data-play-button="true"]')) {
-      return;
-    }
-    
-    if (isMobile) {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      if (videoRef.current) {
-        if (isPlaying) {
-          videoRef.current.pause();
-        } else {
-          const playPromise = videoRef.current.play();
-          if (playPromise !== undefined) {
-            playPromise.catch(error => {
-              console.error('Play failed:', error);
-              videoRef.current?.load();
-            });
-          }
-        }
-      }
-      return;
-    }
-    
-    if (videoRef.current) {
+    // PC表示時は動画の再生/停止を優先
+    if (!isMobile && videoRef.current && firstFrameLoaded) {
       if (isPlaying) {
         videoRef.current.pause();
       } else {
-        const playPromise = videoRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(error => {
-            console.error('Play failed:', error);
-          });
-        }
+        videoRef.current.play().catch(() => {});
       }
-    } else if (onLinkClick) {
-      onLinkClick();
+      return;
     }
-  };
+    
+    // モバイル表示時またはtapToPlayが無効の場合はリンククリック
+    if (!tapToPlay || !videoRef.current) {
+      onLinkClick?.();
+      return;
+    }
+    
+    if (isPlaying) {
+      videoRef.current.pause();
+    } else {
+      videoRef.current.play().catch(() => {});
+    }
+  }, [isMobile, tapToPlay, onLinkClick, isPlaying, hasError, firstFrameLoaded, showFallbackImage]);
 
-  const handleMuteToggle = (e: React.MouseEvent) => {
+  // マウスイベント（PC表示時はホバー再生を無効化）
+  const handleMouseEnter = useCallback(() => {
+    if (isMobile || hasError || showFallbackImage) return;
+    setIsHovered(true);
+    setShowControls(true);
+    // PC表示時はホバーでの自動再生を無効化
+    // if (hoverToPlay && videoRef.current && firstFrameLoaded) {
+    //   videoRef.current.play().catch(() => {});
+    // }
+  }, [isMobile, hasError, showFallbackImage]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (isMobile || hasError || showFallbackImage) return;
+    setIsHovered(false);
+    setShowControls(false);
+    // PC表示時はホバー終了時の自動停止も無効化
+    // if (hoverToPlay && videoRef.current) {
+    //   videoRef.current.pause();
+    //   videoRef.current.currentTime = 0;
+    // }
+  }, [isMobile, hasError, showFallbackImage]);
+
+  const handleMuteToggle = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     if (videoRef.current) {
       videoRef.current.muted = !isMuted;
       setIsMuted(!isMuted);
     }
-  };
+  }, [isMuted]);
 
-  // モバイル対応のpreload設定
-  const getPreloadSetting = () => {
-    // 最初のフレームを表示するためにmetadataを読み込み
-    return 'metadata';
-  };
+  // 新しいイベントハンドラー
+
+  const handleSeek = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!videoRef.current || !duration) return;
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    const percent = (e.clientX - rect.left) / rect.width;
+    const newTime = percent * duration;
+    
+    videoRef.current.currentTime = newTime;
+    setCurrentTime(newTime);
+  }, [duration]);
+
+  const handleVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
+    if (videoRef.current) {
+      videoRef.current.volume = newVolume;
+      videoRef.current.muted = newVolume === 0;
+      setIsMuted(newVolume === 0);
+    }
+  }, []);
+
+  const handleSpeedChange = useCallback((speed: number) => {
+    setPlaybackRate(speed);
+    if (videoRef.current) {
+      videoRef.current.playbackRate = speed;
+    }
+    setShowSpeedMenu(false);
+  }, []);
+
+  const handleFullscreen = useCallback(() => {
+    if (!videoRef.current) return;
+    
+    if (!isFullscreen) {
+      if (videoRef.current.requestFullscreen) {
+        videoRef.current.requestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  }, [isFullscreen]);
+
+  const formatTime = useCallback((seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }, []);
 
   return (
     <div 
       className={`relative overflow-hidden group ${className}`}
-      onMouseEnter={!isMobile ? handleMouseEnter : undefined}
-      onMouseLeave={!isMobile ? handleMouseLeave : undefined}
-      onClick={!isMobile ? handleClick : undefined}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onClick={handleClick}
     >
-      {!hasError ? (
-        <video
-          ref={videoRef}
-          src={allSources[currentSrcIndex]}
-          className="w-full h-full object-cover"
-          autoPlay={false}
-          muted={isMuted}
-          loop={loop}
-          controls={controls}
-          playsInline
-          preload={getPreloadSetting()}
-          // poster属性は使用せず、動画の最初のフレームを表示
-          {...(!isMobile && { crossOrigin: "anonymous" })}
-        >
-          {allSources.map((source, index) => {
-            const extension = source.split('.').pop()?.toLowerCase();
-            let mimeType = 'video/mp4';
-            
-            switch (extension) {
-              case 'mov':
-                mimeType = 'video/quicktime';
-                break;
-              case 'webm':
-                mimeType = 'video/webm';
-                break;
-              case 'ogv':
-                mimeType = 'video/ogg';
-                break;
-              case 'avi':
-                mimeType = 'video/x-msvideo';
-                break;
-              case 'mkv':
-                mimeType = 'video/x-matroska';
-                break;
-              default:
-                mimeType = 'video/mp4';
-            }
-            
-            return (
-              <source key={index} src={source} type={mimeType} />
-            );
-          })}
-          お使いのブラウザは動画の再生に対応していません。
-        </video>
+      {showFallbackImage ? (
+        // フォールバック画像表示
+        <div className="w-full h-full relative">
+          <img
+            src={fallbackImage}
+            alt={alt}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+            <div className="bg-black bg-opacity-60 text-white rounded-full p-3">
+              <Play className="h-6 w-6" />
+            </div>
+          </div>
+          <div className="absolute bottom-2 left-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs">
+            動画 ({getVideoFormat(src).toUpperCase()})
+          </div>
+        </div>
       ) : (
-        <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-          <div className="text-center p-4">
-            <div className="text-gray-500 mb-2">
-              <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <p className="text-sm text-gray-600">動画を読み込めませんでした</p>
-            {onLinkClick && (
-              <button 
-                onClick={onLinkClick}
-                className="mt-2 text-sm text-blue-600 hover:underline"
-              >
-                詳細を見る
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-      
-      {/* ローディング表示 - 最初のフレームが読み込まれるまでのみ表示 */}
-      {!hasError && isLoading && showThumbnail && !firstFrameLoaded && (
-        <div className="absolute inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-            <p className="text-sm text-white">動画を読み込み中...</p>
-            {retryCount > 0 && !isMobile && (
-              <p className="text-xs text-white/80 mt-1">再試行中... ({retryCount}/2)</p>
-            )}
-            {isMobile && (
-              <p className="text-xs text-white/80 mt-1">少々お待ちください</p>
-            )}
-          </div>
-        </div>
-      )}
-      
-      {/* カスタムコントロール */}
-      {!controls && (
+        // 動画表示
         <>
-          {/* 再生/一時停止オーバーレイ - モバイルでは別のイベントハンドラーを使用 */}
-          {!isMobile && (
-            <div 
-              className="absolute inset-0 transition-all duration-300 flex items-center justify-center bg-black bg-opacity-0 hover:bg-opacity-20"
-              onClick={handleClick}
-            >
-              {(!isPlaying || showControls) && !isPlaying && (
-                <button 
-                  onClick={handlePlayButtonClick}
-                  className={`bg-black/80 backdrop-blur-sm rounded-full p-3 shadow-lg transition-all duration-300 hover:bg-black hover:scale-110 ${
-                    showControls || !hoverToPlay ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                  }`}
-                  data-play-button="true"
-                >
-                  <Play className="h-6 w-6 fill-white" />
-                </button>
-              )}
-            </div>
-          )}
-          
-          {/* モバイル: 動画エリアクリック領域（再生ボタン以外の部分） */}
-          {isMobile && (
-            <div 
-              className="absolute inset-0"
-              onClick={handleVideoAreaClick}
-            />
-          )}
-          
-          {/* モバイル: 再生ボタンオーバーレイ */}
-          {isMobile && !isPlaying && (firstFrameLoaded || thumbnailLoaded) && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div 
-                className="bg-black/80 backdrop-blur-sm rounded-full p-2 shadow-lg opacity-100 pointer-events-auto z-10"
-                onClick={handlePlayButtonClick}
-                data-play-button="true"
-              >
-                <Play className="h-5 w-5 fill-white" />
+          <video
+            ref={videoRef}
+            className="w-full h-full object-cover"
+            autoPlay={false}
+            muted={isMuted}
+            loop={loop}
+            controls={controls}
+            playsInline
+            preload={getOptimalPreload(src)}
+            style={{
+              display: 'block',
+              opacity: firstFrameLoaded ? 1 : 0,
+              transition: 'opacity 0.3s ease-in-out'
+            }}
+          >
+            <source src={src} type={getMimeType(src)} />
+            {fallbackSources.map((source, index) => (
+              <source key={index} src={source} type={getMimeType(source)} />
+            ))}
+            お使いのブラウザは動画の再生に対応していません。
+          </video>
+
+          {/* ローディング表示 */}
+          {isLoading && !firstFrameLoaded && (
+            <div className="absolute inset-0 bg-gray-100 flex items-center justify-center z-10">
+              <div className="text-center">
+                <div className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                <p className="text-xs text-gray-500">動画読み込み中...</p>
               </div>
             </div>
           )}
 
-          {/* 音声コントロール（再生中は非表示）- minimumOverlayの場合は非表示 */}
-          {!isPlaying && !minimumOverlay && (firstFrameLoaded || thumbnailLoaded) && (
-            <button
-              onClick={handleMuteToggle}
-              className={`absolute top-3 right-3 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-300 ${
-                showControls || isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-              }`}
-            >
-              {isMuted ? (
-                <VolumeX className="h-4 w-4" />
-              ) : (
-                <Volume2 className="h-4 w-4" />
+          {/* YouTube風コントロールバー（fullFeaturedモードかつホバー時のみ） */}
+          {fullFeatured && !minimumOverlay && (isHovered || showControls) && firstFrameLoaded && (
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent">
+              {/* 中央の再生/一時停止ボタン（再生中でホバー時のみ） */}
+              {isPlaying && isHovered && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <button
+                    onClick={handleClick}
+                    className="bg-black bg-opacity-70 text-white rounded-full p-3 hover:bg-opacity-90 transition-opacity duration-200"
+                  >
+                    <Pause className="h-6 w-6" />
+                  </button>
+                </div>
               )}
-            </button>
+              
+              {/* 下部コントロールバー */}
+              <div className="absolute bottom-0 left-0 right-0 p-4">
+                {/* プログレスバー */}
+                <div className="mb-3">
+                  <div 
+                    className="w-full h-1 bg-white bg-opacity-30 rounded-full cursor-pointer hover:h-2 transition-all duration-200 relative"
+                    onClick={handleSeek}
+                  >
+                    <div 
+                      className="h-full bg-red-500 rounded-full relative"
+                      style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
+                    >
+                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-red-500 rounded-full opacity-0 hover:opacity-100 transition-opacity duration-200"></div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* コントロールボタン群 */}
+                <div className="flex items-center justify-between text-white">
+                  <div className="flex items-center space-x-3">
+                    {/* 再生/一時停止 */}
+                    <button
+                      onClick={handleClick}
+                      className="hover:bg-white hover:bg-opacity-20 rounded p-1 transition-colors duration-200"
+                    >
+                      {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                    </button>
+                    
+                    {/* 音量コントロール */}
+                    <div className="flex items-center space-x-2 group">
+                      <button
+                        onClick={handleMuteToggle}
+                        className="hover:bg-white hover:bg-opacity-20 rounded p-1 transition-colors duration-200"
+                      >
+                        {isMuted || volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                      </button>
+                                             <input
+                         type="range"
+                         min="0"
+                         max="1"
+                         step="0.1"
+                         value={volume}
+                         onChange={handleVolumeChange}
+                         className="w-16 h-1 bg-white bg-opacity-30 rounded-full appearance-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                         style={{
+                           background: `linear-gradient(to right, white 0%, white ${volume * 100}%, rgba(255, 255, 255, 0.3) ${volume * 100}%, rgba(255, 255, 255, 0.3) 100%)`
+                         }}
+                       />
+                    </div>
+                    
+                    {/* 時間表示 */}
+                    <span className="text-sm text-white">
+                      {formatTime(currentTime)} / {formatTime(duration)}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    {/* 再生速度 */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowSpeedMenu(!showSpeedMenu)}
+                        className="hover:bg-white hover:bg-opacity-20 rounded p-1 transition-colors duration-200 flex items-center space-x-1"
+                      >
+                        <Settings className="h-4 w-4" />
+                        <span className="text-sm">{playbackRate}x</span>
+                      </button>
+                      
+                      {/* 再生速度メニュー */}
+                      {showSpeedMenu && (
+                        <div className="absolute bottom-full right-0 mb-2 bg-black bg-opacity-90 rounded-md py-2 text-sm min-w-[80px]">
+                          {[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map((speed) => (
+                            <button
+                              key={speed}
+                              onClick={() => handleSpeedChange(speed)}
+                              className={`block w-full text-left px-3 py-1 hover:bg-white hover:bg-opacity-20 ${
+                                speed === playbackRate ? 'text-red-500' : 'text-white'
+                              }`}
+                            >
+                              {speed}x
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* フルスクリーン */}
+                    <button
+                      onClick={handleFullscreen}
+                      className="hover:bg-white hover:bg-opacity-20 rounded p-1 transition-colors duration-200"
+                    >
+                      <Maximize className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
 
-          {/* 動画インジケーター（再生中は非表示）- minimumOverlayの場合は非表示 */}
-          {!isPlaying && !minimumOverlay && (firstFrameLoaded || thumbnailLoaded) && (
-            <div className="absolute bottom-3 left-3 bg-black/70 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
-              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-              動画
+          {/* PC表示時の動画バッジ（再生していない時は常に表示） */}
+          {!isMobile && firstFrameLoaded && !isPlaying && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="bg-black bg-opacity-70 text-white rounded-full p-3 shadow-lg">
+                <Play className="h-6 w-6" />
+              </div>
+            </div>
+          )}
+
+          {/* モバイル用再生ボタン */}
+          {(minimumOverlay || isMobile) && firstFrameLoaded && !isPlaying && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="bg-black bg-opacity-60 text-white rounded-full p-2">
+                <Play className="h-4 w-4" />
+              </div>
             </div>
           )}
         </>

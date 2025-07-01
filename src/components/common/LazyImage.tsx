@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { cn } from '../../lib/utils';
 
 interface LazyImageProps {
@@ -32,6 +32,19 @@ const LazyImage: React.FC<LazyImageProps> = ({
   const imgRef = useRef<HTMLImageElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
+  // 最適化されたロード処理
+  const handleLoad = useCallback(() => {
+    setIsLoaded(true);
+    setError(false);
+    onLoad?.();
+  }, [onLoad]);
+
+  const handleError = useCallback(() => {
+    setError(true);
+    setCurrentSrc(fallbackSrc);
+    onError?.();
+  }, [fallbackSrc, onError]);
+
   useEffect(() => {
     // 優先度の高い画像は即座に読み込み
     if (priority) {
@@ -39,7 +52,7 @@ const LazyImage: React.FC<LazyImageProps> = ({
       return;
     }
 
-    // Intersection Observer API を使用した遅延読み込み
+    // Intersection Observer API を使用した最適化された遅延読み込み
     if (imgRef.current && 'IntersectionObserver' in window) {
       observerRef.current = new IntersectionObserver(
         (entries) => {
@@ -51,7 +64,7 @@ const LazyImage: React.FC<LazyImageProps> = ({
           });
         },
         {
-          rootMargin: '200px', // 200px手前で読み込み開始（よりスムーズに）
+          rootMargin: '100px', // 200pxから100pxに削減してパフォーマンス向上
           threshold: 0.01
         }
       );
@@ -67,30 +80,18 @@ const LazyImage: React.FC<LazyImageProps> = ({
     };
   }, [src, priority]);
 
-  const handleLoad = () => {
-    setIsLoaded(true);
-    setError(false);
-    onLoad?.();
-  };
-
-  const handleError = () => {
-    setError(true);
-    setCurrentSrc(fallbackSrc);
-    onError?.();
-  };
-
   return (
     <div className={cn('relative overflow-hidden', className)}>
-      {/* プレースホルダー表示 */}
+      {/* 最適化されたプレースホルダー表示 */}
       {!isLoaded && !error && (
         <div 
           className={cn(
-            'absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center',
+            'absolute inset-0 bg-gray-200 flex items-center justify-center',
             className
           )}
         >
-          {/* プレースホルダー画像の読み込みを削除してパフォーマンス向上 */}
-          <div className="w-8 h-8 bg-gray-300 rounded" />
+          {/* シンプルなプレースホルダー（アニメーション削除でパフォーマンス向上） */}
+          <div className="w-8 h-8 bg-gray-300 rounded opacity-50" />
         </div>
       )}
       
@@ -101,7 +102,7 @@ const LazyImage: React.FC<LazyImageProps> = ({
           src={currentSrc}
           alt={alt}
           className={cn(
-            'w-full h-full object-cover transition-opacity duration-300',
+            'w-full h-full object-cover transition-opacity duration-200',
             isLoaded ? 'opacity-100' : 'opacity-0',
             className
           )}

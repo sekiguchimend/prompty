@@ -1,5 +1,5 @@
 // .envファイルを読み込む（重要！）
-require('dotenv').config();
+require('dotenv').config({ path: '/home/ec2-user/prompty/.env' });
 
 module.exports = {
   apps: [
@@ -49,6 +49,7 @@ module.exports = {
         NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
         NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
         NEXT_PUBLIC_FIREBASE_APP_ID: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+        
         NEXT_PUBLIC_VAPID_KEY: process.env.NEXT_PUBLIC_VAPID_KEY,
       },
       error_file: '/home/ec2-user/logs/prompty-error.log',

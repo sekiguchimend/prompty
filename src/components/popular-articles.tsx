@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import VideoPlayer from './common/VideoPlayer';
+import LazyImage from './common/LazyImage';
 
 interface Article {
   id: string;
@@ -60,7 +61,7 @@ const PopularArticles: React.FC<PopularArticlesProps> = ({ articles, prevArticle
                 </div>
               </div>
               {article.thumbnailUrl && (
-                <div className="w-24 h-14 shrink-0 overflow-hidden rounded-md">
+                <div className="w-24 h-14 shrink-0 overflow-hidden rounded-md relative">
                   {article.mediaType === 'video' ? (
                     <VideoPlayer
                       src={article.thumbnailUrl}
@@ -77,11 +78,21 @@ const PopularArticles: React.FC<PopularArticlesProps> = ({ articles, prevArticle
                       }}
                     />
                   ) : (
-                    <img 
+                    <LazyImage 
                       src={article.thumbnailUrl} 
                       alt={article.title} 
                       className="w-full h-full object-cover"
+                      loading="lazy"
+                      sizes="96px"
                     />
+                  )}
+                  {/* 動画バッジ */}
+                  {article.mediaType === 'video' && (
+                    <div className="absolute top-1 right-1">
+                      <div className="bg-black bg-opacity-70 text-white text-xs px-1.5 py-0.5 rounded">
+                        動画
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
@@ -182,7 +193,7 @@ const PopularArticles: React.FC<PopularArticlesProps> = ({ articles, prevArticle
                         </div>
                       </div>
                       {article.thumbnailUrl ? (
-                        <div className="w-20 h-11 shrink-0 overflow-hidden rounded-md bg-purple-100">
+                        <div className="w-20 h-11 shrink-0 overflow-hidden rounded-md bg-purple-100 relative">
                           {article.mediaType === 'video' ? (
                             <VideoPlayer
                               src={article.thumbnailUrl}
@@ -199,11 +210,21 @@ const PopularArticles: React.FC<PopularArticlesProps> = ({ articles, prevArticle
                               }}
                             />
                           ) : (
-                            <img 
+                            <LazyImage 
                               src={article.thumbnailUrl} 
                               alt={article.title} 
                               className="w-full h-full object-cover"
+                              loading="lazy"
+                              sizes="80px"
                             />
+                          )}
+                          {/* 動画バッジ */}
+                          {article.mediaType === 'video' && (
+                            <div className="absolute top-1 right-1">
+                              <div className="bg-black bg-opacity-70 text-white text-xs px-1 py-0.5 rounded">
+                                動画
+                              </div>
+                            </div>
                           )}
                         </div>
                       ) : (

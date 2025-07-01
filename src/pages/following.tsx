@@ -411,89 +411,93 @@ const Following: React.FC = () => {
 
     return (
       <article 
-        key={post.id} 
-        className="px-4 py-5 cursor-pointer hover:bg-gray-50 transition-colors"
+        className="px-4 py-5 cursor-pointer hover:bg-gray-50 transition-colors border-b border-gray-100"
         onClick={() => navigateToArticle(post.id)}
       >
-        <div className="flex">
-          <div className="flex-1 pr-4 overflow-hidden">
-            <h3 className="font-medium text-[15px] mb-2.5 leading-tight line-clamp-2">{post.title}</h3>
-            <div className="flex items-center mt-2.5">
+        <div className="flex items-start gap-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-medium text-sm leading-tight line-clamp-2 mb-2">{post.title}</h3>
+            
+            <div className="flex items-center gap-2 mb-2">
               <UnifiedAvatar
                 src={post.user.avatarUrl}
                 displayName={post.user.name}
                 size="xs"
-                className="mr-1.5"
+                className="flex-shrink-0"
               />
               <span className="text-xs text-gray-500 truncate">{post.user.name}</span>
-              <span className="text-xs text-gray-500 ml-2">{post.postedAt}</span>
+              <span className="text-xs text-gray-400 flex-shrink-0">•</span>
+              <span className="text-xs text-gray-400 flex-shrink-0">{post.postedAt}</span>
             </div>
-            <div className="flex items-center mt-2.5">
+            
+            <div className="flex items-center gap-4">
               <button 
-                className={`flex items-center mr-4 ${post.isLiked ? 'text-red-500' : 'text-gray-400'}`}
+                className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : 'text-gray-400'} hover:text-red-500 transition-colors`}
                 onClick={(e) => {
-                  e.stopPropagation(); // クリックイベントの伝播を防止
+                  e.stopPropagation();
                   handleFollowingLike(post.id);
                 }}
               >
                 <Heart 
-                  className={`h-[14px] w-[14px] mr-1.5 ${post.isLiked ? 'fill-red-500' : ''}`} 
+                  className={`h-4 w-4 ${post.isLiked ? 'fill-red-500' : ''}`} 
                 />
                 <span className="text-xs">{post.likeCount}</span>
               </button>
+              
               <button 
-                className="flex items-center text-gray-400"
-                onClick={(e) => e.stopPropagation()} // クリックイベントの伝播を防止
+                className="flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                onClick={(e) => e.stopPropagation()}
               >
-                <Bookmark className="h-[14px] w-[14px]" />
+                <Bookmark className="h-4 w-4" />
               </button>
+              
+              {/* 三点メニュー */}
+              <div className="ml-auto" onClick={(e) => e.stopPropagation()}>
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="flex items-center justify-center p-1 rounded-full text-gray-400 hover:bg-gray-100">
+                    <MoreVertical className="h-4 w-4" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => openReportDialog(post.id)}>
+                      報告
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => hidePost(post.id)}>
+                      非表示にする
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </div>
-          <div className="flex items-start">
-            <div className="w-[104px] h-[58px] flex-shrink-0 bg-gray-100 rounded-md overflow-hidden shadow-sm">
-                        {post.mediaType === 'video' ? (
-            <VideoPlayer
-              src={post.thumbnailUrl}
-              alt={post.title}
-              className="w-full h-full"
-              hoverToPlay={false}
-              tapToPlay={false}
-              muted={true}
-              loop={false}
-              showThumbnail={true}
-              minimumOverlay={true}
-            />
-          ) : (
-                                                          <NextImage 
-                        src={post.thumbnailUrl}
-                        fill
-                        alt={post.title} 
-                        className="object-cover" 
-                        sizes="104px"
-                        priority={false}
-                        onError={(e: any) => {
-                          // 画像読み込みエラー時にデフォルト画像を表示
-                          (e.target as HTMLImageElement).src = '/images/default-thumbnail.svg';
-                        }}
-                      />
+          
+          {/* サムネイル画像 */}
+          <div className="flex-shrink-0">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-lg overflow-hidden relative">
+              {post.mediaType === 'video' ? (
+                <VideoPlayer
+                  src={post.thumbnailUrl}
+                  alt={post.title}
+                  className="w-full h-full"
+                  hoverToPlay={false}
+                  tapToPlay={false}
+                  muted={true}
+                  loop={false}
+                  showThumbnail={true}
+                  minimumOverlay={true}
+                />
+              ) : (
+                <NextImage 
+                  src={post.thumbnailUrl || '/images/default-thumbnail.svg'}
+                  fill
+                  alt={post.title} 
+                  className="object-cover" 
+                  sizes="(max-width: 640px) 64px, 80px"
+                  priority={false}
+                  onError={(e: any) => {
+                    (e.target as HTMLImageElement).src = '/images/default-thumbnail.svg';
+                  }}
+                />
               )}
-            </div>
-            
-            {/* 三点メニュー */}
-            <div onClick={(e) => e.stopPropagation()}> {/* クリックイベントの伝播を防止 */}
-              <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center justify-center p-1 ml-1 rounded-full text-gray-400 hover:bg-gray-100">
-                  <MoreVertical className="h-4 w-4" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => openReportDialog(post.id)}>
-                    報告
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => hidePost(post.id)}>
-                    非表示にする
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -656,14 +660,16 @@ const Following: React.FC = () => {
   
   // ブレッドクラムコンポーネント
   const Breadcrumb = () => (
-    <div className="bg-gray-50 py-3 px-4 sm:px-6 md:px-8 border-b sticky top-0 z-10 md:static md:z-auto md:mt-0">
-      <div className="container mx-auto flex items-center text-sm text-gray-600 overflow-x-auto whitespace-nowrap">
-        <Link href="/" className="flex items-center hover:text-gray-900 flex-shrink-0">
-          <Home size={14} className="mr-1" />
-          ホーム
-        </Link>
-        <ChevronRight size={14} className="mx-2 flex-shrink-0" />
-        <span className="font-medium text-gray-900 flex-shrink-0">フォロー中</span>
+    <div className="bg-white border-b border-gray-200 sticky top-0 z-20 md:static md:z-auto">
+      <div className="container mx-auto px-4 py-3">
+        <div className="flex items-center text-sm text-gray-600 overflow-x-auto">
+          <Link href="/" className="flex items-center hover:text-gray-900 flex-shrink-0 transition-colors">
+            <Home size={14} className="mr-1" />
+            ホーム
+          </Link>
+          <ChevronRight size={14} className="mx-2 flex-shrink-0 text-gray-400" />
+          <span className="font-medium text-gray-900 flex-shrink-0">フォロー中</span>
+        </div>
       </div>
     </div>
   );

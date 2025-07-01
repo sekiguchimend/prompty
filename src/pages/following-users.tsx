@@ -299,30 +299,32 @@ const FollowingUsers: React.FC = () => {
   // ユーザーカードコンポーネント
   const UserCard = useCallback(({ user }: { user: FollowingUser }) => (
     <div className="flex items-center justify-between p-4 border-b border-gray-100">
-      <Link href={`/users/${encodeURIComponent(user.username)}`} className="flex items-center space-x-4 flex-1">
+      <Link href={`/users/${encodeURIComponent(user.username)}`} className="flex items-center space-x-3 flex-1 min-w-0">
         <UnifiedAvatar
           src={user.avatar_url}
           displayName={getDisplayName(user.display_name, user.username)}
           size="lg"
+          className="flex-shrink-0"
         />
         <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-gray-900 truncate">{getDisplayName(user.display_name, user.username)}</h3>
-          <p className="text-sm text-gray-500 truncate">@{user.username}</p>
-          {user.bio && <p className="text-sm text-gray-600 mt-1 line-clamp-1">{user.bio}</p>}
+          <h3 className="font-medium text-gray-900 truncate text-sm sm:text-base">{getDisplayName(user.display_name, user.username)}</h3>
+          <p className="text-xs sm:text-sm text-gray-500 truncate">@{user.username}</p>
+          {user.bio && <p className="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-1 hidden sm:block">{user.bio}</p>}
           <p className="text-xs text-gray-400 mt-1">フォロー日: {user.created_at}</p>
         </div>
       </Link>
       <Button 
         variant="outline" 
         size="sm"
-        className="ml-4"
+        className="ml-2 sm:ml-4 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
         onClick={(e) => {
           e.preventDefault();
           unfollowUser(user.id);
         }}
       >
-        <UserMinus className="h-4 w-4 mr-1" />
-        フォロー解除
+        <UserMinus className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+        <span className="hidden sm:inline">フォロー解除</span>
+        <span className="sm:hidden">解除</span>
       </Button>
     </div>
   ), [unfollowUser]);

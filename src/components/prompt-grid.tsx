@@ -16,6 +16,13 @@ import VideoPlayer from './common/VideoPlayer';
 import { useResponsive } from '../hooks/use-responsive';
 import { storageService } from '../lib/storage-service';
 import { getOptimizedImageProps, useImageState, DEFAULT_BLUR_DATA_URL } from '../lib/image-optimization';
+import { format } from 'date-fns';
+import { ja } from 'date-fns/locale';
+import OptimizedPromptCard from './common/OptimizedPromptCard';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
+import { cn } from '../lib/utils';
+import { useOptimizedCache, generateCacheKey } from '../lib/cache';
 
 // グローバルトースト用のイベント名
 const GLOBAL_TOAST_EVENT = 'global:toast:show';
@@ -448,6 +455,14 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
                   onError={(e) => handleImageError(e, 'thumbnail')}
                 />
               )}
+              {/* モバイル用動画バッジ */}
+              {mediaType === 'video' && (
+                <div className="absolute top-1 right-1 z-10">
+                  <span className="bg-black bg-opacity-75 text-white text-xs px-1.5 py-0.5 rounded text-[10px]">
+                    動画
+                  </span>
+                </div>
+              )}
             </div>
           </Link>
         </div>
@@ -486,6 +501,14 @@ const PromptCard: React.FC<PromptCardProps> = memo(({
                   onLoad={handleImageLoad}
                   onError={(e) => handleImageError(e, 'thumbnail')}
                 />
+              )}
+              {/* 動画バッジ */}
+              {mediaType === 'video' && (
+                <div className="absolute top-2 right-2 z-10">
+                  <span className="bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded">
+                    動画
+                  </span>
+                </div>
               )}
             </div>
           </Link>
