@@ -1,3 +1,6 @@
+// .envファイルを読み込む（重要！）
+require('dotenv').config();
+
 module.exports = {
   apps: [
     {
