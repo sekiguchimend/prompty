@@ -171,7 +171,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
     e.preventDefault();
     e.stopPropagation();
     
-    if (!currentUser) {
+    if (!currentUser || !currentUser.id) {
       toast({
         title: "ログインが必要です",
         description: "ブックマークするにはログインしてください",
@@ -179,6 +179,8 @@ const PromptCard: React.FC<PromptCardProps> = ({
       });
       return;
     }
+    
+    const userId = currentUser.id!; // 型安全性のため変数に格納（上でnullチェック済み）
     
     // 同時に複数回処理されないようにする
     if (isBookmarkProcessing) return;
@@ -191,7 +193,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
       
       if (bookmarked) {
         // ブックマークを削除
-        const result = await unbookmarkPrompt(promptId, currentUser.id);
+        const result = await unbookmarkPrompt(promptId, userId);
         if (!result.success) {
           throw new Error('ブックマークの取り消しに失敗しました');
         }
@@ -201,7 +203,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
         });
       } else {
         // ブックマークを追加
-        const result = await bookmarkPrompt(promptId, currentUser.id);
+        const result = await bookmarkPrompt(promptId, userId);
         if (!result.success) {
           throw new Error('ブックマークの追加に失敗しました');
         }
