@@ -323,7 +323,7 @@ const PromptDetail = ({
   nextPost: PostItem | null;
   error?: string;
 }) => {
-  const router = useRouter();
+  const router = useRouter();  
   const { toast } = useToast();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthor, setIsAuthor] = useState(false);
@@ -352,7 +352,7 @@ const PromptDetail = ({
     };
     
     if (postData) {
-      fetchUser();
+    fetchUser();
     }
     
     return () => {
@@ -439,7 +439,7 @@ const PromptDetail = ({
     if (postData) {
       setPrompt(postData);
       setIsLoading(false);
-    }
+  }
   }, [postData]);
   
   useEffect(() => {
@@ -449,9 +449,9 @@ const PromptDetail = ({
       recordPromptView(postData.id).catch(() => {
         // エラーは無視
       });
-    }
+  }
   }, [postData?.id]);
-
+  
   // 有料・無料判定（メモ化）
   const isFree = useMemo(() => postData ? isContentFree(postData) : false, [postData]);
   const isPremium = useMemo(() => postData ? isContentPremium(postData) : false, [postData]);
@@ -480,20 +480,20 @@ const PromptDetail = ({
     if (!postData) return null;
     
     return {
-      ...postData,
-      authorForSidebar: {
-        name: postData.user.name,
-        avatarUrl: postData.user.avatarUrl,
-        bio: postData.user.bio || '著者情報なし',
-        userId: postData.user.userId || ''
-      },
-      authorForContent: {
-        name: postData.user.name,
-        avatarUrl: postData.user.avatarUrl,
-        bio: postData.user.bio || '著者情報なし',
-        publishedAt: postData.user.publishedAt || '投稿日時なし',
-        userId: postData.user.userId || ''
-      }
+    ...postData,
+    authorForSidebar: {
+      name: postData.user.name,
+      avatarUrl: postData.user.avatarUrl,
+      bio: postData.user.bio || '著者情報なし',
+      userId: postData.user.userId || ''
+    },
+    authorForContent: {
+      name: postData.user.name,
+      avatarUrl: postData.user.avatarUrl,
+      bio: postData.user.bio || '著者情報なし',
+      publishedAt: postData.user.publishedAt || '投稿日時なし',
+      userId: postData.user.userId || ''
+    }
     };
   }, [postData]);
   
