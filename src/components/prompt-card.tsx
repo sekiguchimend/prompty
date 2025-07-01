@@ -71,14 +71,16 @@ const PromptCard: React.FC<PromptCardProps> = ({
   // 初期状態でブックマーク状態といいね状態を確認
   useEffect(() => {
     const checkInitialState = async () => {
-      if (!currentUser) return;
+      if (!currentUser || !currentUser.id) return;
+      
+      const userId = currentUser.id!; // nullチェック済み
       
       // ブックマーク状態を確認
-      const isBookmarked = await checkIfBookmarked(promptId, currentUser.id);
+      const isBookmarked = await checkIfBookmarked(promptId, userId);
       setBookmarked(isBookmarked);
       
       // いいね状態を確認
-      const isLiked = await checkIfLiked(promptId, currentUser.id);
+      const isLiked = await checkIfLiked(promptId, userId);
       setLiked(isLiked);
     };
     
@@ -90,7 +92,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
     e.preventDefault();
     e.stopPropagation();
     
-    if (!currentUser) {
+    if (!currentUser || !currentUser.id) {
       toast({
         title: "ログインが必要です",
         description: "いいねするにはログインしてください",
@@ -98,6 +100,8 @@ const PromptCard: React.FC<PromptCardProps> = ({
       });
       return;
     }
+    
+    const userId = currentUser.id!; // 型安全性のため変数に格納（上でnullチェック済み）
     
     // 楽観的更新（UIを先に更新）
     const wasLiked = liked;
@@ -113,7 +117,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
           .from('likes')
           .delete()
           .eq('prompt_id', promptId)
-          .eq('user_id', currentUser.id);
+          .eq('user_id', userId);
 
         if (error) {
           console.error("いいね削除エラー:", error);
@@ -133,7 +137,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
           .from('likes')
           .insert({
             prompt_id: promptId,
-            user_id: currentUser.id,
+            user_id: userId,
           });
 
         if (error) {
