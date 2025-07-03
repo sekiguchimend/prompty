@@ -51,8 +51,8 @@ export const PromptCardGrid = memo(forwardRef<HTMLDivElement, PromptCardGridProp
             user={prompt.user}
             postedAt={prompt.postedAt}
             likeCount={prompt.likeCount}
-            isLiked={prompt.isLiked}
-            isBookmarked={prompt.isBookmarked}
+            isLiked={!!prompt.isLiked}
+            isBookmarked={!!prompt.isBookmarked}
             onHide={onHidePrompt}
             isFeatureSection={isFeatureSection}
           />
