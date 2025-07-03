@@ -82,9 +82,9 @@ export default async function handler(
       Promise.resolve(req.body)
     ]);
 
-    if (!user) {
-      return res.status(401).json({ error: '認証されていません' });
-    }
+  if (!user) {
+    return res.status(401).json({ error: '認証されていません' });
+  }
 
     // 必須パラメータチェック
     if (!base64Data || !fileName || !contentType || !bucketName) {

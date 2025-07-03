@@ -71,8 +71,8 @@ async function authenticateUser(authHeader: string | undefined): Promise<Supabas
   const { data: userData, error: userError } = await adminSupabase.auth.getUser(sessionToken);
   if (userError || !userData.user) {
     throw new Error('ユーザー情報の取得に失敗しました');
-  }
-  
+    }
+    
   return adminSupabase;
 }
 
@@ -111,65 +111,65 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       fs.readFile(thumbnailFile.filepath),
       Promise.resolve(path.extname(thumbnailFile.originalFilename || '').substring(1) || 'jpg')
     ]);
-    
+      
     // 非同期MIMEタイプ検出
     const contentType = await detectMimeType(fileBuffer, originalExt);
-    
+      
     // MIMEタイプ検証
-    const isImage = contentType.startsWith('image/');
-    const isVideo = contentType.startsWith('video/');
-    
-    if (!isImage && !isVideo) {
-      return res.status(400).json({ 
-        error: '無効なファイル形式です。画像または動画ファイルのみアップロード可能です。', 
-        detectedType: contentType 
-      });
-    }
+      const isImage = contentType.startsWith('image/');
+      const isVideo = contentType.startsWith('video/');
+      
+      if (!isImage && !isVideo) {
+        return res.status(400).json({ 
+          error: '無効なファイル形式です。画像または動画ファイルのみアップロード可能です。', 
+          detectedType: contentType 
+        });
+      }
 
     // ファイル名生成
     const timestamp = Date.now();
     const fileName = `thumbnail-${timestamp}.${originalExt}`;
 
     // 最適化されたアップロード処理
-    const { error: uploadError } = await supabase.storage
-      .from('prompt-thumbnails')
-      .upload(fileName, fileBuffer, {
-        contentType: contentType,
-        cacheControl: '3600',
-        upsert: true
-      });
+      const { error: uploadError } = await supabase.storage
+        .from('prompt-thumbnails')
+        .upload(fileName, fileBuffer, {
+          contentType: contentType,
+          cacheControl: '3600',
+          upsert: true
+        });
 
-    if (uploadError) {
-      if (uploadError.message.includes('security policy')) {
-        return res.status(403).json({ 
-          error: 'アップロード権限がありません', 
+      if (uploadError) {
+        if (uploadError.message.includes('security policy')) {
+          return res.status(403).json({ 
+            error: 'アップロード権限がありません', 
           details: 'Row Level Security ポリシーによってアップロードが拒否されました。'
+          });
+        }
+        
+        return res.status(500).json({ 
+          error: 'サムネイル画像のアップロードに失敗しました', 
+          details: uploadError.message
         });
       }
-      
-      return res.status(500).json({ 
-        error: 'サムネイル画像のアップロードに失敗しました', 
-        details: uploadError.message
-      });
-    }
 
     // 公開URL取得
-    const { data: { publicUrl } } = supabase.storage
-      .from('prompt-thumbnails')
-      .getPublicUrl(fileName);
+      const { data: { publicUrl } } = supabase.storage
+        .from('prompt-thumbnails')
+        .getPublicUrl(fileName);
 
-    // URLパスの修正（必要に応じて）
+      // URLパスの修正（必要に応じて）
     const finalPublicUrl = publicUrl.includes('/object/public/') 
       ? publicUrl 
       : publicUrl.replace('/object/', '/object/public/');
 
-    return res.status(200).json({
-      success: true,
-      publicUrl: finalPublicUrl,
-      mimeType: contentType,
-      mediaType: isVideo ? 'video' : 'image'
-    });
-    
+      return res.status(200).json({
+        success: true,
+        publicUrl: finalPublicUrl,
+        mimeType: contentType,
+        mediaType: isVideo ? 'video' : 'image'
+      });
+      
   } catch (error: any) {
     if (error.message.includes('認証')) {
       return res.status(401).json({ 

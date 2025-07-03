@@ -63,6 +63,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
      window.innerWidth <= 768)
   );
 
+  // 初回ロード判定（シーク時の canplay で currentTime が 0 に戻るのを防ぐ）
+  const isFirstLoadRef = useRef(true);
+
   // ブラウザ検出
   const getBrowserInfo = useCallback(() => {
     if (typeof window === 'undefined') return { name: 'unknown', version: 0 };
@@ -87,7 +90,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const extension = url.split('.').pop()?.toLowerCase() || 'unknown';
     return extension;
   }, []);
-
+    
   // 動画形式に応じたMIMEタイプ取得（ブラウザ別最適化）
   const getMimeType = useCallback((url: string) => {
     const format = getVideoFormat(url);
@@ -115,7 +118,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     
     // 基本対応形式
     const basicSupported = ['mp4', 'm4v', 'webm', 'ogv', 'ogg'];
-    
+      
     // MOVファイルのブラウザ別対応
     if (format === 'mov') {
       return browser.name === 'safari' ? true : false; // Safari以外は対応困難
@@ -163,9 +166,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     setHasError(false);
     setShowFallbackImage(false);
     
-    // 最初のフレームに移動
-    if (videoRef.current && videoRef.current.currentTime !== 0) {
+    // 初回ロード時のみ 0 秒にリセット
+    if (isFirstLoadRef.current && videoRef.current && videoRef.current.currentTime !== 0) {
       videoRef.current.currentTime = 0;
+      isFirstLoadRef.current = false;
     }
   }, [src, getVideoFormat, getBrowserInfo]);
 
@@ -209,7 +213,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    
+      
     const format = getVideoFormat(src);
     const browser = getBrowserInfo();
     
@@ -238,7 +242,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       }
     }, timeoutDuration);
   }, [src, timeout, getVideoFormat, getBrowserInfo, isFormatSupported]);
-
+      
   // MOV専用の初期化処理
   const initializeMOVVideo = useCallback(() => {
     const video = videoRef.current;
@@ -391,12 +395,17 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   // 新しいイベントハンドラー
 
   const handleSeek = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    // 親要素のクリックハンドラーにイベントが伝播しないように制御
+    e.preventDefault();
+    e.stopPropagation();
+
     if (!videoRef.current || !duration) return;
-    
+
     const rect = e.currentTarget.getBoundingClientRect();
     const percent = (e.clientX - rect.left) / rect.width;
     const newTime = percent * duration;
-    
+
+    // シーク位置に再生ヘッドを移動
     videoRef.current.currentTime = newTime;
     setCurrentTime(newTime);
   }, [duration]);
@@ -439,6 +448,28 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   }, []);
 
+  /* ----------------------------------------------------
+   *  リアルタイム進捗反映（requestAnimationFrame）
+   * --------------------------------------------------*/
+  useEffect(() => {
+    if (!isPlaying) return; // 再生中のみ追跡
+
+    let frameId: number;
+
+    const update = () => {
+      if (videoRef.current) {
+        setCurrentTime(videoRef.current.currentTime);
+      }
+      frameId = requestAnimationFrame(update);
+    };
+
+    frameId = requestAnimationFrame(update);
+
+    return () => {
+      if (frameId) cancelAnimationFrame(frameId);
+    };
+  }, [isPlaying]);
+
   return (
     <div 
       className={`relative overflow-hidden group ${className}`}
@@ -467,14 +498,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       ) : (
         // 動画表示
         <>
-          <video
-            ref={videoRef}
-            className="w-full h-full object-cover"
-            autoPlay={false}
-            muted={isMuted}
-            loop={loop}
-            controls={controls}
-            playsInline
+        <video
+          ref={videoRef}
+          className="w-full h-full object-cover"
+          autoPlay={false}
+          muted={isMuted}
+          loop={loop}
+          controls={controls}
+          playsInline
             preload={getOptimalPreload(src)}
             style={{
               display: 'block',
@@ -486,8 +517,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             {fallbackSources.map((source, index) => (
               <source key={index} src={source} type={getMimeType(source)} />
             ))}
-            お使いのブラウザは動画の再生に対応していません。
-          </video>
+          お使いのブラウザは動画の再生に対応していません。
+        </video>
 
           {/* ローディング表示 */}
           {isLoading && !firstFrameLoaded && (
@@ -505,15 +536,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
               {/* 中央の再生/一時停止ボタン（再生中でホバー時のみ） */}
               {isPlaying && isHovered && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <button
+              <button 
                     onClick={handleClick}
                     className="bg-black bg-opacity-70 text-white rounded-full p-3 hover:bg-opacity-90 transition-opacity duration-200"
-                  >
+              >
                     <Pause className="h-6 w-6" />
-                  </button>
-                </div>
-              )}
-              
+              </button>
+        </div>
+      )}
+      
               {/* 下部コントロールバー */}
               <div className="absolute bottom-0 left-0 right-0 p-4">
                 {/* プログレスバー */}
@@ -528,17 +559,17 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     >
                       <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-red-500 rounded-full opacity-0 hover:opacity-100 transition-opacity duration-200"></div>
                     </div>
-                  </div>
-                </div>
-                
+          </div>
+        </div>
+      
                 {/* コントロールボタン群 */}
                 <div className="flex items-center justify-between text-white">
                   <div className="flex items-center space-x-3">
                     {/* 再生/一時停止 */}
                     <button
-                      onClick={handleClick}
+              onClick={handleClick}
                       className="hover:bg-white hover:bg-opacity-20 rounded p-1 transition-colors duration-200"
-                    >
+            >
                       {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                     </button>
                     
@@ -585,15 +616,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                       {showSpeedMenu && (
                         <div className="absolute bottom-full right-0 mb-2 bg-black bg-opacity-90 rounded-md py-2 text-sm min-w-[80px]">
                           {[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map((speed) => (
-                            <button
+                <button 
                               key={speed}
                               onClick={() => handleSpeedChange(speed)}
                               className={`block w-full text-left px-3 py-1 hover:bg-white hover:bg-opacity-20 ${
                                 speed === playbackRate ? 'text-red-500' : 'text-white'
-                              }`}
+                  }`}
                             >
                               {speed}x
-                            </button>
+                </button>
                           ))}
                         </div>
                       )}
@@ -611,7 +642,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
               </div>
             </div>
           )}
-
+          
           {/* PC表示時の動画バッジ（再生していない時は常に表示） */}
           {!isMobile && firstFrameLoaded && !isPlaying && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">

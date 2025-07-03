@@ -162,7 +162,7 @@ const uploadHandler = async (req: AuthenticatedRequest, res: NextApiResponse) =>
         resolve({ fields, files });
       });
     });
-    
+
     const uploadedFile = files.file;
     const file = Array.isArray(uploadedFile) ? uploadedFile[0] : uploadedFile;
     
@@ -229,7 +229,7 @@ const uploadHandler = async (req: AuthenticatedRequest, res: NextApiResponse) =>
     const { data: { publicUrl } } = supabaseAdmin.storage
       .from(bucketName)
       .getPublicUrl(data.path);
-    
+
     return res.status(200).json({
       success: true,
       message: 'File uploaded successfully',

@@ -46,11 +46,11 @@ class OptimizedCache<T> {
     if (!item) {
       return null;
     }
-
+    
     // TTLチェック（非同期クリーンアップ）
     if (Date.now() - item.timestamp > item.ttl) {
       requestIdleCallback(() => {
-        this.cache.delete(key);
+      this.cache.delete(key);
         this.accessOrder.delete(key);
       });
       return null;
@@ -99,18 +99,18 @@ class OptimizedCache<T> {
     if (typeof window === 'undefined') return;
 
     setInterval(() => {
-      const now = Date.now();
-      const keysToDelete: string[] = [];
-
+    const now = Date.now();
+    const keysToDelete: string[] = [];
+    
       this.cache.forEach((item, key) => {
         if (now - item.timestamp > item.ttl) {
-          keysToDelete.push(key);
-        }
+        keysToDelete.push(key);
+      }
       });
-
+    
       keysToDelete.forEach(key => this.delete(key));
     }, 60000); // 1分ごとにクリーンアップ
-  }
+}
 
   // キャッシュ統計
   getStats() {
@@ -142,7 +142,7 @@ class ImageCacheManager {
       maxSize: 200,
       defaultTTL: 10 * 60 * 1000 // 10分
     });
-  }
+}
 
   // 画像URLキャッシュ
   cacheImageUrl(key: string, url: string): void {
@@ -161,7 +161,7 @@ class ImageCacheManager {
   getMetadata(key: string): any | null {
     return this.metadataCache.get(key);
   }
-
+  
   // プリロード状態管理
   private preloadedImages = new Set<string>();
 
@@ -179,8 +179,8 @@ class ImageCacheManager {
 
   isPreloaded(url: string): boolean {
     return this.preloadedImages.has(url);
-  }
-
+    }
+    
   clearPreloaded(): void {
     this.preloadedImages.clear();
   }
@@ -223,7 +223,7 @@ export const generateCacheKey = (prefix: string, ...parts: (string | number)[]):
 export const cleanupExpiredCache = (): void => {
   if (typeof window !== 'undefined') {
     imageCacheManager.clearAll();
-  }
+    }
 };
 
 // メモリ監視とアダプティブキャッシュ

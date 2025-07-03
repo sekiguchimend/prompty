@@ -94,13 +94,13 @@ const OptimizedPromptCard: React.FC<OptimizedPromptCardProps> = memo(({
     generateCacheKey('prompt-meta', id, createdAt),
     [id, createdAt]
   );
-
+  
   // 画像最適化設定
   const imageProps = useMemo(() => 
     getOptimizedImageProps('thumbnail', index),
     [index]
   );
-
+  
   // フォーマット済み日付のメモ化
   const formattedDate = useMemo(() => {
     try {
@@ -115,7 +115,7 @@ const OptimizedPromptCard: React.FC<OptimizedPromptCardProps> = memo(({
     if (cache) {
       const metadata = { likes, bookmarks, views, formattedDate };
       cache.cacheMetadata(metadataKey, metadata);
-    }
+        }
   }, [cache, metadataKey, likes, bookmarks, views, formattedDate]);
 
   // アクションハンドラーの最適化
@@ -177,25 +177,25 @@ const OptimizedPromptCard: React.FC<OptimizedPromptCardProps> = memo(({
     const finalUrl = cachedUrl || thumbnailUrl;
 
     if (mediaType === 'video') {
-      return (
-        <VideoPlayer
+  return (
+              <VideoPlayer
           src={finalUrl}
-          alt={title}
+                alt={title}
           className="w-full h-48"
           hoverToPlay={false}
           tapToPlay={false}
-          muted={true}
+                muted={true}
           loop={false}
-          showThumbnail={true}
+                showThumbnail={true}
           minimumOverlay={true}
-        />
+              />
       );
     }
 
     return (
-      <LazyImage
+              <LazyImage
         src={finalUrl}
-        alt={title}
+                alt={title}
         className="w-full h-48"
         loading={imageProps.loading}
         priority={imageProps.priority}
@@ -247,15 +247,15 @@ const OptimizedPromptCard: React.FC<OptimizedPromptCardProps> = memo(({
           <div className="absolute top-2 right-2">
             {priceDisplay}
           </div>
-        </div>
-
-        {/* コンテンツ */}
+          </div>
+          
+          {/* コンテンツ */}
         <div className="p-4 space-y-3">
           {/* タイトル */}
           <h3 className="font-semibold text-gray-900 line-clamp-2 text-sm leading-5">
-            {title}
-          </h3>
-
+              {title}
+            </h3>
+            
           {/* 説明文 */}
           {description && (
             <p className="text-xs text-gray-600 line-clamp-2 leading-4">
@@ -289,7 +289,7 @@ const OptimizedPromptCard: React.FC<OptimizedPromptCardProps> = memo(({
             <span className="truncate font-medium">{username}</span>
             <span>•</span>
             <span>{formattedDate}</span>
-          </div>
+                </div>
 
           {/* 統計情報 */}
           <div className="flex items-center justify-between text-xs text-gray-500">
@@ -310,7 +310,7 @@ const OptimizedPromptCard: React.FC<OptimizedPromptCardProps> = memo(({
           </div>
         </div>
       </Link>
-
+      
       {/* アクションボタン */}
       {showUserActions && (
         <div className="px-4 pb-4 flex items-center gap-2">

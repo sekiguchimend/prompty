@@ -473,30 +473,30 @@ const Following: React.FC = () => {
           {/* サムネイル画像 */}
           <div className="flex-shrink-0">
             <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-lg overflow-hidden relative">
-              {post.mediaType === 'video' ? (
-                <VideoPlayer
-                  src={post.thumbnailUrl}
-                  alt={post.title}
-                  className="w-full h-full"
-                  hoverToPlay={false}
-                  tapToPlay={false}
-                  muted={true}
-                  loop={false}
-                  showThumbnail={true}
-                  minimumOverlay={true}
-                />
-              ) : (
-                <NextImage 
+                        {post.mediaType === 'video' ? (
+            <VideoPlayer
+              src={post.thumbnailUrl}
+              alt={post.title}
+              className="w-full h-full"
+              hoverToPlay={false}
+              tapToPlay={false}
+              muted={true}
+              loop={false}
+              showThumbnail={true}
+              minimumOverlay={true}
+            />
+          ) : (
+                                                          <NextImage 
                   src={post.thumbnailUrl || '/images/default-thumbnail.svg'}
-                  fill
-                  alt={post.title} 
-                  className="object-cover" 
+                        fill
+                        alt={post.title} 
+                        className="object-cover" 
                   sizes="(max-width: 640px) 64px, 80px"
-                  priority={false}
-                  onError={(e: any) => {
-                    (e.target as HTMLImageElement).src = '/images/default-thumbnail.svg';
-                  }}
-                />
+                        priority={false}
+                        onError={(e: any) => {
+                          (e.target as HTMLImageElement).src = '/images/default-thumbnail.svg';
+                        }}
+                      />
               )}
             </div>
           </div>
@@ -664,11 +664,11 @@ const Following: React.FC = () => {
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center text-sm text-gray-600 overflow-x-auto">
           <Link href="/" className="flex items-center hover:text-gray-900 flex-shrink-0 transition-colors">
-            <Home size={14} className="mr-1" />
-            ホーム
-          </Link>
+          <Home size={14} className="mr-1" />
+          ホーム
+        </Link>
           <ChevronRight size={14} className="mx-2 flex-shrink-0 text-gray-400" />
-          <span className="font-medium text-gray-900 flex-shrink-0">フォロー中</span>
+        <span className="font-medium text-gray-900 flex-shrink-0">フォロー中</span>
         </div>
       </div>
     </div>
