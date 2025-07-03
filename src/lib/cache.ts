@@ -237,4 +237,55 @@ if (typeof window !== 'undefined' && 'memory' in performance) {
   };
 
   setInterval(checkMemoryUsage, 30000); // 30秒ごとにチェック
-} 
+}
+
+// ------------------------------------------------------
+// 🌐 fetch ラッパー: HTTP レスポンスをキャッシュ
+// ------------------------------------------------------
+type CachedResponse = {
+  ok: boolean;
+  status: number;
+  statusText: string;
+  json: any;
+};
+
+// 専用キャッシュ (最大 50 件、TTL 60 秒)
+const fetchCache = new OptimizedCache<CachedResponse>({
+  maxSize: 50,
+  defaultTTL: 60 * 1000,
+});
+
+/**
+ * fetch の簡易キャッシュ版
+ * @param url リクエスト URL
+ * @param options fetch オプション
+ * @param customTTL TTL (ms) 指定がある場合
+ */
+export const cachedFetch = async <T = any>(
+  url: string,
+  options?: RequestInit,
+  customTTL?: number
+): Promise<T> => {
+  const key = generateCacheKey('fetch', url, JSON.stringify(options || {}));
+
+  const cached = fetchCache.get(key);
+  if (cached) {
+    return cached.json as T;
+  }
+
+  const res = await fetch(url, options);
+  const json = await res.json();
+
+  fetchCache.set(
+    key,
+    {
+      ok: res.ok,
+      status: res.status,
+      statusText: res.statusText,
+      json,
+    },
+    customTTL
+  );
+
+  return json as T;
+}; 

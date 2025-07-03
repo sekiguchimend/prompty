@@ -284,27 +284,33 @@ const HomePage: React.FC = memo(() => {
     <div className="flex min-h-screen flex-col">
       {/* 通知許可促進バナー */}
       {shouldShowNotificationBanner && (
-        <div className="bg-blue-600 text-white py-3 px-4 relative z-50">
+        <div className="bg-black text-white py-3 px-4 relative z-50">
           <div className="max-w-6xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Bell className="h-5 w-5" />
               <div>
-                <p className="font-medium">📢 いいねやコメントの通知を受け取りませんか？</p>
-                <p className="text-sm text-blue-100">
-                  新しいフォロワーやリアクションをリアルタイムで確認できます
-                </p>
+                {isMobile ? (
+                  <p className="font-medium">📢 通知を受け取りますか？</p>
+                ) : (
+                  <>
+                    <p className="font-medium">📢 いいねやコメントの通知を受け取りませんか？</p>
+                    <p className="text-sm text-gray-300">
+                      新しいフォロワーやリアクションをリアルタイムで確認できます
+                    </p>
+                  </>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={handleEnableNotifications}
-                className="bg-white text-blue-600 px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-50 transition-colors"
+                className="bg-white text-black px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-100 transition-colors"
               >
                 通知を有効にする
               </button>
               <button
                 onClick={() => setShowNotificationBanner(false)}
-                className="text-blue-100 hover:text-white transition-colors"
+                className="text-white hover:text-gray-300 transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
