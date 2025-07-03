@@ -2,7 +2,7 @@ import React, { memo, useMemo, useCallback, useState } from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { Heart, Bookmark, Eye, User, Star, Play } from 'lucide-react';
+import { Heart, Bookmark, Eye, User as UserIcon, Star, Play } from 'lucide-react';
 import LazyImage from './LazyImage';
 import VideoPlayer from './VideoPlayer';
 import { cn } from '../../lib/utils';
@@ -10,6 +10,7 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { useOptimizedCache, generateCacheKey } from '../../lib/cache';
 import { getOptimizedImageProps } from '../../lib/image-optimization';
+import { User } from '../../types/components';
 
 interface OptimizedPromptCardProps {
   id: string;
@@ -19,9 +20,7 @@ interface OptimizedPromptCardProps {
   mediaType?: 'image' | 'video';
   category: string;
   tags: string[];
-  username: string;
-  userId: string;
-  userAvatarUrl: string;
+  user: User;
   createdAt: string;
   likes: number;
   bookmarks: number;
@@ -61,9 +60,7 @@ const OptimizedPromptCard: React.FC<OptimizedPromptCardProps> = memo(({
   mediaType = 'image',
   category,
   tags,
-  username,
-  userId,
-  userAvatarUrl,
+  user,
   createdAt,
   likes,
   bookmarks,
@@ -152,11 +149,11 @@ const OptimizedPromptCard: React.FC<OptimizedPromptCardProps> = memo(({
     
     setActionLoading('follow');
     try {
-      await onFollow(userId);
+      await onFollow(user.id);
     } finally {
       setActionLoading(null);
     }
-  }, [onFollow, userId, actionLoading]);
+  }, [onFollow, user.id, actionLoading]);
 
   // サムネイル表示の最適化
   const thumbnailElement = useMemo(() => {
@@ -276,17 +273,17 @@ const OptimizedPromptCard: React.FC<OptimizedPromptCardProps> = memo(({
 
           {/* ユーザー情報 */}
           <div className="flex items-center gap-2 text-xs text-gray-500">
-            {userAvatarUrl ? (
+            {user.avatarUrl ? (
               <img 
-                src={userAvatarUrl} 
-                alt={username}
+                src={user.avatarUrl} 
+                alt={user.name}
                 className="w-5 h-5 rounded-full object-cover"
                 loading="lazy"
               />
             ) : (
-              <User className="h-4 w-4" />
+              <UserIcon className="h-4 w-4" />
             )}
-            <span className="truncate font-medium">{username}</span>
+            <span className="truncate font-medium">{user.name}</span>
             <span>•</span>
             <span>{formattedDate}</span>
                 </div>

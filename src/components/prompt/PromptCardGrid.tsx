@@ -46,15 +46,19 @@ export const PromptCardGrid = memo(forwardRef<HTMLDivElement, PromptCardGridProp
           <OptimizedPromptCard
             id={prompt.id}
             title={prompt.title}
+            description={prompt.description ?? ''}
             thumbnailUrl={prompt.thumbnailUrl}
             mediaType={prompt.mediaType}
+            category={prompt.category ?? ''}
+            tags={prompt.tags ?? []}
             user={prompt.user}
-            postedAt={prompt.postedAt}
-            likeCount={prompt.likeCount}
+            createdAt={prompt.postedAt}
+            likes={prompt.likeCount}
+            bookmarks={0}
+            views={prompt.viewCount ?? 0}
             isLiked={!!prompt.isLiked}
             isBookmarked={!!prompt.isBookmarked}
-            onHide={onHidePrompt}
-            isFeatureSection={isFeatureSection}
+            isFollowing={false}
           />
         </div>
       ))}

@@ -161,9 +161,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       clearTimeout(timeoutRef.current);
     }
     
-    setFirstFrameLoaded(true);
-    setIsLoading(false);
-    setHasError(false);
+      setFirstFrameLoaded(true);
+          setIsLoading(false);
+          setHasError(false);
     setShowFallbackImage(false);
     
     // 初回ロード時のみ 0 秒にリセット
@@ -192,7 +192,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
     
     setHasError(true);
-    setIsLoading(false);
+      setIsLoading(false);
     setFirstFrameLoaded(false);
     
     // 対応形式でもエラーが発生した場合はフォールバック画像を表示
@@ -341,9 +341,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     
     // PC表示時は動画の再生/停止を優先
     if (!isMobile && videoRef.current && firstFrameLoaded) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
+    if (isPlaying) {
+      videoRef.current.pause();
+    } else {
         videoRef.current.play().catch(() => {});
       }
       return;
@@ -355,9 +355,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       return;
     }
     
-    if (isPlaying) {
-      videoRef.current.pause();
-    } else {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
       videoRef.current.play().catch(() => {});
     }
   }, [isMobile, tapToPlay, onLinkClick, isPlaying, hasError, firstFrameLoaded, showFallbackImage]);
